@@ -1,280 +1,129 @@
-package koks.module.combat;
-
-import god.buddy.aot.BCompiler;
-import koks.api.event.Event;
-import koks.api.registry.module.Module;
-import koks.api.utils.MovementUtil;
-import koks.api.manager.value.annotation.Value;
-import koks.event.*;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.network.INetHandler;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.client.C03PacketPlayer;
-import net.minecraft.network.play.server.S27PacketExplosion;
-import net.minecraft.util.MathHelper;
-
-import java.util.Random;
-
-/**
- * Copyright 2020, Koks Team
- * Please don't use the code
+/*
+ * LiquidBounce Hacked Client
+ * A free open source mixin-based injection hacked client for Minecraft using Minecraft Forge.
+ * https://github.com/CCBlueX/LiquidBounce/
  */
+package net.ccbluex.liquidbounce.features.module.modules.combat
 
-@Module.Info(name = "Velocity", category = Module.Category.COMBAT, description = "Reduce your knock back")
-public class Velocity extends Module {
+import net.ccbluex.liquidbounce.event.EventTarget
+import net.ccbluex.liquidbounce.event.Render3DEvent
+import net.ccbluex.liquidbounce.features.module.Module
+import net.ccbluex.liquidbounce.features.module.ModuleCategory
+import net.ccbluex.liquidbounce.injection.implementations.IItemStack
+import net.ccbluex.liquidbounce.utils.InventoryUtils
+import net.ccbluex.liquidbounce.utils.extensions.moving
+import net.ccbluex.liquidbounce.utils.item.ArmorComparator
+import net.ccbluex.liquidbounce.utils.item.ArmorPiece
+import net.ccbluex.liquidbounce.utils.timer.TimeUtils
+import net.ccbluex.liquidbounce.value.BoolValue
+import net.ccbluex.liquidbounce.value.IntegerValue
+import net.minecraft.client.gui.inventory.GuiInventory
+import net.minecraft.item.ItemArmor
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement
+import net.minecraft.network.play.client.C09PacketHeldItemChange
+import net.minecraft.network.play.client.C0DPacketCloseWindow
+import net.minecraft.network.play.client.C16PacketClientStatus
+import java.util.stream.Collectors
+import java.util.stream.IntStream
 
-    @Value(name = "Mode", modes = {"Packet", "BackToBlock", "Jump", "Vulcan2.0.1", "Intave13KeepLow", "Intave13Reverse", "Intave13Wall", "Intave13Old", "Intave13GommeZero", "Intave13Flag", "Intave14.1.2", "AAC3.3.12", "AAC3.3.14", "AAC4", "Simple", "BAC1.0.4", "Matrix6.6.1"})
-    public String mode = "Packet";
-
-    @Value(name = "Cancel")
-    boolean cancel = true;
-
-    @Value(name = "Cancel Explosion")
-    boolean cancelExplosion = false;
-
-    @Value(name = "Vertical", minimum = 0, maximum = 100)
-    int vertical = 0;
-
-    @Value(name = "Horizontal", minimum = 0, maximum = 100)
-    int horizontal = 0;
-
-    @Value(name = "Intave14.1.2-Improve", displayName = "Improve")
-    boolean improveIntave1412 = true;
-
-    @Value(name = "BackToBlock-HurtTime", displayName = "HurtTime", minimum = 1, maximum = 10)
-    int backToBlockHurtTime = 5;
-
-
-    public boolean wasOnGround;
-
-    @Override
-    public boolean isVisible(koks.api.manager.value.Value<?> value, String name) {
-        if(name.contains("-")) {
-            final String[] split = name.split("-");
-            return split[0].equalsIgnoreCase(mode);
+class AutoArmor : Module(
+    "AutoArmor",
+    "Automatically equips the best armor in your inventory.",
+    ModuleCategory.COMBAT
+) {
+    private val maxDelayValue: IntegerValue = object : IntegerValue("MaxDelay", 200, 0, 400) {
+        override fun onChanged(oldValue: Int, newValue: Int) {
+            val minDelay = minDelayValue.get()
+            if (minDelay > newValue) set(minDelay)
         }
-        switch (name) {
-            case "Vertical":
-            case "Horizontal":
-                return mode.equalsIgnoreCase("Packet") && !cancel;
-            case "Cancel Explosion":
-                return mode.equalsIgnoreCase("Packet") && cancel;
-            case "Cancel":
-                return mode.equalsIgnoreCase("Packet");
-        }
-        return super.isVisible(value, name);
     }
+    private val minDelayValue: IntegerValue = object : IntegerValue("MinDelay", 100, 0, 400) {
+        override fun onChanged(oldValue: Int, newValue: Int) {
+            val maxDelay = maxDelayValue.get()
+            if (maxDelay < newValue) set(maxDelay)
+        }
+    }
+    private val invOpenValue = BoolValue("InvOpen", false)
+    private val simulateInventory = BoolValue("SimulateInventory", true)
+    private val noMoveValue = BoolValue("NoMove", false)
+    private val itemDelayValue = IntegerValue("ItemDelay", 0, 0, 5000)
+    private val hotbarValue = BoolValue("Hotbar", true)
+    private var delay: Long = 0
+    @EventTarget
+    fun onRender3D(event: Render3DEvent?) {
+        if (!InventoryUtils.CLICK_TIMER.hasTimePassed(delay) ||
+            mc.thePlayer.openContainer != null && mc.thePlayer.openContainer.windowId != 0
+        ) return
 
-    @BCompiler(aot = BCompiler.AOT.AGGRESSIVE)
-    @Override
-    @Event.Info(priority = Event.Priority.HIGH)
-    public void onEvent(Event event) {
-        final MovementUtil movementUtil = MovementUtil.getInstance();
+        // Find best armor
+        val armorPieces = IntStream.range(0, 36)
+            .filter { i: Int ->
+                val itemStack = mc.thePlayer.inventory.getStackInSlot(i)
+                (itemStack != null && itemStack.item is ItemArmor
+                        && (i < 9 || System.currentTimeMillis() - (itemStack as Any as IItemStack).itemDelay >= itemDelayValue.get()))
+            }
+            .mapToObj { i: Int ->
+                ArmorPiece(
+                    mc.thePlayer.inventory.getStackInSlot(
+                        i
+                    ), i
+                )
+            }
+            .collect(Collectors.groupingBy { obj: ArmorPiece -> obj.armorType })
+        val bestArmor = arrayOfNulls<ArmorPiece>(4)
+        for ((key, value) in armorPieces) {
+            bestArmor[key!!] = value.stream()
+                .max(ARMOR_COMPARATOR).orElse(null)
+        }
 
-        switch (mode) {
-            case "BackToBlock":
-                if(event instanceof UpdateEvent) {
-                    if(getHurtTime() == backToBlockHurtTime) {
-                        getPlayer().motionX *= -1;
-                        getPlayer().motionZ *= -1;
-                        if(getPlayer().motionY < 0) {
-                            getPlayer().motionY *= -1;
-                        }
-                    }
-                }
-                break;
-            case "Packet":
-                if (event instanceof final VelocityEvent velocityEvent) {
-                    if (cancel)
-                        velocityEvent.setCanceled(true);
-                    else {
-                        velocityEvent.setVertical(vertical);
-                        velocityEvent.setHorizontal(horizontal);
-                    }
-                }
-                if (event instanceof final PacketEvent packetEvent) {
-                    if (packetEvent.getType() == PacketEvent.Type.RECEIVE) {
-                        final Packet<? extends INetHandler> packet = packetEvent.getPacket();
-                        if (packet instanceof S27PacketExplosion)
-                            if (cancelExplosion)
-                                packetEvent.setCanceled(true);
-                    }
-                }
-                break;
-            case "Simple":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() != 0) {
-                        getPlayer().motionY = 0;
-                        setMotion(0);
-                    }
-                }
-                break;
-            case "Jump":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() == 10 && getPlayer().onGround) {
-                        getPlayer().jump();
-                    }
-                }
-                break;
-            case "Matrix6.6.1":
-                if(event instanceof UpdateEvent) {
-                    if(getHurtTime() > 2) {
-                        movementUtil.setSpeed(0.14);
-                    }
-                }
-                break;
-            case "BAC1.0.4":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() != 0) {
-                        getPlayer().onGround = true;
-                        getPlayer().motionX *= 0.2;
-                        getPlayer().motionZ *= 0.2;
-                    }
-                }
-                break;
-            case "AAC3.3.12":
-                if (event instanceof UpdateEvent) {
-                    if (getPlayer().hurtTime > 0) {
-                        getPlayer().motionX *= 0.8;
-                        getPlayer().motionZ *= 0.8;
-                        getPlayer().motionY *= 1;
-                    }
-                }
-                break;
-            case "AAC3.3.14":
-                if (event instanceof UpdateEvent) {
-                    if (getPlayer().hurtTime > 0) {
-                        setMotion(0);
-                    }
-                }
-                break;
-            case "Intave13Flag":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() == 10 && getPlayer().onGround) {
-                        sendPacketUnlogged(new C03PacketPlayer.C04PacketPlayerPosition(getX() + 6, getY() + 1, getZ() + 6, true));
-                    }
-                }
-                break;
-            case "Intave13Wall":
-                if (event instanceof UpdateEvent) {
-                    //TODO: Checking for Full BLock
-                    if(mc.inGameHasFocus) {
-                        final float velocity = (float) MathHelper.getRandomDoubleInRange(new Random(), 0.3045, 0.3345);
-                        if (getPlayer().isCollidedHorizontally && !getPlayer().onGround && !getPlayer().isCollidedVertically && !getPlayer().isInWeb && !getPlayer().isInWater() && !getPlayer().isInLava() && getHurtTime() != 0) {
-                            movementUtil.setSpeed(velocity, getYaw());
-                        }
-                    }
-                }
-                break;
-            case "Intave13Old":
-                if (event instanceof UpdateEvent) {
-                    if (getPlayer().hurtTime != 0)
-                        if (getPlayer().hurtTime == 6)
-                            movementUtil.setSpeed(0.17, getYaw());
-                }
-            case "Intave13KeepLow":
-                if (event instanceof UpdateEvent) {
-                    switch (getHurtTime()) {
-                        case 10:
-                            if (getPlayer().onGround) {
-                                wasOnGround = true;
-                            }
-                            break;
-                        case 0:
-                            wasOnGround = false;
-                            break;
-                        case 9:
-                            if (wasOnGround) {
-                                getPlayer().motionY = 0.0D;
-                            }
-                            break;
-                    }
-                }
-                break;
-            case "Intave13GommeZero":
-                if (event instanceof VelocityEvent) {
-                    if (getHurtTime() != 0) {
-                        event.setCanceled(true);
-                    }
-                }
-
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() != 0) {
-                        getGameSettings().keyBindForward.pressed = false;
-                        getGameSettings().keyBindBack.pressed = false;
-                        getGameSettings().keyBindLeft.pressed = false;
-                        getGameSettings().keyBindRight.pressed = false;
-                    }
-                }
-                break;
-            case "Intave13Reverse":
-                if (event instanceof MoveEvent) {
-                    if (getPlayer() != null) {
-                        if (getHurtTime() > 0) {
-                            getPlayer().setSprinting(false);
-                            movementUtil.setSpeed(0.05F);
-                        }
-                    }
-                }
-                break;
-            case "Intave14.1.2":
-                if(event instanceof final KnockbackModifierEvent knockbackModifierEvent) {
-                    knockbackModifierEvent.setFlag(true);
-                    if(improveIntave1412) {
-                        int i = 0;
-                        i += EnchantmentHelper.getKnockbackModifier(getPlayer());
-                        if(getPlayer().isSprinting())
-                            i++;
-                        if(getPlayer().isSwingInProgress && getPlayer().hurtTime != 0 && getPlayer().moveForward != 0 && getPlayer().moveStrafing != 0) {
-                            if(getPlayer().onGround || !getPlayer().isSprinting()) {
-                                if (i > 0) {
-                                    getPlayer().addVelocity((-MathHelper.sin((float) (getYaw() * Math.PI / 180)) * i * 0.5), 0.1, (MathHelper.cos((float) (getYaw() * Math.PI / 180)) * i * 0.5));
-                                }
-                            }
-                        }
-                    }
-                }
-                break;
-            case "Intave14.3.3":
-                if(event instanceof UpdateEvent) {
-                    if(getPlayer().hurtTime == 10) {
-                        getPlayer().motionX *= -1;
-                        getPlayer().motionZ *= -1;
-                    } else if(getPlayer().hurtTime == 9) {
-                        if(getPlayer().onGround) {
-                            getPlayer().motionX *= 0.9;
-                            getPlayer().motionZ *= 0.9;
-                        }
-                    }
-                }
-                break;
-            case "AAC4":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() > 5) {
-                        getPlayer().onGround = true;
-                        stopWalk();
-                    } else if(getHurtTime() != 0) {
-                        resumeWalk();
-                    }
-                }
-                break;
-            case "Vulcan2.0.1":
-                if (event instanceof UpdateEvent) {
-                    if (getHurtTime() != 0) {
-                        movementUtil.setSpeed(0.2);
-                    }
-                }
-                break;
+        // Swap armor
+        for (i in 0..3) {
+            val armorPiece = bestArmor[i] ?: continue
+            val armorSlot = 3 - i
+            val oldArmor = ArmorPiece(mc.thePlayer.inventory.armorItemInSlot(armorSlot), -1)
+            if (oldArmor.itemStack == null || oldArmor.itemStack.item !is ItemArmor || ARMOR_COMPARATOR.compare(
+                    oldArmor,
+                    armorPiece
+                ) < 0
+            ) {
+                if (oldArmor.itemStack != null && move(8 - armorSlot, true)) return
+                if (mc.thePlayer.inventory.armorItemInSlot(armorSlot) == null && move(armorPiece.slot, false)) return
+            }
         }
     }
 
-    @Override
-    public void onEnable() {
-
+    /**
+     * Shift+Left clicks the specified item
+     *
+     * @param item        Slot of the item to click
+     * @param isArmorSlot
+     * @return True if it is unable to move the item
+     */
+    private fun move(item: Int, isArmorSlot: Boolean): Boolean {
+        if (!isArmorSlot && item < 9 && hotbarValue.get() && mc.currentScreen !is GuiInventory) {
+            mc.netHandler.addToSendQueue(C09PacketHeldItemChange(item))
+            mc.netHandler.addToSendQueue(C08PacketPlayerBlockPlacement(mc.thePlayer.inventoryContainer.getSlot(item).stack))
+            mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+            delay = TimeUtils.randomDelay(minDelayValue.get(), maxDelayValue.get())
+            return true
+        } else if (!(noMoveValue.get() && mc.thePlayer.moving) && (!invOpenValue.get() || mc.currentScreen is GuiInventory) && item != -1) {
+            val openInventory = simulateInventory.get() && mc.currentScreen !is GuiInventory
+            if (openInventory) mc.netHandler.addToSendQueue(C16PacketClientStatus(C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT))
+            mc.playerController.windowClick(
+                mc.thePlayer.inventoryContainer.windowId,
+                if (isArmorSlot) item else if (item < 9) item + 36 else item,
+                0,
+                1,
+                mc.thePlayer
+            )
+            delay = TimeUtils.randomDelay(minDelayValue.get(), maxDelayValue.get())
+            if (openInventory) mc.netHandler.addToSendQueue(C0DPacketCloseWindow())
+            return true
+        }
+        return false
     }
 
-    @Override
-    public void onDisable() {
-
+    companion object {
+        val ARMOR_COMPARATOR = ArmorComparator()
     }
 }
