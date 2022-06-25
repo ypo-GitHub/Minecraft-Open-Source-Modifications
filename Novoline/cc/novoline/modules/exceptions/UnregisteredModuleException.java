@@ -1,18 +1,23 @@
 package cc.novoline.modules.exceptions;
 
+/**
+ * @author xDelsy
+ */
 public final class UnregisteredModuleException extends RuntimeException {
-   public UnregisteredModuleException() {
-   }
 
-   public UnregisteredModuleException(String var1) {
-      super(var1);
-   }
+    public UnregisteredModuleException() {
+    }
 
-   public UnregisteredModuleException(String var1, Throwable var2) {
-      super(var1, var2);
-   }
+    public UnregisteredModuleException(String message) {
+        super(message);
+    }
 
-   public UnregisteredModuleException(Throwable var1) {
-      super(var1);
-   }
+    public UnregisteredModuleException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public UnregisteredModuleException(Throwable cause) {
+        super(cause);
+    }
+
 }

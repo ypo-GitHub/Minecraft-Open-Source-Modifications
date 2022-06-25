@@ -1,43 +1,40 @@
 package net.minecraft.client.resources;
 
 import com.google.common.collect.Sets;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
-import net.minecraft.client.resources.AbstractResourcePack;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 
+import java.io.*;
+import java.util.Set;
+
 public class FolderResourcePack extends AbstractResourcePack {
-   public FolderResourcePack(File var1) {
-      super(var1);
-   }
+    public FolderResourcePack(File resourcePackFileIn) {
+        super(resourcePackFileIn);
+    }
 
-   protected InputStream getInputStreamByName(String var1) throws IOException {
-      return new BufferedInputStream(new FileInputStream(new File(this.resourcePackFile, var1)));
-   }
+    protected InputStream getInputStreamByName(String name) throws IOException {
+        return new BufferedInputStream(new FileInputStream(new File(this.resourcePackFile, name)));
+    }
 
-   protected boolean hasResourceName(String var1) {
-      return (new File(this.resourcePackFile, var1)).isFile();
-   }
+    protected boolean hasResourceName(String name) {
+        return new File(this.resourcePackFile, name).isFile();
+    }
 
-   public Set getResourceDomains() {
-      HashSet var1 = Sets.newHashSet();
-      File var2 = new File(this.resourcePackFile, "assets/");
-      if(var2.isDirectory()) {
-         for(File var6 : var2.listFiles(DirectoryFileFilter.DIRECTORY)) {
-            String var7 = getRelativeName(var2, var6);
-            if(!var7.equals(var7.toLowerCase())) {
-               this.logNameNotLowercase(var7);
-            } else {
-               var1.add(var7.substring(0, var7.length() - 1));
+    public Set<String> getResourceDomains() {
+        Set<String> set = Sets.<String>newHashSet();
+        File file1 = new File(this.resourcePackFile, "assets/");
+
+        if (file1.isDirectory()) {
+            for (File file2 : file1.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY)) {
+                String s = getRelativeName(file1, file2);
+
+                if (!s.equals(s.toLowerCase())) {
+                    this.logNameNotLowercase(s);
+                } else {
+                    set.add(s.substring(0, s.length() - 1));
+                }
             }
-         }
-      }
+        }
 
-      return var1;
-   }
+        return set;
+    }
 }

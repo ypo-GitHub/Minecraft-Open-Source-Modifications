@@ -1,25 +1,36 @@
 package net.minecraft.util;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import net.minecraft.util.Util$EnumOS;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+
 public final class Util {
-   public static Util$EnumOS getOSType() {
-      String var0 = System.getProperty("os.name").toLowerCase();
-      return var0.contains("win")?Util$EnumOS.WINDOWS:(var0.contains("mac")?Util$EnumOS.OSX:(var0.contains("solaris")?Util$EnumOS.SOLARIS:(var0.contains("sunos")?Util$EnumOS.SOLARIS:(var0.contains("linux")?Util$EnumOS.LINUX:(var0.contains("unix")?Util$EnumOS.LINUX:Util$EnumOS.UNKNOWN)))));
-   }
 
-   public static Object func_181617_a(FutureTask var0, Logger var1) {
-      FutureTask var10000 = var0;
+    public static Util.EnumOS getOSType() {
+        final String s = System.getProperty("os.name").toLowerCase();
+        return s.contains("win") ? Util.EnumOS.WINDOWS : s.contains("mac") ? EnumOS.OSX : s.contains("solaris") ? EnumOS.SOLARIS : s.contains("sunos") ? EnumOS.SOLARIS : s.contains("linux") ? EnumOS.LINUX : s.contains("unix") ? EnumOS.LINUX : EnumOS.UNKNOWN;
+    }
 
-      try {
-         var10000.run();
-         return var0.get();
-      } catch (InterruptedException | ExecutionException var3) {
-         var1.fatal("Error executing task", var3);
-         return null;
-      }
-   }
+    public static <V> V func_181617_a(FutureTask<V> p_181617_0_, Logger p_181617_1_) {
+        try {
+            p_181617_0_.run();
+            return p_181617_0_.get();
+        } catch (ExecutionException | InterruptedException e) {
+            p_181617_1_.fatal("Error executing task", e);
+        }
+
+        return null;
+    }
+
+    public enum EnumOS {
+
+        LINUX,
+        SOLARIS,
+        WINDOWS,
+        OSX,
+        UNKNOWN
+
+    }
+
 }

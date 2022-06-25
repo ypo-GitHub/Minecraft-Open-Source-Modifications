@@ -1,10 +1,7 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.iV;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,118 +15,142 @@ import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockCake extends Block {
-   public static final iV P = iV.a("bites", 0, 6);
 
-   protected BlockCake() {
-      super(Material.cake);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(0)));
-      this.setTickRandomly(true);
-   }
+    public static final PropertyInteger BITES = PropertyInteger.create("bites", 0, 6);
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      float var3 = 0.0625F;
-      float var4 = (float)(1 + ((Integer)var1.getBlockState(var2).getValue(P)).intValue() * 2) / 16.0F;
-      float var5 = 0.5F;
-      this.setBlockBounds(var4, 0.0F, 0.0625F, 0.9375F, 0.5F, 0.9375F);
-   }
+    protected BlockCake() {
+        super(Material.cake);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(BITES, 0));
+        this.setTickRandomly(true);
+    }
 
-   public void setBlockBoundsForItemRender() {
-      float var1 = 0.0625F;
-      float var2 = 0.5F;
-      this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.5F, 0.9375F);
-   }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        final float f = 0.0625F;
+        final float f1 = (float) (1 + worldIn.getBlockState(pos).getValue(BITES) * 2) / 16.0F;
+        final float f2 = 0.5F;
+        this.setBlockBounds(f1, 0.0F, f, 1.0F - f, f2, 1.0F - f);
+    }
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      float var4 = 0.0625F;
-      float var5 = (float)(1 + ((Integer)var3.getValue(P)).intValue() * 2) / 16.0F;
-      float var6 = 0.5F;
-      return new AxisAlignedBB((double)((float)var2.getX() + var5), (double)var2.getY(), (double)((float)var2.getZ() + 0.0625F), (double)((float)(var2.getX() + 1) - 0.0625F), (double)((float)var2.getY() + 0.5F), (double)((float)(var2.getZ() + 1) - 0.0625F));
-   }
+    /**
+     * Sets the block's bounds for rendering it as an item
+     */
+    public void setBlockBoundsForItemRender() {
+        final float f = 0.0625F;
+        final float f1 = 0.5F;
+        this.setBlockBounds(f, 0.0F, f, 1.0F - f, f1, 1.0F - f);
+    }
 
-   public AxisAlignedBB getSelectedBoundingBox(World var1, BlockPos var2) {
-      return this.getCollisionBoundingBox(var1, var2, var1.getBlockState(var2));
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        final float f = 0.0625F;
+        final float f1 = (float) (1 + state.getValue(BITES) * 2) / 16.0F;
+        final float f2 = 0.5F;
+        return new AxisAlignedBB((float) pos.getX() + f1, pos.getY(), (float) pos.getZ() + f, (float) (pos.getX() + 1) - f, (float) pos.getY() + f2, (float) (pos.getZ() + 1) - f);
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos) {
+        return this.getCollisionBoundingBox(worldIn, pos, worldIn.getBlockState(pos));
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      this.eatCake(var1, var2, var3, var4);
-      return true;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void onBlockClicked(World var1, BlockPos var2, EntityPlayer var3) {
-      this.eatCake(var1, var2, var1.getBlockState(var2), var3);
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        this.eatCake(worldIn, pos, state, playerIn);
+        return true;
+    }
 
-   private void eatCake(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4) {
-      if(var4.canEat(false)) {
-         var4.triggerAchievement(StatList.field_181724_H);
-         var4.getFoodStats().addStats(2, 0.1F);
-         int var5 = ((Integer)var3.getValue(P)).intValue();
-         if(var5 < 6) {
-            var1.setBlockState(var2, var3.withProperty(P, Integer.valueOf(var5 + 1)), 3);
-         } else {
-            var1.setBlockToAir(var2);
-         }
-      }
+    public void onBlockClicked(World worldIn, BlockPos pos, EntityPlayer playerIn) {
+        this.eatCake(worldIn, pos, worldIn.getBlockState(pos), playerIn);
+    }
 
-   }
+    private void eatCake(World worldIn, BlockPos pos, IBlockState state, EntityPlayer player) {
+        if (player.canEat(false)) {
+            player.triggerAchievement(StatList.field_181724_H);
+            player.getFoodStats().addStats(2, 0.1F);
+            final int i = state.getValue(BITES);
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      return super.canPlaceBlockAt(var1, var2) && this.canBlockStay(var1, var2);
-   }
+            if (i < 6) {
+                worldIn.setBlockState(pos, state.withProperty(BITES, i + 1), 3);
+            } else {
+                worldIn.setBlockToAir(pos);
+            }
+        }
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      if(!this.canBlockStay(var1, var2)) {
-         var1.setBlockToAir(var2);
-      }
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        return super.canPlaceBlockAt(worldIn, pos) && this.canBlockStay(worldIn, pos);
+    }
 
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        if (!this.canBlockStay(worldIn, pos)) {
+            worldIn.setBlockToAir(pos);
+        }
+    }
 
-   private boolean canBlockStay(World var1, BlockPos var2) {
-      return var1.getBlockState(var2.down()).getBlock().getMaterial().isSolid();
-   }
+    private boolean canBlockStay(World worldIn, BlockPos pos) {
+        return worldIn.getBlockState(pos.down()).getBlock().getMaterial().isSolid();
+    }
 
-   public int quantityDropped(Random var1) {
-      return 0;
-   }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return 0;
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return null;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return null;
+    }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return Items.cake;
-   }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return Items.cake;
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf(var1));
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(BITES, meta);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue();
-   }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(BITES);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, BITES);
+    }
 
-   public int getComparatorInputOverride(World var1, BlockPos var2) {
-      return (7 - ((Integer)var1.getBlockState(var2).getValue(P)).intValue()) * 2;
-   }
+    public int getComparatorInputOverride(World worldIn, BlockPos pos) {
+        return (7 - worldIn.getBlockState(pos).getValue(BITES)) * 2;
+    }
 
-   public boolean hasComparatorInputOverride() {
-      return true;
-   }
+    public boolean hasComparatorInputOverride() {
+        return true;
+    }
+
 }

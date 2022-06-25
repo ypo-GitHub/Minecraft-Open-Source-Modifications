@@ -1,7 +1,5 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
@@ -13,37 +11,50 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockWeb extends Block {
-   public BlockWeb() {
-      super(Material.web);
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
 
-   public void onEntityCollidedWithBlock(World var1, BlockPos var2, IBlockState var3, Entity var4) {
-      var4.setInWeb();
-   }
+    public BlockWeb() {
+        super(Material.web);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    /**
+     * Called When an Entity Collided with the Block
+     */
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn) {
+        entityIn.setInWeb();
+    }
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      return null;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        return null;
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Items.string;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   protected boolean canSilkHarvest() {
-      return true;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Items.string;
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+    protected boolean canSilkHarvest() {
+        return true;
+    }
+
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
 }

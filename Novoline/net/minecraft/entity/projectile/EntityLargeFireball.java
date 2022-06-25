@@ -2,51 +2,58 @@ package net.minecraft.entity.projectile;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
 public class EntityLargeFireball extends EntityFireball {
-   public int explosionPower = 1;
+    public int explosionPower = 1;
 
-   public EntityLargeFireball(World var1) {
-      super(var1);
-   }
+    public EntityLargeFireball(World worldIn) {
+        super(worldIn);
+    }
 
-   public EntityLargeFireball(World var1, double var2, double var4, double var6, double var8, double var10, double var12) {
-      super(var1, var2, var4, var6, var8, var10, var12);
-   }
+    public EntityLargeFireball(World worldIn, double x, double y, double z, double accelX, double accelY, double accelZ) {
+        super(worldIn, x, y, z, accelX, accelY, accelZ);
+    }
 
-   public EntityLargeFireball(World var1, EntityLivingBase var2, double var3, double var5, double var7) {
-      super(var1, var2, var3, var5, var7);
-   }
+    public EntityLargeFireball(World worldIn, EntityLivingBase shooter, double accelX, double accelY, double accelZ) {
+        super(worldIn, shooter, accelX, accelY, accelZ);
+    }
 
-   protected void onImpact(MovingObjectPosition var1) {
-      if(!this.worldObj.isRemote) {
-         if(var1.entityHit != null) {
-            var1.entityHit.attackEntityFrom(DamageSource.causeFireballDamage(this, this.shootingEntity), 6.0F);
-            this.applyEnchantments(this.shootingEntity, var1.entityHit);
-         }
+    /**
+     * Called when this EntityFireball hits a block or entity.
+     */
+    protected void onImpact(MovingObjectPosition movingObject) {
+        if (!this.worldObj.isRemote) {
+            if (movingObject.entityHit != null) {
+                movingObject.entityHit.attackEntityFrom(DamageSource.causeFireballDamage(this, this.shootingEntity), 6.0F);
+                this.applyEnchantments(this.shootingEntity, movingObject.entityHit);
+            }
 
-         boolean var2 = this.worldObj.getGameRules().getBoolean("mobGriefing");
-         this.worldObj.newExplosion((Entity)null, this.posX, this.posY, this.posZ, (float)this.explosionPower, var2, var2);
-         this.setDead();
-      }
+            boolean flag = this.worldObj.getGameRules().getBoolean("mobGriefing");
+            this.worldObj.newExplosion((Entity) null, this.posX, this.posY, this.posZ, (float) this.explosionPower, flag, flag);
+            this.setDead();
+        }
+    }
 
-   }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+        super.writeEntityToNBT(tagCompound);
+        tagCompound.setInteger("ExplosionPower", this.explosionPower);
+    }
 
-   public void writeEntityToNBT(NBTTagCompound var1) {
-      super.writeEntityToNBT(var1);
-      var1.setInteger("ExplosionPower", this.explosionPower);
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+        super.readEntityFromNBT(tagCompund);
 
-   public void readEntityFromNBT(NBTTagCompound var1) {
-      super.readEntityFromNBT(var1);
-      if(var1.hasKey("ExplosionPower", 99)) {
-         this.explosionPower = var1.getInteger("ExplosionPower");
-      }
-
-   }
+        if (tagCompund.hasKey("ExplosionPower", 99)) {
+            this.explosionPower = tagCompund.getInteger("ExplosionPower");
+        }
+    }
 }

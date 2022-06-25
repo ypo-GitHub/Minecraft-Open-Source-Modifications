@@ -2,158 +2,217 @@ package viaversion.viaversion.api.data;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.Via;
+import viaversion.viaversion.util.GsonUtil;
 import viaversion.viaversion.util.Int2IntBiMap;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class MappingDataLoader {
-   private static final Map MAPPINGS_CACHE = new ConcurrentHashMap();
-   private static boolean cacheJsonMappings;
 
-   public static boolean isCacheJsonMappings() {
-      return cacheJsonMappings;
-   }
+    private static final Map<String, JsonObject> MAPPINGS_CACHE = new ConcurrentHashMap<>();
+    private static boolean cacheJsonMappings;
 
-   public static void enableMappingsCache() {
-      cacheJsonMappings = true;
-   }
+    /**
+     * Returns true if a selected number of mappings should be cached.
+     * If enabled, cleanup should be done after the cache is no longer needed.
+     *
+     * @return true if mappings should be cached
+     */
+    public static boolean isCacheJsonMappings() {
+        return cacheJsonMappings;
+    }
 
-   public static Map getMappingsCache() {
-      return MAPPINGS_CACHE;
-   }
+    public static void enableMappingsCache() {
+        cacheJsonMappings = true;
+    }
 
-   @Nullable
-   public static JsonObject loadFromDataDir(String param0) {
-      // $FF: Couldn't be decompiled
-   }
+    /**
+     * Returns the cached mappings. Cleared after Via has been fully loaded.
+     *
+     * @see #isCacheJsonMappings()
+     */
+    public static Map<String, JsonObject> getMappingsCache() {
+        return MAPPINGS_CACHE;
+    }
 
-   @Nullable
-   public static JsonObject loadData(String var0) {
-      return loadData(var0, false);
-   }
+    /**
+     * Loads the file from the plugin folder if present, else from the bundled resources.
+     */
+    @Nullable
+    public static JsonObject loadFromDataDir(String name) {
+        File file = new File(Via.getPlatform().getDataFolder(), name);
+        if (!file.exists()) return loadData(name);
 
-   @Nullable
-   public static JsonObject loadData(String var0, boolean var1) {
-      if(cacheJsonMappings) {
-         JsonObject var3 = (JsonObject)MAPPINGS_CACHE.get(var0);
-         return var3;
-      } else {
-         InputStream var2 = getResource(var0);
-         return null;
-      }
-   }
+        // Load the file from the platform's directory if present
+        try (FileReader reader = new FileReader(file)) {
+            return GsonUtil.getGson().fromJson(reader, JsonObject.class);
+        } catch (JsonSyntaxException e) {
+            // Users might mess up the format, so let's catch the syntax error
+            Via.getPlatform().getLogger().warning(name + " is badly formatted!");
+            e.printStackTrace();
+        } catch (IOException | JsonIOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-   public static void mapIdentifiers(Int2IntBiMap var0, JsonObject var1, JsonObject var2, @Nullable JsonObject var3) {
-      Object2IntMap var4 = indexedObjectToMap(var2);
+    /**
+     * Loads the file from the bundled resources. Uses the cache if enabled.
+     */
+    @Nullable
+    public static JsonObject loadData(String name) {
+        return loadData(name, false);
+    }
 
-      for(Entry var6 : var1.entrySet()) {
-         int var7 = mapIdentifierEntry(var6, var4, var3);
-         if(var7 != -1) {
-            var0.put(Integer.parseInt((String)var6.getKey()), var7);
-         }
-      }
-
-   }
-
-   public static void mapIdentifiers(short[] var0, JsonObject var1, JsonObject var2) {
-      mapIdentifiers((short[])var0, var1, var2, (JsonObject)null);
-   }
-
-   public static void mapIdentifiers(short[] var0, JsonObject var1, JsonObject var2, @Nullable JsonObject var3) {
-      Object2IntMap var4 = indexedObjectToMap(var2);
-
-      for(Entry var6 : var1.entrySet()) {
-         int var7 = mapIdentifierEntry(var6, var4, var3);
-         if(var7 != -1) {
-            var0[Integer.parseInt((String)var6.getKey())] = (short)var7;
-         }
-      }
-
-   }
-
-   private static int mapIdentifierEntry(Entry var0, Object2IntMap var1, @Nullable JsonObject var2) {
-      int var3 = var1.getInt(((JsonElement)var0.getValue()).getAsString());
-      if(var3 == -1) {
-         JsonElement var4 = var2.get((String)var0.getKey());
-         var3 = var1.getInt(var4.getAsString());
-         if(var3 == -1) {
-            if(!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
-               Via.getPlatform().getLogger().warning("No key for " + var0.getValue() + " :( ");
+    /**
+     * Loads the file from the bundled resources. Uses the cache if enabled.
+     *
+     * @param cacheIfEnabled whether loaded files should be cached
+     */
+    @Nullable
+    public static JsonObject loadData(String name, boolean cacheIfEnabled) {
+        if (cacheJsonMappings) {
+            JsonObject cached = MAPPINGS_CACHE.get(name);
+            if (cached != null) {
+                return cached;
             }
+        }
 
-            return -1;
-         }
-      }
+        InputStream stream = getResource(name);
+        if (stream == null) return null;
 
-      return var3;
-   }
-
-   public static void mapIdentifiers(short[] var0, JsonArray var1, JsonArray var2, boolean var3) {
-      mapIdentifiers(var0, var1, var2, (JsonObject)null, var3);
-   }
-
-   public static void mapIdentifiers(short[] var0, JsonArray var1, JsonArray var2, @Nullable JsonObject var3, boolean var4) {
-      Object2IntMap var5 = arrayToMap(var2);
-
-      for(int var6 = 0; var6 < var1.size(); ++var6) {
-         JsonElement var7 = var1.get(var6);
-         int var8 = var5.getInt(var7.getAsString());
-         if(var8 == -1) {
-            JsonElement var9 = var3.get(var7.getAsString());
-            String var10 = var9.getAsString();
-            if(var10.isEmpty()) {
-               continue;
+        InputStreamReader reader = new InputStreamReader(stream);
+        try {
+            JsonObject object = GsonUtil.getGson().fromJson(reader, JsonObject.class);
+            if (cacheIfEnabled && cacheJsonMappings) {
+                MAPPINGS_CACHE.put(name, object);
             }
-
-            var8 = var5.getInt(var10);
-            if(var8 == -1) {
-               if(!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
-                  Via.getPlatform().getLogger().warning("No key for " + var7 + " :( ");
-               }
-               continue;
+            return object;
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException ignored) {
+                // Ignored
             }
-         }
+        }
+    }
 
-         var0[var6] = (short)var8;
-      }
+    public static void mapIdentifiers(Int2IntBiMap output, JsonObject oldIdentifiers, JsonObject newIdentifiers, @Nullable JsonObject diffIdentifiers) {
+        Object2IntMap<String> newIdentifierMap = MappingDataLoader.indexedObjectToMap(newIdentifiers);
+        for (Map.Entry<String, JsonElement> entry : oldIdentifiers.entrySet()) {
+            int value = mapIdentifierEntry(entry, newIdentifierMap, diffIdentifiers);
+            if (value != -1) {
+                output.put(Integer.parseInt(entry.getKey()), value);
+            }
+        }
+    }
 
-   }
+    public static void mapIdentifiers(short[] output, JsonObject oldIdentifiers, JsonObject newIdentifiers) {
+        MappingDataLoader.mapIdentifiers(output, oldIdentifiers, newIdentifiers, null);
+    }
 
-   public static Object2IntMap indexedObjectToMap(JsonObject var0) {
-      Object2IntOpenHashMap var1 = new Object2IntOpenHashMap(var0.size(), 1.0F);
-      var1.defaultReturnValue(-1);
+    public static void mapIdentifiers(short[] output, JsonObject oldIdentifiers, JsonObject newIdentifiers, @Nullable JsonObject diffIdentifiers) {
+        Object2IntMap newIdentifierMap = MappingDataLoader.indexedObjectToMap(newIdentifiers);
+        for (Map.Entry<String, JsonElement> entry : oldIdentifiers.entrySet()) {
+            int value = mapIdentifierEntry(entry, newIdentifierMap, diffIdentifiers);
+            if (value != -1) {
+                output[Integer.parseInt(entry.getKey())] = (short) value;
+            }
+        }
+    }
 
-      for(Entry var3 : var0.entrySet()) {
-         var1.put(((JsonElement)var3.getValue()).getAsString(), Integer.parseInt((String)var3.getKey()));
-      }
+    private static int mapIdentifierEntry(Map.Entry<String, JsonElement> entry, Object2IntMap newIdentifierMap, @Nullable JsonObject diffIdentifiers) {
+        int value = newIdentifierMap.getInt(entry.getValue().getAsString());
+        if (value == -1) {
+            // Search in diff mappings
+            if (diffIdentifiers != null) {
+                JsonElement diffElement = diffIdentifiers.get(entry.getKey());
+                if (diffElement != null) {
+                    value = newIdentifierMap.getInt(diffElement.getAsString());
+                }
+            }
+            if (value == -1) {
+                if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                    Via.getPlatform().getLogger().warning("No key for " + entry.getValue() + " :( ");
+                }
+                return -1;
+            }
+        }
+        return value;
+    }
 
-      return var1;
-   }
+    public static void mapIdentifiers(short[] output, JsonArray oldIdentifiers, JsonArray newIdentifiers, boolean warnOnMissing) {
+        mapIdentifiers(output, oldIdentifiers, newIdentifiers, null, warnOnMissing);
+    }
 
-   public static Object2IntMap arrayToMap(JsonArray var0) {
-      Object2IntOpenHashMap var1 = new Object2IntOpenHashMap(var0.size(), 1.0F);
-      var1.defaultReturnValue(-1);
+    public static void mapIdentifiers(short[] output, JsonArray oldIdentifiers, JsonArray newIdentifiers, @Nullable JsonObject diffIdentifiers, boolean warnOnMissing) {
+        Object2IntMap<String> newIdentifierMap = MappingDataLoader.arrayToMap(newIdentifiers);
+        for (int i = 0; i < oldIdentifiers.size(); i++) {
+            JsonElement oldIdentifier = oldIdentifiers.get(i);
+            int mappedId = newIdentifierMap.getInt(oldIdentifier.getAsString());
+            if (mappedId == -1) {
+                // Search in diff mappings
+                if (diffIdentifiers != null) {
+                    JsonElement diffElement = diffIdentifiers.get(oldIdentifier.getAsString());
+                    if (diffElement != null) {
+                        String mappedName = diffElement.getAsString();
+                        if (mappedName.isEmpty()) continue; // "empty" remaps
 
-      for(int var2 = 0; var2 < var0.size(); ++var2) {
-         var1.put(var0.get(var2).getAsString(), var2);
-      }
+                        mappedId = newIdentifierMap.getInt(mappedName);
+                    }
+                }
+                if (mappedId == -1) {
+                    if (warnOnMissing && !Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                        Via.getPlatform().getLogger().warning("No key for " + oldIdentifier + " :( ");
+                    }
+                    continue;
+                }
+            }
+            output[i] = (short) mappedId;
+        }
+    }
 
-      return var1;
-   }
+    /**
+     * @param object json object
+     * @return map with indexes hashed by their id value
+     */
+    public static Object2IntMap<String> indexedObjectToMap(JsonObject object) {
+        Object2IntMap<String> map = new Object2IntOpenHashMap<>(object.size(), 1F);
+        map.defaultReturnValue(-1);
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            map.put(entry.getValue().getAsString(), Integer.parseInt(entry.getKey()));
+        }
+        return map;
+    }
 
-   @Nullable
-   public static InputStream getResource(String var0) {
-      return MappingDataLoader.class.getClassLoader().getResourceAsStream("assets/viaversion/data/" + var0);
-   }
+    /**
+     * @param array json array
+     * @return map with indexes hashed by their id value
+     */
+    public static Object2IntMap<String> arrayToMap(JsonArray array) {
+        Object2IntMap<String> map = new Object2IntOpenHashMap<>(array.size(), 1F);
+        map.defaultReturnValue(-1);
+        for (int i = 0; i < array.size(); i++) {
+            map.put(array.get(i).getAsString(), i);
+        }
+        return map;
+    }
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+    @Nullable
+    public static InputStream getResource(String name) {
+        return MappingDataLoader.class.getClassLoader().getResourceAsStream("assets/viaversion/data/" + name);
+    }
 }

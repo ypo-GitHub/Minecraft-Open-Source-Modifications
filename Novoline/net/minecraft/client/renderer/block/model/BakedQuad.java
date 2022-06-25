@@ -9,143 +9,146 @@ import net.optifine.Config;
 import net.optifine.Reflector;
 
 public class BakedQuad implements IVertexProducer {
-   protected int[] vertexData;
-   protected final int tintIndex;
-   protected final EnumFacing face;
-   private static final String f = "CL_00002512";
-   private TextureAtlasSprite sprite = null;
-   private int[] vertexDataSingle = null;
+    /**
+     * Joined 4 vertex records, each has 7 fields (x, y, z, shadeColor, u, v, <unused>), see
+     * FaceBakery.storeVertexData()
+     */
+    protected int[] vertexData;
+    protected final int tintIndex;
+    protected final EnumFacing face;
+    private static final String __OBFID = "CL_00002512";
+    private TextureAtlasSprite sprite = null;
+    private int[] vertexDataSingle = null;
 
-   public BakedQuad(int[] var1, int var2, EnumFacing var3, TextureAtlasSprite var4) {
-      this.vertexData = var1;
-      this.tintIndex = var2;
-      this.face = var3;
-      this.sprite = var4;
-      this.fixVertexData();
-   }
+    public BakedQuad(int[] p_i9_1_, int p_i9_2_, EnumFacing p_i9_3_, TextureAtlasSprite p_i9_4_) {
+        this.vertexData = p_i9_1_;
+        this.tintIndex = p_i9_2_;
+        this.face = p_i9_3_;
+        this.sprite = p_i9_4_;
+        this.fixVertexData();
+    }
 
-   public TextureAtlasSprite getSprite() {
-      if(this.sprite == null) {
-         this.sprite = getSpriteByUv(this.getVertexData());
-      }
+    public TextureAtlasSprite getSprite() {
+        if (this.sprite == null) {
+            this.sprite = getSpriteByUv(this.getVertexData());
+        }
 
-      return this.sprite;
-   }
+        return this.sprite;
+    }
 
-   public String toString() {
-      return "vertex: " + this.vertexData.length / 7 + ", tint: " + this.tintIndex + ", facing: " + this.face + ", sprite: " + this.sprite;
-   }
+    public String toString() {
+        return "vertex: " + this.vertexData.length / 7 + ", tint: " + this.tintIndex + ", facing: " + this.face + ", sprite: " + this.sprite;
+    }
 
-   public BakedQuad(int[] var1, int var2, EnumFacing var3) {
-      this.vertexData = var1;
-      this.tintIndex = var2;
-      this.face = var3;
-      this.fixVertexData();
-   }
+    public BakedQuad(int[] vertexDataIn, int tintIndexIn, EnumFacing faceIn) {
+        this.vertexData = vertexDataIn;
+        this.tintIndex = tintIndexIn;
+        this.face = faceIn;
+        this.fixVertexData();
+    }
 
-   public int[] getVertexData() {
-      this.fixVertexData();
-      return this.vertexData;
-   }
+    public int[] getVertexData() {
+        this.fixVertexData();
+        return this.vertexData;
+    }
 
-   public boolean hasTintIndex() {
-      return this.tintIndex != -1;
-   }
+    public boolean hasTintIndex() {
+        return this.tintIndex != -1;
+    }
 
-   public int getTintIndex() {
-      return this.tintIndex;
-   }
+    public int getTintIndex() {
+        return this.tintIndex;
+    }
 
-   public EnumFacing getFace() {
-      return this.face;
-   }
+    public EnumFacing getFace() {
+        return this.face;
+    }
 
-   public int[] getVertexDataSingle() {
-      if(this.vertexDataSingle == null) {
-         this.vertexDataSingle = makeVertexDataSingle(this.getVertexData(), this.getSprite());
-      }
+    public int[] getVertexDataSingle() {
+        if (this.vertexDataSingle == null) {
+            this.vertexDataSingle = makeVertexDataSingle(this.getVertexData(), this.getSprite());
+        }
 
-      return this.vertexDataSingle;
-   }
+        return this.vertexDataSingle;
+    }
 
-   private static int[] makeVertexDataSingle(int[] var0, TextureAtlasSprite var1) {
-      int[] var2 = (int[])((int[])var0.clone());
-      int var3 = var1.sheetWidth / var1.getIconWidth();
-      int var4 = var1.sheetHeight / var1.getIconHeight();
-      int var5 = var2.length / 4;
+    private static int[] makeVertexDataSingle(int[] p_makeVertexDataSingle_0_, TextureAtlasSprite p_makeVertexDataSingle_1_) {
+        int[] aint = (int[]) p_makeVertexDataSingle_0_.clone();
+        int i = p_makeVertexDataSingle_1_.sheetWidth / p_makeVertexDataSingle_1_.getIconWidth();
+        int j = p_makeVertexDataSingle_1_.sheetHeight / p_makeVertexDataSingle_1_.getIconHeight();
+        int k = aint.length / 4;
 
-      for(int var6 = 0; var6 < 4; ++var6) {
-         int var7 = var6 * var5;
-         float var8 = Float.intBitsToFloat(var2[var7 + 4]);
-         float var9 = Float.intBitsToFloat(var2[var7 + 4 + 1]);
-         float var10 = var1.toSingleU(var8);
-         float var11 = var1.toSingleV(var9);
-         var2[var7 + 4] = Float.floatToRawIntBits(var10);
-         var2[var7 + 4 + 1] = Float.floatToRawIntBits(var11);
-      }
+        for (int l = 0; l < 4; ++l) {
+            int i1 = l * k;
+            float f = Float.intBitsToFloat(aint[i1 + 4]);
+            float f1 = Float.intBitsToFloat(aint[i1 + 4 + 1]);
+            float f2 = p_makeVertexDataSingle_1_.toSingleU(f);
+            float f3 = p_makeVertexDataSingle_1_.toSingleV(f1);
+            aint[i1 + 4] = Float.floatToRawIntBits(f2);
+            aint[i1 + 4 + 1] = Float.floatToRawIntBits(f3);
+        }
 
-      return var2;
-   }
+        return aint;
+    }
 
-   public void pipe(IVertexConsumer var1) {
-      Reflector.a(Reflector.bk, new Object[]{var1, this});
-   }
+    public void pipe(IVertexConsumer p_pipe_1_) {
+        Reflector.callVoid(Reflector.LightUtil_putBakedQuad, new Object[]{p_pipe_1_, this});
+    }
 
-   private static TextureAtlasSprite getSpriteByUv(int[] var0) {
-      float var1 = 1.0F;
-      float var2 = 1.0F;
-      float var3 = 0.0F;
-      float var4 = 0.0F;
-      int var5 = var0.length / 4;
+    private static TextureAtlasSprite getSpriteByUv(int[] p_getSpriteByUv_0_) {
+        float f = 1.0F;
+        float f1 = 1.0F;
+        float f2 = 0.0F;
+        float f3 = 0.0F;
+        int i = p_getSpriteByUv_0_.length / 4;
 
-      for(int var6 = 0; var6 < 4; ++var6) {
-         int var7 = var6 * var5;
-         float var8 = Float.intBitsToFloat(var0[var7 + 4]);
-         float var9 = Float.intBitsToFloat(var0[var7 + 4 + 1]);
-         var1 = Math.min(var1, var8);
-         var2 = Math.min(var2, var9);
-         var3 = Math.max(var3, var8);
-         var4 = Math.max(var4, var9);
-      }
+        for (int j = 0; j < 4; ++j) {
+            int k = j * i;
+            float f4 = Float.intBitsToFloat(p_getSpriteByUv_0_[k + 4]);
+            float f5 = Float.intBitsToFloat(p_getSpriteByUv_0_[k + 4 + 1]);
+            f = Math.min(f, f4);
+            f1 = Math.min(f1, f5);
+            f2 = Math.max(f2, f4);
+            f3 = Math.max(f3, f5);
+        }
 
-      float var10 = (var1 + var3) / 2.0F;
-      float var11 = (var2 + var4) / 2.0F;
-      TextureAtlasSprite var12 = Minecraft.getInstance().getTextureMapBlocks().getIconByUV((double)var10, (double)var11);
-      return var12;
-   }
+        float f6 = (f + f2) / 2.0F;
+        float f7 = (f1 + f3) / 2.0F;
+        TextureAtlasSprite textureatlassprite = Minecraft.getInstance().getTextureMapBlocks().getIconByUV((double) f6, (double) f7);
+        return textureatlassprite;
+    }
 
-   private void fixVertexData() {
-      if(Config.isShaders()) {
-         if(this.vertexData.length == 28) {
-            this.vertexData = expandVertexData(this.vertexData);
-         }
-      } else if(this.vertexData.length == 56) {
-         this.vertexData = compactVertexData(this.vertexData);
-      }
+    private void fixVertexData() {
+        if (Config.isShaders()) {
+            if (this.vertexData.length == 28) {
+                this.vertexData = expandVertexData(this.vertexData);
+            }
+        } else if (this.vertexData.length == 56) {
+            this.vertexData = compactVertexData(this.vertexData);
+        }
+    }
 
-   }
+    private static int[] expandVertexData(int[] p_expandVertexData_0_) {
+        int i = p_expandVertexData_0_.length / 4;
+        int j = i * 2;
+        int[] aint = new int[j * 4];
 
-   private static int[] expandVertexData(int[] var0) {
-      int var1 = var0.length / 4;
-      int var2 = var1 * 2;
-      int[] var3 = new int[var2 * 4];
+        for (int k = 0; k < 4; ++k) {
+            System.arraycopy(p_expandVertexData_0_, k * i, aint, k * j, i);
+        }
 
-      for(int var4 = 0; var4 < 4; ++var4) {
-         System.arraycopy(var0, var4 * var1, var3, var4 * var2, var1);
-      }
+        return aint;
+    }
 
-      return var3;
-   }
+    private static int[] compactVertexData(int[] p_compactVertexData_0_) {
+        int i = p_compactVertexData_0_.length / 4;
+        int j = i / 2;
+        int[] aint = new int[j * 4];
 
-   private static int[] compactVertexData(int[] var0) {
-      int var1 = var0.length / 4;
-      int var2 = var1 / 2;
-      int[] var3 = new int[var2 * 4];
+        for (int k = 0; k < 4; ++k) {
+            System.arraycopy(p_compactVertexData_0_, k * i, aint, k * j, j);
+        }
 
-      for(int var4 = 0; var4 < 4; ++var4) {
-         System.arraycopy(var0, var4 * var1, var3, var4 * var2, var2);
-      }
-
-      return var3;
-   }
+        return aint;
+    }
 }

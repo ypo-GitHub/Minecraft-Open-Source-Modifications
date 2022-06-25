@@ -3,376 +3,411 @@ package viaversion.viaversion.protocols.protocol1_9to1_8;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import viaversion.viaversion.api.minecraft.item.Item;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import net.Cw;
-import net.aRY;
-import viaversion.viaversion.api.minecraft.item.Item;
 
 public class ItemRewriter {
-   public static final Map ENTTIY_NAME_TO_ID = new HashMap();
-   public static final Map ENTTIY_ID_TO_NAME = new HashMap();
-   public static final Map POTION_NAME_TO_ID = new HashMap();
-   public static final Map POTION_ID_TO_NAME = new HashMap();
-   private static final Int2IntMap POTION_INDEX = new Int2IntOpenHashMap(36, 1.0F);
 
-   public static void toServer(Item var0) {
-      int var1 = Cw.a();
-      if(var0 != null) {
-         if(var0.getIdentifier() == 383 && var0.getData() == 0) {
-            CompoundTag var2 = var0.getTag();
-            int var3 = 0;
-            if(var2.get("EntityTag") instanceof CompoundTag) {
-               CompoundTag var4 = (CompoundTag)var2.get("EntityTag");
-               if(var4.get("id") instanceof StringTag) {
-                  StringTag var5 = (StringTag)var4.get("id");
-                  if(ENTTIY_NAME_TO_ID.containsKey(var5.getValue())) {
-                     var3 = ((Integer)ENTTIY_NAME_TO_ID.get(var5.getValue())).intValue();
-                  }
-               }
+    public static final Map<String, Integer> ENTTIY_NAME_TO_ID = new HashMap<>();
+    public static final Map<Integer, String> ENTTIY_ID_TO_NAME = new HashMap<>();
+    public static final Map<String, Integer> POTION_NAME_TO_ID = new HashMap<>();
+    public static final Map<Integer, String> POTION_ID_TO_NAME = new HashMap<>();
 
-               var2.remove("EntityTag");
+    private static final Int2IntMap POTION_INDEX = new Int2IntOpenHashMap(36, 1F);
+
+    static {
+        /* Entities */
+        registerEntity(1, "Item");
+        registerEntity(2, "XPOrb");
+        registerEntity(7, "ThrownEgg");
+        registerEntity(8, "LeashKnot");
+        registerEntity(9, "Painting");
+        registerEntity(10, "Arrow");
+        registerEntity(11, "Snowball");
+        registerEntity(12, "Fireball");
+        registerEntity(13, "SmallFireball");
+        registerEntity(14, "ThrownEnderpearl");
+        registerEntity(15, "EyeOfEnderSignal");
+        registerEntity(16, "ThrownPotion");
+        registerEntity(17, "ThrownExpBottle");
+        registerEntity(18, "ItemFrame");
+        registerEntity(19, "WitherSkull");
+        registerEntity(20, "PrimedTnt");
+        registerEntity(21, "FallingSand");
+        registerEntity(22, "FireworksRocketEntity");
+        registerEntity(30, "ArmorStand");
+        registerEntity(40, "MinecartCommandBlock");
+        registerEntity(41, "Boat");
+        registerEntity(42, "MinecartRideable");
+        registerEntity(43, "MinecartChest");
+        registerEntity(44, "MinecartFurnace");
+        registerEntity(45, "MinecartTNT");
+        registerEntity(46, "MinecartHopper");
+        registerEntity(47, "MinecartSpawner");
+        registerEntity(48, "Mob");
+        registerEntity(49, "Monster");
+        registerEntity(50, "Creeper");
+        registerEntity(51, "Skeleton");
+        registerEntity(52, "Spider");
+        registerEntity(53, "Giant");
+        registerEntity(54, "Zombie");
+        registerEntity(55, "Slime");
+        registerEntity(56, "Ghast");
+        registerEntity(57, "PigZombie");
+        registerEntity(58, "Enderman");
+        registerEntity(59, "CaveSpider");
+        registerEntity(60, "Silverfish");
+        registerEntity(61, "Blaze");
+        registerEntity(62, "LavaSlime");
+        registerEntity(63, "EnderDragon");
+        registerEntity(64, "WitherBoss");
+        registerEntity(65, "Bat");
+        registerEntity(66, "Witch");
+        registerEntity(67, "Endermite");
+        registerEntity(68, "Guardian");
+        registerEntity(90, "Pig");
+        registerEntity(91, "Sheep");
+        registerEntity(92, "Cow");
+        registerEntity(93, "Chicken");
+        registerEntity(94, "Squid");
+        registerEntity(95, "Wolf");
+        registerEntity(96, "MushroomCow");
+        registerEntity(97, "SnowMan");
+        registerEntity(98, "Ozelot");
+        registerEntity(99, "VillagerGolem");
+        registerEntity(100, "EntityHorse");
+        registerEntity(101, "Rabbit");
+        registerEntity(120, "Villager");
+        registerEntity(200, "EnderCrystal");
+
+        /* Potions */
+        registerPotion(-1, "empty");
+        registerPotion(0, "water");
+        registerPotion(64, "mundane");
+        registerPotion(32, "thick");
+        registerPotion(16, "awkward");
+
+        registerPotion(8198, "night_vision");
+        registerPotion(8262, "long_night_vision");
+
+        registerPotion(8206, "invisibility");
+        registerPotion(8270, "long_invisibility");
+
+        registerPotion(8203, "leaping");
+        registerPotion(8267, "long_leaping");
+        registerPotion(8235, "strong_leaping");
+
+        registerPotion(8195, "fire_resistance");
+        registerPotion(8259, "long_fire_resistance");
+
+        registerPotion(8194, "swiftness");
+        registerPotion(8258, "long_swiftness");
+        registerPotion(8226, "strong_swiftness");
+
+        registerPotion(8202, "slowness");
+        registerPotion(8266, "long_slowness");
+
+        registerPotion(8205, "water_breathing");
+        registerPotion(8269, "long_water_breathing");
+
+        registerPotion(8261, "healing");
+        registerPotion(8229, "strong_healing");
+
+        registerPotion(8204, "harming");
+        registerPotion(8236, "strong_harming");
+
+        registerPotion(8196, "poison");
+        registerPotion(8260, "long_poison");
+        registerPotion(8228, "strong_poison");
+
+        registerPotion(8193, "regeneration");
+        registerPotion(8257, "long_regeneration");
+        registerPotion(8225, "strong_regeneration");
+
+        registerPotion(8201, "strength");
+        registerPotion(8265, "long_strength");
+        registerPotion(8233, "strong_strength");
+
+        registerPotion(8200, "weakness");
+        registerPotion(8264, "long_weakness");
+
+    }
+
+    public static void toServer(Item item) {
+        if (item != null) {
+            if (item.getIdentifier() == 383 && item.getData() == 0) { // Monster Egg
+                CompoundTag tag = item.getTag();
+                int data = 0;
+                if (tag != null && tag.get("EntityTag") instanceof CompoundTag) {
+                    CompoundTag entityTag = tag.get("EntityTag");
+                    if (entityTag.get("id") instanceof StringTag) {
+                        StringTag id = entityTag.get("id");
+                        if (ENTTIY_NAME_TO_ID.containsKey(id.getValue()))
+                            data = ENTTIY_NAME_TO_ID.get(id.getValue());
+                    }
+                    tag.remove("EntityTag");
+                }
+                item.setTag(tag);
+                item.setData((short) data);
+            }
+            if (item.getIdentifier() == 373) { // Potion
+                CompoundTag tag = item.getTag();
+                int data = 0;
+                if (tag != null && tag.get("Potion") instanceof StringTag) {
+                    StringTag potion = tag.get("Potion");
+                    String potionName = potion.getValue().replace("minecraft:", "");
+                    if (POTION_NAME_TO_ID.containsKey(potionName)) {
+                        data = POTION_NAME_TO_ID.get(potionName);
+                    }
+                    tag.remove("Potion");
+                }
+                item.setTag(tag);
+                item.setData((short) data);
+            }
+            // Splash potion
+            if(item.getIdentifier() == 438) {
+                CompoundTag tag = item.getTag();
+                int data = 0;
+                item.setIdentifier(373); // Potion
+                if(tag != null && tag.get("Potion") instanceof StringTag) {
+                    StringTag potion = tag.get("Potion");
+                    String potionName = potion.getValue().replace("minecraft:", "");
+                    if(POTION_NAME_TO_ID.containsKey(potionName)) {
+                        data = POTION_NAME_TO_ID.get(potionName) + 8192;
+                    }
+                    tag.remove("Potion");
+                }
+                item.setTag(tag);
+                item.setData((short) data);
             }
 
-            var0.setTag(var2);
-            var0.setData((short)var3);
-         }
-
-         if(var0.getIdentifier() == 373) {
-            CompoundTag var6 = var0.getTag();
-            int var11 = 0;
-            if(var6.get("Potion") instanceof StringTag) {
-               StringTag var13 = (StringTag)var6.get("Potion");
-               String var15 = var13.getValue().replace("minecraft:", "");
-               if(POTION_NAME_TO_ID.containsKey(var15)) {
-                  var11 = ((Integer)POTION_NAME_TO_ID.get(var15)).intValue();
-               }
-
-               var6.remove("Potion");
+            boolean newItem = item.getIdentifier() >= 198 && item.getIdentifier() <= 212;
+            newItem |= item.getIdentifier() == 397 && item.getData() == 5;
+            newItem |= item.getIdentifier() >= 432 && item.getIdentifier() <= 448;
+            if(newItem) { // Replace server-side unknown items
+                item.setIdentifier((short) 1);
+                item.setData((short) 0);
             }
+        }
+    }
 
-            var0.setTag(var6);
-            var0.setData((short)var11);
-         }
-
-         if(var0.getIdentifier() == 438) {
-            CompoundTag var7 = var0.getTag();
-            int var12 = 0;
-            var0.setIdentifier(373);
-            if(var7.get("Potion") instanceof StringTag) {
-               StringTag var14 = (StringTag)var7.get("Potion");
-               String var16 = var14.getValue().replace("minecraft:", "");
-               if(POTION_NAME_TO_ID.containsKey(var16)) {
-                  var12 = ((Integer)POTION_NAME_TO_ID.get(var16)).intValue() + 8192;
-               }
-
-               var7.remove("Potion");
+    public static void rewriteBookToServer(Item item) {
+        int id = item.getIdentifier();
+        if (id != 387) {
+            return;
+        }
+        CompoundTag tag = item.getTag();
+        ListTag pages = tag.get("pages");
+        if (pages == null) { // is this even possible?
+            return;
+        }
+        for (int i = 0; i < pages.size(); i++) {
+            Tag pageTag = pages.get(i);
+            if (!(pageTag instanceof StringTag)) {
+                continue;
             }
-
-            var0.setTag(var7);
-            var0.setData((short)var12);
-         }
-
-         boolean var8 = var0.getIdentifier() >= 198 && var0.getIdentifier() <= 212;
-         var8 = var8 | (var0.getIdentifier() == 397 && var0.getData() == 5);
-         var8 = var8 | (var0.getIdentifier() >= 432 && var0.getIdentifier() <= 448);
-         var0.setIdentifier(1);
-         var0.setData((short)0);
-      }
-
-   }
-
-   public static void b(Item var0) {
-      Cw.b();
-      int var2 = var0.getIdentifier();
-      if(var2 == 387) {
-         CompoundTag var3 = var0.getTag();
-         ListTag var4 = (ListTag)var3.get("pages");
-      }
-   }
-
-   private static String a(String var0) {
-      int var1 = Cw.b();
-      if(!var0.startsWith(" ")) {
-         return var0;
-      } else {
-         var0 = "§r" + var0;
-         return var0;
-      }
-   }
-
-   public static void toClient(Item var0) {
-      int var1 = Cw.a();
-      if(var0 != null) {
-         if(var0.getIdentifier() == 383 && var0.getData() != 0) {
-            CompoundTag var2 = var0.getTag();
-            if(var2 == null) {
-               var2 = new CompoundTag("tag");
+            StringTag stag = (StringTag) pageTag;
+            String value = stag.getValue();
+            if (value.replaceAll(" ", "").isEmpty()) {
+                value = "\"" + fixBookSpaceChars(value) + "\"";
+            } else {
+                value = fixBookSpaceChars(value);
             }
+            stag.setValue(value);
+        }
+    }
 
-            CompoundTag var3 = new CompoundTag("EntityTag");
-            String var4 = (String)ENTTIY_ID_TO_NAME.get(Integer.valueOf(var0.getData()));
-            StringTag var5 = new StringTag("id", var4);
-            var3.put(var5);
-            var2.put(var3);
-            var0.setTag(var2);
-            var0.setData((short)0);
-         }
+    private static String fixBookSpaceChars(String str) {
+        if (!str.startsWith(" ")) {
+            return str;
+        }
+        // hacky but it works :)
+        str = "§r" + str;
+        return str;
+    }
 
-         if(var0.getIdentifier() == 373) {
-            CompoundTag var6 = var0.getTag();
-            if(var6 == null) {
-               var6 = new CompoundTag("tag");
+    public static void toClient(Item item) {
+        if (item != null) {
+            if (item.getIdentifier() == 383 && item.getData() != 0) { // Monster Egg
+                CompoundTag tag = item.getTag();
+                if (tag == null) {
+                    tag = new CompoundTag("tag");
+                }
+                CompoundTag entityTag = new CompoundTag("EntityTag");
+                String entityName = ENTTIY_ID_TO_NAME.get((int) item.getData());
+                if (entityName != null) {
+                    StringTag id = new StringTag("id", entityName);
+                    entityTag.put(id);
+                    tag.put(entityTag);
+                }
+                item.setTag(tag);
+                item.setData((short) 0);
             }
-
-            if(var0.getData() >= 16384) {
-               var0.setIdentifier(438);
-               var0.setData((short)(var0.getData() - 8192));
+            if (item.getIdentifier() == 373) { // Potion
+                CompoundTag tag = item.getTag();
+                if (tag == null) {
+                    tag = new CompoundTag("tag");
+                }
+                if (item.getData() >= 16384) {
+                    item.setIdentifier(438); // splash id
+                    item.setData((short) (item.getData() - 8192));
+                }
+                String name = potionNameFromDamage(item.getData());
+                StringTag potion = new StringTag("Potion", "minecraft:" + name);
+                tag.put(potion);
+                item.setTag(tag);
+                item.setData((short) 0);
             }
+            if (item.getIdentifier() == 387) { // WRITTEN_BOOK
+                CompoundTag tag = item.getTag();
+                if (tag == null) {
+                    tag = new CompoundTag("tag");
+                }
+                ListTag pages = tag.get("pages");
+                if (pages == null) {
+                    pages = new ListTag("pages", Collections.<Tag>singletonList(new StringTag(Protocol1_9To1_8.fixJson("").toString())));
+                    tag.put(pages);
+                    item.setTag(tag);
+                    return;
+                }
 
-            String var8 = potionNameFromDamage(var0.getData());
-            StringTag var11 = new StringTag("Potion", "minecraft:" + var8);
-            var6.put(var11);
-            var0.setTag(var6);
-            var0.setData((short)0);
-         }
-
-         if(var0.getIdentifier() == 387) {
-            CompoundTag var7 = var0.getTag();
-            if(var7 == null) {
-               var7 = new CompoundTag("tag");
+                for (int i = 0; i < pages.size(); i++) {
+                    if (!(pages.get(i) instanceof StringTag))
+                        continue;
+                    StringTag page = pages.get(i);
+                    page.setValue(Protocol1_9To1_8.fixJson(page.getValue()).toString());
+                }
+                item.setTag(tag);
             }
+        }
+    }
 
-            ListTag var9 = (ListTag)var7.get("pages");
-            if(var9 == null) {
-               var9 = new ListTag("pages", Collections.singletonList(new StringTag(aRY.b("").toString())));
-               var7.put(var9);
-               var0.setTag(var7);
-               return;
-            }
+    public static String potionNameFromDamage(short damage) {
+        String cached = POTION_ID_TO_NAME.get((int) damage);
+        if (cached != null) {
+            return cached;
+        }
+        if (damage == 0) {
+            return "water";
+        }
 
-            int var12 = 0;
-            if(var12 < var9.size()) {
-               if(!(var9.get(var12) instanceof StringTag)) {
-                  ;
-               }
+        int effect = damage & 0xF;
+        int name = damage & 0x3F;
+        boolean enhanced = (damage & 0x20) > 0;
+        boolean extended = (damage & 0x40) > 0;
 
-               StringTag var14 = (StringTag)var9.get(var12);
-               var14.setValue(aRY.b(var14.getValue()).toString());
-               ++var12;
-            }
+        boolean canEnhance = true;
+        boolean canExtend = true;
 
-            var0.setTag(var7);
-         }
-      }
+        String id;
+        switch (effect) {
+            case 1:
+                id = "regeneration";
+                break;
+            case 2:
+                id = "swiftness";
+                break;
+            case 3:
+                id = "fire_resistance";
+                canEnhance = false;
+                break;
+            case 4:
+                id = "poison";
+                break;
+            case 5:
+                id = "healing";
+                canExtend = false;
+                break;
+            case 6:
+                id = "night_vision";
+                canEnhance = false;
+                break;
 
-   }
+            case 8:
+                id = "weakness";
+                canEnhance = false;
+                break;
+            case 9:
+                id = "strength";
+                break;
+            case 10:
+                id = "slowness";
+                canEnhance = false;
+                break;
+            case 11:
+                id = "leaping";
+                break;
+            case 12:
+                id = "harming";
+                canExtend = false;
+                break;
+            case 13:
+                id = "water_breathing";
+                canEnhance = false;
+                break;
+            case 14:
+                id = "invisibility";
+                canEnhance = false;
+                break;
 
-   public static String potionNameFromDamage(short var0) {
-      Cw.a();
-      String var2 = (String)POTION_ID_TO_NAME.get(Integer.valueOf(var0));
-      if(var2 != null) {
-         return var2;
-      } else if(var0 == 0) {
-         return "water";
-      } else {
-         int var3 = var0 & 15;
-         int var4 = var0 & 63;
-         boolean var5 = (var0 & 32) > 0;
-         boolean var6 = (var0 & 64) > 0;
-         boolean var7 = true;
-         boolean var8 = true;
-         switch(var3) {
-         case 1:
-            String var9 = "regeneration";
-         case 2:
-            String var20 = "swiftness";
-         case 3:
-            String var21 = "fire_resistance";
-            var7 = false;
-         case 4:
-            String var22 = "poison";
-         case 5:
-            String var23 = "healing";
-            var8 = false;
-         case 6:
-            String var24 = "night_vision";
-            var7 = false;
-         case 8:
-            String var25 = "weakness";
-            var7 = false;
-         case 9:
-            String var26 = "strength";
-         case 10:
-            String var27 = "slowness";
-            var7 = false;
-         case 11:
-            String var28 = "leaping";
-         case 12:
-            String var29 = "harming";
-            var8 = false;
-         case 13:
-            String var30 = "water_breathing";
-            var7 = false;
-         case 14:
-            String var31 = "invisibility";
-            var7 = false;
-         case 7:
-         default:
-            var7 = false;
-            var8 = false;
-            switch(var4) {
-            case 0:
-               String var32 = "mundane";
-            case 16:
-               String var33 = "awkward";
-            case 32:
-               String var34 = "thick";
+
             default:
-               String var35 = "empty";
-               if(var3 > 0) {
-                  if(var7 && var5) {
-                     var35 = "strong_" + var35;
-                  }
+                canEnhance = false;
+                canExtend = false;
+                switch (name) {
+                    case 0:
+                        id = "mundane";
+                        break;
+                    case 16:
+                        id = "awkward";
+                        break;
+                    case 32:
+                        id = "thick";
+                        break;
+                    default:
+                        id = "empty";
+                }
+        }
 
-                  if(var8 && var6) {
-                     var35 = "long_" + var35;
-                  }
-               }
-
-               return var35;
+        if (effect > 0) {
+            if (canEnhance && enhanced) {
+                id = "strong_" + id;
+            } else if (canExtend && extended) {
+                id = "long_" + id;
             }
-         }
-      }
-   }
+        }
 
-   public static int getNewEffectID(int var0) {
-      int var1 = Cw.a();
-      if(var0 >= 16384) {
-         var0 -= 8192;
-      }
+        return id;
+    }
 
-      int var2 = POTION_INDEX.get(var0);
-      if(var2 != -1) {
-         return var2;
-      } else {
-         var0 = ((Integer)POTION_NAME_TO_ID.get(potionNameFromDamage((short)var0))).intValue();
-         return (var2 = POTION_INDEX.get(var0)) != -1?var2:0;
-      }
-   }
+    public static int getNewEffectID(int oldID) {
+        if (oldID >= 16384) {
+            oldID -= 8192;
+        }
 
-   private static void registerEntity(int var0, String var1) {
-      ENTTIY_ID_TO_NAME.put(Integer.valueOf(var0), var1);
-      ENTTIY_NAME_TO_ID.put(var1, Integer.valueOf(var0));
-   }
+        int index = POTION_INDEX.get(oldID);
+        if (index != -1) {
+            return index;
+        }
 
-   private static void registerPotion(int var0, String var1) {
-      POTION_INDEX.put(var0, POTION_ID_TO_NAME.size());
-      POTION_ID_TO_NAME.put(Integer.valueOf(var0), var1);
-      POTION_NAME_TO_ID.put(var1, Integer.valueOf(var0));
-   }
+        oldID = POTION_NAME_TO_ID.get(potionNameFromDamage((short) oldID));
+        return (index = POTION_INDEX.get(oldID)) != -1 ? index : 0;
+    }
 
-   static {
-      registerEntity(1, "Item");
-      registerEntity(2, "XPOrb");
-      registerEntity(7, "ThrownEgg");
-      registerEntity(8, "LeashKnot");
-      registerEntity(9, "Painting");
-      registerEntity(10, "Arrow");
-      registerEntity(11, "Snowball");
-      registerEntity(12, "Fireball");
-      registerEntity(13, "SmallFireball");
-      registerEntity(14, "ThrownEnderpearl");
-      registerEntity(15, "EyeOfEnderSignal");
-      registerEntity(16, "ThrownPotion");
-      registerEntity(17, "ThrownExpBottle");
-      registerEntity(18, "ItemFrame");
-      registerEntity(19, "WitherSkull");
-      registerEntity(20, "PrimedTnt");
-      registerEntity(21, "FallingSand");
-      registerEntity(22, "FireworksRocketEntity");
-      registerEntity(30, "ArmorStand");
-      registerEntity(40, "MinecartCommandBlock");
-      registerEntity(41, "Boat");
-      registerEntity(42, "MinecartRideable");
-      registerEntity(43, "MinecartChest");
-      registerEntity(44, "MinecartFurnace");
-      registerEntity(45, "MinecartTNT");
-      registerEntity(46, "MinecartHopper");
-      registerEntity(47, "MinecartSpawner");
-      registerEntity(48, "Mob");
-      registerEntity(49, "Monster");
-      registerEntity(50, "Creeper");
-      registerEntity(51, "Skeleton");
-      registerEntity(52, "Spider");
-      registerEntity(53, "Giant");
-      registerEntity(54, "Zombie");
-      registerEntity(55, "Slime");
-      registerEntity(56, "Ghast");
-      registerEntity(57, "PigZombie");
-      registerEntity(58, "Enderman");
-      registerEntity(59, "CaveSpider");
-      registerEntity(60, "Silverfish");
-      registerEntity(61, "Blaze");
-      registerEntity(62, "LavaSlime");
-      registerEntity(63, "EnderDragon");
-      registerEntity(64, "WitherBoss");
-      registerEntity(65, "Bat");
-      registerEntity(66, "Witch");
-      registerEntity(67, "Endermite");
-      registerEntity(68, "Guardian");
-      registerEntity(90, "Pig");
-      registerEntity(91, "Sheep");
-      registerEntity(92, "Cow");
-      registerEntity(93, "Chicken");
-      registerEntity(94, "Squid");
-      registerEntity(95, "Wolf");
-      registerEntity(96, "MushroomCow");
-      registerEntity(97, "SnowMan");
-      registerEntity(98, "Ozelot");
-      registerEntity(99, "VillagerGolem");
-      registerEntity(100, "EntityHorse");
-      registerEntity(101, "Rabbit");
-      registerEntity(120, "Villager");
-      registerEntity(200, "EnderCrystal");
-      registerPotion(-1, "empty");
-      registerPotion(0, "water");
-      registerPotion(64, "mundane");
-      registerPotion(32, "thick");
-      registerPotion(16, "awkward");
-      registerPotion(8198, "night_vision");
-      registerPotion(8262, "long_night_vision");
-      registerPotion(8206, "invisibility");
-      registerPotion(8270, "long_invisibility");
-      registerPotion(8203, "leaping");
-      registerPotion(8267, "long_leaping");
-      registerPotion(8235, "strong_leaping");
-      registerPotion(8195, "fire_resistance");
-      registerPotion(8259, "long_fire_resistance");
-      registerPotion(8194, "swiftness");
-      registerPotion(8258, "long_swiftness");
-      registerPotion(8226, "strong_swiftness");
-      registerPotion(8202, "slowness");
-      registerPotion(8266, "long_slowness");
-      registerPotion(8205, "water_breathing");
-      registerPotion(8269, "long_water_breathing");
-      registerPotion(8261, "healing");
-      registerPotion(8229, "strong_healing");
-      registerPotion(8204, "harming");
-      registerPotion(8236, "strong_harming");
-      registerPotion(8196, "poison");
-      registerPotion(8260, "long_poison");
-      registerPotion(8228, "strong_poison");
-      registerPotion(8193, "regeneration");
-      registerPotion(8257, "long_regeneration");
-      registerPotion(8225, "strong_regeneration");
-      registerPotion(8201, "strength");
-      registerPotion(8265, "long_strength");
-      registerPotion(8233, "strong_strength");
-      registerPotion(8200, "weakness");
-      registerPotion(8264, "long_weakness");
-   }
+    private static void registerEntity(int id, String name) {
+        ENTTIY_ID_TO_NAME.put(id, name);
+        ENTTIY_NAME_TO_ID.put(name, id);
+    }
+
+    private static void registerPotion(int id, String name) {
+        POTION_INDEX.put(id, POTION_ID_TO_NAME.size());
+        POTION_ID_TO_NAME.put(id, name);
+        POTION_NAME_TO_ID.put(name, id);
+    }
 }

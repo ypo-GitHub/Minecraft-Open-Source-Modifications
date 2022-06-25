@@ -1,33 +1,38 @@
 package net.optifine;
 
 import net.minecraft.client.Minecraft;
-import net.optifine.HttpPipeline;
-import net.optifine.IFileDownloadListener;
 
-public class FileDownloadThread extends Thread {
-   private String urlString = null;
-   private IFileDownloadListener listener = null;
+public class FileDownloadThread extends Thread
+{
+    private String urlString = null;
+    private IFileDownloadListener listener = null;
 
-   public FileDownloadThread(String var1, IFileDownloadListener var2) {
-      this.urlString = var1;
-      this.listener = var2;
-   }
+    public FileDownloadThread(String p_i41_1_, IFileDownloadListener p_i41_2_)
+    {
+        this.urlString = p_i41_1_;
+        this.listener = p_i41_2_;
+    }
 
-   public void run() {
-      try {
-         byte[] var1 = HttpPipeline.get(this.urlString, Minecraft.getInstance().getProxy());
-         this.listener.fileDownloadFinished(this.urlString, var1, (Throwable)null);
-      } catch (Exception var2) {
-         this.listener.fileDownloadFinished(this.urlString, (byte[])null, var2);
-      }
+    public void run()
+    {
+        try
+        {
+            byte[] abyte = HttpPipeline.get(this.urlString, Minecraft.getInstance().getProxy());
+            this.listener.fileDownloadFinished(this.urlString, abyte, (Throwable)null);
+        }
+        catch (Exception exception)
+        {
+            this.listener.fileDownloadFinished(this.urlString, (byte[])null, exception);
+        }
+    }
 
-   }
+    public String getUrlString()
+    {
+        return this.urlString;
+    }
 
-   public String getUrlString() {
-      return this.urlString;
-   }
-
-   public IFileDownloadListener getListener() {
-      return this.listener;
-   }
+    public IFileDownloadListener getListener()
+    {
+        return this.listener;
+    }
 }

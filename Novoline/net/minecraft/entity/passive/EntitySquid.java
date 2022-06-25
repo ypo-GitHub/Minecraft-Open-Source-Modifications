@@ -2,8 +2,7 @@ package net.minecraft.entity.passive;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.passive.EntitySquid$AIMoveRandom;
-import net.minecraft.entity.passive.EntityWaterMob;
+import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
@@ -12,164 +11,240 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntitySquid extends EntityWaterMob {
-   public float squidPitch;
-   public float prevSquidPitch;
-   public float squidYaw;
-   public float prevSquidYaw;
-   public float squidRotation;
-   public float prevSquidRotation;
-   public float tentacleAngle;
-   public float lastTentacleAngle;
-   private float randomMotionSpeed;
-   private float rotationVelocity;
-   private float field_70871_bB;
-   private float randomMotionVecX;
-   private float randomMotionVecY;
-   private float randomMotionVecZ;
+    public float squidPitch;
+    public float prevSquidPitch;
+    public float squidYaw;
+    public float prevSquidYaw;
 
-   public EntitySquid(World var1) {
-      super(var1);
-      this.setSize(0.95F, 0.95F);
-      this.rand.setSeed((long)(1 + this.getEntityID()));
-      this.rotationVelocity = 1.0F / (this.rand.nextFloat() + 1.0F) * 0.2F;
-      this.tasks.addTask(0, new EntitySquid$AIMoveRandom(this));
-   }
+    /**
+     * appears to be rotation in radians; we already have pitch & yaw, so this completes the triumvirate.
+     */
+    public float squidRotation;
 
-   protected void applyEntityAttributes() {
-      super.applyEntityAttributes();
-      this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(10.0D);
-   }
+    /**
+     * previous squidRotation in radians
+     */
+    public float prevSquidRotation;
 
-   public float getEyeHeight() {
-      return this.height * 0.5F;
-   }
+    /**
+     * angle of the tentacles in radians
+     */
+    public float tentacleAngle;
 
-   protected String getLivingSound() {
-      return null;
-   }
+    /**
+     * the last calculated angle of the tentacles in radians
+     */
+    public float lastTentacleAngle;
+    private float randomMotionSpeed;
 
-   protected String getHurtSound() {
-      return null;
-   }
+    /**
+     * change in squidRotation in radians.
+     */
+    private float rotationVelocity;
+    private float field_70871_bB;
+    private float randomMotionVecX;
+    private float randomMotionVecY;
+    private float randomMotionVecZ;
 
-   protected String getDeathSound() {
-      return null;
-   }
+    public EntitySquid(World worldIn) {
+        super(worldIn);
+        this.setSize(0.95F, 0.95F);
+        this.rand.setSeed((long) (1 + this.getEntityID()));
+        this.rotationVelocity = 1.0F / (this.rand.nextFloat() + 1.0F) * 0.2F;
+        this.tasks.addTask(0, new EntitySquid.AIMoveRandom(this));
+    }
 
-   protected float getSoundVolume() {
-      return 0.4F;
-   }
+    protected void applyEntityAttributes() {
+        super.applyEntityAttributes();
+        this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(10.0D);
+    }
 
-   protected Item getDropItem() {
-      return null;
-   }
+    public float getEyeHeight() {
+        return this.height * 0.5F;
+    }
 
-   protected boolean canTriggerWalking() {
-      return false;
-   }
+    /**
+     * Returns the sound this mob makes while it's alive.
+     */
+    protected String getLivingSound() {
+        return null;
+    }
 
-   protected void dropFewItems(boolean var1, int var2) {
-      int var3 = this.rand.nextInt(3 + var2) + 1;
+    /**
+     * Returns the sound this mob makes when it is hurt.
+     */
+    protected String getHurtSound() {
+        return null;
+    }
 
-      for(int var4 = 0; var4 < var3; ++var4) {
-         this.entityDropItem(new ItemStack(Items.dye, 1, EnumDyeColor.BLACK.getDyeDamage()), 0.0F);
-      }
+    /**
+     * Returns the sound this mob makes on death.
+     */
+    protected String getDeathSound() {
+        return null;
+    }
 
-   }
+    /**
+     * Returns the volume for the sounds this mob makes.
+     */
+    protected float getSoundVolume() {
+        return 0.4F;
+    }
 
-   public boolean isInWater() {
-      return this.worldObj.handleMaterialAcceleration(this.getEntityBoundingBox().expand(0.0D, -0.6000000238418579D, 0.0D), Material.water, this);
-   }
+    protected Item getDropItem() {
+        return null;
+    }
 
-   public void onLivingUpdate() {
-      super.onLivingUpdate();
-      this.prevSquidPitch = this.squidPitch;
-      this.prevSquidYaw = this.squidYaw;
-      this.prevSquidRotation = this.squidRotation;
-      this.lastTentacleAngle = this.tentacleAngle;
-      this.squidRotation += this.rotationVelocity;
-      if((double)this.squidRotation > 6.283185307179586D) {
-         if(this.worldObj.isRemote) {
-            this.squidRotation = 6.2831855F;
-         } else {
-            this.squidRotation = (float)((double)this.squidRotation - 6.283185307179586D);
-            if(this.rand.nextInt(10) == 0) {
-               this.rotationVelocity = 1.0F / (this.rand.nextFloat() + 1.0F) * 0.2F;
-            }
+    /**
+     * returns if this entity triggers Block.onEntityWalking on the blocks they walk on. used for spiders and wolves to
+     * prevent them from trampling crops
+     */
+    protected boolean canTriggerWalking() {
+        return false;
+    }
 
-            this.worldObj.setEntityState(this, (byte)19);
-         }
-      }
+    /**
+     * Drop 0-2 items of this living's type
+     */
+    protected void dropFewItems(boolean p_70628_1_, int p_70628_2_) {
+        int i = this.rand.nextInt(3 + p_70628_2_) + 1;
 
-      if(this.inWater) {
-         if(this.squidRotation < 3.1415927F) {
-            float var1 = this.squidRotation / 3.1415927F;
-            this.tentacleAngle = MathHelper.sin(var1 * var1 * 3.1415927F) * 3.1415927F * 0.25F;
-            if((double)var1 > 0.75D) {
-               this.randomMotionSpeed = 1.0F;
-               this.field_70871_bB = 1.0F;
+        for (int j = 0; j < i; ++j) {
+            this.entityDropItem(new ItemStack(Items.dye, 1, EnumDyeColor.BLACK.getDyeDamage()), 0.0F);
+        }
+    }
+
+    /**
+     * Checks if this entity is inside water (if inWater field is true as a result of handleWaterMovement() returning
+     * true)
+     */
+    public boolean isInWater() {
+        return this.worldObj.handleMaterialAcceleration(this.getEntityBoundingBox().expand(0.0D, -0.6000000238418579D, 0.0D), Material.water, this);
+    }
+
+    /**
+     * Called frequently so the entity can update its state every tick as required. For example, zombies and skeletons
+     * use this to react to sunlight and start to burn.
+     */
+    public void onLivingUpdate() {
+        super.onLivingUpdate();
+        this.prevSquidPitch = this.squidPitch;
+        this.prevSquidYaw = this.squidYaw;
+        this.prevSquidRotation = this.squidRotation;
+        this.lastTentacleAngle = this.tentacleAngle;
+        this.squidRotation += this.rotationVelocity;
+
+        if ((double) this.squidRotation > Math.PI * 2D) {
+            if (this.worldObj.isRemote) {
+                this.squidRotation = (float) Math.PI * 2F;
             } else {
-               this.field_70871_bB *= 0.8F;
+                this.squidRotation = (float) ((double) this.squidRotation - Math.PI * 2D);
+
+                if (this.rand.nextInt(10) == 0) {
+                    this.rotationVelocity = 1.0F / (this.rand.nextFloat() + 1.0F) * 0.2F;
+                }
+
+                this.worldObj.setEntityState(this, (byte) 19);
             }
-         } else {
-            this.tentacleAngle = 0.0F;
-            this.randomMotionSpeed *= 0.9F;
-            this.field_70871_bB *= 0.99F;
-         }
+        }
 
-         if(!this.worldObj.isRemote) {
-            this.motionX = (double)(this.randomMotionVecX * this.randomMotionSpeed);
-            this.motionY = (double)(this.randomMotionVecY * this.randomMotionSpeed);
-            this.motionZ = (double)(this.randomMotionVecZ * this.randomMotionSpeed);
-         }
+        if (this.inWater) {
+            if (this.squidRotation < (float) Math.PI) {
+                float f = this.squidRotation / (float) Math.PI;
+                this.tentacleAngle = MathHelper.sin(f * f * (float) Math.PI) * (float) Math.PI * 0.25F;
 
-         float var2 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
-         this.renderYawOffset += (-((float)MathHelper.func_181159_b(this.motionX, this.motionZ)) * 180.0F / 3.1415927F - this.renderYawOffset) * 0.1F;
-         this.rotationYaw = this.renderYawOffset;
-         this.squidYaw = (float)((double)this.squidYaw + 3.141592653589793D * (double)this.field_70871_bB * 1.5D);
-         this.squidPitch += (-((float)MathHelper.func_181159_b((double)var2, this.motionY)) * 180.0F / 3.1415927F - this.squidPitch) * 0.1F;
-      } else {
-         this.tentacleAngle = MathHelper.abs(MathHelper.sin(this.squidRotation)) * 3.1415927F * 0.25F;
-         if(!this.worldObj.isRemote) {
-            this.motionX = 0.0D;
-            this.motionY -= 0.08D;
-            this.motionY *= 0.9800000190734863D;
-            this.motionZ = 0.0D;
-         }
+                if ((double) f > 0.75D) {
+                    this.randomMotionSpeed = 1.0F;
+                    this.field_70871_bB = 1.0F;
+                } else {
+                    this.field_70871_bB *= 0.8F;
+                }
+            } else {
+                this.tentacleAngle = 0.0F;
+                this.randomMotionSpeed *= 0.9F;
+                this.field_70871_bB *= 0.99F;
+            }
 
-         this.squidPitch = (float)((double)this.squidPitch + (double)(-90.0F - this.squidPitch) * 0.02D);
-      }
+            if (!this.worldObj.isRemote) {
+                this.motionX = (double) (this.randomMotionVecX * this.randomMotionSpeed);
+                this.motionY = (double) (this.randomMotionVecY * this.randomMotionSpeed);
+                this.motionZ = (double) (this.randomMotionVecZ * this.randomMotionSpeed);
+            }
 
-   }
+            float f1 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+            this.renderYawOffset += (-((float) MathHelper.func_181159_b(this.motionX, this.motionZ)) * 180.0F / (float) Math.PI - this.renderYawOffset) * 0.1F;
+            this.rotationYaw = this.renderYawOffset;
+            this.squidYaw = (float) ((double) this.squidYaw + Math.PI * (double) this.field_70871_bB * 1.5D);
+            this.squidPitch += (-((float) MathHelper.func_181159_b((double) f1, this.motionY)) * 180.0F / (float) Math.PI - this.squidPitch) * 0.1F;
+        } else {
+            this.tentacleAngle = MathHelper.abs(MathHelper.sin(this.squidRotation)) * (float) Math.PI * 0.25F;
 
-   public void moveEntityWithHeading(float var1, float var2) {
-      this.moveEntity(this.motionX, this.motionY, this.motionZ);
-   }
+            if (!this.worldObj.isRemote) {
+                this.motionX = 0.0D;
+                this.motionY -= 0.08D;
+                this.motionY *= 0.9800000190734863D;
+                this.motionZ = 0.0D;
+            }
 
-   public boolean getCanSpawnHere() {
-      return this.posY > 45.0D && this.posY < (double)this.worldObj.func_181545_F() && super.getCanSpawnHere();
-   }
+            this.squidPitch = (float) ((double) this.squidPitch + (double) (-90.0F - this.squidPitch) * 0.02D);
+        }
+    }
 
-   public void handleStatusUpdate(byte var1) {
-      if(var1 == 19) {
-         this.squidRotation = 0.0F;
-      } else {
-         super.handleStatusUpdate(var1);
-      }
+    /**
+     * Moves the entity based on the specified heading.  Args: strafe, forward
+     */
+    public void moveEntityWithHeading(float strafe, float forward) {
+        this.moveEntity(this.motionX, this.motionY, this.motionZ);
+    }
 
-   }
+    /**
+     * Checks if the entity's current position is a valid location to spawn this entity.
+     */
+    public boolean getCanSpawnHere() {
+        return this.posY > 45.0D && this.posY < (double) this.worldObj.func_181545_F() && super.getCanSpawnHere();
+    }
 
-   public void func_175568_b(float var1, float var2, float var3) {
-      this.randomMotionVecX = var1;
-      this.randomMotionVecY = var2;
-      this.randomMotionVecZ = var3;
-   }
+    public void handleStatusUpdate(byte id) {
+        if (id == 19) {
+            this.squidRotation = 0.0F;
+        } else {
+            super.handleStatusUpdate(id);
+        }
+    }
 
-   public boolean func_175567_n() {
-      return this.randomMotionVecX != 0.0F || this.randomMotionVecY != 0.0F || this.randomMotionVecZ != 0.0F;
-   }
+    public void func_175568_b(float randomMotionVecXIn, float randomMotionVecYIn, float randomMotionVecZIn) {
+        this.randomMotionVecX = randomMotionVecXIn;
+        this.randomMotionVecY = randomMotionVecYIn;
+        this.randomMotionVecZ = randomMotionVecZIn;
+    }
 
-   static boolean access$000(EntitySquid var0) {
-      return var0.inWater;
-   }
+    public boolean func_175567_n() {
+        return this.randomMotionVecX != 0.0F || this.randomMotionVecY != 0.0F || this.randomMotionVecZ != 0.0F;
+    }
+
+    static class AIMoveRandom extends EntityAIBase {
+        private EntitySquid squid;
+
+        public AIMoveRandom(EntitySquid p_i45859_1_) {
+            this.squid = p_i45859_1_;
+        }
+
+        public boolean shouldExecute() {
+            return true;
+        }
+
+        public void updateTask() {
+            int i = this.squid.getAge();
+
+            if (i > 100) {
+                this.squid.func_175568_b(0.0F, 0.0F, 0.0F);
+            } else if (this.squid.getRNG().nextInt(50) == 0 || !this.squid.inWater || !this.squid.func_175567_n()) {
+                float f = this.squid.getRNG().nextFloat() * (float) Math.PI * 2.0F;
+                float f1 = MathHelper.cos(f) * 0.2F;
+                float f2 = -0.1F + this.squid.getRNG().nextFloat() * 0.2F;
+                float f3 = MathHelper.sin(f) * 0.2F;
+                this.squid.func_175568_b(f1, f2, f3);
+            }
+        }
+    }
 }

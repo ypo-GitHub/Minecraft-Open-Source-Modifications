@@ -7,34 +7,59 @@ import ninja.leaping.configurate.ConfigurationNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A configuration node that can have a comment attached to it.
+ */
 public interface CommentedConfigurationNode extends ConfigurationNode {
-   @NotNull
-   Optional getComment();
 
-   @NotNull
-   CommentedConfigurationNode setComment(@Nullable String var1);
+    /**
+     * Gets the current value for the comment.
+     *
+     * <p>If the comment contains multiple lines, the lines will be split by \n</p>
+     *
+     * @return The configuration's current comment
+     */
+    @NotNull Optional<String> getComment();
 
-   @Nullable
-   CommentedConfigurationNode getParent();
+    /**
+     * Sets the comment for this configuration node.
+     *
+     * @param comment The comment to set. Line breaks should be represented as LFs (\n)
+     * @return this
+     */
+    @NotNull CommentedConfigurationNode setComment(@Nullable String comment);
 
-   @NotNull
-   List getChildrenList();
+    // Methods from superclass overridden to have correct return types
+    @Nullable
+    @Override
+    CommentedConfigurationNode getParent();
 
-   @NotNull
-   Map getChildrenMap();
+    @NotNull
+    @Override
+    List<? extends CommentedConfigurationNode> getChildrenList();
 
-   @NotNull
-   CommentedConfigurationNode setValue(@Nullable Object var1);
+    @NotNull
+    @Override
+    Map<Object, ? extends CommentedConfigurationNode> getChildrenMap();
 
-   @NotNull
-   CommentedConfigurationNode mergeValuesFrom(@NotNull ConfigurationNode var1);
+    @NotNull
+    @Override
+    CommentedConfigurationNode setValue(@Nullable Object value);
 
-   @NotNull
-   CommentedConfigurationNode getAppendedNode();
+    @NotNull
+    @Override
+    CommentedConfigurationNode mergeValuesFrom(@NotNull ConfigurationNode other);
 
-   @NotNull
-   CommentedConfigurationNode getNode(@NotNull Object... var1);
+    @NotNull
+    @Override
+    CommentedConfigurationNode getAppendedNode();
 
-   @NotNull
-   CommentedConfigurationNode copy();
+    @NotNull
+    @Override
+    CommentedConfigurationNode getNode(@NotNull Object... path);
+
+    @NotNull
+    @Override
+    CommentedConfigurationNode copy();
+
 }

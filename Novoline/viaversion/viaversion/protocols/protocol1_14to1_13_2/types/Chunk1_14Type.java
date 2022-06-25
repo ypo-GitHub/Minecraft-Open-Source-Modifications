@@ -2,78 +2,104 @@ package viaversion.viaversion.protocols.protocol1_14to1_13_2.types;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.Arrays;
-import net.aEY;
-import net.acE;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.minecraft.chunks.BaseChunk;
 import viaversion.viaversion.api.minecraft.chunks.Chunk;
 import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.types.minecraft.BaseChunkType;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
+import viaversion.viaversion.api.type.types.version.Types1_13;
 
-public class Chunk1_14Type extends Type {
-   public Chunk1_14Type() {
-      super("Chunk", Chunk.class);
-   }
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-   public Chunk read(ByteBuf var1) throws Exception {
-      int var3 = var1.readInt();
-      ConnectionData.c();
-      int var4 = var1.readInt();
-      boolean var5 = var1.readBoolean();
-      int var6 = Type.VAR_INT.readPrimitive(var1);
-      CompoundTag var7 = (CompoundTag)Type.NBT.read(var1);
-      Type.VAR_INT.readPrimitive(var1);
-      ChunkSection[] var8 = new ChunkSection[16];
-      int var9 = 0;
-      if(var9 < 16) {
-         if((var6 & 1 << var9) != 0) {
-            short var10 = var1.readShort();
-            ChunkSection var11 = (ChunkSection)aEY.c.read(var1);
-            var11.setNonAirBlocksCount(var10);
-            var8[var9] = var11;
-         }
+public class Chunk1_14Type extends Type<Chunk> {
 
-         ++var9;
-      }
+    public Chunk1_14Type() {
+        super("Chunk", Chunk.class);
+    }
 
-      int[] var13 = var5?new int[256]:null;
-      if(var5) {
-         int var14 = 0;
-         if(var14 < 256) {
-            var13[var14] = var1.readInt();
-            ++var14;
-         }
-      }
+    @Override
+    public Chunk read(ByteBuf input) throws Exception {
+        int chunkX = input.readInt();
+        int chunkZ = input.readInt();
 
-      ArrayList var16 = new ArrayList(Arrays.asList((Object[])Type.NBT_ARRAY.read(var1)));
-      if(var1.readableBytes() > 0) {
-         byte[] var17 = (byte[])Type.REMAINING_BYTES.read(var1);
-         if(Via.getManager().isDebug()) {
-            Via.getPlatform().getLogger().warning("Found " + var17.length + " more bytes than expected while reading the chunk: " + var3 + "/" + var4);
-         }
-      }
+        boolean fullChunk = input.readBoolean();
+        int primaryBitmask = Type.VAR_INT.readPrimitive(input);
+        CompoundTag heightMap = Type.NBT.read(input);
 
-      BaseChunk var10000 = new BaseChunk(var3, var4, var5, false, var6, var8, var13, var7, var16);
-      if(acE.b() == null) {
-         ConnectionData.b(new String[4]);
-      }
+        Type.VAR_INT.readPrimitive(input);
 
-      return var10000;
-   }
+        // Read sections
+        ChunkSection[] sections = new ChunkSection[16];
+        for (int i = 0; i < 16; i++) {
+            if ((primaryBitmask & (1 << i)) == 0) continue; // Section not set
 
-   public void write(ByteBuf param1, Chunk param2) throws Exception {
-      // $FF: Couldn't be decompiled
-   }
+            short nonAirBlocksCount = input.readShort();
+            ChunkSection section = Types1_13.CHUNK_SECTION.read(input);
+            section.setNonAirBlocksCount(nonAirBlocksCount);
+            sections[i] = section;
+        }
 
-   public Class getBaseClass() {
-      return BaseChunkType.class;
-   }
+        int[] biomeData = fullChunk ? new int[256] : null;
+        if (fullChunk) {
+            for (int i = 0; i < 256; i++) {
+                biomeData[i] = input.readInt();
+            }
+        }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        List<CompoundTag> nbtData = new ArrayList<>(Arrays.asList(Type.NBT_ARRAY.read(input)));
+
+        // Read all the remaining bytes (workaround for #681)
+        if (input.readableBytes() > 0) {
+            byte[] array = Type.REMAINING_BYTES.read(input);
+            if (Via.getManager().isDebug()) {
+                Via.getPlatform().getLogger().warning("Found " + array.length + " more bytes than expected while reading the chunk: " + chunkX + "/" + chunkZ);
+            }
+        }
+
+        return new BaseChunk(chunkX, chunkZ, fullChunk, false, primaryBitmask, sections, biomeData, heightMap, nbtData);
+    }
+
+    @Override
+    public void write(ByteBuf output, Chunk chunk) throws Exception {
+        output.writeInt(chunk.getX());
+        output.writeInt(chunk.getZ());
+
+        output.writeBoolean(chunk.isFullChunk());
+        Type.VAR_INT.writePrimitive(output, chunk.getBitmask());
+        Type.NBT.write(output, chunk.getHeightMap());
+
+        ByteBuf buf = output.alloc().buffer();
+        try {
+            for (int i = 0; i < 16; i++) {
+                ChunkSection section = chunk.getSections()[i];
+                if (section == null) continue; // Section not set
+
+                buf.writeShort(section.getNonAirBlocksCount());
+                Types1_13.CHUNK_SECTION.write(buf, section);
+            }
+            buf.readerIndex(0);
+            Type.VAR_INT.writePrimitive(output, buf.readableBytes() + (chunk.isBiomeData() ? 1024 : 0)); // 256 * 4
+            output.writeBytes(buf);
+        } finally {
+            buf.release(); // release buffer
+        }
+
+        // Write biome data
+        if (chunk.isBiomeData()) {
+            for (int value : chunk.getBiomeData()) {
+                output.writeInt(value & 0xFF); // This is a temporary workaround, we'll look into fixing this soon :)
+            }
+        }
+
+        // Write Block Entities
+        Type.NBT_ARRAY.write(output, chunk.getBlockEntities().toArray(new CompoundTag[0]));
+    }
+
+    @Override
+    public Class<? extends Type> getBaseClass() {
+        return BaseChunkType.class;
+    }
 }

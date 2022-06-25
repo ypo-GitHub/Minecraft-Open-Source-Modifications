@@ -1,247 +1,211 @@
 package viaversion.viarewind.protocol.protocol1_8to1_9.storage;
 
-import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.UUID;
-import net.JM;
-import net.aRE;
-import net.bY;
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_8to1_9.storage.BlockPlaceDestroyTracker;
-import viaversion.viarewind.protocol.protocol1_8to1_9.storage.EntityTracker;
-import viaversion.viarewind.utils.PacketUtil;
+import viaversion.viarewind.ViaRewind;
 import viaversion.viarewind.utils.Tickable;
+import viaversion.viarewind.api.ViaRewindConfig;
+import viaversion.viarewind.protocol.protocol1_8to1_9.Protocol1_8TO1_9;
+import viaversion.viarewind.utils.PacketUtil;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Pair;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.type.Type;
 
-public class Cooldown extends cA implements Tickable {
-   private double attackSpeed = 4.0D;
-   private long lastHit = 0L;
-   private final bY c;
-   private UUID bossUUID;
-   private boolean lastSend;
-   private static final int max = 10;
+import java.util.ArrayList;
+import java.util.UUID;
 
-   public Cooldown(UserConnection var1) {
-      super(var1);
+public class Cooldown extends StoredObject implements Tickable {
 
-      bY var2;
-      try {
-         var2 = JM.b().a();
-      } catch (IllegalArgumentException var4) {
-         JM.a().a().warning("Invalid cooldown-indicator setting");
-         var2 = bY.DISABLED;
-      }
+	private double attackSpeed = 4.0;
+	private long lastHit = 0;
+	private final ViaRewindConfig.CooldownIndicator cooldownIndicator;
+	private UUID bossUUID;
+	private boolean lastSend;
 
-      this.c = var2;
-   }
+	public Cooldown(final UserConnection user) {
+		super(user);
 
-   public void tick() {
-      String[] var1 = EntityTracker.d();
-      if(!this.hasCooldown()) {
-         if(this.lastSend) {
-            this.hide();
-            this.lastSend = false;
-         }
+        ViaRewindConfig.CooldownIndicator indicator;
+        try {
+            indicator = ViaRewind.getConfig().getCooldownIndicator();
+        } catch (IllegalArgumentException e) {
+            ViaRewind.getPlatform().getLogger().warning("Invalid cooldown-indicator setting");
+            indicator = ViaRewindConfig.CooldownIndicator.DISABLED;
+        }
 
-      } else {
-         BlockPlaceDestroyTracker var2 = (BlockPlaceDestroyTracker)this.d().b(BlockPlaceDestroyTracker.class);
-         if(var2.isMining()) {
-            this.lastHit = 0L;
-            if(this.lastSend) {
-               this.hide();
-               this.lastSend = false;
-            }
+        this.cooldownIndicator = indicator;
+	}
 
-         } else {
-            this.showCooldown();
-            this.lastSend = true;
-         }
-      }
-   }
+	@Override
+	public void tick() {
+		if (!hasCooldown()) {
+			if (lastSend) {
+				hide();
+				lastSend = false;
+			}
+			return;
+		}
 
-   private void showCooldown() {
-      String[] var1 = EntityTracker.d();
-      if(this.c == bY.TITLE) {
-         this.sendTitle("", this.getTitle(), 0, 2, 5);
-      }
+		BlockPlaceDestroyTracker tracker = getUser().get(BlockPlaceDestroyTracker.class);
+		if (tracker.isMining()) {
+			lastHit = 0;
+			if (lastSend) {
+				hide();
+				lastSend = false;
+			}
+			return;
+		}
 
-      if(this.c == bY.ACTION_BAR) {
-         this.sendActionBar(this.getTitle());
-      }
+		showCooldown();
+		lastSend = true;
+	}
 
-      if(this.c == bY.BOSS_BAR) {
-         this.sendBossBar((float)this.getCooldown());
-      }
+	private void showCooldown() {
+		if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.TITLE) {
+			sendTitle("", getTitle(), 0, 2, 5);
+		} else if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.ACTION_BAR) {
+			sendActionBar(getTitle());
+		} else if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.BOSS_BAR) {
+			sendBossBar((float) getCooldown());
+		}
+	}
 
-   }
+	private void hide() {
+		if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.ACTION_BAR) {
+			sendActionBar("§r");
+		} else if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.TITLE) {
+			hideTitle();
+		} else if (cooldownIndicator==ViaRewindConfig.CooldownIndicator.BOSS_BAR) {
+			hideBossBar();
+		}
+	}
 
-   private void hide() {
-      String[] var1 = EntityTracker.d();
-      if(this.c == bY.ACTION_BAR) {
-         this.sendActionBar("§r");
-      }
+	private void hideBossBar() {
+		if (bossUUID==null) return;
+		PacketWrapper wrapper = new PacketWrapper(0x0C, null, getUser());
+		wrapper.write(Type.UUID, bossUUID);
+		wrapper.write(Type.VAR_INT, 1);
+		PacketUtil.sendPacket(wrapper, Protocol1_8TO1_9.class, false, true);
+		bossUUID = null;
+	}
 
-      if(this.c == bY.TITLE) {
-         this.hideTitle();
-      }
+	private void sendBossBar(float cooldown) {
+		PacketWrapper wrapper = new PacketWrapper(0x0C, null, getUser());
+		if (bossUUID==null) {
+			bossUUID = UUID.randomUUID();
+			wrapper.write(Type.UUID, bossUUID);
+			wrapper.write(Type.VAR_INT, 0);
+			wrapper.write(Type.STRING, "{\"text\":\"  \"}");
+			wrapper.write(Type.FLOAT, cooldown);
+			wrapper.write(Type.VAR_INT, 0);
+			wrapper.write(Type.VAR_INT, 0);
+			wrapper.write(Type.UNSIGNED_BYTE, (short) 0);
+		} else {
+			wrapper.write(Type.UUID, bossUUID);
+			wrapper.write(Type.VAR_INT, 2);
+			wrapper.write(Type.FLOAT, cooldown);
+		}
+		PacketUtil.sendPacket(wrapper, Protocol1_8TO1_9.class, false, true);
+	}
 
-      if(this.c == bY.BOSS_BAR) {
-         this.hideBossBar();
-      }
+	private void hideTitle() {
+		PacketWrapper hide = new PacketWrapper(0x45, null, getUser());
+		hide.write(Type.VAR_INT, 3);
+		PacketUtil.sendPacket(hide, Protocol1_8TO1_9.class);
+	}
 
-   }
+	private void sendTitle(String title, String subTitle, int fadeIn, int stay, int fadeOut) {
+		PacketWrapper timePacket = new PacketWrapper(0x45, null, getUser());
+		timePacket.write(Type.VAR_INT, 2);
+		timePacket.write(Type.INT, fadeIn);
+		timePacket.write(Type.INT, stay);
+		timePacket.write(Type.INT, fadeOut);
+		PacketWrapper titlePacket = new PacketWrapper(0x45, null, getUser());
+		titlePacket.write(Type.VAR_INT, 0);
+		titlePacket.write(Type.STRING, title);
+		PacketWrapper subtitlePacket = new PacketWrapper(0x45, null, getUser());
+		subtitlePacket.write(Type.VAR_INT, 1);
+		subtitlePacket.write(Type.STRING, subTitle);
 
-   private void hideBossBar() {
-      if(this.bossUUID != null) {
-         PacketWrapper var1 = new PacketWrapper(12, (ByteBuf)null, this.d());
-         var1.write(Type.UUID, this.bossUUID);
-         var1.write(Type.VAR_INT, Integer.valueOf(1));
-         PacketUtil.sendPacket(var1, aRE.class, false, true);
-         this.bossUUID = null;
-      }
-   }
+		PacketUtil.sendPacket(titlePacket, Protocol1_8TO1_9.class);
+		PacketUtil.sendPacket(subtitlePacket, Protocol1_8TO1_9.class);
+		PacketUtil.sendPacket(timePacket, Protocol1_8TO1_9.class);
+	}
 
-   private void sendBossBar(float var1) {
-      EntityTracker.d();
-      PacketWrapper var3 = new PacketWrapper(12, (ByteBuf)null, this.d());
-      if(this.bossUUID == null) {
-         this.bossUUID = UUID.randomUUID();
-         var3.write(Type.UUID, this.bossUUID);
-         var3.write(Type.VAR_INT, Integer.valueOf(0));
-         var3.write(Type.STRING, "{\"text\":\"  \"}");
-         var3.write(Type.FLOAT, Float.valueOf(var1));
-         var3.write(Type.VAR_INT, Integer.valueOf(0));
-         var3.write(Type.VAR_INT, Integer.valueOf(0));
-         var3.write(Type.UNSIGNED_BYTE, Short.valueOf((short)0));
-      }
+	private void sendActionBar(String bar) {
+		PacketWrapper actionBarPacket = new PacketWrapper(0x02, null, getUser());
+		actionBarPacket.write(Type.STRING, bar);
+		actionBarPacket.write(Type.BYTE, (byte) 2);
 
-      var3.write(Type.UUID, this.bossUUID);
-      var3.write(Type.VAR_INT, Integer.valueOf(2));
-      var3.write(Type.FLOAT, Float.valueOf(var1));
-      PacketUtil.sendPacket(var3, aRE.class, false, true);
-   }
+		PacketUtil.sendPacket(actionBarPacket, Protocol1_8TO1_9.class);
+	}
 
-   private void hideTitle() {
-      PacketWrapper var1 = new PacketWrapper(69, (ByteBuf)null, this.d());
-      var1.write(Type.VAR_INT, Integer.valueOf(3));
-      PacketUtil.sendPacket(var1, aRE.class);
-   }
+	public boolean hasCooldown() {
+		long time = System.currentTimeMillis()-lastHit;
+		double cooldown = restrain(((double)time) * attackSpeed / 1000d, 0, 1.5);
+		return cooldown>0.1 && cooldown<1.1;
+	}
 
-   private void sendTitle(String var1, String var2, int var3, int var4, int var5) {
-      PacketWrapper var6 = new PacketWrapper(69, (ByteBuf)null, this.d());
-      var6.write(Type.VAR_INT, Integer.valueOf(2));
-      var6.write(Type.INT, Integer.valueOf(var3));
-      var6.write(Type.INT, Integer.valueOf(var4));
-      var6.write(Type.INT, Integer.valueOf(var5));
-      PacketWrapper var7 = new PacketWrapper(69, (ByteBuf)null, this.d());
-      var7.write(Type.VAR_INT, Integer.valueOf(0));
-      var7.write(Type.STRING, var1);
-      PacketWrapper var8 = new PacketWrapper(69, (ByteBuf)null, this.d());
-      var8.write(Type.VAR_INT, Integer.valueOf(1));
-      var8.write(Type.STRING, var2);
-      PacketUtil.sendPacket(var7, aRE.class);
-      PacketUtil.sendPacket(var8, aRE.class);
-      PacketUtil.sendPacket(var6, aRE.class);
-   }
+	public double getCooldown() {
+		long time = System.currentTimeMillis()-lastHit;
+		return restrain(((double)time) * attackSpeed / 1000d, 0, 1);
+	}
 
-   private void sendActionBar(String var1) {
-      PacketWrapper var2 = new PacketWrapper(2, (ByteBuf)null, this.d());
-      var2.write(Type.STRING, var1);
-      var2.write(Type.BYTE, Byte.valueOf((byte)2));
-      PacketUtil.sendPacket(var2, aRE.class);
-   }
+	private double restrain(double x, double a, double b) {
+		if (x<a) return a;
+		if (x>b) return b;
+		return x;
+	}
 
-   public boolean hasCooldown() {
-      EntityTracker.d();
-      long var2 = System.currentTimeMillis() - this.lastHit;
-      double var4 = this.a((double)var2 * this.attackSpeed / 1000.0D, 0.0D, 1.5D);
-      return var4 > 0.1D && var4 < 1.1D;
-   }
+	private static final int max = 10;
+	private String getTitle() {
+		String symbol = cooldownIndicator==ViaRewindConfig.CooldownIndicator.ACTION_BAR ? "■" : "˙";
 
-   public double getCooldown() {
-      long var1 = System.currentTimeMillis() - this.lastHit;
-      return this.a((double)var1 * this.attackSpeed / 1000.0D, 0.0D, 1.0D);
-   }
+		double cooldown = getCooldown();
+		int green = (int) Math.floor(((double)max) * cooldown);
+		int grey = max-green;
+		StringBuilder builder = new StringBuilder("§8");
+		while(green-->0) builder.append(symbol);
+		builder.append("§7");
+		while(grey-->0) builder.append(symbol);
+		return builder.toString();
+	}
 
-   private double a(double var1, double var3, double var5) {
-      String[] var7 = EntityTracker.d();
-      return var1 < var3?var3:(var1 > var5?var5:var1);
-   }
+	public double getAttackSpeed() {
+		return attackSpeed;
+	}
 
-   private String getTitle() {
-      String[] var1 = EntityTracker.d();
-      String var2 = this.c == bY.ACTION_BAR?"■":"˙";
-      double var3 = this.getCooldown();
-      int var5 = (int)Math.floor(10.0D * var3);
-      int var6 = 10 - var5;
-      StringBuilder var7 = new StringBuilder("§8");
-      if(var5-- > 0) {
-         var7.append(var2);
-      }
+	public void setAttackSpeed(double attackSpeed) {
+		this.attackSpeed = attackSpeed;
+	}
 
-      var7.append("§7");
-      if(var6-- > 0) {
-         var7.append(var2);
-      }
+	public void setAttackSpeed(double base, ArrayList<Pair<Byte, Double>> modifiers) {
+		attackSpeed = base;
+		for (int j = 0; j<modifiers.size(); j++) {
+			if (modifiers.get(j).getKey()==0) {
+				attackSpeed += modifiers.get(j).getValue();
+				modifiers.remove(j--);
+			}
+		}
+		for (int j = 0; j<modifiers.size(); j++) {
+			if (modifiers.get(j).getKey()==1) {
+				attackSpeed += base * modifiers.get(j).getValue();
+				modifiers.remove(j--);
+			}
+		}
+		for (int j = 0; j<modifiers.size(); j++) {
+			if (modifiers.get(j).getKey()==2) {
+				attackSpeed *= (1.0 + modifiers.get(j).getValue());
+				modifiers.remove(j--);
+			}
+		}
+	}
 
-      return var7.toString();
-   }
+	public void hit() {
+		lastHit = System.currentTimeMillis();
+	}
 
-   public double getAttackSpeed() {
-      return this.attackSpeed;
-   }
-
-   public void setAttackSpeed(double var1) {
-      this.attackSpeed = var1;
-   }
-
-   public void setAttackSpeed(double var1, ArrayList var3) {
-      EntityTracker.d();
-      this.attackSpeed = var1;
-      int var5 = 0;
-      if(var5 < var3.size()) {
-         if(((Byte)((Pair)var3.get(var5)).getKey()).byteValue() == 0) {
-            this.attackSpeed += ((Double)((Pair)var3.get(var5)).getValue()).doubleValue();
-            var3.remove(var5--);
-         }
-
-         ++var5;
-      }
-
-      var5 = 0;
-      if(var5 < var3.size()) {
-         if(((Byte)((Pair)var3.get(var5)).getKey()).byteValue() == 1) {
-            this.attackSpeed += var1 * ((Double)((Pair)var3.get(var5)).getValue()).doubleValue();
-            var3.remove(var5--);
-         }
-
-         ++var5;
-      }
-
-      var5 = 0;
-      if(var5 < var3.size()) {
-         if(((Byte)((Pair)var3.get(var5)).getKey()).byteValue() == 2) {
-            this.attackSpeed *= 1.0D + ((Double)((Pair)var3.get(var5)).getValue()).doubleValue();
-            var3.remove(var5--);
-         }
-
-         ++var5;
-      }
-
-   }
-
-   public void hit() {
-      this.lastHit = System.currentTimeMillis();
-   }
-
-   public void setLastHit(long var1) {
-      this.lastHit = var1;
-   }
-
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+	public void setLastHit(long lastHit) {
+		this.lastHit = lastHit;
+	}
 }

@@ -3,23 +3,9 @@ package net.minecraft.command;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.CommandSpreadPlayers$Position;
-import net.minecraft.command.EntityNotFoundException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.PlayerNotFoundException;
-import net.minecraft.command.PlayerSelector;
-import net.minecraft.command.WrongUsageException;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
@@ -27,191 +13,318 @@ import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
 public class CommandSpreadPlayers extends CommandBase {
-   public String getCommandName() {
-      return "spreadplayers";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "spreadplayers";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.spreadplayers.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.spreadplayers.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 6) {
-         throw new WrongUsageException("commands.spreadplayers.usage", new Object[0]);
-      } else {
-         int var3 = 0;
-         BlockPos var4 = var1.getPosition();
-         double var5 = parseDouble((double)var4.getX(), var2[var3++], true);
-         double var7 = parseDouble((double)var4.getZ(), var2[var3++], true);
-         double var9 = parseDouble(var2[var3++], 0.0D);
-         double var11 = parseDouble(var2[var3++], var9 + 1.0D);
-         boolean var13 = parseBoolean(var2[var3++]);
-         ArrayList var14 = Lists.newArrayList();
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 6) {
+            throw new WrongUsageException("commands.spreadplayers.usage", new Object[0]);
+        } else {
+            int i = 0;
+            BlockPos blockpos = sender.getPosition();
+            double d0 = parseDouble((double) blockpos.getX(), args[i++], true);
+            double d1 = parseDouble((double) blockpos.getZ(), args[i++], true);
+            double d2 = parseDouble(args[i++], 0.0D);
+            double d3 = parseDouble(args[i++], d2 + 1.0D);
+            boolean flag = parseBoolean(args[i++]);
+            List<Entity> list = Lists.<Entity>newArrayList();
 
-         while(var3 < var2.length) {
-            String var15 = var2[var3++];
-            if(!PlayerSelector.hasArguments(var15)) {
-               EntityPlayerMP var22 = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(var15);
-               throw new PlayerNotFoundException();
+            while (i < args.length) {
+                String s = args[i++];
+
+                if (PlayerSelector.hasArguments(s)) {
+                    List<Entity> list1 = PlayerSelector.<Entity>matchEntities(sender, s, Entity.class);
+
+                    if (list1.isEmpty()) {
+                        throw new EntityNotFoundException();
+                    }
+
+                    list.addAll(list1);
+                } else {
+                    EntityPlayer entityplayer = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(s);
+
+                    if (entityplayer == null) {
+                        throw new PlayerNotFoundException();
+                    }
+
+                    list.add(entityplayer);
+                }
             }
 
-            List var16 = PlayerSelector.matchEntities(var1, var15, Entity.class);
-            if(var16.isEmpty()) {
-               throw new EntityNotFoundException();
-            }
+            sender.setCommandStat(CommandResultStats.Type.AFFECTED_ENTITIES, list.size());
 
-            var14.addAll(var16);
-         }
-
-         var1.setCommandStat(CommandResultStats$Type.AFFECTED_ENTITIES, var14.size());
-         if(var14.isEmpty()) {
-            throw new EntityNotFoundException();
-         } else {
-            var1.addChatMessage(new ChatComponentTranslation("commands.spreadplayers.spreading." + "teams", new Object[]{Integer.valueOf(var14.size()), Double.valueOf(var11), Double.valueOf(var5), Double.valueOf(var7), Double.valueOf(var9)}));
-            this.func_110669_a(var1, var14, new CommandSpreadPlayers$Position(var5, var7), var9, var11, ((Entity)var14.get(0)).worldObj, var13);
-         }
-      }
-   }
-
-   private void func_110669_a(ICommandSender var1, List var2, CommandSpreadPlayers$Position var3, double var4, double var6, World var8, boolean var9) throws CommandException {
-      Random var10 = new Random();
-      double var11 = var3.field_111101_a - var6;
-      double var13 = var3.field_111100_b - var6;
-      double var15 = var3.field_111101_a + var6;
-      double var17 = var3.field_111100_b + var6;
-      CommandSpreadPlayers$Position[] var19 = this.func_110670_a(var10, this.func_110667_a(var2), var11, var13, var15, var17);
-      int var20 = this.func_110668_a(var3, var4, var8, var10, var11, var13, var15, var17, var19, var9);
-      double var21 = this.func_110671_a(var2, var8, var19, var9);
-      notifyOperators(var1, this, "commands.spreadplayers.success." + "teams", new Object[]{Integer.valueOf(var19.length), Double.valueOf(var3.field_111101_a), Double.valueOf(var3.field_111100_b)});
-      if(var19.length > 1) {
-         var1.addChatMessage(new ChatComponentTranslation("commands.spreadplayers.info." + "teams", new Object[]{String.format("%.2f", new Object[]{Double.valueOf(var21)}), Integer.valueOf(var20)}));
-      }
-
-   }
-
-   private int func_110667_a(List var1) {
-      HashSet var2 = Sets.newHashSet();
-
-      for(Entity var4 : var1) {
-         if(var4 instanceof EntityPlayer) {
-            var2.add(((EntityPlayer)var4).getTeam());
-         } else {
-            var2.add((Team)null);
-         }
-      }
-
-      return var2.size();
-   }
-
-   private int func_110668_a(CommandSpreadPlayers$Position var1, double var2, World var4, Random var5, double var6, double var8, double var10, double var12, CommandSpreadPlayers$Position[] var14, boolean var15) throws CommandException {
-      boolean var16 = true;
-      double var17 = 3.4028234663852886E38D;
-
-      int var19;
-      for(var19 = 0; var19 < 10000; ++var19) {
-         var16 = false;
-         var17 = 3.4028234663852886E38D;
-
-         for(int var20 = 0; var20 < var14.length; ++var20) {
-            CommandSpreadPlayers$Position var21 = var14[var20];
-            int var22 = 0;
-            CommandSpreadPlayers$Position var23 = new CommandSpreadPlayers$Position();
-
-            for(int var24 = 0; var24 < var14.length; ++var24) {
-               if(var20 != var24) {
-                  CommandSpreadPlayers$Position var25 = var14[var24];
-                  double var26 = var21.func_111099_a(var25);
-                  var17 = Math.min(var26, var17);
-                  if(var26 < var2) {
-                     ++var22;
-                     var23.field_111101_a += var25.field_111101_a - var21.field_111101_a;
-                     var23.field_111100_b += var25.field_111100_b - var21.field_111100_b;
-                  }
-               }
-            }
-
-            var23.field_111101_a /= (double)var22;
-            var23.field_111100_b /= (double)var22;
-            double var36 = (double)var23.func_111096_b();
-            if(var36 > 0.0D) {
-               var23.func_111095_a();
-               var21.func_111094_b(var23);
+            if (list.isEmpty()) {
+                throw new EntityNotFoundException();
             } else {
-               var21.func_111097_a(var5, var6, var8, var10, var12);
+                sender.addChatMessage(new ChatComponentTranslation("commands.spreadplayers.spreading." + (flag ? "teams" : "players"), new Object[]{list.size(), d3, d0, d1, d2}));
+                this.func_110669_a(sender, list, new CommandSpreadPlayers.Position(d0, d1), d2, d3, ((Entity) list.get(0)).worldObj, flag);
+            }
+        }
+    }
+
+    private void func_110669_a(ICommandSender p_110669_1_, List<Entity> p_110669_2_, CommandSpreadPlayers.Position p_110669_3_, double p_110669_4_, double p_110669_6_, World worldIn, boolean p_110669_9_) throws CommandException {
+        Random random = new Random();
+        double d0 = p_110669_3_.field_111101_a - p_110669_6_;
+        double d1 = p_110669_3_.field_111100_b - p_110669_6_;
+        double d2 = p_110669_3_.field_111101_a + p_110669_6_;
+        double d3 = p_110669_3_.field_111100_b + p_110669_6_;
+        CommandSpreadPlayers.Position[] acommandspreadplayers$position = this.func_110670_a(random, p_110669_9_ ? this.func_110667_a(p_110669_2_) : p_110669_2_.size(), d0, d1, d2, d3);
+        int i = this.func_110668_a(p_110669_3_, p_110669_4_, worldIn, random, d0, d1, d2, d3, acommandspreadplayers$position, p_110669_9_);
+        double d4 = this.func_110671_a(p_110669_2_, worldIn, acommandspreadplayers$position, p_110669_9_);
+        notifyOperators(p_110669_1_, this, "commands.spreadplayers.success." + (p_110669_9_ ? "teams" : "players"), new Object[]{acommandspreadplayers$position.length, p_110669_3_.field_111101_a, p_110669_3_.field_111100_b});
+
+        if (acommandspreadplayers$position.length > 1) {
+            p_110669_1_.addChatMessage(new ChatComponentTranslation("commands.spreadplayers.info." + (p_110669_9_ ? "teams" : "players"), new Object[]{String.format("%.2f", new Object[]{d4}), i}));
+        }
+    }
+
+    private int func_110667_a(List<Entity> p_110667_1_) {
+        Set<Team> set = Sets.<Team>newHashSet();
+
+        for (Entity entity : p_110667_1_) {
+            if (entity instanceof EntityPlayer) {
+                set.add(((EntityPlayer) entity).getTeam());
+            } else {
+                set.add((Team) null);
+            }
+        }
+
+        return set.size();
+    }
+
+    private int func_110668_a(CommandSpreadPlayers.Position p_110668_1_, double p_110668_2_, World worldIn, Random p_110668_5_, double p_110668_6_, double p_110668_8_, double p_110668_10_, double p_110668_12_, CommandSpreadPlayers.Position[] p_110668_14_, boolean p_110668_15_) throws CommandException {
+        boolean flag = true;
+        double d0 = 3.4028234663852886E38D;
+        int i;
+
+        for (i = 0; i < 10000 && flag; ++i) {
+            flag = false;
+            d0 = 3.4028234663852886E38D;
+
+            for (int j = 0; j < p_110668_14_.length; ++j) {
+                CommandSpreadPlayers.Position commandspreadplayers$position = p_110668_14_[j];
+                int k = 0;
+                CommandSpreadPlayers.Position commandspreadplayers$position1 = new CommandSpreadPlayers.Position();
+
+                for (int l = 0; l < p_110668_14_.length; ++l) {
+                    if (j != l) {
+                        CommandSpreadPlayers.Position commandspreadplayers$position2 = p_110668_14_[l];
+                        double d1 = commandspreadplayers$position.func_111099_a(commandspreadplayers$position2);
+                        d0 = Math.min(d1, d0);
+
+                        if (d1 < p_110668_2_) {
+                            ++k;
+                            commandspreadplayers$position1.field_111101_a += commandspreadplayers$position2.field_111101_a - commandspreadplayers$position.field_111101_a;
+                            commandspreadplayers$position1.field_111100_b += commandspreadplayers$position2.field_111100_b - commandspreadplayers$position.field_111100_b;
+                        }
+                    }
+                }
+
+                if (k > 0) {
+                    commandspreadplayers$position1.field_111101_a /= (double) k;
+                    commandspreadplayers$position1.field_111100_b /= (double) k;
+                    double d2 = (double) commandspreadplayers$position1.func_111096_b();
+
+                    if (d2 > 0.0D) {
+                        commandspreadplayers$position1.func_111095_a();
+                        commandspreadplayers$position.func_111094_b(commandspreadplayers$position1);
+                    } else {
+                        commandspreadplayers$position.func_111097_a(p_110668_5_, p_110668_6_, p_110668_8_, p_110668_10_, p_110668_12_);
+                    }
+
+                    flag = true;
+                }
+
+                if (commandspreadplayers$position.func_111093_a(p_110668_6_, p_110668_8_, p_110668_10_, p_110668_12_)) {
+                    flag = true;
+                }
             }
 
-            var16 = true;
-            if(var21.func_111093_a(var6, var8, var10, var12)) {
-               var16 = true;
+            if (!flag) {
+                for (CommandSpreadPlayers.Position commandspreadplayers$position3 : p_110668_14_) {
+                    if (!commandspreadplayers$position3.func_111098_b(worldIn)) {
+                        commandspreadplayers$position3.func_111097_a(p_110668_5_, p_110668_6_, p_110668_8_, p_110668_10_, p_110668_12_);
+                        flag = true;
+                    }
+                }
             }
-         }
+        }
 
-         for(CommandSpreadPlayers$Position var35 : var14) {
-            if(!var35.func_111098_b(var4)) {
-               var35.func_111097_a(var5, var6, var8, var10, var12);
-               var16 = true;
+        if (i >= 10000) {
+            throw new CommandException("commands.spreadplayers.failure." + (p_110668_15_ ? "teams" : "players"), new Object[]{p_110668_14_.length, p_110668_1_.field_111101_a, p_110668_1_.field_111100_b, String.format("%.2f", new Object[]{d0})});
+        } else {
+            return i;
+        }
+    }
+
+    private double func_110671_a(List<Entity> p_110671_1_, World worldIn, CommandSpreadPlayers.Position[] p_110671_3_, boolean p_110671_4_) {
+        double d0 = 0.0D;
+        int i = 0;
+        Map<Team, CommandSpreadPlayers.Position> map = Maps.<Team, CommandSpreadPlayers.Position>newHashMap();
+
+        for (Entity value : p_110671_1_) {
+            Entity entity = (Entity) value;
+            Position commandspreadplayers$position;
+
+            if (p_110671_4_) {
+                Team team = entity instanceof EntityPlayer ? ((EntityPlayer) entity).getTeam() : null;
+
+                if (!map.containsKey(team)) {
+                    map.put(team, p_110671_3_[i++]);
+                }
+
+                commandspreadplayers$position = (Position) map.get(team);
+            } else {
+                commandspreadplayers$position = p_110671_3_[i++];
             }
-         }
-      }
 
-      if(var19 >= 10000) {
-         throw new CommandException("commands.spreadplayers.failure." + "teams", new Object[]{Integer.valueOf(var14.length), Double.valueOf(var1.field_111101_a), Double.valueOf(var1.field_111100_b), String.format("%.2f", new Object[]{Double.valueOf(var17)})});
-      } else {
-         return var19;
-      }
-   }
+            entity.setPositionAndUpdate((double) ((float) MathHelper.floor_double(commandspreadplayers$position.field_111101_a) + 0.5F), (double) commandspreadplayers$position.func_111092_a(worldIn), (double) MathHelper.floor_double(commandspreadplayers$position.field_111100_b) + 0.5D);
+            double d2 = Double.MAX_VALUE;
 
-   private double func_110671_a(List var1, World var2, CommandSpreadPlayers$Position[] var3, boolean var4) {
-      double var5 = 0.0D;
-      int var7 = 0;
-      HashMap var8 = Maps.newHashMap();
-
-      for(Entity var10 : var1) {
-         Team var13 = var10 instanceof EntityPlayer?((EntityPlayer)var10).getTeam():null;
-         if(!var8.containsKey(var13)) {
-            var8.put(var13, var3[var7++]);
-         }
-
-         CommandSpreadPlayers$Position var12 = (CommandSpreadPlayers$Position)var8.get(var13);
-         var10.setPositionAndUpdate((double)((float)MathHelper.floor_double(var12.field_111101_a) + 0.5F), (double)var12.func_111092_a(var2), (double)MathHelper.floor_double(var12.field_111100_b) + 0.5D);
-         double var22 = Double.MAX_VALUE;
-
-         for(CommandSpreadPlayers$Position var18 : var3) {
-            if(var12 != var18) {
-               double var19 = var12.func_111099_a(var18);
-               var22 = Math.min(var19, var22);
+            for (Position position : p_110671_3_) {
+                if (commandspreadplayers$position != position) {
+                    double d1 = commandspreadplayers$position.func_111099_a(position);
+                    d2 = Math.min(d1, d2);
+                }
             }
-         }
 
-         var5 += var22;
-      }
+            d0 += d2;
+        }
 
-      var5 = var5 / (double)var1.size();
-      return var5;
-   }
+        d0 = d0 / (double) p_110671_1_.size();
+        return d0;
+    }
 
-   private CommandSpreadPlayers$Position[] func_110670_a(Random var1, int var2, double var3, double var5, double var7, double var9) {
-      CommandSpreadPlayers$Position[] var11 = new CommandSpreadPlayers$Position[var2];
+    private CommandSpreadPlayers.Position[] func_110670_a(Random p_110670_1_, int p_110670_2_, double p_110670_3_, double p_110670_5_, double p_110670_7_, double p_110670_9_) {
+        CommandSpreadPlayers.Position[] acommandspreadplayers$position = new CommandSpreadPlayers.Position[p_110670_2_];
 
-      for(int var12 = 0; var12 < var11.length; ++var12) {
-         CommandSpreadPlayers$Position var13 = new CommandSpreadPlayers$Position();
-         var13.func_111097_a(var1, var3, var5, var7, var9);
-         var11[var12] = var13;
-      }
+        for (int i = 0; i < acommandspreadplayers$position.length; ++i) {
+            CommandSpreadPlayers.Position commandspreadplayers$position = new CommandSpreadPlayers.Position();
+            commandspreadplayers$position.func_111097_a(p_110670_1_, p_110670_3_, p_110670_5_, p_110670_7_, p_110670_9_);
+            acommandspreadplayers$position[i] = commandspreadplayers$position;
+        }
 
-      return var11;
-   }
+        return acommandspreadplayers$position;
+    }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length >= 1 && var2.length <= 2?a(var2, 0, var3):null;
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length >= 1 && args.length <= 2 ? func_181043_b(args, 0, pos) : null;
+    }
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    static class Position {
+        double field_111101_a;
+        double field_111100_b;
+
+        Position() {
+        }
+
+        Position(double p_i1358_1_, double p_i1358_3_) {
+            this.field_111101_a = p_i1358_1_;
+            this.field_111100_b = p_i1358_3_;
+        }
+
+        double func_111099_a(CommandSpreadPlayers.Position p_111099_1_) {
+            double d0 = this.field_111101_a - p_111099_1_.field_111101_a;
+            double d1 = this.field_111100_b - p_111099_1_.field_111100_b;
+            return Math.sqrt(d0 * d0 + d1 * d1);
+        }
+
+        void func_111095_a() {
+            double d0 = (double) this.func_111096_b();
+            this.field_111101_a /= d0;
+            this.field_111100_b /= d0;
+        }
+
+        float func_111096_b() {
+            return MathHelper.sqrt_double(this.field_111101_a * this.field_111101_a + this.field_111100_b * this.field_111100_b);
+        }
+
+        public void func_111094_b(CommandSpreadPlayers.Position p_111094_1_) {
+            this.field_111101_a -= p_111094_1_.field_111101_a;
+            this.field_111100_b -= p_111094_1_.field_111100_b;
+        }
+
+        public boolean func_111093_a(double p_111093_1_, double p_111093_3_, double p_111093_5_, double p_111093_7_) {
+            boolean flag = false;
+
+            if (this.field_111101_a < p_111093_1_) {
+                this.field_111101_a = p_111093_1_;
+                flag = true;
+            } else if (this.field_111101_a > p_111093_5_) {
+                this.field_111101_a = p_111093_5_;
+                flag = true;
+            }
+
+            if (this.field_111100_b < p_111093_3_) {
+                this.field_111100_b = p_111093_3_;
+                flag = true;
+            } else if (this.field_111100_b > p_111093_7_) {
+                this.field_111100_b = p_111093_7_;
+                flag = true;
+            }
+
+            return flag;
+        }
+
+        public int func_111092_a(World worldIn) {
+            BlockPos blockpos = new BlockPos(this.field_111101_a, 256.0D, this.field_111100_b);
+
+            while (blockpos.getY() > 0) {
+                blockpos = blockpos.down();
+
+                if (worldIn.getBlockState(blockpos).getBlock().getMaterial() != Material.air) {
+                    return blockpos.getY() + 1;
+                }
+            }
+
+            return 257;
+        }
+
+        public boolean func_111098_b(World worldIn) {
+            BlockPos blockpos = new BlockPos(this.field_111101_a, 256.0D, this.field_111100_b);
+
+            while (blockpos.getY() > 0) {
+                blockpos = blockpos.down();
+                Material material = worldIn.getBlockState(blockpos).getBlock().getMaterial();
+
+                if (material != Material.air) {
+                    return !material.isLiquid() && material != Material.fire;
+                }
+            }
+
+            return false;
+        }
+
+        public void func_111097_a(Random p_111097_1_, double p_111097_2_, double p_111097_4_, double p_111097_6_, double p_111097_8_) {
+            this.field_111101_a = MathHelper.getRandomDoubleInRange(p_111097_1_, p_111097_2_, p_111097_6_);
+            this.field_111100_b = MathHelper.getRandomDoubleInRange(p_111097_1_, p_111097_4_, p_111097_8_);
+        }
+    }
 }

@@ -3,58 +3,69 @@ package net.minecraft.util;
 import org.apache.commons.lang3.Validate;
 
 public class ResourceLocation {
-   protected final String resourceDomain;
-   protected final String resourcePath;
 
-   protected ResourceLocation(int var1, String... var2) {
-      this.resourceDomain = org.apache.commons.lang3.StringUtils.isEmpty(var2[0])?"minecraft":var2[0].toLowerCase();
-      this.resourcePath = var2[1];
-      Validate.notNull(this.resourcePath);
-   }
+    protected final String resourceDomain;
+    protected final String resourcePath;
 
-   public ResourceLocation(String var1) {
-      this(0, splitObjectName(var1));
-   }
+    protected ResourceLocation(int p_i45928_1_, String... resourceName) {
+        this.resourceDomain = org.apache.commons.lang3.StringUtils.isEmpty(resourceName[0]) ? "minecraft" : resourceName[0].toLowerCase();
+        this.resourcePath = resourceName[1];
+        Validate.notNull(this.resourcePath);
+    }
 
-   public ResourceLocation(String var1, String var2) {
-      this(0, new String[]{var1, var2});
-   }
+    public ResourceLocation(String resourceName) {
+        this(0, splitObjectName(resourceName));
+    }
 
-   protected static String[] splitObjectName(String var0) {
-      String[] var1 = new String[]{null, var0};
-      int var2 = var0.indexOf(58);
-      var1[1] = var0.substring(var2 + 1);
-      if(var2 > 1) {
-         var1[0] = var0.substring(0, var2);
-      }
+    public ResourceLocation(String resourceDomainIn, String resourcePathIn) {
+        this(0, resourceDomainIn, resourcePathIn);
+    }
 
-      return var1;
-   }
+    /**
+     * Splits an object name (such as minecraft:apple) into the domain and path parts and returns these as an array of
+     * length 2. If no colon is present in the passed value the returned array will contain {null, toSplit}.
+     */
+    protected static String[] splitObjectName(String toSplit) {
+        String[] array = new String[]{null, toSplit};
+        int i = toSplit.indexOf(58);
 
-   public String getResourcePath() {
-      return this.resourcePath;
-   }
+        if (i >= 0) {
+            array[1] = toSplit.substring(i + 1);
 
-   public String getResourceDomain() {
-      return this.resourceDomain;
-   }
+            if (i > 1) {
+                array[0] = toSplit.substring(0, i);
+            }
+        }
 
-   public String toString() {
-      return this.resourceDomain + ':' + this.resourcePath;
-   }
+        return array;
+    }
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof ResourceLocation)) {
-         return false;
-      } else {
-         ResourceLocation var2 = (ResourceLocation)var1;
-         return this.resourceDomain.equals(var2.resourceDomain) && this.resourcePath.equals(var2.resourcePath);
-      }
-   }
+    public String getResourcePath() {
+        return this.resourcePath;
+    }
 
-   public int hashCode() {
-      return 31 * this.resourceDomain.hashCode() + this.resourcePath.hashCode();
-   }
+    public String getResourceDomain() {
+        return this.resourceDomain;
+    }
+
+    public String toString() {
+        return this.resourceDomain + ':' + this.resourcePath;
+    }
+
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
+            return true;
+        } else if (!(p_equals_1_ instanceof ResourceLocation)) {
+            return false;
+        } else {
+            ResourceLocation resourcelocation = (ResourceLocation) p_equals_1_;
+            return this.resourceDomain.equals(resourcelocation.resourceDomain) && this.resourcePath.equals(resourcelocation.resourcePath);
+        }
+    }
+
+    public int hashCode() {
+        return 31 * this.resourceDomain.hashCode() + this.resourcePath.hashCode();
+
+    }
+
 }

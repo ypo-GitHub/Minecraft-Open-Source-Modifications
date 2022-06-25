@@ -2,37 +2,51 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelWither;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.layers.LayerWitherAura;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderWither extends RenderLiving {
-   private static final ResourceLocation invulnerableWitherTextures = new ResourceLocation("textures/entity/wither/wither_invulnerable.png");
-   private static final ResourceLocation witherTextures = new ResourceLocation("textures/entity/wither/wither.png");
+public class RenderWither extends RenderLiving<EntityWither> {
+    private static final ResourceLocation invulnerableWitherTextures = new ResourceLocation("textures/entity/wither/wither_invulnerable.png");
+    private static final ResourceLocation witherTextures = new ResourceLocation("textures/entity/wither/wither.png");
 
-   public RenderWither(RenderManager var1) {
-      super(var1, new ModelWither(0.0F), 1.0F);
-      this.addLayer(new LayerWitherAura(this));
-   }
+    public RenderWither(RenderManager renderManagerIn) {
+        super(renderManagerIn, new ModelWither(0.0F), 1.0F);
+        this.addLayer(new LayerWitherAura(this));
+    }
 
-   public void doRender(EntityWither var1, double var2, double var4, double var6, float var8, float var9) {
-      BossStatus.setBossStatus(var1, true);
-      super.doRender((EntityLiving)var1, var2, var4, var6, var8, var9);
-   }
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void doRender(EntityWither entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        BossStatus.setBossStatus(entity, true);
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
+    }
 
-   protected ResourceLocation getEntityTexture(EntityWither var1) {
-      int var2 = var1.getInvulTime();
-      return var2 <= 80 && var2 / 5 % 2 == 1?witherTextures:invulnerableWitherTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityWither entity) {
+        int i = entity.getInvulTime();
+        return i > 0 && (i > 80 || i / 5 % 2 != 1) ? invulnerableWitherTextures : witherTextures;
+    }
 
-   protected void preRenderCallback(EntityWither var1, float var2) {
-      float var3 = 2.0F;
-      int var4 = var1.getInvulTime();
-      var3 = var3 - ((float)var4 - var2) / 220.0F * 0.5F;
-      GlStateManager.scale(var3, var3, var3);
-   }
+    /**
+     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
+     * entityLiving, partialTickTime
+     */
+    protected void preRenderCallback(EntityWither entityLivingBase, float partialTickTime) {
+        float f = 2.0F;
+        int i = entityLivingBase.getInvulTime();
+
+        if (i > 0) {
+            f -= ((float) i - partialTickTime) / 220.0F * 0.5F;
+        }
+
+        GlStateManager.scale(f, f, f);
+    }
 }

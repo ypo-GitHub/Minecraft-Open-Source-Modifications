@@ -1,56 +1,59 @@
 package net.minecraft.inventory;
 
-import java.util.Random;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class InventoryHelper {
-   private static final Random RANDOM = new Random();
+    private static final Random RANDOM = new Random();
 
-   public static void dropInventoryItems(World var0, BlockPos var1, IInventory var2) {
-      func_180174_a(var0, (double)var1.getX(), (double)var1.getY(), (double)var1.getZ(), var2);
-   }
+    public static void dropInventoryItems(World worldIn, BlockPos pos, IInventory p_180175_2_) {
+        func_180174_a(worldIn, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), p_180175_2_);
+    }
 
-   public static void func_180176_a(World var0, Entity var1, IInventory var2) {
-      func_180174_a(var0, var1.posX, var1.posY, var1.posZ, var2);
-   }
+    public static void func_180176_a(World worldIn, Entity p_180176_1_, IInventory p_180176_2_) {
+        func_180174_a(worldIn, p_180176_1_.posX, p_180176_1_.posY, p_180176_1_.posZ, p_180176_2_);
+    }
 
-   private static void func_180174_a(World var0, double var1, double var3, double var5, IInventory var7) {
-      for(int var8 = 0; var8 < var7.getSizeInventory(); ++var8) {
-         ItemStack var9 = var7.getStackInSlot(var8);
-         spawnItemStack(var0, var1, var3, var5, var9);
-      }
+    private static void func_180174_a(World worldIn, double x, double y, double z, IInventory p_180174_7_) {
+        for (int i = 0; i < p_180174_7_.getSizeInventory(); ++i) {
+            ItemStack itemstack = p_180174_7_.getStackInSlot(i);
 
-   }
+            if (itemstack != null) {
+                spawnItemStack(worldIn, x, y, z, itemstack);
+            }
+        }
+    }
 
-   private static void spawnItemStack(World var0, double var1, double var3, double var5, ItemStack var7) {
-      float var8 = RANDOM.nextFloat() * 0.8F + 0.1F;
-      float var9 = RANDOM.nextFloat() * 0.8F + 0.1F;
-      float var10 = RANDOM.nextFloat() * 0.8F + 0.1F;
+    private static void spawnItemStack(World worldIn, double x, double y, double z, ItemStack stack) {
+        float f = RANDOM.nextFloat() * 0.8F + 0.1F;
+        float f1 = RANDOM.nextFloat() * 0.8F + 0.1F;
+        float f2 = RANDOM.nextFloat() * 0.8F + 0.1F;
 
-      while(var7.stackSize > 0) {
-         int var11 = RANDOM.nextInt(21) + 10;
-         if(var11 > var7.stackSize) {
-            var11 = var7.stackSize;
-         }
+        while (stack.stackSize > 0) {
+            int i = RANDOM.nextInt(21) + 10;
 
-         var7.stackSize -= var11;
-         EntityItem var12 = new EntityItem(var0, var1 + (double)var8, var3 + (double)var9, var5 + (double)var10, new ItemStack(var7.getItem(), var11, var7.getMetadata()));
-         if(var7.hasTagCompound()) {
-            var12.getEntityItem().setTagCompound((NBTTagCompound)var7.getTagCompound().copy());
-         }
+            if (i > stack.stackSize) {
+                i = stack.stackSize;
+            }
 
-         float var13 = 0.05F;
-         var12.motionX = RANDOM.nextGaussian() * (double)var13;
-         var12.motionY = RANDOM.nextGaussian() * (double)var13 + 0.20000000298023224D;
-         var12.motionZ = RANDOM.nextGaussian() * (double)var13;
-         var0.spawnEntityInWorld(var12);
-      }
+            stack.stackSize -= i;
+            EntityItem entityitem = new EntityItem(worldIn, x + (double) f, y + (double) f1, z + (double) f2, new ItemStack(stack.getItem(), i, stack.getMetadata()));
 
-   }
+            if (stack.hasTagCompound()) {
+                entityitem.getEntityItem().setTagCompound((NBTTagCompound) stack.getTagCompound().copy());
+            }
+
+            float f3 = 0.05F;
+            entityitem.motionX = RANDOM.nextGaussian() * (double) f3;
+            entityitem.motionY = RANDOM.nextGaussian() * (double) f3 + 0.20000000298023224D;
+            entityitem.motionZ = RANDOM.nextGaussian() * (double) f3;
+            worldIn.spawnEntityInWorld(entityitem);
+        }
+    }
 }

@@ -1,95 +1,102 @@
 package cc.novoline.gui.screen.alt.repository.hypixel;
 
-import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfile;
 import cc.novoline.utils.java.Checks;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
-import net.acE;
 
+/**
+ * @author xDelsy
+ */
 public class HypixelBan {
-   private final String reason;
-   private final Date unbanDate;
 
-   private HypixelBan(String var1, Date var2) {
-      this.reason = Checks.notBlank(var1, "reason");
-      this.unbanDate = var2;
-   }
+    /* fields */
+    @NonNull
+    private final String reason;
+    @Nullable
+    private final Date unbanDate;
 
-   static HypixelBan of(String var0, long var1) {
-      Checks.notNegative(var1, "unban date");
-      return new HypixelBan(var0, new Date(var1));
-   }
+    /* constructors */
+    private HypixelBan(@NonNull String reason, @Nullable Date unbanDate) {
+        this.reason = Checks.notBlank(reason, "reason");
+        this.unbanDate = unbanDate;
+    }
 
-   static HypixelBan of(String var0, String var1) {
-      return new HypixelBan(var0, parse(var1));
-   }
+    @NonNull
+    static HypixelBan of(@NonNull String reason, long unbanDate) {
+        Checks.notNegative(unbanDate, "unban date");
+        return new HypixelBan(reason, new Date(unbanDate));
+    }
 
-   private static Date parse(String var0) {
-      Checks.notBlank(var0, "date");
-      HypixelProfile.i();
-      String[] var2 = var0.split(" ");
-      long var3 = 0L;
-      int var5 = 0;
-      if(var5 < var2.length) {
-         String var6 = var2[var5];
-         int var7 = var6.length() - 1;
-         char var9 = var6.charAt(var7);
-         String var10000 = var6;
-         byte var10001 = 0;
-         int var10002 = var7;
+    @NonNull
+    static HypixelBan of(@NonNull String reason, @NonNull String s) {
+        return new HypixelBan(reason, parse(s));
+    }
 
-         int var8;
-         try {
-            var8 = Integer.parseInt(var10000.substring(var10001, var10002));
-         } catch (NumberFormatException var11) {
-            throw new RuntimeException("An error occurred while parsing number: " + var6.substring(0, var7), var11);
-         }
+    /* methods */
+    @NonNull
+    private static Date parse(@NonNull String s) {
+        Checks.notBlank(s, "date");
 
-         switch(var9) {
-         case 'd':
-            var3 += (long)(var8 * 24 * 60 * 60 * 1000);
-         case 'h':
-            var3 += (long)(var8 * 60 * 60 * 1000);
-         case 'm':
-            var3 += (long)(var8 * 60 * 1000);
-         case 's':
-            var3 += (long)(var8 * 1000);
-         default:
-            ++var5;
-         }
-      }
+        final String[] split = s.split(" ");
+        long millis = 0;
 
-      return Date.from(Instant.now().plusMillis(var3));
-   }
+        for (int i = 0; i < split.length; i++) {
+            final String v = split[i];
+            final int length = v.length() - 1;
 
-   public boolean equals(Object var1) {
-      String var2 = HypixelProfile.i();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof HypixelBan)) {
-         return false;
-      } else {
-         HypixelBan var3 = (HypixelBan)var1;
-         return this.reason.equals(var3.reason) && Objects.equals(this.unbanDate, var3.unbanDate);
-      }
-   }
+            final int value;
+            final char type = v.charAt(length);
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{this.reason, this.unbanDate});
-   }
+            try {
+                value = Integer.parseInt(v.substring(0, length));
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("An error occurred while parsing number: " + v.substring(0, length), e);
+            }
 
-   public String toString() {
-      String var1 = HypixelProfile.i();
-      String var10000 = "HypixelBan{reason=\'" + this.reason + '\'' + ", unbanDate=" + this.unbanDate + '}';
-      if(acE.b() == null) {
-         HypixelProfile.b("QXYHQb");
-      }
+            switch (type) {
+                case 'd':
+                    millis += value * 24 * 60 * 60 * 1_000;
+                    break;
 
-      return var10000;
-   }
+                case 'h':
+                    millis += value * 60 * 60 * 1_000;
+                    break;
 
-   private static NumberFormatException a(NumberFormatException var0) {
-      return var0;
-   }
+                case 'm':
+                    millis += value * 60 * 1_000;
+                    break;
+
+                case 's':
+                    millis += value * 1_000;
+                    break;
+            }
+        }
+
+        return Date.from(Instant.now().plusMillis(millis));
+    }
+
+    //region Lombok
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof HypixelBan)) return false;
+        final HypixelBan that = (HypixelBan) o;
+        return this.reason.equals(that.reason) && Objects.equals(this.unbanDate, that.unbanDate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.reason, this.unbanDate);
+    }
+
+    @Override
+    public String toString() {
+        return "HypixelBan{" + "reason='" + this.reason + '\'' + ", unbanDate=" + this.unbanDate + '}';
+    }
+    //endregion
+
 }

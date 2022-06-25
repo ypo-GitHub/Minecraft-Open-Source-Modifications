@@ -1,30 +1,27 @@
 package net.minecraft.util;
 
 import com.google.common.collect.Maps;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class MapPopulator {
-   public static Map createMap(Iterable var0, Iterable var1) {
-      return populateMap(var0, var1, Maps.newLinkedHashMap());
-   }
+    public static <K, V> Map<K, V> createMap(Iterable<K> keys, Iterable<V> values) {
+        return populateMap(keys, values, Maps.<K, V>newLinkedHashMap());
+    }
 
-   public static Map populateMap(Iterable var0, Iterable var1, Map var2) {
-      Iterator var3 = var1.iterator();
+    public static <K, V> Map<K, V> populateMap(Iterable<K> keys, Iterable<V> values, Map<K, V> map) {
+        Iterator<V> iterator = values.iterator();
 
-      for(Object var5 : var0) {
-         var2.put(var5, var3.next());
-      }
+        for (K k : keys) {
+            map.put(k, iterator.next());
+        }
 
-      if(var3.hasNext()) {
-         throw new NoSuchElementException();
-      } else {
-         return var2;
-      }
-   }
-
-   private static NoSuchElementException a(NoSuchElementException var0) {
-      return var0;
-   }
+        if (iterator.hasNext()) {
+            throw new NoSuchElementException();
+        } else {
+            return map;
+        }
+    }
 }

@@ -1,108 +1,136 @@
 package cc.novoline.utils;
 
-import cc.novoline.Novoline;
-import cc.novoline.modules.visual.ClickGUI;
-import cc.novoline.utils.Timer;
-import java.awt.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.client.shader.ShaderGroup;
+import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.OpenGLException;
+
+import java.awt.*;
+
+import static org.lwjgl.opengl.GL11.*;
 
 public final class OpenGLUtil {
-   private static final Minecraft mc = Minecraft.getInstance();
-   private static ShaderGroup blurShader;
-   private static Framebuffer blurShaderFramebuffer;
-   private static final Object MUTEX = new Object();
-   private static int lastDisplayWidth;
-   private static int lastDisplayHeight;
 
-   public static void blurScissor(int var0, int var1, int var2, int var3, boolean var4) {
-      String[] var5 = Timer.e();
-      if(mc.gameSettings.guiScale == 2) {
-         GL11.glEnable(3089);
-         a(var0, var1, var2, var3);
-         GL11.glPushMatrix();
-         blurShaderFramebuffer.framebufferRenderExt(Minecraft.getInstance().displayWidth, Minecraft.getInstance().displayHeight, true);
-         GL11.glPopMatrix();
-         if(var4) {
+    private static final Minecraft mc = Minecraft.getInstance();
+
+    private static ShaderGroup blurShader;
+    private static Framebuffer blurShaderFramebuffer;
+
+    private static final Object MUTEX = new Object();
+
+    private static int lastDisplayWidth, lastDisplayHeight;
+
+    public static void blurScissor(int right, int top, int left, int down, boolean overlay) {
+        if (mc.gameSettings.guiScale != 2) {
+            return;
+        }
+        glEnable(GL_SCISSOR_TEST);
+        scaledScissor(right, top, left, down);
+
+        glPushMatrix();
+        blurShaderFramebuffer.framebufferRenderExt(Minecraft.getInstance().displayWidth, Minecraft.getInstance().displayHeight, true);
+        glPopMatrix();
+
+        if (overlay) {
             Minecraft.getInstance().entityRenderer.setupOverlayRendering();
-         }
+        }
 
-         GlStateManager.enableDepth();
-         GL11.glDisable(3089);
-      }
-   }
+        GlStateManager.enableDepth();
 
-   public static void blurFully(boolean var0) {
-      String[] var1 = Timer.e();
-      if(mc.gameSettings.guiScale == 2) {
-         mc.getFramebuffer().unbindFramebuffer();
-         blurShaderFramebuffer.bindFramebuffer(true);
-         mc.getFramebuffer().framebufferRenderExt(mc.displayWidth, mc.displayHeight, true);
-         if(OpenGlHelper.shadersSupported && blurShader != null) {
-            GlStateManager.matrixMode(5890);
+        glDisable(GL_SCISSOR_TEST);
+    }
+
+    public static void blurFully(boolean overlay) {
+        if (mc.gameSettings.guiScale != 2) {
+            return;
+        }
+        mc.getFramebuffer().unbindFramebuffer();
+        blurShaderFramebuffer.bindFramebuffer(true);
+        mc.getFramebuffer().framebufferRenderExt(mc.displayWidth, mc.displayHeight, true);
+
+        if (OpenGlHelper.shadersSupported && blurShader != null) {
+            GlStateManager.matrixMode(GL_TEXTURE);
             GlStateManager.pushMatrix();
             GlStateManager.loadIdentity();
             blurShader.loadShaderGroup(mc.timer.renderPartialTicks);
             GlStateManager.popMatrix();
-         }
+        }
 
-         blurShaderFramebuffer.unbindFramebuffer();
-         mc.getFramebuffer().bindFramebuffer(true);
-         if(var0) {
+        blurShaderFramebuffer.unbindFramebuffer();
+        mc.getFramebuffer().bindFramebuffer(true);
+
+        if (overlay) {
             mc.entityRenderer.setupOverlayRendering();
-         }
+        }
+    }
 
-      }
-   }
+    public static void bindShader() {
+        if (mc.gameSettings.guiScale != 2) {
+            return;
+        }
 
-   public static void bindShader() {
-      // $FF: Couldn't be decompiled
-   }
+        if (blurShader != null &&
+                mc.displayWidth == lastDisplayWidth &&
+                mc.displayHeight == lastDisplayHeight) {
+            return;
+        }
 
-   public static void a(int var0, int var1, int var2, int var3) {
-      Timer.e();
-      var2 = var2 - var0;
-      var3 = var3 - var1;
-      Minecraft var5 = Minecraft.getInstance();
-      ScaledResolution var6 = new ScaledResolution(var5);
-      float var7 = 1.0F;
-      switch(mc.gameSettings.guiScale) {
-      case 0:
-         var7 = (float)(0.5D * ((ClickGUI)Novoline.getInstance().getModuleManager().getModule(ClickGUI.class)).s());
-      case 1:
-         var7 = (float)(2.0D * ((ClickGUI)Novoline.getInstance().getModuleManager().getModule(ClickGUI.class)).s());
-      case 3:
-         var7 = (float)(0.6666666865348816D * ((ClickGUI)Novoline.getInstance().getModuleManager().getModule(ClickGUI.class)).s());
-      case 2:
-      default:
-         var7 = (float)((ClickGUI)Novoline.getInstance().getModuleManager().getModule(ClickGUI.class)).s();
-         GL11.glScissor((int)((float)(var0 * var6.getScaleFactor()) * var7), (int)((float)var5.displayHeight - (float)(var1 * var6.getScaleFactor()) * var7 - (float)(var3 * var6.getScaleFactor()) * var7), (int)((float)(var2 * var6.getScaleFactor()) * var7), (int)((float)(var3 * var6.getScaleFactor()) * var7));
-      }
-   }
+        synchronized (MUTEX) {
+            blurShaderFramebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, false);
+            blurShaderFramebuffer.setFramebufferColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-   public static int interpolateColor(Color var0, Color var1, float var2) {
-      int var3 = (int)((float)var0.getRed() + (float)(var1.getRed() - var0.getRed()) * var2);
-      int var4 = (int)((float)var0.getGreen() + (float)(var1.getGreen() - var0.getGreen()) * var2);
-      int var5 = (int)((float)var0.getBlue() + (float)(var1.getBlue() - var0.getBlue()) * var2);
-      int var6 = (int)((float)var0.getAlpha() + (float)(var1.getAlpha() - var0.getAlpha()) * var2);
+            if (OpenGlHelper.isFramebufferEnabled()) {
+                try {
+                    blurShader = new ShaderGroup(mc.getTextureManager(), mc.getResourceManager(), blurShaderFramebuffer, new ResourceLocation("shaders/post/blur.json"));
+                    blurShader.createBindFramebuffers(mc.displayWidth, mc.displayHeight);
 
-      try {
-         return (new Color(var3, var4, var5, var6)).getRGB();
-      } catch (Exception var8) {
-         return -1;
-      }
-   }
+                    lastDisplayWidth = mc.displayWidth;
+                    lastDisplayHeight = mc.displayHeight;
+                } catch (Exception ex) {
+                    throw new OpenGLException("Failed to create a shader object");
+                }
+            } else {
+                throw new OpenGLException("Framebuffer is not supported");
+            }
+        }
+    }
 
-   private OpenGLUtil() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
+    public static void scaledScissor(int right, int top, int left, int down) {
+        if (mc.gameSettings.guiScale != 2) {
+            return;
+        }
+        left -= right;
+        down -= top;
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        Minecraft minecraft = Minecraft.getInstance();
+        ScaledResolution scaledResolution = new ScaledResolution(minecraft);
+
+        GL11.glScissor(
+                right * scaledResolution.getScaleFactor(),
+                minecraft.displayHeight - top * scaledResolution.getScaleFactor() - down * scaledResolution.getScaleFactor(),
+                left * scaledResolution.getScaleFactor(),
+                down * scaledResolution.getScaleFactor()
+        );
+    }
+
+    public static int interpolateColor(Color color1, Color color2, float fraction) {
+        int red = (int) (color1.getRed() + (color2.getRed() - color1.getRed()) * fraction);
+        int green = (int) (color1.getGreen() + (color2.getGreen() - color1.getGreen()) * fraction);
+        int blue = (int) (color1.getBlue() + (color2.getBlue() - color1.getBlue()) * fraction);
+        int alpha = (int) (color1.getAlpha() + (color2.getAlpha() - color1.getAlpha()) * fraction);
+        try {
+            return new Color(red, green, blue, alpha).getRGB();
+        } catch (Exception ex) {
+            return 0xffffffff;
+        }
+    }
+
+    private OpenGLUtil() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 }

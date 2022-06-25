@@ -3,118 +3,139 @@ package net.minecraft.inventory;
 import net.minecraft.entity.IMerchant;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.ICrafting;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryMerchant;
-import net.minecraft.inventory.Slot;
-import net.minecraft.inventory.SlotMerchantResult;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 public class ContainerMerchant extends Container {
-   private IMerchant theMerchant;
-   private InventoryMerchant merchantInventory;
-   private final World theWorld;
+    /**
+     * Instance of Merchant.
+     */
+    private IMerchant theMerchant;
+    private InventoryMerchant merchantInventory;
 
-   public ContainerMerchant(InventoryPlayer var1, IMerchant var2, World var3) {
-      this.theMerchant = var2;
-      this.theWorld = var3;
-      this.merchantInventory = new InventoryMerchant(var1.player, var2);
-      this.addSlotToContainer(new Slot(this.merchantInventory, 0, 36, 53));
-      this.addSlotToContainer(new Slot(this.merchantInventory, 1, 62, 53));
-      this.addSlotToContainer(new SlotMerchantResult(var1.player, var2, this.merchantInventory, 2, 120, 53));
+    /**
+     * Instance of World.
+     */
+    private final World theWorld;
 
-      for(int var4 = 0; var4 < 3; ++var4) {
-         for(int var5 = 0; var5 < 9; ++var5) {
-            this.addSlotToContainer(new Slot(var1, var5 + var4 * 9 + 9, 8 + var5 * 18, 84 + var4 * 18));
-         }
-      }
+    public ContainerMerchant(InventoryPlayer playerInventory, IMerchant merchant, World worldIn) {
+        this.theMerchant = merchant;
+        this.theWorld = worldIn;
+        this.merchantInventory = new InventoryMerchant(playerInventory.player, merchant);
+        this.addSlotToContainer(new Slot(this.merchantInventory, 0, 36, 53));
+        this.addSlotToContainer(new Slot(this.merchantInventory, 1, 62, 53));
+        this.addSlotToContainer(new SlotMerchantResult(playerInventory.player, merchant, this.merchantInventory, 2, 120, 53));
 
-      for(int var6 = 0; var6 < 9; ++var6) {
-         this.addSlotToContainer(new Slot(var1, var6, 8 + var6 * 18, 142));
-      }
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.addSlotToContainer(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+            }
+        }
 
-   }
+        for (int k = 0; k < 9; ++k) {
+            this.addSlotToContainer(new Slot(playerInventory, k, 8 + k * 18, 142));
+        }
+    }
 
-   public InventoryMerchant getMerchantInventory() {
-      return this.merchantInventory;
-   }
+    public InventoryMerchant getMerchantInventory() {
+        return this.merchantInventory;
+    }
 
-   public void onCraftGuiOpened(ICrafting var1) {
-      super.onCraftGuiOpened(var1);
-   }
+    public void onCraftGuiOpened(ICrafting listener) {
+        super.onCraftGuiOpened(listener);
+    }
 
-   public void detectAndSendChanges() {
-      super.detectAndSendChanges();
-   }
+    /**
+     * Looks for changes made in the container, sends them to every listener.
+     */
+    public void detectAndSendChanges() {
+        super.detectAndSendChanges();
+    }
 
-   public void onCraftMatrixChanged(IInventory var1) {
-      this.merchantInventory.resetRecipeAndSlots();
-      super.onCraftMatrixChanged(var1);
-   }
+    /**
+     * Callback for when the crafting matrix is changed.
+     */
+    public void onCraftMatrixChanged(IInventory inventoryIn) {
+        this.merchantInventory.resetRecipeAndSlots();
+        super.onCraftMatrixChanged(inventoryIn);
+    }
 
-   public void setCurrentRecipeIndex(int var1) {
-      this.merchantInventory.setCurrentRecipeIndex(var1);
-   }
+    public void setCurrentRecipeIndex(int currentRecipeIndex) {
+        this.merchantInventory.setCurrentRecipeIndex(currentRecipeIndex);
+    }
 
-   public void updateProgressBar(int var1, int var2) {
-   }
+    public void updateProgressBar(int id, int data) {
+    }
 
-   public boolean canInteractWith(EntityPlayer var1) {
-      return this.theMerchant.getCustomer() == var1;
-   }
+    public boolean canInteractWith(EntityPlayer playerIn) {
+        return this.theMerchant.getCustomer() == playerIn;
+    }
 
-   public ItemStack transferStackInSlot(EntityPlayer var1, int var2) {
-      ItemStack var3 = null;
-      Slot var4 = (Slot)this.inventorySlots.get(var2);
-      if(var4.getHasStack()) {
-         ItemStack var5 = var4.getStack();
-         var3 = var5.copy();
-         if(var2 == 2) {
-            if(!this.mergeItemStack(var5, 3, 39, true)) {
-               return null;
+    /**
+     * Take a stack from the specified inventory slot.
+     */
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+        ItemStack itemstack = null;
+        Slot slot = (Slot) this.inventorySlots.get(index);
+
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
+
+            if (index == 2) {
+                if (!this.mergeItemStack(itemstack1, 3, 39, true)) {
+                    return null;
+                }
+
+                slot.onSlotChange(itemstack1, itemstack);
+            } else if (index != 0 && index != 1) {
+                if (index >= 3 && index < 30) {
+                    if (!this.mergeItemStack(itemstack1, 30, 39, false)) {
+                        return null;
+                    }
+                } else if (index >= 30 && index < 39 && !this.mergeItemStack(itemstack1, 3, 30, false)) {
+                    return null;
+                }
+            } else if (!this.mergeItemStack(itemstack1, 3, 39, false)) {
+                return null;
             }
 
-            var4.onSlotChange(var5, var3);
-         } else if(var2 != 1) {
-            if(var2 >= 3 && var2 < 30) {
-               if(!this.mergeItemStack(var5, 30, 39, false)) {
-                  return null;
-               }
-            } else if(var2 >= 30 && var2 < 39 && !this.mergeItemStack(var5, 3, 30, false)) {
-               return null;
+            if (itemstack1.stackSize == 0) {
+                slot.putStack((ItemStack) null);
+            } else {
+                slot.onSlotChanged();
             }
-         } else if(!this.mergeItemStack(var5, 3, 39, false)) {
-            return null;
-         }
 
-         if(var5.stackSize == 0) {
-            var4.putStack((ItemStack)null);
-         } else {
-            var4.onSlotChanged();
-         }
+            if (itemstack1.stackSize == itemstack.stackSize) {
+                return null;
+            }
 
-         if(var5.stackSize == var3.stackSize) {
-            return null;
-         }
+            slot.onPickupFromSlot(playerIn, itemstack1);
+        }
 
-         var4.onPickupFromSlot(var1, var5);
-      }
+        return itemstack;
+    }
 
-      return var3;
-   }
+    /**
+     * Called when the container is closed.
+     */
+    public void onContainerClosed(EntityPlayer playerIn) {
+        super.onContainerClosed(playerIn);
+        this.theMerchant.setCustomer((EntityPlayer) null);
+        super.onContainerClosed(playerIn);
 
-   public void onContainerClosed(EntityPlayer var1) {
-      super.onContainerClosed(var1);
-      this.theMerchant.setCustomer((EntityPlayer)null);
-      super.onContainerClosed(var1);
-      if(!this.theWorld.isRemote) {
-         ItemStack var2 = this.merchantInventory.removeStackFromSlot(0);
-         var1.dropPlayerItemWithRandomChoice(var2, false);
-         var2 = this.merchantInventory.removeStackFromSlot(1);
-         var1.dropPlayerItemWithRandomChoice(var2, false);
-      }
+        if (!this.theWorld.isRemote) {
+            ItemStack itemstack = this.merchantInventory.removeStackFromSlot(0);
 
-   }
+            if (itemstack != null) {
+                playerIn.dropPlayerItemWithRandomChoice(itemstack, false);
+            }
+
+            itemstack = this.merchantInventory.removeStackFromSlot(1);
+
+            if (itemstack != null) {
+                playerIn.dropPlayerItemWithRandomChoice(itemstack, false);
+            }
+        }
+    }
 }

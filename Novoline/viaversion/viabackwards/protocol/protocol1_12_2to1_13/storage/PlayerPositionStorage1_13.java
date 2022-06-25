@@ -4,7 +4,8 @@ import viaversion.viabackwards.api.entities.storage.PlayerPositionStorage;
 import viaversion.viaversion.api.data.UserConnection;
 
 public class PlayerPositionStorage1_13 extends PlayerPositionStorage {
-   public PlayerPositionStorage1_13(UserConnection var1) {
-      super(var1);
-   }
+
+    public PlayerPositionStorage1_13(UserConnection user) {
+        super(user);
+    }
 }

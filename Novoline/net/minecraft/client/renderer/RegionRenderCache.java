@@ -1,7 +1,5 @@
 package net.minecraft.client.renderer;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
@@ -9,93 +7,128 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3i;
 import net.minecraft.world.ChunkCache;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk$EnumCreateEntityType;
+import net.minecraft.world.chunk.Chunk;
 import net.optifine.Config;
 import net.optifine.DynamicLights;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
+
 public class RegionRenderCache extends ChunkCache {
-   private static final IBlockState DEFAULT_STATE = Blocks.air.getDefaultState();
-   private final BlockPos position;
-   private int[] combinedLights;
-   private IBlockState[] blockStates;
-   private static final String h = "CL_00002565";
-   private static ArrayDeque cacheLights = new ArrayDeque();
-   private static ArrayDeque cacheStates = new ArrayDeque();
-   private static int maxCacheSize = Config.limit(Runtime.getRuntime().availableProcessors(), 1, 32);
+    private static final IBlockState DEFAULT_STATE = Blocks.air.getDefaultState();
+    private final BlockPos position;
+    private int[] combinedLights;
+    private IBlockState[] blockStates;
+    private static final String __OBFID = "CL_00002565";
+    private static ArrayDeque<int[]> cacheLights = new ArrayDeque();
+    private static ArrayDeque<IBlockState[]> cacheStates = new ArrayDeque();
+    private static int maxCacheSize = Config.limit(Runtime.getRuntime().availableProcessors(), 1, 32);
 
-   public RegionRenderCache(World var1, BlockPos var2, BlockPos var3, int var4) {
-      super(var1, var2, var3, var4);
-      this.position = var2.subtract(new Vec3i(var4, var4, var4));
-      boolean var5 = true;
-      this.combinedLights = allocateLights(8000);
-      Arrays.fill((int[])this.combinedLights, -1);
-      this.blockStates = allocateStates(8000);
-   }
+    public RegionRenderCache(World worldIn, BlockPos posFromIn, BlockPos posToIn, int subIn) {
+        super(worldIn, posFromIn, posToIn, subIn);
+        this.position = posFromIn.subtract(new Vec3i(subIn, subIn, subIn));
+        boolean flag = true;
+        this.combinedLights = allocateLights(8000);
+        Arrays.fill((int[]) this.combinedLights, (int) -1);
+        this.blockStates = allocateStates(8000);
+    }
 
-   public TileEntity getTileEntity(BlockPos var1) {
-      int var2 = (var1.getX() >> 4) - this.chunkX;
-      int var3 = (var1.getZ() >> 4) - this.chunkZ;
-      return this.chunkArray[var2][var3].getTileEntity(var1, Chunk$EnumCreateEntityType.QUEUED);
-   }
+    public TileEntity getTileEntity(BlockPos pos) {
+        int i = (pos.getX() >> 4) - this.chunkX;
+        int j = (pos.getZ() >> 4) - this.chunkZ;
+        return this.chunkArray[i][j].getTileEntity(pos, Chunk.EnumCreateEntityType.QUEUED);
+    }
 
-   public int getCombinedLight(BlockPos var1, int var2) {
-      int var3 = this.getPositionIndex(var1);
-      int var4 = this.combinedLights[var3];
-      if(var4 == -1) {
-         var4 = super.getCombinedLight(var1, var2);
-         if(Config.al() && !this.getBlockState(var1).getBlock().isOpaqueCube()) {
-            var4 = DynamicLights.getCombinedLight(var1, var4);
-         }
+    public int getCombinedLight(BlockPos pos, int lightValue) {
+        int i = this.getPositionIndex(pos);
+        int j = this.combinedLights[i];
 
-         this.combinedLights[var3] = var4;
-      }
+        if (j == -1) {
+            j = super.getCombinedLight(pos, lightValue);
 
-      return var4;
-   }
+            if (Config.isDynamicLights() && !this.getBlockState(pos).getBlock().isOpaqueCube()) {
+                j = DynamicLights.getCombinedLight(pos, j);
+            }
 
-   public IBlockState getBlockState(BlockPos var1) {
-      int var2 = this.getPositionIndex(var1);
-      IBlockState var3 = this.blockStates[var2];
-      var3 = this.getBlockStateRaw(var1);
-      this.blockStates[var2] = var3;
-      return var3;
-   }
+            this.combinedLights[i] = j;
+        }
 
-   private IBlockState getBlockStateRaw(BlockPos var1) {
-      if(var1.getY() >= 0 && var1.getY() < 256) {
-         int var2 = (var1.getX() >> 4) - this.chunkX;
-         int var3 = (var1.getZ() >> 4) - this.chunkZ;
-         return this.chunkArray[var2][var3].getBlockState(var1);
-      } else {
-         return DEFAULT_STATE;
-      }
-   }
+        return j;
+    }
 
-   private int getPositionIndex(BlockPos var1) {
-      int var2 = var1.getX() - this.position.getX();
-      int var3 = var1.getY() - this.position.getY();
-      int var4 = var1.getZ() - this.position.getZ();
-      return var2 * 400 + var4 * 20 + var3;
-   }
+    public IBlockState getBlockState(BlockPos pos) {
+        int i = this.getPositionIndex(pos);
+        IBlockState iblockstate = this.blockStates[i];
 
-   public void freeBuffers() {
-      freeLights(this.combinedLights);
-      freeStates(this.blockStates);
-   }
+        if (iblockstate == null) {
+            iblockstate = this.getBlockStateRaw(pos);
+            this.blockStates[i] = iblockstate;
+        }
 
-   private static int[] allocateLights(int param0) {
-      // $FF: Couldn't be decompiled
-   }
+        return iblockstate;
+    }
 
-   public static void freeLights(int[] param0) {
-      // $FF: Couldn't be decompiled
-   }
+    private IBlockState getBlockStateRaw(BlockPos pos) {
+        if (pos.getY() >= 0 && pos.getY() < 256) {
+            int i = (pos.getX() >> 4) - this.chunkX;
+            int j = (pos.getZ() >> 4) - this.chunkZ;
+            return this.chunkArray[i][j].getBlockState(pos);
+        } else {
+            return DEFAULT_STATE;
+        }
+    }
 
-   private static IBlockState[] allocateStates(int param0) {
-      // $FF: Couldn't be decompiled
-   }
+    private int getPositionIndex(BlockPos p_175630_1_) {
+        int i = p_175630_1_.getX() - this.position.getX();
+        int j = p_175630_1_.getY() - this.position.getY();
+        int k = p_175630_1_.getZ() - this.position.getZ();
+        return i * 400 + k * 20 + j;
+    }
 
-   public static void freeStates(IBlockState[] param0) {
-      // $FF: Couldn't be decompiled
-   }
+    public void freeBuffers() {
+        freeLights(this.combinedLights);
+        freeStates(this.blockStates);
+    }
+
+    private static int[] allocateLights(int p_allocateLights_0_) {
+        synchronized (cacheLights) {
+            int[] aint = (int[]) cacheLights.pollLast();
+
+            if (aint == null || aint.length < p_allocateLights_0_) {
+                aint = new int[p_allocateLights_0_];
+            }
+
+            return aint;
+        }
+    }
+
+    public static void freeLights(int[] p_freeLights_0_) {
+        synchronized (cacheLights) {
+            if (cacheLights.size() < maxCacheSize) {
+                cacheLights.add(p_freeLights_0_);
+            }
+        }
+    }
+
+    private static IBlockState[] allocateStates(int p_allocateStates_0_) {
+        synchronized (cacheStates) {
+            IBlockState[] aiblockstate = (IBlockState[]) cacheStates.pollLast();
+
+            if (aiblockstate != null && aiblockstate.length >= p_allocateStates_0_) {
+                Arrays.fill(aiblockstate, (Object) null);
+            } else {
+                aiblockstate = new IBlockState[p_allocateStates_0_];
+            }
+
+            return aiblockstate;
+        }
+    }
+
+    public static void freeStates(IBlockState[] p_freeStates_0_) {
+        synchronized (cacheStates) {
+            if (cacheStates.size() < maxCacheSize) {
+                cacheStates.add(p_freeStates_0_);
+            }
+        }
+    }
 }

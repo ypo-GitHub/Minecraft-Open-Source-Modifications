@@ -2,34 +2,44 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.layers.LayerSlimeGel;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderSlime extends RenderLiving {
-   private static final ResourceLocation slimeTextures = new ResourceLocation("textures/entity/slime/slime.png");
+public class RenderSlime extends RenderLiving<EntitySlime> {
+    private static final ResourceLocation slimeTextures = new ResourceLocation("textures/entity/slime/slime.png");
 
-   public RenderSlime(RenderManager var1, ModelBase var2, float var3) {
-      super(var1, var2, var3);
-      this.addLayer(new LayerSlimeGel(this));
-   }
+    public RenderSlime(RenderManager renderManagerIn, ModelBase modelBaseIn, float shadowSizeIn) {
+        super(renderManagerIn, modelBaseIn, shadowSizeIn);
+        this.addLayer(new LayerSlimeGel(this));
+    }
 
-   public void doRender(EntitySlime var1, double var2, double var4, double var6, float var8, float var9) {
-      this.shadowSize = 0.25F * (float)var1.getSlimeSize();
-      super.doRender((EntityLiving)var1, var2, var4, var6, var8, var9);
-   }
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void doRender(EntitySlime entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        this.shadowSize = 0.25F * (float) entity.getSlimeSize();
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
+    }
 
-   protected void preRenderCallback(EntitySlime var1, float var2) {
-      float var3 = (float)var1.getSlimeSize();
-      float var4 = (var1.prevSquishFactor + (var1.squishFactor - var1.prevSquishFactor) * var2) / (var3 * 0.5F + 1.0F);
-      float var5 = 1.0F / (var4 + 1.0F);
-      GlStateManager.scale(var5 * var3, 1.0F / var5 * var3, var5 * var3);
-   }
+    /**
+     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
+     * entityLiving, partialTickTime
+     */
+    protected void preRenderCallback(EntitySlime entityLivingBase, float partialTickTime) {
+        float f = (float) entityLivingBase.getSlimeSize();
+        float f1 = (entityLivingBase.prevSquishFactor + (entityLivingBase.squishFactor - entityLivingBase.prevSquishFactor) * partialTickTime) / (f * 0.5F + 1.0F);
+        float f2 = 1.0F / (f1 + 1.0F);
+        GlStateManager.scale(f2 * f, 1.0F / f2 * f, f2 * f);
+    }
 
-   protected ResourceLocation getEntityTexture(EntitySlime var1) {
-      return slimeTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntitySlime entity) {
+        return slimeTextures;
+    }
 }

@@ -1,33 +1,58 @@
 package cc.novoline.viaversion.platform;
 
-import cc.novoline.viaversion.platform.ViaBackwardsPlatformImplementation$1;
-import java.io.File;
-import java.util.logging.Logger;
-import net.NO;
-import net.VV;
 import net.minecraft.client.Minecraft;
+import viaversion.viabackwards.ViaBackwards;
+import viaversion.viabackwards.api.ViaBackwardsConfig;
 import viaversion.viabackwards.api.ViaBackwardsPlatform;
 import viaversion.viaversion.api.Via;
 
+import java.io.File;
+import java.util.logging.Logger;
+
 public class ViaBackwardsPlatformImplementation implements ViaBackwardsPlatform {
-   public ViaBackwardsPlatformImplementation() {
-      NO.c();
-      VV.a(this, new ViaBackwardsPlatformImplementation$1(this));
-      this.init(Minecraft.getInstance().mcDataDir);
-   }
 
-   public Logger getLogger() {
-      return Via.getPlatform().getLogger();
-   }
+    public ViaBackwardsPlatformImplementation() {
+        ViaBackwards.init(this, new ViaBackwardsConfig() {
+            @Override
+            public boolean addCustomEnchantsToLore() {
+                return true;
+            }
 
-   public void disable() {
-   }
+            @Override
+            public boolean addTeamColorTo1_13Prefix() {
+                return true;
+            }
 
-   public boolean isOutdated() {
-      return false;
-   }
+            @Override
+            public boolean isFix1_13FacePlayer() {
+                return true;
+            }
 
-   public File getDataFolder() {
-      return Minecraft.getInstance().mcDataDir;
-   }
+            @Override
+            public boolean alwaysShowOriginalMobName() {
+                return true;
+            }
+        });
+        init(Minecraft.getInstance().mcDataDir);
+    }
+
+    @Override
+    public Logger getLogger() {
+        return Via.getPlatform().getLogger();
+    }
+
+    @Override
+    public void disable() {
+
+    }
+
+    @Override
+    public boolean isOutdated() {
+        return false;
+    }
+
+    @Override
+    public File getDataFolder() {
+        return Minecraft.getInstance().mcDataDir;
+    }
 }

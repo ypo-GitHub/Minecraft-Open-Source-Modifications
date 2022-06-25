@@ -1,13 +1,7 @@
 package net.minecraft.command;
 
-import java.util.List;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.JsonToNBT;
@@ -15,72 +9,94 @@ import net.minecraft.nbt.NBTException;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 
+import java.util.List;
+
 public class CommandGive extends CommandBase {
-   public String getCommandName() {
-      return "give";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "give";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.give.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.give.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 2) {
-         throw new WrongUsageException("commands.give.usage", new Object[0]);
-      } else {
-         EntityPlayerMP var3 = getPlayer(var1, var2[0]);
-         Item var4 = getItemByText(var1, var2[1]);
-         int var5 = var2.length >= 3?parseInt(var2[2], 1, 64):1;
-         int var6 = var2.length >= 4?parseInt(var2[3]):0;
-         ItemStack var7 = new ItemStack(var4, var5, var6);
-         if(var2.length >= 5) {
-            String var8 = getChatComponentFromNthArg(var1, var2, 4).getUnformattedText();
-            ItemStack var10000 = var7;
-            String var10001 = var8;
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 2) {
+            throw new WrongUsageException("commands.give.usage", new Object[0]);
+        } else {
+            EntityPlayer entityplayer = getPlayer(sender, args[0]);
+            Item item = getItemByText(sender, args[1]);
+            int i = args.length >= 3 ? parseInt(args[2], 1, 64) : 1;
+            int j = args.length >= 4 ? parseInt(args[3]) : 0;
+            ItemStack itemstack = new ItemStack(item, i, j);
 
-            try {
-               var10000.setTagCompound(JsonToNBT.getTagFromJson(var10001));
-            } catch (NBTException var10) {
-               throw new CommandException("commands.give.tagError", new Object[]{var10.getMessage()});
+            if (args.length >= 5) {
+                String s = getChatComponentFromNthArg(sender, args, 4).getUnformattedText();
+
+                try {
+                    itemstack.setTagCompound(JsonToNBT.getTagFromJson(s));
+                } catch (NBTException nbtexception) {
+                    throw new CommandException("commands.give.tagError", new Object[]{nbtexception.getMessage()});
+                }
             }
-         }
 
-         boolean var11 = var3.inventory.addItemStackToInventory(var7);
-         var3.worldObj.playSoundAtEntity(var3, "random.pop", 0.2F, ((var3.getRNG().nextFloat() - var3.getRNG().nextFloat()) * 0.7F + 1.0F) * 2.0F);
-         var3.inventoryContainer.detectAndSendChanges();
-         if(var7.stackSize <= 0) {
-            var7.stackSize = 1;
-            var1.setCommandStat(CommandResultStats$Type.AFFECTED_ITEMS, var5);
-            EntityItem var9 = var3.dropPlayerItemWithRandomChoice(var7, false);
-            var9.func_174870_v();
-         } else {
-            var1.setCommandStat(CommandResultStats$Type.AFFECTED_ITEMS, var5 - var7.stackSize);
-            EntityItem var12 = var3.dropPlayerItemWithRandomChoice(var7, false);
-            var12.setNoPickupDelay();
-            var12.setOwner(var3.getName());
-         }
+            boolean flag = entityplayer.inventory.addItemStackToInventory(itemstack);
 
-         notifyOperators(var1, this, "commands.give.success", new Object[]{var7.getChatComponent(), Integer.valueOf(var5), var3.getName()});
-      }
-   }
+            if (flag) {
+                entityplayer.worldObj.playSoundAtEntity(entityplayer, "random.pop", 0.2F, ((entityplayer.getRNG().nextFloat() - entityplayer.getRNG().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                entityplayer.inventoryContainer.detectAndSendChanges();
+            }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 1?getListOfStringsMatchingLastWord(var2, this.getPlayers()):(var2.length == 2?getListOfStringsMatchingLastWord(var2, Item.itemRegistry.getKeys()):null);
-   }
+            if (flag && itemstack.stackSize <= 0) {
+                itemstack.stackSize = 1;
+                sender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, i);
+                EntityItem entityitem1 = entityplayer.dropPlayerItemWithRandomChoice(itemstack, false);
 
-   protected String[] getPlayers() {
-      return MinecraftServer.getServer().getAllUsernames();
-   }
+                if (entityitem1 != null) {
+                    entityitem1.func_174870_v();
+                }
+            } else {
+                sender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, i - itemstack.stackSize);
+                EntityItem entityitem = entityplayer.dropPlayerItemWithRandomChoice(itemstack, false);
 
-   public boolean isUsernameIndex(String[] var1, int var2) {
-      return true;
-   }
+                if (entityitem != null) {
+                    entityitem.setNoPickupDelay();
+                    entityitem.setOwner(entityplayer.getName());
+                }
+            }
 
-   private static NBTException a(NBTException var0) {
-      return var0;
-   }
+            notifyOperators(sender, this, "commands.give.success", new Object[]{itemstack.getChatComponent(), i, entityplayer.getName()});
+        }
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, this.getPlayers()) : args.length == 2 ? getListOfStringsMatchingLastWord(args, Item.itemRegistry.getKeys()) : null;
+    }
+
+    protected String[] getPlayers() {
+        return MinecraftServer.getServer().getAllUsernames();
+    }
+
+    /**
+     * Return whether the specified command parameter index is a username parameter.
+     */
+    public boolean isUsernameIndex(String[] args, int index) {
+        return index == 0;
+    }
 }

@@ -1,39 +1,48 @@
 package net.minecraft.item;
 
 import net.minecraft.block.Block;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
 
 public class ItemColored extends ItemBlock {
-   private final Block coloredBlock;
-   private String[] subtypeNames;
+    private final Block coloredBlock;
+    private String[] subtypeNames;
 
-   public ItemColored(Block var1, boolean var2) {
-      super(var1);
-      this.coloredBlock = var1;
-      this.setMaxDamage(0);
-      this.setHasSubtypes(true);
-   }
+    public ItemColored(Block block, boolean hasSubtypes) {
+        super(block);
+        this.coloredBlock = block;
 
-   public int getColorFromItemStack(ItemStack var1, int var2) {
-      return this.coloredBlock.getRenderColor(this.coloredBlock.getStateFromMeta(var1.getMetadata()));
-   }
+        if (hasSubtypes) {
+            this.setMaxDamage(0);
+            this.setHasSubtypes(true);
+        }
+    }
 
-   public int getMetadata(int var1) {
-      return var1;
-   }
+    public int getColorFromItemStack(ItemStack stack, int renderPass) {
+        return this.coloredBlock.getRenderColor(this.coloredBlock.getStateFromMeta(stack.getMetadata()));
+    }
 
-   public ItemColored setSubtypeNames(String[] var1) {
-      this.subtypeNames = var1;
-      return this;
-   }
+    /**
+     * Converts the given ItemStack damage value into a metadata value to be placed in the world when this Item is
+     * placed as a Block (mostly used with ItemBlocks).
+     */
+    public int getMetadata(int damage) {
+        return damage;
+    }
 
-   public String getUnlocalizedName(ItemStack var1) {
-      if(this.subtypeNames == null) {
-         return super.getUnlocalizedName(var1);
-      } else {
-         int var2 = var1.getMetadata();
-         return var2 < this.subtypeNames.length?super.getUnlocalizedName(var1) + "." + this.subtypeNames[var2]:super.getUnlocalizedName(var1);
-      }
-   }
+    public ItemColored setSubtypeNames(String[] names) {
+        this.subtypeNames = names;
+        return this;
+    }
+
+    /**
+     * Returns the unlocalized name of this item. This version accepts an ItemStack so different stacks can have
+     * different names based on their damage or NBT.
+     */
+    public String getUnlocalizedName(ItemStack stack) {
+        if (this.subtypeNames == null) {
+            return super.getUnlocalizedName(stack);
+        } else {
+            int i = stack.getMetadata();
+            return i >= 0 && i < this.subtypeNames.length ? super.getUnlocalizedName(stack) + "." + this.subtypeNames[i] : super.getUnlocalizedName(stack);
+        }
+    }
 }

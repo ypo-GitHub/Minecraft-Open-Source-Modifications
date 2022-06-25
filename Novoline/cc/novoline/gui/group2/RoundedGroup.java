@@ -1,9 +1,12 @@
 package cc.novoline.gui.group2;
 
-import cc.novoline.gui.group2.Group;
-
+/**
+ * @author xDelsy
+ */
 public interface RoundedGroup extends Group {
-   int getRadius();
 
-   void setRadius(int var1);
+    int getRadius();
+
+    void setRadius(int radius);
+
 }

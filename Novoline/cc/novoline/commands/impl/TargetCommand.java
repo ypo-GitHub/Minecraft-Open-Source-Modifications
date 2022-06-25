@@ -2,244 +2,208 @@ package cc.novoline.commands.impl;
 
 import cc.novoline.Novoline;
 import cc.novoline.commands.NovoCommand;
-import cc.novoline.commands.impl.TargetCommand$1;
 import cc.novoline.modules.PlayerManager;
-import cc.novoline.modules.PlayerManager$EnumPlayerType;
 import cc.novoline.utils.java.Checks;
-import cc.novoline.utils.messages.MessageFactory;
 import cc.novoline.utils.messages.TextMessage;
 import com.mojang.authlib.GameProfile;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-import net.Uj;
-import net.a_E;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IChatComponent;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static cc.novoline.modules.PlayerManager.EnumPlayerType.FRIEND;
+import static cc.novoline.modules.PlayerManager.EnumPlayerType.TARGET;
+import static cc.novoline.utils.messages.MessageFactory.text;
+import static cc.novoline.utils.messages.MessageFactory.usage;
+import static net.minecraft.util.EnumChatFormatting.GRAY;
+
 
 public final class TargetCommand extends NovoCommand {
-   public TargetCommand(Novoline var1) {
-      super(var1, "target", (Iterable)Arrays.asList(new String[]{"tar", "target"}));
-   }
 
-   public void process(String[] var1) {
-      int[] var2 = a_E.b();
-      if(var1.length < 1) {
-         this.a("Targets help:", ".target", new Uj[]{MessageFactory.a("add (name)", "adds target"), MessageFactory.a("remove (name)", "removes target"), MessageFactory.a("list", "shows targets")});
-      } else {
-         if(var1.length == 1) {
-            String var3 = var1[0];
-            String var4 = var3.toLowerCase();
-            byte var5 = -1;
-            switch(var4.hashCode()) {
-            case 3322014:
-               if(!var4.equals("list")) {
-                  break;
-               }
+    /* constructors */
+    public TargetCommand(@NonNull Novoline novoline) {
+        super(novoline, "target", Arrays.asList("tar", "target"));
+    }
 
-               var5 = 0;
-            case 108:
-               if(!var4.equals("l")) {
-                  break;
-               }
+    /* methods */
+    @Override
+    public void process(String[] args) {
+        if (args.length < 1) {
+            sendHelp( // @off
+                    "Targets help:", ".target",
+                    usage("add (name)", "adds target"),
+                    usage("remove (name)", "removes target"),
+                    usage("list", "shows targets")
+            ); // @on
+            return;
+        }
 
-               var5 = 1;
-            case 94746189:
-               if(var4.equals("clear")) {
-                  var5 = 2;
-               }
+        if (args.length == 1) {
+            final String arg = args[0];
+
+            switch (arg.toLowerCase()) {
+                case "list":
+                case "l":
+                    final List<String> friends = this.novoline.getPlayerManager().whoHas(TARGET);
+                    final TextMessage text = text("Targets list:");
+
+                    if (friends.isEmpty()) {
+                        text.append(text(" (empty)", EnumChatFormatting.RED));
+                    }
+
+                    send(text, true);
+
+                    for (String target : friends) {
+                        send(text(" - ").append(text(target, GRAY)));
+                    }
+
+                    break;
+
+                case "clear":
+                    if (this.novoline.getPlayerManager().removeType(TARGET, e -> true)) {
+                        notify("Target list was cleared");
+                    } else {
+                        notify("Target list is empty");
+                    }
+
+                    break;
+
+                default:
+                    final PlayerManager.EnumPlayerType type = this.novoline.getPlayerManager().getType(arg);
+
+                    if (type == FRIEND || type == null) {
+                        add(arg);
+                    } else if (type == TARGET) {
+                        remove(arg);
+                    }
+
+                    break;
             }
+        } else {
+            try {
+                final String action = args[0], // @off
+                        name = args[1]; // @on
 
-            switch(var5) {
-            case 0:
+                switch (action.toLowerCase()) {
+                    case "clear": {
+                        this.novoline.getPlayerManager().removeType(TARGET, e -> true);
+                        break;
+                    }
+
+                    case "add": {
+                        add(name);
+                        break;
+                    }
+
+                    case "remove":
+                    case "delete":
+                    case "del":
+                    case "rem": {
+                        remove(name);
+                        break;
+                    }
+
+                    default:
+                        notifyError("Illegal command specified: " + args[0] + "!");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void add(String name) {
+        Checks.notBlank(name, "name");
+        final String lowercase = name.toLowerCase();
+
+        final PlayerManager manager = this.novoline.getPlayerManager();
+        final PlayerManager.EnumPlayerType type = manager.getType(lowercase);
+
+        if (type != null) {
+            switch (type) {
+                case FRIEND:
+                    notifyError(name + " is friend");
+                    return;
+
+                case TARGET:
+                    notifyError(name + " is target already!");
+                    return;
+            }
+        }
+
+        final boolean wasSet = manager.setType(lowercase, TARGET);
+
+        if (wasSet) {
+            notify("Added " + name + " to targets!");
+
+            try {
+                manager.getConfig().save();
+            } catch (IOException e) {
+                notifyError("Can't save to file");
+                manager.getLogger().warn("An error occurred while saving targets list", e);
+            }
+        } else {
+            notifyError("Cannot add " + name + " to targets!");
+        }
+    }
+
+    public void remove(String name) {
+        Checks.notBlank(name, "name");
+        final String lowercase = name.toLowerCase();
+
+        final PlayerManager manager = this.novoline.getPlayerManager();
+
+        if (manager.getType(lowercase) != TARGET) {
+            notifyError(name + " is not target!");
+            return;
+        }
+
+        final boolean contained = manager.removePlayer(lowercase);
+
+        if (contained) {
+            notify("Removed " + name + " from targets!");
+
+            try {
+                manager.getConfig().save();
+            } catch (IOException e) {
+                notifyError("Can't save to file");
+                manager.getLogger().warn("An error occurred while saving targets list", e);
+            }
+        } else {
+            notifyError("Cannot remove " + name + " from targets!");
+        }
+    }
+
+    @Override
+    public @Nullable List<String> completeTabOptions(String[] args) {
+        switch (args.length) { // @off
             case 1:
-               List var6 = this.novoline.getPlayerManager().whoHas(PlayerManager$EnumPlayerType.TARGET);
-               TextMessage var7 = MessageFactory.text("Targets list:");
-               if(var6.isEmpty()) {
-                  var7.append((IChatComponent)MessageFactory.text(" (empty)", EnumChatFormatting.RED));
-               }
-
-               this.send(var7, true);
-               Iterator var8 = var6.iterator();
-               if(var8.hasNext()) {
-                  String var9 = (String)var8.next();
-                  this.send(MessageFactory.text(" - ").append((IChatComponent)MessageFactory.text(var9, EnumChatFormatting.GRAY)));
-               }
+                return completeTab(Stream.of("add", "remove", "list"), args[0], true);
             case 2:
-               if(this.novoline.getPlayerManager().removeType(PlayerManager$EnumPlayerType.TARGET, TargetCommand::lambda$process$0)) {
-                  this.notify("Target list was cleared");
-               }
+                final PlayerManager playerManager = this.novoline.getPlayerManager();
 
-               this.notify("Target list is empty");
-            }
-
-            PlayerManager$EnumPlayerType var15 = this.novoline.getPlayerManager().getType(var3);
-            if(var15 == PlayerManager$EnumPlayerType.FRIEND || var15 == null) {
-               this.add(var3);
-            }
-
-            if(var15 == PlayerManager$EnumPlayerType.TARGET) {
-               this.remove(var3);
-            }
-         }
-
-         try {
-            String var11 = var1[0];
-            String var12 = var1[1];
-            String var13 = var11.toLowerCase();
-            byte var14 = -1;
-            switch(var13.hashCode()) {
-            case 94746189:
-               if(!var13.equals("clear")) {
-                  break;
-               }
-
-               var14 = 0;
-            case 96417:
-               if(!var13.equals("add")) {
-                  break;
-               }
-
-               var14 = 1;
-            case -934610812:
-               if(!var13.equals("remove")) {
-                  break;
-               }
-
-               var14 = 2;
-            case -1335458389:
-               if(!var13.equals("delete")) {
-                  break;
-               }
-
-               var14 = 3;
-            case 99339:
-               if(!var13.equals("del")) {
-                  break;
-               }
-
-               var14 = 4;
-            case 112794:
-               if(var13.equals("rem")) {
-                  var14 = 5;
-               }
-            }
-
-            switch(var14) {
-            case 0:
-               this.novoline.getPlayerManager().removeType(PlayerManager$EnumPlayerType.TARGET, TargetCommand::lambda$process$1);
-            case 1:
-               this.add(var12);
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-               this.remove(var12);
+                if (args[0].equalsIgnoreCase("add")) {
+                    return completeTab(NetHandlerPlayClient.playerInfoMap.values().stream()
+                            .map(NetworkPlayerInfo::getGameProfile)
+                            .map(GameProfile::getName)
+                            .filter(s -> {
+                                final PlayerManager.EnumPlayerType type = playerManager.getType(s);
+                                return type != TARGET && type != FRIEND;
+                            }), args[1], true);
+                } else if (args[0].equalsIgnoreCase("remove")) {
+                    return completeTab(playerManager.whoHas(TARGET), args[1], true);
+                } else {
+                    return null;
+                }
             default:
-               this.notifyError("Illegal command specified: " + var1[0] + "!");
-            }
-         } catch (Exception var10) {
-            var10.printStackTrace();
-         }
+                return null;
+        } // @on
+    }
 
-      }
-   }
-
-   public void add(String var1) {
-      Checks.notBlank(var1, "name");
-      String var3 = var1.toLowerCase();
-      a_E.b();
-      PlayerManager var4 = this.novoline.getPlayerManager();
-      PlayerManager$EnumPlayerType var5 = var4.getType(var3);
-      switch(TargetCommand$1.$SwitchMap$cc$novoline$modules$PlayerManager$EnumPlayerType[var5.ordinal()]) {
-      case 1:
-         this.notifyError(var1 + " is friend");
-         return;
-      case 2:
-         this.notifyError(var1 + " is target already!");
-         return;
-      default:
-         boolean var6 = var4.setType(var3, PlayerManager$EnumPlayerType.TARGET);
-         this.notify("Added " + var1 + " to targets!");
-         PlayerManager var10000 = var4;
-
-         try {
-            var10000.getConfig().save();
-         } catch (IOException var8) {
-            this.notifyError("Can\'t save to file");
-            var4.getLogger().warn("An error occurred while saving targets list", var8);
-            this.notifyError("Cannot add " + var1 + " to targets!");
-         }
-
-      }
-   }
-
-   public void remove(String var1) {
-      a_E.b();
-      Checks.notBlank(var1, "name");
-      String var3 = var1.toLowerCase();
-      PlayerManager var4 = this.novoline.getPlayerManager();
-      if(var4.getType(var3) != PlayerManager$EnumPlayerType.TARGET) {
-         this.notifyError(var1 + " is not target!");
-      } else {
-         boolean var5 = var4.removePlayer(var3);
-         this.notify("Removed " + var1 + " from targets!");
-         PlayerManager var10000 = var4;
-
-         try {
-            var10000.getConfig().save();
-         } catch (IOException var7) {
-            this.notifyError("Can\'t save to file");
-            var4.getLogger().warn("An error occurred while saving targets list", var7);
-            this.notifyError("Cannot remove " + var1 + " from targets!");
-         }
-
-      }
-   }
-
-   public List completeTabOptions(String[] var1) {
-      int[] var2 = a_E.b();
-      switch(var1.length) {
-      case 1:
-         return this.completeTab(Stream.of(new String[]{"add", "remove", "list"}), var1[0], true);
-      case 2:
-         PlayerManager var3 = this.novoline.getPlayerManager();
-         if(var1[0].equalsIgnoreCase("add")) {
-            return this.completeTab(NetHandlerPlayClient.playerInfoMap.values().stream().map(NetworkPlayerInfo::getGameProfile).map(GameProfile::getName).filter(TargetCommand::lambda$completeTabOptions$2), var1[1], true);
-         } else {
-            if(var1[0].equalsIgnoreCase("remove")) {
-               return this.completeTab(var3.whoHas(PlayerManager$EnumPlayerType.TARGET), var1[1], true);
-            }
-
-            return null;
-         }
-      default:
-         return null;
-      }
-   }
-
-   private static boolean lambda$completeTabOptions$2(PlayerManager var0, String var1) {
-      a_E.b();
-      PlayerManager$EnumPlayerType var3 = var0.getType(var1);
-      return var3 != PlayerManager$EnumPlayerType.TARGET && var3 != PlayerManager$EnumPlayerType.FRIEND;
-   }
-
-   private static boolean lambda$process$1(Entry var0) {
-      return true;
-   }
-
-   private static boolean lambda$process$0(Entry var0) {
-      return true;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
 }

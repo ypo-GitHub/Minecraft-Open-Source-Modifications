@@ -1,13 +1,8 @@
 package net.minecraft.client.gui.inventory;
 
 import io.netty.buffer.Unpooled;
-import java.io.IOException;
-import net.aHz;
-import net.aZO;
-import net.aZt;
-import net.aZx;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
@@ -18,158 +13,264 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.client.C17PacketCustomPayload;
+import net.minecraft.potion.Potion;
 import net.minecraft.tileentity.TileEntityBeacon;
 import net.minecraft.util.ResourceLocation;
 
-public class GuiBeacon extends aHz {
-   private static final ResourceLocation beaconGuiTextures = new ResourceLocation("textures/gui/container/beacon.png");
-   private final IInventory tileBeacon;
-   private aZt ai;
-   private boolean buttonsNotDrawn;
+import java.io.IOException;
 
-   public GuiBeacon(InventoryPlayer var1, IInventory var2) {
-      super(new ContainerBeacon(var1, var2));
-      this.tileBeacon = var2;
-      this.y = 230;
-      this.ab = 219;
-   }
+public class GuiBeacon extends GuiContainer {
 
-   public void initGui() {
-      super.initGui();
-      this.buttonList.add(this.ai = new aZt(this, -1, this.R + 164, this.W + 107));
-      this.buttonList.add(new aZO(this, -2, this.R + 190, this.W + 107));
-      this.buttonsNotDrawn = true;
-      this.ai.enabled = false;
-   }
+    private static final ResourceLocation beaconGuiTextures = new ResourceLocation("textures/gui/container/beacon.png");
+    private final IInventory tileBeacon;
+    private GuiBeacon.ConfirmButton beaconConfirmButton;
+    private boolean buttonsNotDrawn;
 
-   public void updateScreen() {
-      super.updateScreen();
-      int var1 = this.tileBeacon.getField(0);
-      int var2 = this.tileBeacon.getField(1);
-      int var3 = this.tileBeacon.getField(2);
-      if(this.buttonsNotDrawn) {
-         this.buttonsNotDrawn = false;
+    public GuiBeacon(InventoryPlayer playerInventory, IInventory tileBeaconIn) {
+        super(new ContainerBeacon(playerInventory, tileBeaconIn));
+        this.tileBeacon = tileBeaconIn;
+        this.xSize = 230;
+        this.ySize = 219;
+    }
 
-         for(int var4 = 0; var4 <= 2; ++var4) {
-            int var5 = TileEntityBeacon.effectsList[var4].length;
-            int var6 = var5 * 22 + (var5 - 1) * 2;
+    /**
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
+     */
+    public void initGui() {
+        super.initGui();
+        this.buttonList.add(this.beaconConfirmButton = new GuiBeacon.ConfirmButton(-1, this.guiLeft + 164, this.guiTop + 107));
+        this.buttonList.add(new GuiBeacon.CancelButton(-2, this.guiLeft + 190, this.guiTop + 107));
+        this.buttonsNotDrawn = true;
+        this.beaconConfirmButton.enabled = false;
+    }
 
-            for(int var7 = 0; var7 < var5; ++var7) {
-               int var8 = TileEntityBeacon.effectsList[var4][var7].getId();
-               aZx var9 = new aZx(this, var4 << 8 | var8, this.R + 76 + var7 * 24 - var6 / 2, this.W + 22 + var4 * 25, var8, var4);
-               this.buttonList.add(var9);
-               if(var4 >= var1) {
-                  var9.enabled = false;
-               } else if(var8 == var2) {
-                  var9.func_146140_b(true);
-               }
+    /**
+     * Called from the main game loop to update the screen.
+     */
+    public void updateScreen() {
+        super.updateScreen();
+        final int i = this.tileBeacon.getField(0), //
+                j = this.tileBeacon.getField(1), //
+                k = this.tileBeacon.getField(2);
+
+        if (this.buttonsNotDrawn && i >= 0) {
+            this.buttonsNotDrawn = false;
+
+            for (int l = 0; l <= 2; ++l) {
+                final int i1 = TileEntityBeacon.effectsList[l].length, //
+                        j1 = i1 * 22 + (i1 - 1) * 2;
+
+                for (int k1 = 0; k1 < i1; ++k1) {
+                    final int l1 = TileEntityBeacon.effectsList[l][k1].getId();
+                    final GuiBeacon.PowerButton powerButton = new GuiBeacon.PowerButton(l << 8 | l1, this.guiLeft + 76 + k1 * 24 - j1 / 2, this.guiTop + 22 + l * 25, l1, l);
+                    this.buttonList.add(powerButton);
+
+                    if (l >= i) {
+                        powerButton.enabled = false;
+                    } else if (l1 == j) {
+                        powerButton.func_146140_b(true);
+                    }
+                }
             }
-         }
 
-         boolean var10 = true;
-         int var11 = TileEntityBeacon.effectsList[3].length + 1;
-         int var12 = var11 * 22 + (var11 - 1) * 2;
+            final int i2 = 3;
+            final int j2 = TileEntityBeacon.effectsList[i2].length + 1;
+            final int k2 = j2 * 22 + (j2 - 1) * 2;
 
-         for(int var13 = 0; var13 < var11 - 1; ++var13) {
-            int var15 = TileEntityBeacon.effectsList[3][var13].getId();
-            aZx var16 = new aZx(this, 768 | var15, this.R + 167 + var13 * 24 - var12 / 2, this.W + 47, var15, 3);
-            this.buttonList.add(var16);
-            if(3 >= var1) {
-               var16.enabled = false;
-            } else if(var15 == var3) {
-               var16.func_146140_b(true);
+            for (int l2 = 0; l2 < j2 - 1; ++l2) {
+                final int i3 = TileEntityBeacon.effectsList[i2][l2].getId();
+                final GuiBeacon.PowerButton guibeacon$powerbutton2 = new GuiBeacon.PowerButton(i2 << 8 | i3, this.guiLeft + 167 + l2 * 24 - k2 / 2, this.guiTop + 47, i3, i2);
+                this.buttonList.add(guibeacon$powerbutton2);
+
+                if (i2 >= i) {
+                    guibeacon$powerbutton2.enabled = false;
+                } else if (i3 == k) {
+                    guibeacon$powerbutton2.func_146140_b(true);
+                }
             }
-         }
 
-         aZx var14 = new aZx(this, 768 | var2, this.R + 167 + (var11 - 1) * 24 - var12 / 2, this.W + 47, var2, 3);
-         this.buttonList.add(var14);
-         if(3 >= var1) {
-            var14.enabled = false;
-         } else if(var2 == var3) {
-            var14.func_146140_b(true);
-         }
-      }
+            if (j > 0) {
+                final GuiBeacon.PowerButton guibeacon$powerbutton1 = new GuiBeacon.PowerButton(i2 << 8 | j, this.guiLeft + 167 + (j2 - 1) * 24 - k2 / 2, this.guiTop + 47, j, i2);
+                this.buttonList.add(guibeacon$powerbutton1);
 
-      this.ai.enabled = this.tileBeacon.getStackInSlot(0) != null;
-   }
+                if (i2 >= i) {
+                    guibeacon$powerbutton1.enabled = false;
+                } else if (j == k) {
+                    guibeacon$powerbutton1.func_146140_b(true);
+                }
+            }
+        }
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      if(var1.id == -2) {
-         this.mc.displayGuiScreen((GuiScreen)null);
-      } else if(var1.id == -1) {
-         String var2 = "MC|Beacon";
-         PacketBuffer var3 = new PacketBuffer(Unpooled.buffer());
-         var3.writeInt(this.tileBeacon.getField(1));
-         var3.writeInt(this.tileBeacon.getField(2));
-         this.mc.getNetHandler().b(new C17PacketCustomPayload("MC|Beacon", var3));
-         this.mc.displayGuiScreen((GuiScreen)null);
-      } else if(var1 instanceof aZx) {
-         if(((aZx)var1).func_146141_c()) {
-            return;
-         }
+        this.beaconConfirmButton.enabled = this.tileBeacon.getStackInSlot(0) != null && j > 0;
+    }
 
-         int var5 = var1.id;
-         int var6 = var5 & 255;
-         int var4 = var5 >> 8;
-         if(var4 < 3) {
-            this.tileBeacon.setField(1, var6);
-         } else {
-            this.tileBeacon.setField(2, var6);
-         }
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if (button.id == -2) {
+            this.mc.displayGuiScreen(null);
+        } else if (button.id == -1) {
+            final String s = "MC|Beacon";
+            final PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
 
-         this.buttonList.clear();
-         this.initGui();
-         this.updateScreen();
-      }
+            packetbuffer.writeInt(this.tileBeacon.getField(1));
+            packetbuffer.writeInt(this.tileBeacon.getField(2));
 
-   }
+            this.mc.getNetHandler().sendPacket(new C17PacketCustomPayload(s, packetbuffer));
+            this.mc.displayGuiScreen(null);
+        } else if (button instanceof GuiBeacon.PowerButton) {
+            if (((GuiBeacon.PowerButton) button).func_146141_c()) {
+                return;
+            }
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      RenderHelper.disableStandardItemLighting();
-      this.drawCenteredString(this.fontRendererObj, I18n.format("tile.beacon.primary", new Object[0]), 62, 10, 14737632);
-      this.drawCenteredString(this.fontRendererObj, I18n.format("tile.beacon.secondary", new Object[0]), 169, 10, 14737632);
+            final int j = button.id;
+            final int k = j & 255;
+            final int i = j >> 8;
 
-      for(GuiButton var4 : this.buttonList) {
-         if(var4.isMouseOver()) {
-            var4.drawButtonForegroundLayer(var1 - this.R, var2 - this.W);
-            break;
-         }
-      }
+            if (i < 3) {
+                this.tileBeacon.setField(1, k);
+            } else {
+                this.tileBeacon.setField(2, k);
+            }
 
-      RenderHelper.enableGUIStandardItemLighting();
-   }
+            this.buttonList.clear();
+            this.initGui();
+            this.updateScreen();
+        }
+    }
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(beaconGuiTextures);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.ab);
-      this.itemRender.zLevel = 100.0F;
-      this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.emerald), (float)(var4 + 42), (float)(var5 + 109));
-      this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.diamond), (float)(var4 + 42 + 22), (float)(var5 + 109));
-      this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.gold_ingot), (float)(var4 + 42 + 44), (float)(var5 + 109));
-      this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.iron_ingot), (float)(var4 + 42 + 66), (float)(var5 + 109));
-      this.itemRender.zLevel = 0.0F;
-   }
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        RenderHelper.disableStandardItemLighting();
+        this.drawCenteredString(this.fontRendererObj, I18n.format("tile.beacon.primary"), 62, 10, 14737632);
+        this.drawCenteredString(this.fontRendererObj, I18n.format("tile.beacon.secondary"), 169, 10, 14737632);
 
-   static ResourceLocation access$000() {
-      return beaconGuiTextures;
-   }
+        for (GuiButton guibutton : this.buttonList) {
+            if (guibutton.isMouseOver()) {
+                guibutton.drawButtonForegroundLayer(mouseX - this.guiLeft, mouseY - this.guiTop);
+                break;
+            }
+        }
 
-   static void a(GuiBeacon var0, String var1, int var2, int var3) {
-      var0.drawCreativeTabHoveringText(var1, var2, var3);
-   }
+        RenderHelper.enableGUIStandardItemLighting();
+    }
 
-   static void b(GuiBeacon var0, String var1, int var2, int var3) {
-      var0.drawCreativeTabHoveringText(var1, var2, var3);
-   }
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(beaconGuiTextures);
+        final int i = (this.width - this.xSize) / 2;
+        final int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+        this.itemRender.zLevel = 100.0F;
+        this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.emerald), i + 42, j + 109);
+        this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.diamond), i + 42 + 22, j + 109);
+        this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.gold_ingot), i + 42 + 44, j + 109);
+        this.itemRender.renderItemAndEffectIntoGUI(new ItemStack(Items.iron_ingot), i + 42 + 66, j + 109);
+        this.itemRender.zLevel = 0.0F;
+    }
 
-   static void c(GuiBeacon var0, String var1, int var2, int var3) {
-      var0.drawCreativeTabHoveringText(var1, var2, var3);
-   }
+    static class Button extends GuiButton {
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        private final ResourceLocation field_146145_o;
+        private final int field_146144_p;
+        private final int field_146143_q;
+        private boolean field_146142_r;
+
+        protected Button(int p_i1077_1_, int p_i1077_2_, int p_i1077_3_, ResourceLocation p_i1077_4_, int p_i1077_5_, int p_i1077_6_) {
+            super(p_i1077_1_, p_i1077_2_, p_i1077_3_, 22, 22, "");
+            this.field_146145_o = p_i1077_4_;
+            this.field_146144_p = p_i1077_5_;
+            this.field_146143_q = p_i1077_6_;
+        }
+
+        public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+            if (this.visible) {
+                mc.getTextureManager().bindTexture(GuiBeacon.beaconGuiTextures);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+                final int i = 219;
+                int j = 0;
+
+                if (!this.enabled) {
+                    j += this.width * 2;
+                } else if (this.field_146142_r) {
+                    j += this.width;
+                } else if (this.hovered) {
+                    j += this.width * 3;
+                }
+
+                this.drawTexturedModalRect((int) this.xPosition, (int) this.yPosition, j, i, this.width, this.height);
+
+                if (!GuiBeacon.beaconGuiTextures.equals(this.field_146145_o)) {
+                    mc.getTextureManager().bindTexture(this.field_146145_o);
+                }
+
+                this.drawTexturedModalRect((int) this.xPosition + 2, (int) this.yPosition + 2, this.field_146144_p, this.field_146143_q, 18, 18);
+            }
+        }
+
+        public boolean func_146141_c() {
+            return this.field_146142_r;
+        }
+
+        public void func_146140_b(boolean p_146140_1_) {
+            this.field_146142_r = p_146140_1_;
+        }
+
+    }
+
+    class CancelButton extends GuiBeacon.Button {
+
+        public CancelButton(int p_i1074_2_, int p_i1074_3_, int p_i1074_4_) {
+            super(p_i1074_2_, p_i1074_3_, p_i1074_4_, GuiBeacon.beaconGuiTextures, 112, 220);
+        }
+
+        public void drawButtonForegroundLayer(int mouseX, int mouseY) {
+            GuiBeacon.this.drawCreativeTabHoveringText(I18n.format("gui.cancel"), mouseX, mouseY);
+        }
+
+    }
+
+    class ConfirmButton extends GuiBeacon.Button {
+
+        public ConfirmButton(int p_i1075_2_, int p_i1075_3_, int p_i1075_4_) {
+            super(p_i1075_2_, p_i1075_3_, p_i1075_4_, GuiBeacon.beaconGuiTextures, 90, 220);
+        }
+
+        public void drawButtonForegroundLayer(int mouseX, int mouseY) {
+            GuiBeacon.this.drawCreativeTabHoveringText(I18n.format("gui.done"), mouseX, mouseY);
+        }
+
+    }
+
+    class PowerButton extends GuiBeacon.Button {
+
+        private final int field_146149_p;
+        private final int field_146148_q;
+
+        public PowerButton(int p_i1076_2_, int p_i1076_3_, int p_i1076_4_, int p_i1076_5_, int p_i1076_6_) {
+            super(p_i1076_2_, p_i1076_3_, p_i1076_4_, GuiContainer.inventoryBackground, Potion.potionTypes[p_i1076_5_].getStatusIconIndex() % 8 * 18, 198 + Potion.potionTypes[p_i1076_5_].getStatusIconIndex() / 8 * 18);
+            this.field_146149_p = p_i1076_5_;
+            this.field_146148_q = p_i1076_6_;
+        }
+
+        public void drawButtonForegroundLayer(int mouseX, int mouseY) {
+            String s = I18n.format(Potion.potionTypes[this.field_146149_p].getName());
+
+            if (this.field_146148_q >= 3 && this.field_146149_p != Potion.regeneration.getId()) {
+                s = s + " II";
+            }
+
+            GuiBeacon.this.drawCreativeTabHoveringText(s, mouseX, mouseY);
+        }
+
+    }
+
 }

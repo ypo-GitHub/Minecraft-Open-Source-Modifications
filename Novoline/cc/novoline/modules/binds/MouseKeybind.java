@@ -1,71 +1,73 @@
 package cc.novoline.modules.binds;
 
-import cc.novoline.modules.binds.KeyboardKeybind;
-import cc.novoline.modules.binds.ModuleKeybind;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Objects;
-import net.acE;
 
+/**
+ * @author xDelsy
+ */
 public final class MouseKeybind implements ModuleKeybind {
-   private int key;
-   private long lastTime;
 
-   private MouseKeybind(int var1) {
-      this.key = var1;
-   }
+    /* fields */
+    private int key;
+    private long lastTime;
 
-   public static MouseKeybind of(int var0) {
-      return new MouseKeybind(var0);
-   }
+    /* constructors */
+    private MouseKeybind(int key) {
+        this.key = key;
+    }
 
-   public boolean click() {
-      String var1 = KeyboardKeybind.b();
-      if(System.currentTimeMillis() > this.lastTime + 200L) {
-         this.lastTime = System.currentTimeMillis();
-         return true;
-      } else {
-         return false;
-      }
-   }
+    @NonNull
+    public static MouseKeybind of(int key) {
+        return new MouseKeybind(key);
+    }
 
-   public int getKey() {
-      return this.key;
-   }
+    /* methods */
+    public boolean click() {
+        if (System.currentTimeMillis() > this.lastTime + 200) {
+            this.lastTime = System.currentTimeMillis();
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-   public void setKey(int var1) {
-      this.key = var1;
-   }
+    @Override
+    public int getKey() {
+        return this.key;
+    }
 
-   public long getLastTime() {
-      return this.lastTime;
-   }
+    //region Lombok
+    public void setKey(int key) {
+        this.key = key;
+    }
 
-   public void setLastTime(long var1) {
-      this.lastTime = var1;
-   }
+    public long getLastTime() {
+        return this.lastTime;
+    }
 
-   public boolean equals(Object var1) {
-      String var2 = KeyboardKeybind.b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         MouseKeybind var3 = (MouseKeybind)var1;
-         return this.key == var3.key;
-      } else {
-         return false;
-      }
-   }
+    public void setLastTime(long lastTime) {
+        this.lastTime = lastTime;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(this.key)});
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MouseKeybind that = (MouseKeybind) o;
+        return this.key == that.key;
+    }
 
-   public String toString() {
-      String var1 = KeyboardKeybind.b();
-      String var10000 = "MouseKeybind{key=" + this.key + ", lastTime=" + this.lastTime + '}';
-      if(acE.b() == null) {
-         KeyboardKeybind.b("VxYGQ");
-      }
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.key);
+    }
 
-      return var10000;
-   }
+    @Override
+    public String toString() {
+        return "MouseKeybind{" + "key=" + this.key + ", lastTime=" + this.lastTime + '}';
+    }
+    //endregion
+
 }

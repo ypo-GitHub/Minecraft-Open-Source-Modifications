@@ -1,35 +1,53 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.transformation;
 
-import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.Map.Entry;
-import net.s;
 import ninja.leaping.configurate.ConfigurationNode;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-class VersionedTransformation extends s {
-   private final Object[] versionPath;
-   private final SortedMap versionTransformations;
+import java.util.SortedMap;
 
-   VersionedTransformation(Object[] var1, SortedMap var2) {
-      this.versionPath = var1;
-      this.versionTransformations = var2;
-   }
+/**
+ * Implements a number of child {@link ConfigurationTransformation}s which are only applied if required,
+ * according to the configurations current version.
+ */
+class VersionedTransformation extends ConfigurationTransformation {
 
-   public void apply(ConfigurationNode var1) {
-      ConfigurationNode var3 = var1.getNode(this.versionPath);
-      int var4 = var3.getInt(-1);
-      s.b();
-      Iterator var5 = this.versionTransformations.entrySet().iterator();
-      if(var5.hasNext()) {
-         Entry var6 = (Entry)var5.next();
-         if(((Integer)var6.getKey()).intValue() <= var4) {
-            ;
-         }
+    private final Object[] versionPath;
+    private final SortedMap<Integer, ConfigurationTransformation> versionTransformations;
 
-         ((s)var6.getValue()).apply(var1);
-         var4 = ((Integer)var6.getKey()).intValue();
-      }
+    VersionedTransformation(Object[] versionPath, SortedMap<Integer, ConfigurationTransformation> versionTransformations) {
+        this.versionPath = versionPath;
+        this.versionTransformations = versionTransformations;
+    }
 
-      var3.setValue(Integer.valueOf(var4));
-   }
+    @Override
+    public void apply(@NonNull ConfigurationNode node) {
+        ConfigurationNode versionNode = node.getNode(versionPath);
+        int currentVersion = versionNode.getInt(-1);
+        for (SortedMap.Entry<Integer, ConfigurationTransformation> entry : versionTransformations.entrySet()) {
+            if (entry.getKey() <= currentVersion) {
+                continue;
+            }
+            entry.getValue().apply(node);
+            currentVersion = entry.getKey();
+        }
+        versionNode.setValue(currentVersion);
+    }
+
 }

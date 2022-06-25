@@ -3,20 +3,18 @@ package cc.novoline.events.events;
 import cc.novoline.events.events.callables.CancellableEvent;
 
 public class JumpEvent extends CancellableEvent {
-   private double height;
 
-   public JumpEvent(double var1) {
-      this.height = var1;
-   }
+    private double height;
 
-   public JumpEvent() {
-   }
+    public JumpEvent(double height) {
+        this.height = height;
+    }
 
-   public void setHeight(double var1) {
-      this.height = var1;
-   }
+    public void setHeight(double height) {
+        this.height = height;
+    }
 
-   public double getHeight() {
-      return this.height;
-   }
+    public double getHeight() {
+        return height;
+    }
 }

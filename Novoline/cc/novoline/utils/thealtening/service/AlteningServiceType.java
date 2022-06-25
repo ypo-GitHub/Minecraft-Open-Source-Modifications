@@ -1,37 +1,26 @@
 package cc.novoline.utils.thealtening.service;
 
-import net.acE;
-
 public enum AlteningServiceType {
-   MOJANG("https://authserver.mojang.com/", "https://sessionserver.mojang.com/"),
-   THEALTENING("http://authserver.thealtening.com/", "http://sessionserver.thealtening.com/");
 
-   private final String authServer;
-   private final String sessionServer;
-   private static acE[] d;
+    MOJANG("https://authserver.mojang.com/", "https://sessionserver.mojang.com/"),
+    THEALTENING("http://authserver.thealtening.com/", "http://sessionserver.thealtening.com/");
 
-   private AlteningServiceType(String var3, String var4) {
-      this.authServer = var3;
-      this.sessionServer = var4;
-   }
+    private final String authServer;
+    private final String sessionServer;
 
-   public String getAuthServer() {
-      return this.authServer;
-   }
+    AlteningServiceType(String authServer, String sessionServer) {
+        this.authServer = authServer;
+        this.sessionServer = sessionServer;
+    }
 
-   public String getSessionServer() {
-      return this.sessionServer;
-   }
+    //region Lombok
+    public String getAuthServer() {
+        return this.authServer;
+    }
 
-   static {
-      b(new acE[1]);
-   }
+    public String getSessionServer() {
+        return this.sessionServer;
+    }
+    //endregion
 
-   public static void b(acE[] var0) {
-      d = var0;
-   }
-
-   public static acE[] b() {
-      return d;
-   }
 }

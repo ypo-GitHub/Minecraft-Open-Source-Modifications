@@ -1,25 +1,28 @@
 package cc.novoline.modules.misc;
 
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.EventState;
 import cc.novoline.events.events.MotionUpdateEvent;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.misc.WindowedFullscreen;
 import net.minecraft.client.gui.GuiGameOver;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class Respawn extends AbstractModule {
-   public Respawn(ModuleManager var1) {
-      super(var1, "Respawn", EnumModuleType.MISC, "Respawns you");
-   }
 
-   @EventTarget
-   public void onUpdate(MotionUpdateEvent var1) {
-      String[] var2 = WindowedFullscreen.a();
-      if(var1.getState().equals(EventState.PRE) && this.mc.currentScreen instanceof GuiGameOver) {
-         this.mc.player.respawnPlayer();
-      }
+    /* constructors */
+    public Respawn(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "Respawn", EnumModuleType.MISC, "Respawns you");
+    }
 
-   }
+    /* events */
+    @EventTarget
+    public void onUpdate(MotionUpdateEvent event) {
+        if (event.getState().equals(MotionUpdateEvent.State.PRE)) {
+            if (this.mc.currentScreen instanceof GuiGameOver) {
+                this.mc.player.respawnPlayer();
+            }
+        }
+    }
+
 }

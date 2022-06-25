@@ -11,51 +11,52 @@ import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.IntProperty;
 import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.misc.WindowedFullscreen;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.event.ClickEvent;
-import net.minecraft.event.ClickEvent$Action;
 import net.minecraft.event.HoverEvent;
-import net.minecraft.event.HoverEvent$Action;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.IChatComponent;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class Notifier extends AbstractModule {
-   @Property("additional_y")
-   private IntProperty add_y = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(10)).minimum(Integer.valueOf(10))).maximum(Integer.valueOf(90));
 
-   public Notifier(ModuleManager var1) {
-      super(var1, "Notifier", EnumModuleType.MISC, "alert you if player in your chunks");
-      Manager.put(new Setting("NF_ADD_Y", "Addition Y", SettingType.SLIDER, this, this.add_y, 5.0D));
-   }
+    @Property("additional_y")
+    private IntProperty add_y = PropertyFactory.createInt(10).minimum(10).maximum(90);
 
-   public boolean isServerBot(Entity var1) {
-      return var1.getDisplayName().getFormattedText().contains("§8[NPC]");
-   }
+    /* constructors */
+    public Notifier(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "Notifier", EnumModuleType.MISC, "alert you if player in your chunks");
+        Manager.put(new Setting("NF_ADD_Y", "Addition Y", SettingType.SLIDER, this, add_y, 5));
+    }
 
-   @EventTarget
-   public void onCheck(SpawnCheckEvent var1) {
-      String[] var2 = WindowedFullscreen.a();
-      if(var1.getEntity() instanceof EntityPlayer && var1.getEntity().getEntityID() != this.mc.player.getEntityID() && !this.isServerBot(var1.getEntity())) {
-         int var3 = (int)var1.getEntity().posX;
-         int var4 = (int)var1.getEntity().posY;
-         int var5 = (int)var1.getEntity().posZ;
-         String var6 = this.mc.isSingleplayer()?"/tp ":".tp ";
-         String var7 = var1.getEntity().getName().toLowerCase();
-         ChatComponentText var8 = new ChatComponentText("§dNotifier§r§7 » ");
-         ChatComponentText var9 = new ChatComponentText("§3Name: §r");
-         ChatComponentText var10 = new ChatComponentText(var7);
-         var10 = (ChatComponentText)var10.setChatStyle(var10.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent$Action.SHOW_TEXT, new ChatComponentText(var6 + var7))));
-         var10 = (ChatComponentText)var10.setChatStyle(var10.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent$Action.RUN_COMMAND, var6 + var7)));
-         ChatComponentText var11 = new ChatComponentText(" §3Coords: §r");
-         ChatComponentText var12 = new ChatComponentText("§bX:§r " + var3 + " §bY:§r " + var4 + " §bZ:§r " + var5);
-         String var13 = var6 + var3 + " " + var4 + " " + var5;
-         var12 = (ChatComponentText)var12.setChatStyle(var12.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent$Action.SHOW_TEXT, new ChatComponentText(var13))));
-         var12 = (ChatComponentText)var12.setChatStyle(var12.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent$Action.RUN_COMMAND, var13)));
-         var8.appendSibling(var9).appendSibling(var10).appendSibling(var11).appendSibling(var12);
-         this.mc.ingameGUI.n().a((IChatComponent)var8);
-      }
+    /* methods */
+    public boolean isServerBot(Entity entity) {
+        return entity.getDisplayName().getFormattedText().contains("\u00A78[NPC]");
+    }
 
-   }
+    /* events */
+    @EventTarget
+    public void onCheck(SpawnCheckEvent e) {
+        if (e.getEntity() instanceof EntityPlayer && e.getEntity().getEntityID() != mc.player.getEntityID() && !isServerBot(e.getEntity())) {
+            int x = (int) e.getEntity().posX, y = (int) e.getEntity().posY, z = (int) e.getEntity().posZ;
+            String tp = mc.isSingleplayer() ? "/tp " : ".tp ", playerName = e.getEntity().getName().toLowerCase();
+
+            ChatComponentText message = new ChatComponentText("\u00A7dNotifier\u00A7r\u00A77 \u00BB ");
+            ChatComponentText textName = new ChatComponentText("\u00A73Name: \u00A7r");
+            ChatComponentText name = new ChatComponentText(playerName);
+
+            name = (ChatComponentText) name.setChatStyle(name.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(tp + playerName))));
+            name = (ChatComponentText) name.setChatStyle(name.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, tp + playerName)));
+
+            ChatComponentText textCoords = new ChatComponentText(" \u00A73Coords: \u00A7r");
+            ChatComponentText coords = new ChatComponentText("\u00A7bX:\u00A7r " + x + " \u00A7bY:\u00A7r " + y + " \u00A7bZ:\u00A7r " + z);
+            String coordsCommand = tp + x + " " + y + " " + z;
+
+            coords = (ChatComponentText) coords.setChatStyle(coords.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(coordsCommand))));
+            coords = (ChatComponentText) coords.setChatStyle(coords.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, coordsCommand)));
+
+            message.appendSibling(textName).appendSibling(name).appendSibling(textCoords).appendSibling(coords);
+            mc.ingameGUI.getChatGUI().printChatMessage(message);
+        }
+    }
 }

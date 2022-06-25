@@ -1,39 +1,47 @@
 package net.minecraft.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiListExtended$IGuiListEntry;
 import net.minecraft.client.resources.I18n;
 
-public class ServerListEntryLanScan implements GuiListExtended$IGuiListEntry {
-   private final Minecraft mc = Minecraft.getInstance();
+public class ServerListEntryLanScan implements GuiListExtended.IGuiListEntry {
+    private final Minecraft mc = Minecraft.getInstance();
 
-   public void drawEntry(int var1, int var2, int var3, int var4, int var5, int var6, int var7, boolean var8) {
-      int var9 = var3 + var5 / 2 - this.mc.fontRendererObj.getHeight() / 2;
-      this.mc.fontRendererObj.drawString(I18n.format("lanServer.scanning", new Object[0]), (float)(this.mc.currentScreen.width / 2 - this.mc.fontRendererObj.d(I18n.format("lanServer.scanning", new Object[0])) / 2), (float)var9, 16777215);
-      String var10;
-      switch((int)(Minecraft.getSystemTime() / 300L % 4L)) {
-      case 0:
-      default:
-         var10 = "O o o";
-         break;
-      case 1:
-      case 3:
-         var10 = "o O o";
-         break;
-      case 2:
-         var10 = "o o O";
-      }
+    public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected) {
+        int i = y + slotHeight / 2 - this.mc.fontRendererObj.getHeight() / 2;
+        this.mc.fontRendererObj.drawString(I18n.format("lanServer.scanning"), this.mc.currentScreen.width / 2 - this.mc.fontRendererObj.getStringWidth(I18n.format("lanServer.scanning")) / 2, i, 16777215);
+        String s;
 
-      this.mc.fontRendererObj.drawString(var10, (float)(this.mc.currentScreen.width / 2 - this.mc.fontRendererObj.d(var10) / 2), (float)(var9 + this.mc.fontRendererObj.getHeight()), 8421504);
-   }
+        switch ((int) (Minecraft.getSystemTime() / 300L % 4L)) {
+            case 0:
+            default:
+                s = "O o o";
+                break;
 
-   public void setSelected(int var1, int var2, int var3) {
-   }
+            case 1:
+            case 3:
+                s = "o O o";
+                break;
 
-   public boolean mousePressed(int var1, int var2, int var3, int var4, int var5, int var6) {
-      return false;
-   }
+            case 2:
+                s = "o o O";
+        }
 
-   public void mouseReleased(int var1, int var2, int var3, int var4, int var5, int var6) {
-   }
+        this.mc.fontRendererObj.drawString(s, this.mc.currentScreen.width / 2 - this.mc.fontRendererObj.getStringWidth(s) / 2, i + this.mc.fontRendererObj.getHeight(), 8421504);
+    }
+
+    public void setSelected(int p_178011_1_, int p_178011_2_, int p_178011_3_) {
+    }
+
+    /**
+     * Returns true if the mouse has been pressed on this control.
+     */
+    public boolean mousePressed(int slotIndex, int p_148278_2_, int p_148278_3_, int p_148278_4_, int p_148278_5_, int p_148278_6_) {
+        return false;
+    }
+
+    /**
+     * Fired when the mouse button is released. Arguments: index, x, y, mouseEvent, relativeX, relativeY
+     */
+    public void mouseReleased(int slotIndex, int x, int y, int mouseEvent, int relativeX, int relativeY) {
+    }
 }

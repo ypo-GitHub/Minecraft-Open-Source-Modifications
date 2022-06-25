@@ -1,61 +1,91 @@
 package net.minecraft.command;
 
-import java.util.List;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 
+import java.util.List;
+
 public class CommandXP extends CommandBase {
-   public String getCommandName() {
-      return "xp";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "xp";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.xp.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.xp.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length <= 0) {
-         throw new WrongUsageException("commands.xp.usage", new Object[0]);
-      } else {
-         String var3 = var2[0];
-         boolean var4 = var3.endsWith("l") || var3.endsWith("L");
-         if(var3.length() > 1) {
-            var3 = var3.substring(0, var3.length() - 1);
-         }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length <= 0) {
+            throw new WrongUsageException("commands.xp.usage", new Object[0]);
+        } else {
+            String s = args[0];
+            boolean flag = s.endsWith("l") || s.endsWith("L");
 
-         int var5 = parseInt(var3);
-         boolean var6 = true;
-         var5 = var5 * -1;
-         EntityPlayerMP var7 = var2.length > 1?getPlayer(var1, var2[1]):getCommandSenderAsPlayer(var1);
-         var1.setCommandStat(CommandResultStats$Type.QUERY_RESULT, var7.experienceLevel);
-         var7.addExperienceLevel(-var5);
-         notifyOperators(var1, this, "commands.xp.success.negative.levels", new Object[]{Integer.valueOf(var5), var7.getName()});
-      }
-   }
+            if (flag && s.length() > 1) {
+                s = s.substring(0, s.length() - 1);
+            }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 2?getListOfStringsMatchingLastWord(var2, this.getAllUsernames()):null;
-   }
+            int i = parseInt(s);
+            boolean flag1 = i < 0;
 
-   protected String[] getAllUsernames() {
-      return MinecraftServer.getServer().getAllUsernames();
-   }
+            if (flag1) {
+                i *= -1;
+            }
 
-   public boolean isUsernameIndex(String[] var1, int var2) {
-      return var2 == 1;
-   }
+            EntityPlayer entityplayer = args.length > 1 ? getPlayer(sender, args[1]) : getCommandSenderAsPlayer(sender);
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+            if (flag) {
+                sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, entityplayer.experienceLevel);
+
+                if (flag1) {
+                    entityplayer.addExperienceLevel(-i);
+                    notifyOperators(sender, this, "commands.xp.success.negative.levels", new Object[]{i, entityplayer.getName()});
+                } else {
+                    entityplayer.addExperienceLevel(i);
+                    notifyOperators(sender, this, "commands.xp.success.levels", new Object[]{i, entityplayer.getName()});
+                }
+            } else {
+                sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, entityplayer.experienceTotal);
+
+                if (flag1) {
+                    throw new CommandException("commands.xp.failure.widthdrawXp", new Object[0]);
+                }
+
+                entityplayer.addExperience(i);
+                notifyOperators(sender, this, "commands.xp.success", new Object[]{i, entityplayer.getName()});
+            }
+        }
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 2 ? getListOfStringsMatchingLastWord(args, this.getAllUsernames()) : null;
+    }
+
+    protected String[] getAllUsernames() {
+        return MinecraftServer.getServer().getAllUsernames();
+    }
+
+    /**
+     * Return whether the specified command parameter index is a username parameter.
+     */
+    public boolean isUsernameIndex(String[] args, int index) {
+        return index == 1;
+    }
 }

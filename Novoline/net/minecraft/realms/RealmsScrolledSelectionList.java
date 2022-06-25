@@ -1,72 +1,71 @@
 package net.minecraft.realms;
 
 import net.minecraft.client.gui.GuiSlotRealmsProxy;
-import net.minecraft.realms.Tezzelator;
 
 public class RealmsScrolledSelectionList {
-   private final GuiSlotRealmsProxy proxy;
+    private final GuiSlotRealmsProxy proxy;
 
-   public RealmsScrolledSelectionList(int var1, int var2, int var3, int var4, int var5) {
-      this.proxy = new GuiSlotRealmsProxy(this, var1, var2, var3, var4, var5);
-   }
+    public RealmsScrolledSelectionList(int p_i1119_1_, int p_i1119_2_, int p_i1119_3_, int p_i1119_4_, int p_i1119_5_) {
+        this.proxy = new GuiSlotRealmsProxy(this, p_i1119_1_, p_i1119_2_, p_i1119_3_, p_i1119_4_, p_i1119_5_);
+    }
 
-   public void render(int var1, int var2, float var3) {
-      this.proxy.drawScreen(var1, var2, var3);
-   }
+    public void render(int p_render_1_, int p_render_2_, float p_render_3_) {
+        this.proxy.drawScreen(p_render_1_, p_render_2_, p_render_3_);
+    }
 
-   public int width() {
-      return this.proxy.func_154338_k();
-   }
+    public int width() {
+        return this.proxy.func_154338_k();
+    }
 
-   public int ym() {
-      return this.proxy.func_154339_l();
-   }
+    public int ym() {
+        return this.proxy.func_154339_l();
+    }
 
-   public int xm() {
-      return this.proxy.func_154337_m();
-   }
+    public int xm() {
+        return this.proxy.func_154337_m();
+    }
 
-   protected void renderItem(int var1, int var2, int var3, int var4, Tezzelator var5, int var6, int var7) {
-   }
+    protected void renderItem(int p_renderItem_1_, int p_renderItem_2_, int p_renderItem_3_, int p_renderItem_4_, Tezzelator p_renderItem_5_, int p_renderItem_6_, int p_renderItem_7_) {
+    }
 
-   public void renderItem(int var1, int var2, int var3, int var4, int var5, int var6) {
-      this.renderItem(var1, var2, var3, var4, Tezzelator.instance, var5, var6);
-   }
+    public void renderItem(int p_renderItem_1_, int p_renderItem_2_, int p_renderItem_3_, int p_renderItem_4_, int p_renderItem_5_, int p_renderItem_6_) {
+        this.renderItem(p_renderItem_1_, p_renderItem_2_, p_renderItem_3_, p_renderItem_4_, Tezzelator.instance, p_renderItem_5_, p_renderItem_6_);
+    }
 
-   public int getItemCount() {
-      return 0;
-   }
+    public int getItemCount() {
+        return 0;
+    }
 
-   public void selectItem(int var1, boolean var2, int var3, int var4) {
-   }
+    public void selectItem(int p_selectItem_1_, boolean p_selectItem_2_, int p_selectItem_3_, int p_selectItem_4_) {
+    }
 
-   public boolean isSelectedItem(int var1) {
-      return false;
-   }
+    public boolean isSelectedItem(int p_isSelectedItem_1_) {
+        return false;
+    }
 
-   public void renderBackground() {
-   }
+    public void renderBackground() {
+    }
 
-   public int getMaxPosition() {
-      return 0;
-   }
+    public int getMaxPosition() {
+        return 0;
+    }
 
-   public int getScrollbarPosition() {
-      return this.proxy.func_154338_k() / 2 + 124;
-   }
+    public int getScrollbarPosition() {
+        return this.proxy.func_154338_k() / 2 + 124;
+    }
 
-   public void mouseEvent() {
-      this.proxy.handleMouseInput();
-   }
+    public void mouseEvent() {
+        this.proxy.handleMouseInput();
+    }
 
-   public void scroll(int var1) {
-      this.proxy.scrollBy(var1);
-   }
+    public void scroll(int p_scroll_1_) {
+        this.proxy.scrollBy(p_scroll_1_);
+    }
 
-   public int getScroll() {
-      return this.proxy.getAmountScrolled();
-   }
+    public int getScroll() {
+        return this.proxy.getAmountScrolled();
+    }
 
-   protected void renderList(int var1, int var2, int var3, int var4) {
-   }
+    protected void renderList(int p_renderList_1_, int p_renderList_2_, int p_renderList_3_, int p_renderList_4_) {
+    }
 }

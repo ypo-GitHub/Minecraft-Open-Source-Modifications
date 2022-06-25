@@ -4,49 +4,49 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiTextField;
 
 public class RealmsEditBox {
-   private final GuiTextField editBox;
+    private final GuiTextField editBox;
 
-   public RealmsEditBox(int var1, int var2, int var3, int var4, int var5) {
-      this.editBox = new GuiTextField(var1, Minecraft.getInstance().fontRendererObj, var2, var3, var4, var5);
-   }
+    public RealmsEditBox(int p_i45743_1_, int p_i45743_2_, int p_i45743_3_, int p_i45743_4_, int p_i45743_5_) {
+        this.editBox = new GuiTextField(p_i45743_1_, Minecraft.getInstance().fontRendererObj, p_i45743_2_, p_i45743_3_, p_i45743_4_, p_i45743_5_);
+    }
 
-   public String getValue() {
-      return this.editBox.getText();
-   }
+    public String getValue() {
+        return this.editBox.getText();
+    }
 
-   public void tick() {
-      this.editBox.updateCursorCounter();
-   }
+    public void tick() {
+        this.editBox.updateCursorCounter();
+    }
 
-   public void setFocus(boolean var1) {
-      this.editBox.setFocused(var1);
-   }
+    public void setFocus(boolean p_setFocus_1_) {
+        this.editBox.setFocused(p_setFocus_1_);
+    }
 
-   public void setValue(String var1) {
-      this.editBox.setText(var1);
-   }
+    public void setValue(String p_setValue_1_) {
+        this.editBox.setText(p_setValue_1_);
+    }
 
-   public void keyPressed(char var1, int var2) {
-      this.editBox.textboxKeyTyped(var1, var2);
-   }
+    public void keyPressed(char p_keyPressed_1_, int p_keyPressed_2_) {
+        this.editBox.textboxKeyTyped(p_keyPressed_1_, p_keyPressed_2_);
+    }
 
-   public boolean isFocused() {
-      return this.editBox.isFocused();
-   }
+    public boolean isFocused() {
+        return this.editBox.isFocused();
+    }
 
-   public void mouseClicked(int var1, int var2, int var3) {
-      this.editBox.mouseClicked(var1, var2, var3);
-   }
+    public void mouseClicked(int p_mouseClicked_1_, int p_mouseClicked_2_, int p_mouseClicked_3_) {
+        this.editBox.mouseClicked(p_mouseClicked_1_, p_mouseClicked_2_, p_mouseClicked_3_);
+    }
 
-   public void render() {
-      this.editBox.drawTextBox();
-   }
+    public void render() {
+        this.editBox.drawTextBox();
+    }
 
-   public void setMaxLength(int var1) {
-      this.editBox.setMaxStringLength(var1);
-   }
+    public void setMaxLength(int p_setMaxLength_1_) {
+        this.editBox.setMaxStringLength(p_setMaxLength_1_);
+    }
 
-   public void setIsEditable(boolean var1) {
-      this.editBox.setEnabled(var1);
-   }
+    public void setIsEditable(boolean p_setIsEditable_1_) {
+        this.editBox.setEnabled(p_setIsEditable_1_);
+    }
 }

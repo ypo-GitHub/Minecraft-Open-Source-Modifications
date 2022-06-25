@@ -1,20 +1,23 @@
 package net.minecraft.block.state;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Collection;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
 
+import java.util.Collection;
+
 public interface IBlockState {
-   Collection getPropertyNames();
 
-   Comparable getValue(IProperty var1);
+    Collection<IProperty> getPropertyNames();
 
-   IBlockState withProperty(IProperty var1, Comparable var2);
+    <T extends Comparable<T>> T getValue(IProperty<T> property);
 
-   IBlockState cycleProperty(IProperty var1);
+    <T extends Comparable<T>, V extends T> IBlockState withProperty(IProperty<T> property, V value);
 
-   ImmutableMap getProperties();
+    <T extends Comparable<T>> IBlockState cycleProperty(IProperty<T> property);
 
-   Block getBlock();
+    ImmutableMap<IProperty, Comparable> getProperties();
+
+    Block getBlock();
+
 }

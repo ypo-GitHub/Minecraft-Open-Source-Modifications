@@ -1,33 +1,31 @@
 package cc.novoline.modules.configurations.property.object;
 
-import cc.novoline.modules.binds.KeyboardKeybind;
-import cc.novoline.modules.binds.ModuleKeybind;
+import cc.novoline.modules.binds.*;
 import cc.novoline.modules.configurations.property.AbstractProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.input.Keyboard;
 
-public final class KeyBindProperty extends AbstractProperty {
-   @Contract(
-      pure = true
-   )
-   public KeyBindProperty(@Nullable ModuleKeybind var1) {
-      super(var1);
-   }
+/**
+ * @author Artyom Popov
+ * @since March 14, 2021 @ 11:34 AM
+ */
+public final class KeyBindProperty extends AbstractProperty<ModuleKeybind> {
 
-   public boolean isHeld() {
-      ModuleKeybind var2 = (ModuleKeybind)this.value;
-      IntProperty.a();
-      int var3 = var2.getKey();
-      if(var2 instanceof KeyboardKeybind) {
-         return Keyboard.isKeyDown(var3);
-      } else {
-         throw new UnsupportedOperationException();
-      }
-   }
+	@Contract(pure = true)
+	public KeyBindProperty(@Nullable ModuleKeybind value) {
+		super(value);
+	}
 
-   private static UnsupportedOperationException a(UnsupportedOperationException var0) {
-      return var0;
-   }
+	public boolean isHeld() {
+		ModuleKeybind value = this.value;
+		int key = value.getKey();
+
+		if(value instanceof KeyboardKeybind) {
+			return Keyboard.isKeyDown(key);
+		} else {
+			throw new UnsupportedOperationException();
+		}
+	}
 }

@@ -1,8 +1,5 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockBush;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -16,36 +13,51 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockDeadBush extends BlockBush {
-   protected BlockDeadBush() {
-      super(Material.vine);
-      float var1 = 0.4F;
-      this.setBlockBounds(0.099999994F, 0.0F, 0.099999994F, 0.9F, 0.8F, 0.9F);
-   }
 
-   public MapColor getMapColor(IBlockState var1) {
-      return MapColor.woodColor;
-   }
+    protected BlockDeadBush() {
+        super(Material.vine);
+        final float f = 0.4F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.8F, 0.5F + f);
+    }
 
-   protected boolean canPlaceBlockOn(Block var1) {
-      return var1 == Blocks.sand || var1 == Blocks.hardened_clay || var1 == Blocks.stained_hardened_clay || var1 == Blocks.dirt;
-   }
+    /**
+     * Get the MapColor for this Block and the given BlockState
+     */
+    public MapColor getMapColor(IBlockState state) {
+        return MapColor.woodColor;
+    }
 
-   public boolean isReplaceable(World var1, BlockPos var2) {
-      return true;
-   }
+    /**
+     * is the block grass, dirt or farmland
+     */
+    protected boolean canPlaceBlockOn(Block ground) {
+        return ground == Blocks.sand || ground == Blocks.hardened_clay || ground == Blocks.stained_hardened_clay || ground == Blocks.dirt;
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return null;
-   }
+    /**
+     * Whether this Block can be replaced directly by other blocks (true for e.g. tall grass)
+     */
+    public boolean isReplaceable(World worldIn, BlockPos pos) {
+        return true;
+    }
 
-   public void harvestBlock(World var1, EntityPlayer var2, BlockPos var3, IBlockState var4, TileEntity var5) {
-      if(!var1.isRemote && var2.getCurrentEquippedItem() != null && var2.getCurrentEquippedItem().getItem() == Items.shears) {
-         var2.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
-         spawnAsEntity(var1, var3, new ItemStack(Blocks.deadbush, 1, 0));
-      } else {
-         super.harvestBlock(var1, var2, var3, var4, var5);
-      }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return null;
+    }
 
-   }
+    public void harvestBlock(World worldIn, EntityPlayer player, BlockPos pos, IBlockState state, TileEntity te) {
+        if (!worldIn.isRemote && player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() == Items.shears) {
+            player.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
+            spawnAsEntity(worldIn, pos, new ItemStack(Blocks.deadbush, 1, 0));
+        } else {
+            super.harvestBlock(worldIn, player, pos, state, te);
+        }
+    }
+
 }

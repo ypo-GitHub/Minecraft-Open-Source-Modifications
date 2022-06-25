@@ -3,101 +3,222 @@ package net.minecraft.network;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
-import java.util.Map;
-import java.util.function.Function;
-import net.minecraft.network.EnumConnectionState$1;
-import net.minecraft.network.EnumPacketDirection;
-import net.minecraft.network.Packet;
+import net.minecraft.network.handshake.client.C00Handshake;
+import net.minecraft.network.login.client.C00PacketLoginStart;
+import net.minecraft.network.login.client.C01PacketEncryptionResponse;
+import net.minecraft.network.login.server.S00PacketDisconnect;
+import net.minecraft.network.login.server.S01PacketEncryptionRequest;
+import net.minecraft.network.login.server.S02PacketLoginSuccess;
+import net.minecraft.network.login.server.S03PacketEnableCompression;
+import net.minecraft.network.play.client.*;
+import net.minecraft.network.play.server.*;
+import net.minecraft.network.status.client.C00PacketServerQuery;
+import net.minecraft.network.status.client.C01PacketPing;
+import net.minecraft.network.status.server.S00PacketServerInfo;
+import net.minecraft.network.status.server.S01PacketPong;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.Map;
+
 public enum EnumConnectionState {
-   HANDSHAKING(-1),
-   PLAY(0),
-   STATUS(1),
-   LOGIN(2);
+    HANDSHAKING(-1) {
+        {
+            registerPacket(EnumPacketDirection.SERVERBOUND, C00Handshake.class);
+        }
+    },
+    PLAY(0) {
+        {
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S00PacketKeepAlive.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S01PacketJoinGame.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S02PacketChat.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S03PacketTimeUpdate.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S04PacketEntityEquipment.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S05PacketSpawnPosition.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S06PacketUpdateHealth.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S07PacketRespawn.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S08PacketPlayerPosLook.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S09PacketHeldItemChange.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0APacketUseBed.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0BPacketAnimation.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0CPacketSpawnPlayer.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0DPacketCollectItem.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0EPacketSpawnObject.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S0FPacketSpawnMob.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S10PacketSpawnPainting.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S11PacketSpawnExperienceOrb.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S12PacketEntityVelocity.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S13PacketDestroyEntities.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S14PacketEntity.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S14PacketEntity.S15PacketEntityRelMove.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S14PacketEntity.S16PacketEntityLook.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S14PacketEntity.S17PacketEntityLookMove.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S18PacketEntityTeleport.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S19PacketEntityHeadLook.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S19PacketEntityStatus.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S1BPacketEntityAttach.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S1CPacketEntityMetadata.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S1DPacketEntityEffect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S1EPacketRemoveEntityEffect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S1FPacketSetExperience.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S20PacketEntityProperties.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S21PacketChunkData.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S22PacketMultiBlockChange.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S23PacketBlockChange.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S24PacketBlockAction.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S25PacketBlockBreakAnim.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S26PacketMapChunkBulk.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S27PacketExplosion.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S28PacketEffect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S29PacketSoundEffect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2APacketParticles.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2BPacketChangeGameState.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2CPacketSpawnGlobalEntity.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2DPacketOpenWindow.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2EPacketCloseWindow.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S2FPacketSetSlot.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S30PacketWindowItems.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S31PacketWindowProperty.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S32PacketConfirmTransaction.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S33PacketUpdateSign.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S34PacketMaps.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S35PacketUpdateTileEntity.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S36PacketSignEditorOpen.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S37PacketStatistics.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S38PacketPlayerListItem.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S39PacketPlayerAbilities.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3APacketTabComplete.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3BPacketScoreboardObjective.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3CPacketUpdateScore.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3DPacketDisplayScoreboard.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3EPacketTeams.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S3FPacketCustomPayload.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S40PacketDisconnect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S41PacketServerDifficulty.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S42PacketCombatEvent.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S43PacketCamera.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S44PacketWorldBorder.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S45PacketTitle.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S46PacketSetCompressionLevel.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S47PacketPlayerListHeaderFooter.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S48PacketResourcePackSend.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S49PacketUpdateEntityNBT.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, SPacketMoveVehicle.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C00PacketKeepAlive.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C01PacketChatMessage.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C02PacketUseEntity.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C03PacketPlayer.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C03PacketPlayer.C04PacketPlayerPosition.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C03PacketPlayer.C05PacketPlayerLook.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C03PacketPlayer.C06PacketPlayerPosLook.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C07PacketPlayerDigging.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C08PacketPlayerBlockPlacement.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C09PacketHeldItemChange.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0APacketAnimation.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0BPacketEntityAction.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0CPacketInput.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0DPacketCloseWindow.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0EPacketClickWindow.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C0FPacketConfirmTransaction.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C10PacketCreativeInventoryAction.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C11PacketEnchantItem.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C12PacketUpdateSign.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C13PacketPlayerAbilities.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C14PacketTabComplete.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C15PacketClientSettings.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C16PacketClientStatus.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C17PacketCustomPayload.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C18PacketSpectate.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C19PacketResourcePackStatus.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, CPacketVehicleMove.class);
+        }
+    },
+    STATUS(1) {
+        {
+            registerPacket(EnumPacketDirection.SERVERBOUND, C00PacketServerQuery.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S00PacketServerInfo.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C01PacketPing.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S01PacketPong.class);
+        }
+    },
+    LOGIN(2) {
+        {
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S00PacketDisconnect.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S01PacketEncryptionRequest.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S02PacketLoginSuccess.class);
+            registerPacket(EnumPacketDirection.CLIENTBOUND, S03PacketEnableCompression.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C00PacketLoginStart.class);
+            registerPacket(EnumPacketDirection.SERVERBOUND, C01PacketEncryptionResponse.class);
+        }
+    };
 
-   private static final EnumConnectionState[] STATES_BY_ID = new EnumConnectionState[4];
-   private static final Map STATES_BY_CLASS = Maps.newHashMap();
-   private final int id;
-   private Map directionMaps;
-   private static final EnumConnectionState[] $VALUES = new EnumConnectionState[]{HANDSHAKING, PLAY, STATUS, LOGIN};
+    private static final EnumConnectionState[] STATES_BY_ID = new EnumConnectionState[4];
+    private static final Map<Class<? extends Packet<?>>, EnumConnectionState> STATES_BY_CLASS = Maps.newHashMap();
+    private final int id;
+    private Map<EnumPacketDirection, BiMap<Integer, Class<? extends Packet<?>>>> directionMaps = Maps.newEnumMap(EnumPacketDirection.class);
 
-   private EnumConnectionState(int var3) {
-      this.directionMaps = Maps.newEnumMap(EnumPacketDirection.class);
-      this.id = var3;
-   }
+    EnumConnectionState(int protocolId) {
+        this.id = protocolId;
+    }
 
-   public void registerPacket(EnumPacketDirection var1, Class var2) {
-      BiMap var3 = (BiMap)this.directionMaps.computeIfAbsent(var1, EnumConnectionState::lambda$registerPacket$0);
-      if(var3.containsValue(var2)) {
-         String var4 = var1 + " packet " + var2 + " is already known to ID " + var3.inverse().get(var2);
-         LogManager.getLogger().fatal(var4);
-         throw new IllegalArgumentException(var4);
-      } else {
-         var3.put(Integer.valueOf(var3.size()), var2);
-      }
-   }
+    public void registerPacket(EnumPacketDirection direction, Class<? extends Packet<?>> packetClass) {
+        BiMap<Integer, Class<? extends Packet<?>>> bimap = directionMaps.computeIfAbsent(direction, k -> HashBiMap.create());
 
-   public Integer getPacketId(EnumPacketDirection var1, Packet var2) {
-      return (Integer)((BiMap)this.directionMaps.get(var1)).inverse().get(var2.getClass());
-   }
+        if(bimap.containsValue(packetClass)) {
+            String s = direction + " packet " + packetClass + " is already known to ID " + bimap.inverse().get(packetClass);
+            LogManager.getLogger().fatal(s);
+            throw new IllegalArgumentException(s);
+        } else {
+            bimap.put(bimap.size(), packetClass);
+        }
+    }
 
-   public Packet getPacket(EnumPacketDirection var1, int var2) throws InstantiationException, IllegalAccessException {
-      Class var3 = (Class)((BiMap)this.directionMaps.get(var1)).get(Integer.valueOf(var2));
-      return null;
-   }
+    public Integer getPacketId(EnumPacketDirection direction, Packet packetIn) {
+        return (Integer) ((BiMap) directionMaps.get(direction)).inverse().get(packetIn.getClass());
+    }
 
-   public int getId() {
-      return this.id;
-   }
+    public Packet getPacket(EnumPacketDirection direction, int packetId) throws InstantiationException, IllegalAccessException {
+        Class<? extends Packet> oclass = (Class) ((BiMap) directionMaps.get(direction)).get(packetId);
+        return oclass == null ? null : oclass.newInstance();
+    }
 
-   public static EnumConnectionState getById(int var0) {
-      return var0 >= -1 && var0 <= 2?STATES_BY_ID[var0 - -1]:null;
-   }
+    public int getId() {
+        return id;
+    }
 
-   public static EnumConnectionState getFromPacket(Packet var0) {
-      return (EnumConnectionState)STATES_BY_CLASS.get(var0.getClass());
-   }
+    public static EnumConnectionState getById(int stateId) {
+        return stateId >= -1 && stateId <= 2 ? STATES_BY_ID[stateId - -1] : null;
+    }
 
-   private static BiMap lambda$registerPacket$0(EnumPacketDirection var0) {
-      return HashBiMap.create();
-   }
 
-   EnumConnectionState(int var3, EnumConnectionState$1 var4) {
-      this(var3);
-   }
+    public static EnumConnectionState getFromPacket(Packet packetIn) {
+        return STATES_BY_CLASS.get(packetIn.getClass());
+    }
 
-   static {
-      for(EnumConnectionState var10 : values()) {
-         int var11 = var10.getId();
-         if(var11 < -1 || var11 > 2) {
-            throw new Error("Invalid protocol ID " + var11);
-         }
-
-         STATES_BY_ID[var11 - -1] = var10;
-
-         for(EnumPacketDirection var13 : var10.directionMaps.keySet()) {
-            for(Class var15 : ((BiMap)var10.directionMaps.get(var13)).values()) {
-               if(STATES_BY_CLASS.containsKey(var15) && STATES_BY_CLASS.get(var15) != var10) {
-                  throw new Error("Packet " + var15 + " is already assigned to protocol " + STATES_BY_CLASS.get(var15) + " - can\'t reassign to " + var10);
-               }
-
-               Class var10000 = var15;
-
-               try {
-                  var10000.newInstance();
-               } catch (Throwable var17) {
-                  throw new Error("Packet " + var15 + " fails instantiation checks! " + var15);
-               }
-
-               STATES_BY_CLASS.put(var15, var10);
+    static {
+        for(EnumConnectionState enumconnectionstate : values()) {
+            int i = enumconnectionstate.getId();
+            if(i < -1 || i > 2) {
+                throw new Error("Invalid protocol ID " + i);
             }
-         }
-      }
 
-   }
+            STATES_BY_ID[i - -1] = enumconnectionstate;
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+            for(EnumPacketDirection enumpacketdirection : enumconnectionstate.directionMaps.keySet()) {
+                for(Class<? extends Packet<?>> oclass : enumconnectionstate.directionMaps.get(enumpacketdirection).values()) {
+                    if(STATES_BY_CLASS.containsKey(oclass) && STATES_BY_CLASS.get(oclass) != enumconnectionstate) {
+                        throw new Error("Packet " + oclass + " is already assigned to protocol " + STATES_BY_CLASS
+                                .get(oclass) + " - can't reassign to " + enumconnectionstate);
+                    }
+
+                    try {
+                        oclass.newInstance();
+                    } catch(Throwable var10) {
+                        throw new Error("Packet " + oclass + " fails instantiation checks! " + oclass);
+                    }
+
+                    STATES_BY_CLASS.put(oclass, enumconnectionstate);
+                }
+            }
+        }
+    }
 }

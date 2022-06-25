@@ -1,27 +1,12 @@
 package net.minecraft.entity.monster;
 
-import net.aP;
+import com.google.common.base.Predicate;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockFlower$EnumFlowerType;
+import net.minecraft.block.BlockFlower;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.EntityAIAttackOnCollide;
-import net.minecraft.entity.ai.EntityAIDefendVillage;
-import net.minecraft.entity.ai.EntityAIHurtByTarget;
-import net.minecraft.entity.ai.EntityAILookAtVillager;
-import net.minecraft.entity.ai.EntityAILookIdle;
-import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
-import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
-import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
-import net.minecraft.entity.ai.EntityAIWander;
-import net.minecraft.entity.ai.EntityAIWatchClosest;
-import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.entity.monster.EntityGolem;
-import net.minecraft.entity.monster.IMob;
+import net.minecraft.entity.*;
+import net.minecraft.entity.ai.*;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -36,179 +21,263 @@ import net.minecraft.village.Village;
 import net.minecraft.world.World;
 
 public class EntityIronGolem extends EntityGolem {
-   private int homeCheckTimer;
-   Village villageObj;
-   private int attackTimer;
-   private int holdRoseTick;
+    /**
+     * deincrements, and a distance-to-home check is done at 0
+     */
+    private int homeCheckTimer;
+    Village villageObj;
+    private int attackTimer;
+    private int holdRoseTick;
 
-   public EntityIronGolem(World var1) {
-      super(var1);
-      this.setSize(1.4F, 2.9F);
-      ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
-      this.tasks.addTask(1, new EntityAIAttackOnCollide(this, 1.0D, true));
-      this.tasks.addTask(2, new EntityAIMoveTowardsTarget(this, 0.9D, 32.0F));
-      this.tasks.addTask(3, new EntityAIMoveThroughVillage(this, 0.6D, true));
-      this.tasks.addTask(4, new EntityAIMoveTowardsRestriction(this, 1.0D));
-      this.tasks.addTask(5, new EntityAILookAtVillager(this));
-      this.tasks.addTask(6, new EntityAIWander(this, 0.6D));
-      this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
-      this.tasks.addTask(8, new EntityAILookIdle(this));
-      this.targetTasks.addTask(1, new EntityAIDefendVillage(this));
-      this.targetTasks.addTask(2, new EntityAIHurtByTarget(this, false, new Class[0]));
-      this.targetTasks.addTask(3, new aP(this, EntityLiving.class, 10, false, true, IMob.VISIBLE_MOB_SELECTOR));
-   }
+    public EntityIronGolem(World worldIn) {
+        super(worldIn);
+        this.setSize(1.4F, 2.9F);
+        ((PathNavigateGround) this.getNavigator()).setAvoidsWater(true);
+        this.tasks.addTask(1, new EntityAIAttackOnCollide(this, 1.0D, true));
+        this.tasks.addTask(2, new EntityAIMoveTowardsTarget(this, 0.9D, 32.0F));
+        this.tasks.addTask(3, new EntityAIMoveThroughVillage(this, 0.6D, true));
+        this.tasks.addTask(4, new EntityAIMoveTowardsRestriction(this, 1.0D));
+        this.tasks.addTask(5, new EntityAILookAtVillager(this));
+        this.tasks.addTask(6, new EntityAIWander(this, 0.6D));
+        this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
+        this.tasks.addTask(8, new EntityAILookIdle(this));
+        this.targetTasks.addTask(1, new EntityAIDefendVillage(this));
+        this.targetTasks.addTask(2, new EntityAIHurtByTarget(this, false, new Class[0]));
+        this.targetTasks.addTask(3, new EntityIronGolem.AINearestAttackableTargetNonCreeper(this, EntityLiving.class, 10, false, true, IMob.VISIBLE_MOB_SELECTOR));
+    }
 
-   protected void entityInit() {
-      super.entityInit();
-      this.I.b(16, Byte.valueOf((byte)0));
-   }
+    protected void entityInit() {
+        super.entityInit();
+        this.dataWatcher.addObject(16, (byte) 0);
+    }
 
-   protected void updateAITasks() {
-      if(--this.homeCheckTimer <= 0) {
-         this.homeCheckTimer = 70 + this.rand.nextInt(50);
-         this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(new BlockPos(this), 32);
-         if(this.villageObj == null) {
-            this.detachHome();
-         } else {
-            BlockPos var1 = this.villageObj.getCenter();
-            this.setHomePosAndDistance(var1, (int)((float)this.villageObj.getVillageRadius() * 0.6F));
-         }
-      }
+    protected void updateAITasks() {
+        if (--this.homeCheckTimer <= 0) {
+            this.homeCheckTimer = 70 + this.rand.nextInt(50);
+            this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(new BlockPos(this), 32);
 
-      super.updateAITasks();
-   }
+            if (this.villageObj == null) {
+                this.detachHome();
+            } else {
+                BlockPos blockpos = this.villageObj.getCenter();
+                this.setHomePosAndDistance(blockpos, (int) ((float) this.villageObj.getVillageRadius() * 0.6F));
+            }
+        }
 
-   protected void applyEntityAttributes() {
-      super.applyEntityAttributes();
-      this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(100.0D);
-      this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.25D);
-   }
+        super.updateAITasks();
+    }
 
-   protected int decreaseAirSupply(int var1) {
-      return var1;
-   }
+    protected void applyEntityAttributes() {
+        super.applyEntityAttributes();
+        this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(100.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.25D);
+    }
 
-   protected void collideWithEntity(Entity var1) {
-      if(var1 instanceof IMob && !(var1 instanceof EntityCreeper) && this.getRNG().nextInt(20) == 0) {
-         this.setAttackTarget((EntityLivingBase)var1);
-      }
+    /**
+     * Decrements the entity's air supply when underwater
+     */
+    protected int decreaseAirSupply(int p_70682_1_) {
+        return p_70682_1_;
+    }
 
-      super.collideWithEntity(var1);
-   }
+    protected void collideWithEntity(Entity p_82167_1_) {
+        if (p_82167_1_ instanceof IMob && !(p_82167_1_ instanceof EntityCreeper) && this.getRNG().nextInt(20) == 0) {
+            this.setAttackTarget((EntityLivingBase) p_82167_1_);
+        }
 
-   public void onLivingUpdate() {
-      super.onLivingUpdate();
-      if(this.attackTimer > 0) {
-         --this.attackTimer;
-      }
+        super.collideWithEntity(p_82167_1_);
+    }
 
-      if(this.holdRoseTick > 0) {
-         --this.holdRoseTick;
-      }
+    /**
+     * Called frequently so the entity can update its state every tick as required. For example, zombies and skeletons
+     * use this to react to sunlight and start to burn.
+     */
+    public void onLivingUpdate() {
+        super.onLivingUpdate();
 
-      if(this.motionX * this.motionX + this.motionZ * this.motionZ > 2.500000277905201E-7D && this.rand.nextInt(5) == 0) {
-         int var1 = MathHelper.floor_double(this.posX);
-         int var2 = MathHelper.floor_double(this.posY - 0.20000000298023224D);
-         int var3 = MathHelper.floor_double(this.posZ);
-         IBlockState var4 = this.worldObj.getBlockState(new BlockPos(var1, var2, var3));
-         Block var5 = var4.getBlock();
-         if(var5.getMaterial() != Material.air) {
-            this.worldObj.spawnParticle(EnumParticleTypes.BLOCK_CRACK, this.posX + ((double)this.rand.nextFloat() - 0.5D) * (double)this.width, this.getEntityBoundingBox().minY + 0.1D, this.posZ + ((double)this.rand.nextFloat() - 0.5D) * (double)this.width, 4.0D * ((double)this.rand.nextFloat() - 0.5D), 0.5D, ((double)this.rand.nextFloat() - 0.5D) * 4.0D, new int[]{Block.getStateId(var4)});
-         }
-      }
+        if (this.attackTimer > 0) {
+            --this.attackTimer;
+        }
 
-   }
+        if (this.holdRoseTick > 0) {
+            --this.holdRoseTick;
+        }
 
-   public void writeEntityToNBT(NBTTagCompound var1) {
-      super.writeEntityToNBT(var1);
-      var1.setBoolean("PlayerCreated", this.isPlayerCreated());
-   }
+        if (this.motionX * this.motionX + this.motionZ * this.motionZ > 2.500000277905201E-7D && this.rand.nextInt(5) == 0) {
+            int i = MathHelper.floor_double(this.posX);
+            int j = MathHelper.floor_double(this.posY - 0.20000000298023224D);
+            int k = MathHelper.floor_double(this.posZ);
+            IBlockState iblockstate = this.worldObj.getBlockState(new BlockPos(i, j, k));
+            Block block = iblockstate.getBlock();
 
-   public void readEntityFromNBT(NBTTagCompound var1) {
-      super.readEntityFromNBT(var1);
-      this.setPlayerCreated(var1.getBoolean("PlayerCreated"));
-   }
+            if (block.getMaterial() != Material.air) {
+                this.worldObj.spawnParticle(EnumParticleTypes.BLOCK_CRACK, this.posX + ((double) this.rand.nextFloat() - 0.5D) * (double) this.width, this.getEntityBoundingBox().minY + 0.1D, this.posZ + ((double) this.rand.nextFloat() - 0.5D) * (double) this.width, 4.0D * ((double) this.rand.nextFloat() - 0.5D), 0.5D, ((double) this.rand.nextFloat() - 0.5D) * 4.0D, new int[]{Block.getStateId(iblockstate)});
+            }
+        }
+    }
 
-   public boolean attackEntityAsMob(Entity var1) {
-      this.attackTimer = 10;
-      this.worldObj.setEntityState(this, (byte)4);
-      boolean var2 = var1.attackEntityFrom(DamageSource.causeMobDamage(this), (float)(7 + this.rand.nextInt(15)));
-      var1.motionY += 0.4000000059604645D;
-      this.applyEnchantments(this, var1);
-      this.playSound("mob.irongolem.throw", 1.0F, 1.0F);
-      return var2;
-   }
+    /**
+     * Returns true if this entity can attack entities of the specified class.
+     */
+//    public boolean canAttackClass(Class <? extends EntityLivingBase > cls)
+//    {
+//        return this.isPlayerCreated() && EntityPlayer.class.isAssignableFrom(cls) ? false : (cls == EntityCreeper.class ? false : super.canAttackClass(cls));
+//    }
 
-   public void handleStatusUpdate(byte var1) {
-      if(var1 == 4) {
-         this.attackTimer = 10;
-         this.playSound("mob.irongolem.throw", 1.0F, 1.0F);
-      } else if(var1 == 11) {
-         this.holdRoseTick = 400;
-      } else {
-         super.handleStatusUpdate(var1);
-      }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+        super.writeEntityToNBT(tagCompound);
+        tagCompound.setBoolean("PlayerCreated", this.isPlayerCreated());
+    }
 
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+        super.readEntityFromNBT(tagCompund);
+        this.setPlayerCreated(tagCompund.getBoolean("PlayerCreated"));
+    }
 
-   public Village getVillage() {
-      return this.villageObj;
-   }
+    public boolean attackEntityAsMob(Entity entityIn) {
+        this.attackTimer = 10;
+        this.worldObj.setEntityState(this, (byte) 4);
+        boolean flag = entityIn.attackEntityFrom(DamageSource.causeMobDamage(this), (float) (7 + this.rand.nextInt(15)));
 
-   public int getAttackTimer() {
-      return this.attackTimer;
-   }
+        if (flag) {
+            entityIn.motionY += 0.4000000059604645D;
+            this.applyEnchantments(this, entityIn);
+        }
 
-   public void setHoldingRose(boolean var1) {
-      this.holdRoseTick = 400;
-      this.worldObj.setEntityState(this, (byte)11);
-   }
+        this.playSound("mob.irongolem.throw", 1.0F, 1.0F);
+        return flag;
+    }
 
-   protected String getHurtSound() {
-      return "mob.irongolem.hit";
-   }
+    public void handleStatusUpdate(byte id) {
+        if (id == 4) {
+            this.attackTimer = 10;
+            this.playSound("mob.irongolem.throw", 1.0F, 1.0F);
+        } else if (id == 11) {
+            this.holdRoseTick = 400;
+        } else {
+            super.handleStatusUpdate(id);
+        }
+    }
 
-   protected String getDeathSound() {
-      return "mob.irongolem.death";
-   }
+    public Village getVillage() {
+        return this.villageObj;
+    }
 
-   protected void playStepSound(BlockPos var1, Block var2) {
-      this.playSound("mob.irongolem.walk", 1.0F, 1.0F);
-   }
+    public int getAttackTimer() {
+        return this.attackTimer;
+    }
 
-   protected void dropFewItems(boolean var1, int var2) {
-      int var3 = this.rand.nextInt(3);
+    public void setHoldingRose(boolean p_70851_1_) {
+        this.holdRoseTick = p_70851_1_ ? 400 : 0;
+        this.worldObj.setEntityState(this, (byte) 11);
+    }
 
-      for(int var4 = 0; var4 < var3; ++var4) {
-         this.dropItemWithOffset(Item.getItemFromBlock(Blocks.red_flower), 1, (float)BlockFlower$EnumFlowerType.POPPY.getMeta());
-      }
+    /**
+     * Returns the sound this mob makes when it is hurt.
+     */
+    protected String getHurtSound() {
+        return "mob.irongolem.hit";
+    }
 
-      int var6 = 3 + this.rand.nextInt(3);
+    /**
+     * Returns the sound this mob makes on death.
+     */
+    protected String getDeathSound() {
+        return "mob.irongolem.death";
+    }
 
-      for(int var5 = 0; var5 < var6; ++var5) {
-         this.dropItem(Items.iron_ingot, 1);
-      }
+    protected void playStepSound(BlockPos pos, Block blockIn) {
+        this.playSound("mob.irongolem.walk", 1.0F, 1.0F);
+    }
 
-   }
+    /**
+     * Drop 0-2 items of this living's type
+     */
+    protected void dropFewItems(boolean p_70628_1_, int p_70628_2_) {
+        int i = this.rand.nextInt(3);
 
-   public int getHoldRoseTick() {
-      return this.holdRoseTick;
-   }
+        for (int j = 0; j < i; ++j) {
+            this.dropItemWithOffset(Item.getItemFromBlock(Blocks.red_flower), 1, (float) BlockFlower.EnumFlowerType.POPPY.getMeta());
+        }
 
-   public boolean isPlayerCreated() {
-      return (this.I.g(16) & 1) != 0;
-   }
+        int l = 3 + this.rand.nextInt(3);
 
-   public void setPlayerCreated(boolean var1) {
-      byte var2 = this.I.g(16);
-      this.I.a(16, Byte.valueOf((byte)(var2 | 1)));
-   }
+        for (int k = 0; k < l; ++k) {
+            this.dropItem(Items.iron_ingot, 1);
+        }
+    }
 
-   public void onDeath(DamageSource var1) {
-      if(!this.isPlayerCreated() && this.attackingPlayer != null && this.villageObj != null) {
-         this.villageObj.setReputationForPlayer(this.attackingPlayer.getName(), -5);
-      }
+    public int getHoldRoseTick() {
+        return this.holdRoseTick;
+    }
 
-      super.onDeath(var1);
-   }
+    public boolean isPlayerCreated() {
+        return (this.dataWatcher.getWatchableObjectByte(16) & 1) != 0;
+    }
+
+    public void setPlayerCreated(boolean p_70849_1_) {
+        byte b0 = this.dataWatcher.getWatchableObjectByte(16);
+
+        if (p_70849_1_) {
+            this.dataWatcher.updateObject(16, (byte) (b0 | 1));
+        } else {
+            this.dataWatcher.updateObject(16, (byte) (b0 & -2));
+        }
+    }
+
+    /**
+     * Called when the mob's health reaches 0.
+     */
+    public void onDeath(DamageSource cause) {
+        if (!this.isPlayerCreated() && this.attackingPlayer != null && this.villageObj != null) {
+            this.villageObj.setReputationForPlayer(this.attackingPlayer.getName(), -5);
+        }
+
+        super.onDeath(cause);
+    }
+
+    static class AINearestAttackableTargetNonCreeper<T extends EntityLivingBase> extends EntityAINearestAttackableTarget<T> {
+        public AINearestAttackableTargetNonCreeper(final EntityCreature creature, Class<T> classTarget, int chance, boolean p_i45858_4_, boolean p_i45858_5_, final Predicate<? super T> p_i45858_6_) {
+            super(creature, classTarget, chance, p_i45858_4_, p_i45858_5_, p_i45858_6_);
+            this.targetEntitySelector = new Predicate<T>() {
+                public boolean apply(T p_apply_1_) {
+                    if (p_i45858_6_ != null && !p_i45858_6_.apply(p_apply_1_)) {
+                        return false;
+                    } else if (p_apply_1_ instanceof EntityCreeper) {
+                        return false;
+                    } else {
+                        if (p_apply_1_ instanceof EntityPlayer) {
+                            double d0 = AINearestAttackableTargetNonCreeper.this.getTargetDistance();
+
+                            if (p_apply_1_.isSneaking()) {
+                                d0 *= 0.800000011920929D;
+                            }
+
+                            if (p_apply_1_.isInvisible()) {
+                                float f = ((EntityPlayer) p_apply_1_).getArmorVisibility();
+
+                                if (f < 0.1F) {
+                                    f = 0.1F;
+                                }
+
+                                d0 *= (double) (0.7F * f);
+                            }
+
+                            if ((double) p_apply_1_.getDistanceToEntity(creature) > d0) {
+                                return false;
+                            }
+                        }
+
+                        return AINearestAttackableTargetNonCreeper.this.isSuitableTarget(p_apply_1_, false);
+                    }
+                }
+            };
+        }
+    }
 }

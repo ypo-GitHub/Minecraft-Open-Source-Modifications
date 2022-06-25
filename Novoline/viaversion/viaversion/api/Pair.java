@@ -1,50 +1,48 @@
 package viaversion.viaversion.api;
 
-import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.PacketWrapper;
 
-public class Pair {
-   private final Object key;
-   private Object value;
+import java.util.Objects;
 
-   public Pair(@Nullable Object var1, @Nullable Object var2) {
-      this.key = var1;
-      this.value = var2;
-   }
+public class Pair<X, Y> {
+    private final X key;
+    private Y value;
 
-   public Object getKey() {
-      return this.key;
-   }
+    public Pair(@Nullable X key, @Nullable Y value) {
+        this.key = key;
+        this.value = value;
+    }
 
-   public Object getValue() {
-      return this.value;
-   }
+    public X getKey() {
+        return key;
+    }
 
-   public void setValue(@Nullable Object var1) {
-      this.value = var1;
-   }
+    public Y getValue() {
+        return value;
+    }
 
-   public String toString() {
-      return "Pair{" + this.key + ", " + this.value + '}';
-   }
+    public void setValue(@Nullable Y value) {
+        this.value = value;
+    }
 
-   public boolean equals(Object var1) {
-      boolean var2 = PacketWrapper.k();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         Pair var3 = (Pair)var1;
-         return !Objects.equals(this.key, var3.key)?false:Objects.equals(this.value, var3.value);
-      } else {
-         return false;
-      }
-   }
+    @Override
+    public String toString() {
+        return "Pair{" + key + ", " + value + '}';
+    }
 
-   public int hashCode() {
-      boolean var1 = PacketWrapper.f();
-      int var2 = this.key != null?this.key.hashCode():0;
-      var2 = 31 * var2 + (this.value != null?this.value.hashCode():0);
-      return var2;
-   }
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        if (!Objects.equals(key, pair.key)) return false;
+        return Objects.equals(value, pair.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = key != null ? key.hashCode() : 0;
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
 }

@@ -1,54 +1,68 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S03PacketTimeUpdate implements Packet {
-   private long totalWorldTime;
-   private long worldTime;
+import java.io.IOException;
 
-   public S03PacketTimeUpdate() {
-   }
+public class S03PacketTimeUpdate implements Packet<INetHandlerPlayClient> {
 
-   public S03PacketTimeUpdate(long var1, long var3, boolean var5) {
-      this.totalWorldTime = var1;
-      this.worldTime = var3;
-      this.worldTime = -this.worldTime;
-      if(this.worldTime == 0L) {
-         this.worldTime = -1L;
-      }
+    private long totalWorldTime;
+    private long worldTime;
 
-   }
+    public S03PacketTimeUpdate() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.totalWorldTime = var1.readLong();
-      this.worldTime = var1.readLong();
-   }
+    public S03PacketTimeUpdate(long totalWorldTimeIn, long totalTimeIn, boolean doDayLightCycle) {
+        this.totalWorldTime = totalWorldTimeIn;
+        this.worldTime = totalTimeIn;
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeLong(this.totalWorldTime);
-      var1.writeLong(this.worldTime);
-   }
+        if (!doDayLightCycle) {
+            this.worldTime = -this.worldTime;
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleTimeUpdate(this);
-   }
+            if (this.worldTime == 0L) {
+                this.worldTime = -1L;
+            }
+        }
+    }
 
-   public long getTotalWorldTime() {
-      return this.totalWorldTime;
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.totalWorldTime = buf.readLong();
+        this.worldTime = buf.readLong();
+    }
 
-   public long getWorldTime() {
-      return this.worldTime;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeLong(this.totalWorldTime);
+        buf.writeLong(this.worldTime);
+    }
 
-   public void setTotalWorldTime(long var1) {
-      this.totalWorldTime = var1;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleTimeUpdate(this);
+    }
 
-   public void setWorldTime(long var1) {
-      this.worldTime = var1;
-   }
+    public long getTotalWorldTime() {
+        return this.totalWorldTime;
+    }
+
+    public long getWorldTime() {
+        return this.worldTime;
+    }
+
+    public void setTotalWorldTime(long totalWorldTime) {
+        this.totalWorldTime = totalWorldTime;
+    }
+
+    public void setWorldTime(long worldTime) {
+        this.worldTime = worldTime;
+    }
 }

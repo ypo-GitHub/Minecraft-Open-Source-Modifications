@@ -1,37 +1,47 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S09PacketHeldItemChange implements Packet {
-   private int index;
+import java.io.IOException;
 
-   public S09PacketHeldItemChange() {
-   }
+public class S09PacketHeldItemChange implements Packet<INetHandlerPlayClient> {
+    private int index;
 
-   public S09PacketHeldItemChange(int var1) {
-      this.index = var1;
-   }
+    public S09PacketHeldItemChange() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.index = var1.readByte();
-   }
+    public S09PacketHeldItemChange(int hotbarIndexIn) {
+        this.index = hotbarIndexIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.index);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.index = buf.readByte();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleHeldItemChange(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.index);
+    }
 
-   public int getIndex() {
-      return this.index;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleHeldItemChange(this);
+    }
 
-   public void setIndex(int var1) {
-      this.index = var1;
-   }
+    public int getIndex() {
+        return this.index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
 }

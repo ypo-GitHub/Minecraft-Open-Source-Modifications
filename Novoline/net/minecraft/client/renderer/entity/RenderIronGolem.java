@@ -2,32 +2,33 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelIronGolem;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.layers.LayerIronGolemFlower;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderIronGolem extends RenderLiving {
-   private static final ResourceLocation ironGolemTextures = new ResourceLocation("textures/entity/iron_golem.png");
+public class RenderIronGolem extends RenderLiving<EntityIronGolem> {
+    private static final ResourceLocation ironGolemTextures = new ResourceLocation("textures/entity/iron_golem.png");
 
-   public RenderIronGolem(RenderManager var1) {
-      super(var1, new ModelIronGolem(), 0.5F);
-      this.addLayer(new LayerIronGolemFlower(this));
-   }
+    public RenderIronGolem(RenderManager renderManagerIn) {
+        super(renderManagerIn, new ModelIronGolem(), 0.5F);
+        this.addLayer(new LayerIronGolemFlower(this));
+    }
 
-   protected ResourceLocation getEntityTexture(EntityIronGolem var1) {
-      return ironGolemTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityIronGolem entity) {
+        return ironGolemTextures;
+    }
 
-   protected void rotateCorpse(EntityIronGolem var1, float var2, float var3, float var4) {
-      super.rotateCorpse(var1, var2, var3, var4);
-      if((double)var1.limbSwingAmount >= 0.01D) {
-         float var5 = 13.0F;
-         float var6 = var1.limbSwing - var1.limbSwingAmount * (1.0F - var4) + 6.0F;
-         float var7 = (Math.abs(var6 % var5 - var5 * 0.5F) - var5 * 0.25F) / (var5 * 0.25F);
-         GlStateManager.rotate(6.5F * var7, 0.0F, 0.0F, 1.0F);
-      }
+    protected void rotateCorpse(EntityIronGolem bat, float p_77043_2_, float p_77043_3_, float partialTicks) {
+        super.rotateCorpse(bat, p_77043_2_, p_77043_3_, partialTicks);
 
-   }
+        if ((double) bat.limbSwingAmount >= 0.01D) {
+            float f = 13.0F;
+            float f1 = bat.limbSwing - bat.limbSwingAmount * (1.0F - partialTicks) + 6.0F;
+            float f2 = (Math.abs(f1 % f - f * 0.5F) - f * 0.25F) / (f * 0.25F);
+            GlStateManager.rotate(6.5F * f2, 0.0F, 0.0F, 1.0F);
+        }
+    }
 }

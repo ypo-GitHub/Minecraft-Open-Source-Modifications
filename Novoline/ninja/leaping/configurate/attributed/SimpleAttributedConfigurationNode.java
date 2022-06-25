@@ -1,207 +1,232 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.attributed;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import net.acE;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.SimpleConfigurationNode;
-import ninja.leaping.configurate.attributed.AttributedConfigurationNode;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Basic implementation of {@link AttributedConfigurationNode}.
+ */
 public class SimpleAttributedConfigurationNode extends SimpleConfigurationNode implements AttributedConfigurationNode {
-   private String tagName;
-   private final Map attributes = new LinkedHashMap();
-   private static acE[] g;
 
-   public static SimpleAttributedConfigurationNode root() {
-      return root("root", ConfigurationOptions.defaults());
-   }
+    private String tagName;
+    private final Map<String, String> attributes = new LinkedHashMap<>();
 
-   public static SimpleAttributedConfigurationNode root(String var0) {
-      return root(var0, ConfigurationOptions.defaults());
-   }
+    @NonNull
+    public static SimpleAttributedConfigurationNode root() {
+        return root("root", ConfigurationOptions.defaults());
+    }
 
-   public static SimpleAttributedConfigurationNode root(String var0, ConfigurationOptions var1) {
-      return new SimpleAttributedConfigurationNode(var0, (Object)null, (SimpleConfigurationNode)null, var1);
-   }
+    @NonNull
+    public static SimpleAttributedConfigurationNode root(@NonNull String tagName) {
+        return root(tagName, ConfigurationOptions.defaults());
+    }
 
-   protected SimpleAttributedConfigurationNode(String var1, Object var2, SimpleConfigurationNode var3, ConfigurationOptions var4) {
-      super(var2, var3, var4);
-      this.setTagName(var1);
-   }
+    @NonNull
+    public static SimpleAttributedConfigurationNode root(@NonNull String tagName, @NonNull ConfigurationOptions options) {
+        return new SimpleAttributedConfigurationNode(tagName, null, null, options);
+    }
 
-   protected SimpleAttributedConfigurationNode(String var1, SimpleConfigurationNode var2, SimpleConfigurationNode var3) {
-      super(var2, var3);
-      this.setTagName(var1);
-   }
+    protected SimpleAttributedConfigurationNode(@NonNull String tagName, @Nullable Object path, @Nullable SimpleConfigurationNode parent, @NonNull ConfigurationOptions options) {
+        super(path, parent, options);
+        setTagName(tagName);
+    }
 
-   public String getTagName() {
-      return this.tagName;
-   }
+    protected SimpleAttributedConfigurationNode(@NonNull String tagName, @Nullable SimpleConfigurationNode parent, @NonNull SimpleConfigurationNode copyOf) {
+        super(parent, copyOf);
+        setTagName(tagName);
+    }
 
-   public SimpleAttributedConfigurationNode setTagName(String var1) {
-      acE[] var2 = c();
-      if(Strings.isNullOrEmpty(var1)) {
-         throw new IllegalArgumentException("Tag name cannot be null/empty");
-      } else {
-         this.tagName = var1;
-         return this;
-      }
-   }
+    @NonNull
+    @Override
+    public String getTagName() {
+        return tagName;
+    }
 
-   public SimpleAttributedConfigurationNode addAttribute(String var1, String var2) {
-      acE[] var3 = c();
-      if(Strings.isNullOrEmpty(var1)) {
-         throw new IllegalArgumentException("Attribute name cannot be null/empty");
-      } else {
-         this.attributes.put(var1, var2);
-         return this;
-      }
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode setTagName(@NonNull String tagName) {
+        if (Strings.isNullOrEmpty(tagName)) {
+            throw new IllegalArgumentException("Tag name cannot be null/empty");
+        }
 
-   public SimpleAttributedConfigurationNode removeAttribute(String var1) {
-      this.attributes.remove(var1);
-      return this;
-   }
+        this.tagName = tagName;
+        return this;
+    }
 
-   public boolean hasAttributes() {
-      acE[] var1 = c();
-      return !this.attributes.isEmpty();
-   }
-
-   public String getAttribute(String var1) {
-      return (String)this.attributes.get(var1);
-   }
-
-   public Map getAttributes() {
-      return ImmutableMap.copyOf(this.attributes);
-   }
-
-   public SimpleAttributedConfigurationNode setAttributes(Map var1) {
-      c();
-      Iterator var3 = var1.keySet().iterator();
-      if(var3.hasNext()) {
-         String var4 = (String)var3.next();
-         if(Strings.isNullOrEmpty(var4)) {
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode addAttribute(@NonNull String name, @NonNull String value) {
+        if (Strings.isNullOrEmpty(name)) {
             throw new IllegalArgumentException("Attribute name cannot be null/empty");
-         }
-      }
+        }
 
-      this.attributes.clear();
-      this.attributes.putAll(var1);
-      return this;
-   }
+        attributes.put(name, value);
+        return this;
+    }
 
-   public SimpleAttributedConfigurationNode getParent() {
-      return (SimpleAttributedConfigurationNode)super.getParent();
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode removeAttribute(@NonNull String name) {
+        attributes.remove(name);
+        return this;
+    }
 
-   protected SimpleAttributedConfigurationNode createNode(Object var1) {
-      return new SimpleAttributedConfigurationNode("element", var1, this, this.getOptions());
-   }
+    @Override
+    public boolean hasAttributes() {
+        return !attributes.isEmpty();
+    }
 
-   public SimpleAttributedConfigurationNode setValue(Object var1) {
-      acE[] var2 = c();
-      if(var1 instanceof AttributedConfigurationNode) {
-         AttributedConfigurationNode var3 = (AttributedConfigurationNode)var1;
-         this.setTagName(var3.getTagName());
-         this.setAttributes(var3.getAttributes());
-      }
+    @Nullable
+    @Override
+    public String getAttribute(@NonNull String name) {
+        return attributes.get(name);
+    }
 
-      return (SimpleAttributedConfigurationNode)super.setValue(var1);
-   }
+    @NonNull
+    @Override
+    public Map<String, String> getAttributes() {
+        return ImmutableMap.copyOf(attributes);
+    }
 
-   public SimpleAttributedConfigurationNode mergeValuesFrom(ConfigurationNode var1) {
-      acE[] var2 = c();
-      if(var1 instanceof AttributedConfigurationNode) {
-         AttributedConfigurationNode var3 = (AttributedConfigurationNode)var1;
-         this.setTagName(var3.getTagName());
-         Iterator var4 = var3.getAttributes().entrySet().iterator();
-         if(var4.hasNext()) {
-            Entry var5 = (Entry)var4.next();
-            this.addAttribute((String)var5.getKey(), (String)var5.getValue());
-         }
-      }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode setAttributes(@NonNull Map<String, String> attributes) {
+        for (String name : attributes.keySet()) {
+            if (Strings.isNullOrEmpty(name)) {
+                throw new IllegalArgumentException("Attribute name cannot be null/empty");
+            }
+        }
 
-      return (SimpleAttributedConfigurationNode)super.mergeValuesFrom(var1);
-   }
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+        return this;
+    }
 
-   public SimpleAttributedConfigurationNode getNode(Object... var1) {
-      return (SimpleAttributedConfigurationNode)super.getNode(var1);
-   }
+    // Methods from superclass overridden to have correct return types
 
-   public List getChildrenList() {
-      return super.getChildrenList();
-   }
+    @Nullable
+    @Override
+    public SimpleAttributedConfigurationNode getParent() {
+        return (SimpleAttributedConfigurationNode) super.getParent();
+    }
 
-   public Map getChildrenMap() {
-      return super.getChildrenMap();
-   }
+    @Override
+    protected SimpleAttributedConfigurationNode createNode(Object path) {
+        return new SimpleAttributedConfigurationNode("element", path, this, getOptions());
+    }
 
-   public SimpleAttributedConfigurationNode getAppendedNode() {
-      return (SimpleAttributedConfigurationNode)super.getAppendedNode();
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode setValue(@Nullable Object value) {
+        if (value instanceof AttributedConfigurationNode) {
+            AttributedConfigurationNode node = (AttributedConfigurationNode) value;
+            setTagName(node.getTagName());
+            setAttributes(node.getAttributes());
+        }
+        return (SimpleAttributedConfigurationNode) super.setValue(value);
+    }
 
-   public SimpleAttributedConfigurationNode copy() {
-      return this.copy((SimpleConfigurationNode)null);
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode mergeValuesFrom(@NonNull ConfigurationNode other) {
+        if (other instanceof AttributedConfigurationNode) {
+            AttributedConfigurationNode node = (AttributedConfigurationNode) other;
+            setTagName(node.getTagName());
+            for (Map.Entry<String, String> attribute : node.getAttributes().entrySet()) {
+                addAttribute(attribute.getKey(), attribute.getValue());
+            }
+        }
+        return (SimpleAttributedConfigurationNode) super.mergeValuesFrom(other);
+    }
 
-   protected SimpleAttributedConfigurationNode copy(SimpleConfigurationNode var1) {
-      SimpleAttributedConfigurationNode var2 = new SimpleAttributedConfigurationNode(this.tagName, var1, this);
-      var2.attributes.putAll(this.attributes);
-      return var2;
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode getNode(@NonNull Object... path) {
+        return (SimpleAttributedConfigurationNode) super.getNode(path);
+    }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = c();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof SimpleAttributedConfigurationNode)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         SimpleAttributedConfigurationNode var3 = (SimpleAttributedConfigurationNode)var1;
-         return this.tagName.equals(var3.tagName) && this.attributes.equals(var3.attributes);
-      }
-   }
+    @NonNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<? extends SimpleAttributedConfigurationNode> getChildrenList() {
+        return (List<SimpleAttributedConfigurationNode>) super.getChildrenList();
+    }
 
-   public int hashCode() {
-      c();
-      int var2 = super.hashCode();
-      var2 = 31 * var2 + this.tagName.hashCode();
-      var2 = 31 * var2 + this.attributes.hashCode();
-      return var2;
-   }
+    @NonNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<Object, ? extends SimpleAttributedConfigurationNode> getChildrenMap() {
+        return (Map<Object, SimpleAttributedConfigurationNode>) super.getChildrenMap();
+    }
 
-   public String toString() {
-      acE[] var1 = c();
-      String var10000 = "SimpleAttributedConfigurationNode{super=" + super.toString() + ", tagName=" + this.tagName + ", attributes=" + this.attributes + '}';
-      if(acE.b() == null) {
-         b(new acE[2]);
-      }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode getAppendedNode() {
+        return (SimpleAttributedConfigurationNode) super.getAppendedNode();
+    }
 
-      return var10000;
-   }
+    @NonNull
+    @Override
+    public SimpleAttributedConfigurationNode copy() {
+        return copy(null);
+    }
 
-   public static void b(acE[] var0) {
-      g = var0;
-   }
+    @NonNull
+    @Override
+    protected SimpleAttributedConfigurationNode copy(@Nullable SimpleConfigurationNode parent) {
+        SimpleAttributedConfigurationNode copy = new SimpleAttributedConfigurationNode(this.tagName, parent, this);
+        copy.attributes.putAll(this.attributes);
+        return copy;
+    }
 
-   public static acE[] c() {
-      return g;
-   }
+    //region Lombok
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SimpleAttributedConfigurationNode)) return false;
+        if (!super.equals(o)) return false;
+        SimpleAttributedConfigurationNode that = (SimpleAttributedConfigurationNode) o;
+        return tagName.equals(that.tagName) && attributes.equals(that.attributes);
+    }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + tagName.hashCode();
+        result = 31 * result + attributes.hashCode();
+        return result;
+    }
 
-   static {
-      b(new acE[1]);
-   }
+    @Override
+    public String toString() {
+        return "SimpleAttributedConfigurationNode{" + "super=" + super.toString() + ", " + "tagName=" + tagName + ", " + "attributes=" + attributes + '}';
+    }
+    //endregion
+
 }

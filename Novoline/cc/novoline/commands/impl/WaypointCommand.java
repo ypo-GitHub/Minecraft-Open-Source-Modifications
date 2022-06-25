@@ -3,138 +3,113 @@ package cc.novoline.commands.impl;
 import cc.novoline.Novoline;
 import cc.novoline.commands.NovoCommand;
 import cc.novoline.modules.visual.Waypoints;
-import cc.novoline.modules.visual.Waypoints$Waypoint;
-import cc.novoline.utils.messages.MessageFactory;
-import cc.novoline.utils.notifications.NotificationType;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Iterator;
-import net.Uj;
-import net.a_E;
+
+import static cc.novoline.utils.messages.MessageFactory.usage;
+import static cc.novoline.utils.notifications.NotificationType.ERROR;
 
 public final class WaypointCommand extends NovoCommand {
-   public WaypointCommand(Novoline var1) {
-      super(var1, "waypoint", "Manages waypoints", (Iterable)Arrays.asList(new String[]{"waypoints", "wp"}));
-   }
 
-   private void sendHelp() {
-      this.a("Waypoints help:", ".waypoint", new Uj[]{MessageFactory.a("add (x) (y) (z) (name)", "add waypoint"), MessageFactory.a("remove (name)", "removes waypoint"), MessageFactory.a("clear", "remove all waypoints"), MessageFactory.a("list", "show waypoints list")});
-   }
+    /* constructors */
+    public WaypointCommand(@NonNull Novoline novoline) {
+        super(novoline, "waypoint", "Manages waypoints", Arrays.asList("waypoints", "wp"));
+    }
 
-   public void process(String[] var1) {
-      a_E.b();
-      Waypoints var3 = (Waypoints)Novoline.getInstance().getModuleManager().getModule(Waypoints.class);
-      if(var1.length == 0) {
-         this.sendHelp();
-      } else {
-         String var4 = var1[0];
-         String var5 = var4.toLowerCase();
-         byte var6 = -1;
-         switch(var5.hashCode()) {
-         case 96417:
-            if(!var5.equals("add")) {
-               break;
-            }
+    /* methods */
+    private void sendHelp() {
+        sendHelp( // @off
+                "Waypoints help:", ".waypoint",
+                usage("add (x) (y) (z) (name)", "add waypoint"),
+                usage("remove (name)", "removes waypoint"),
+                usage("clear", "remove all waypoints"),
+                usage("list", "show waypoints list")
+        ); // @on
+    }
 
-            var6 = 0;
-         case -934610812:
-            if(!var5.equals("remove")) {
-               break;
-            }
+    @Override
+    public void process(String[] args) {
+        final Waypoints module = Novoline.getInstance().getModuleManager().getModule(Waypoints.class);
 
-            var6 = 1;
-         case -1335458389:
-            if(!var5.equals("delete")) {
-               break;
-            }
+        if (args.length == 0) {
+            sendHelp();
+            return;
+        }
 
-            var6 = 2;
-         case 99339:
-            if(!var5.equals("del")) {
-               break;
-            }
+        final String action = args[0];
 
-            var6 = 3;
-         case 94746189:
-            if(!var5.equals("clear")) {
-               break;
-            }
+        switch (action.toLowerCase()) {
+            case "add":
+                if (args.length != 5) {
+                    sendHelp();
+                    return;
+                }
 
-            var6 = 4;
-         case 3322014:
-            if(var5.equals("list")) {
-               var6 = 5;
-            }
-         }
+                module.addWaypoint(Waypoints.Waypoint
+                        .of(args[4], Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3])));
 
-         switch(var6) {
-         case 0:
-            if(var1.length != 5) {
-               this.sendHelp();
-               return;
-            }
+                try {
+                    module.getConfig().save();
+                    notify("Waypoint " + args[4] + " was added successfully!", 5_000);
+                } catch (IOException e) {
+                    Novoline.getInstance().getNotificationManager().pop("Can't save to file", ERROR);
+                    module.getLogger().warn("An error occurred while saving waypoints list", e);
+                }
 
-            var3.addWaypoint(Waypoints$Waypoint.of(var1[4], Integer.parseInt(var1[1]), Integer.parseInt(var1[2]), Integer.parseInt(var1[3])));
+                break;
 
-            try {
-               var3.getConfig().save();
-               this.notify("Waypoint " + var1[4] + " was added successfully!", 5000);
-               break;
-            } catch (IOException var10) {
-               Novoline.getInstance().getNotificationManager().pop("Can\'t save to file", NotificationType.ERROR);
-               var3.getLogger().warn("An error occurred while saving waypoints list", var10);
-            }
-         case 1:
-         case 2:
-         case 3:
-            if(var1.length != 2) {
-               this.sendHelp();
-               return;
-            }
+            case "remove":
+            case "delete":
+            case "del":
+                if (args.length != 2) {
+                    sendHelp();
+                    return;
+                }
 
-            if(var3.removeWaypoint(var1[1])) {
-               this.notify("Removed " + var1[1] + " waypoint!", 5000);
-               Waypoints var10000 = var3;
+                if (module.removeWaypoint(args[1])) {
+                    notify("Removed " + args[1] + " waypoint!", 5_000);
 
-               try {
-                  var10000.getConfig().save();
-                  break;
-               } catch (IOException var9) {
-                  Novoline.getInstance().getNotificationManager().pop("Can\'t save to file", NotificationType.ERROR);
-                  var3.getLogger().warn("An error occurred while saving waypoints list", var9);
-               }
-            }
+                    try {
+                        module.getConfig().save();
+                    } catch (IOException e) {
+                        Novoline.getInstance().getNotificationManager().pop("Can't save to file", ERROR);
+                        module.getLogger().warn("An error occurred while saving waypoints list", e);
+                    }
+                } else {
+                    notifyError("Waypoint doesn't exist!", 5_000);
+                }
 
-            this.notifyError("Waypoint doesn\'t exist!", 5000);
-         case 4:
-            if(var1.length != 1) {
-               this.sendHelp();
-               return;
-            }
+                break;
 
-            if(var3.getWaypointsList().isEmpty()) {
-               break;
-            }
+            case "clear":
+                if (args.length != 1) {
+                    sendHelp();
+                    return;
+                }
 
-            var3.getWaypointsList().clear();
-         case 5:
-            if(var1.length != 1) {
-               this.sendHelp();
-               return;
-            }
+                if (!module.getWaypointsList().isEmpty()) {
+                    module.getWaypointsList().clear();
+                }
 
-            this.send("Waypoints:");
-            Iterator var7 = var3.getWaypointsList().iterator();
-            if(var7.hasNext()) {
-               Waypoints$Waypoint var8 = (Waypoints$Waypoint)var7.next();
-               this.send(" - name: §3" + var8.getName() + "§r, coordinates: §8X:§r " + var8.getX() + " §8Y:§r " + var8.getY() + " §8Z:§r " + var8.getZ());
-            }
-         }
+                break;
 
-      }
-   }
+            case "list":
+                if (args.length != 1) {
+                    sendHelp();
+                    return;
+                }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+                send("Waypoints:");
+
+                for (Waypoints.Waypoint waypoint : module.getWaypointsList()) {
+                    send(" - name: \u00A73" + waypoint.getName() + "\u00A7r, " +
+                            "coordinates: \u00A78X:\u00A7r " + waypoint.getX() + " \u00A78Y:\u00A7r " + waypoint.getY() + " \u00A78Z:\u00A7r " + waypoint.getZ());
+                }
+
+                break;
+        }
+    }
+
 }

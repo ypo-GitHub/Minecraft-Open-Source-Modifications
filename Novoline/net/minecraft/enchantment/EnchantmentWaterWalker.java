@@ -1,24 +1,31 @@
 package net.minecraft.enchantment;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.util.ResourceLocation;
 
 public class EnchantmentWaterWalker extends Enchantment {
-   public EnchantmentWaterWalker(int var1, ResourceLocation var2, int var3) {
-      super(var1, var2, var3, EnumEnchantmentType.ARMOR_FEET);
-      this.setName("waterWalker");
-   }
+    public EnchantmentWaterWalker(int p_i45762_1_, ResourceLocation p_i45762_2_, int p_i45762_3_) {
+        super(p_i45762_1_, p_i45762_2_, p_i45762_3_, EnumEnchantmentType.ARMOR_FEET);
+        this.setName("waterWalker");
+    }
 
-   public int getMinEnchantability(int var1) {
-      return var1 * 10;
-   }
+    /**
+     * Returns the minimal value of enchantability needed on the enchantment level passed.
+     */
+    public int getMinEnchantability(int enchantmentLevel) {
+        return enchantmentLevel * 10;
+    }
 
-   public int getMaxEnchantability(int var1) {
-      return this.getMinEnchantability(var1) + 15;
-   }
+    /**
+     * Returns the maximum value of enchantability nedded on the enchantment level passed.
+     */
+    public int getMaxEnchantability(int enchantmentLevel) {
+        return this.getMinEnchantability(enchantmentLevel) + 15;
+    }
 
-   public int getMaxLevel() {
-      return 3;
-   }
+    /**
+     * Returns the maximum level that the enchantment can have.
+     */
+    public int getMaxLevel() {
+        return 3;
+    }
 }

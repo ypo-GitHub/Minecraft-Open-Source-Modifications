@@ -1,21 +1,24 @@
 package viaversion.viarewind.replacement;
 
+import viaversion.viaversion.api.minecraft.metadata.Metadata;
+
 import java.util.List;
 
 public interface EntityReplacement {
-   int getEntityId();
 
-   void setLocation(double var1, double var3, double var5);
+	public int getEntityId();
 
-   void relMove(double var1, double var3, double var5);
+	public void setLocation(double x, double y, double z);
 
-   void setYawPitch(float var1, float var2);
+	public void relMove(double x, double y, double z);
 
-   void setHeadYaw(float var1);
+	public void setYawPitch(float yaw, float pitch);
 
-   void spawn();
+	public void setHeadYaw(float yaw);
 
-   void despawn();
+	public void spawn();
 
-   void updateMetadata(List var1);
+	public void despawn();
+
+	public void updateMetadata(List<Metadata> metadataList);
 }

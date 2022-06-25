@@ -1,45 +1,46 @@
 package cc.novoline.gui.screen.alt.repository.hypixel;
 
-import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfile;
 import net.minecraft.nbt.NBTTagCompound;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class HypixelProfileFactory {
-   private HypixelProfileFactory() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
 
-   @NotNull
-   public static HypixelProfile hypixelProfile(@NotNull String var0, int var1) {
-      return HypixelProfile.of(var0, var1, (String)null, (Integer)null, (Integer)null, (Integer)null, (Long)null, (Long)null, Long.valueOf(System.currentTimeMillis()));
-   }
+    private HypixelProfileFactory() {
+        throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
-   @NotNull
-   public static HypixelProfile hypixelProfile(@Nullable String var0, int var1, @Nullable String var2, @Nullable Integer var3, @Nullable Integer var4, @Nullable Integer var5, @Nullable Long var6, @Nullable Long var7, @Nullable Long var8) {
-      return HypixelProfile.of(var0, var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+    public static @NotNull HypixelProfile hypixelProfile(@NotNull String rank, int level) {
+        return HypixelProfile.of(rank, level, null, null, null, null, null, null, System.currentTimeMillis());
+    }
 
-   @Nullable
-   public static HypixelProfile fromNBT(@Nullable NBTTagCompound var0) {
-      String var1 = HypixelProfile.i();
-      if(var0 == null) {
-         return null;
-      } else {
-         String var2 = var0.getString("rank", "Default");
-         int var3 = var0.getInteger("level", Integer.valueOf(1)).intValue();
-         String var4 = var0.getString("rank", (String)null);
-         int var5 = var0.getInteger("ap", Integer.valueOf(0)).intValue();
-         int var6 = var0.getInteger("quests", Integer.valueOf(0)).intValue();
-         int var7 = var0.getInteger("friends", Integer.valueOf(0)).intValue();
-         Long var8 = var0.getLong("first_login", (Long)null);
-         Long var9 = var0.getLong("last_login", (Long)null);
-         Long var10 = var0.getLong("cached", (Long)null);
-         return HypixelProfile.of(var2, var3, var4, Integer.valueOf(var5), Integer.valueOf(var6), Integer.valueOf(var7), var8, var9, var10);
-      }
-   }
+    public static @NotNull HypixelProfile hypixelProfile(@Nullable String rank,
+                                                         int level,
+                                                         @Nullable String guild,
+                                                         @Nullable Integer achievementPoints,
+                                                         @Nullable Integer quests,
+                                                         @Nullable Integer friends,
+                                                         @Nullable Long firstLogin,
+                                                         @Nullable Long lastLogin,
+                                                         @Nullable Long cached) {
+        return HypixelProfile.of(rank, level, guild, achievementPoints, quests, friends, firstLogin, lastLogin, cached);
+    }
 
-   private static UnsupportedOperationException a(UnsupportedOperationException var0) {
-      return var0;
-   }
+    @Nullable
+    public static HypixelProfile fromNBT(@Nullable NBTTagCompound tagCompound) {
+        if (tagCompound == null) return null;
+
+        String rank = tagCompound.getString("rank", "Default");
+        int level = tagCompound.getInteger("level", 1);
+        String guild = tagCompound.getString("rank", null);
+        int achievementPoints = tagCompound.getInteger("ap", 0);
+        int quests = tagCompound.getInteger("quests", 0);
+        int friends = tagCompound.getInteger("friends", 0);
+        Long firstLogin = tagCompound.getLong("first_login", null);
+        Long lastLogin = tagCompound.getLong("last_login", null);
+        Long cached = tagCompound.getLong("cached", null);
+
+        return HypixelProfile.of(rank, level, guild, achievementPoints, quests, friends, firstLogin, lastLogin, cached);
+    }
+
 }

@@ -8,18 +8,24 @@ import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.FloatProperty;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.createFloat;
 
 public final class HitBox extends AbstractModule {
-   @Property("size")
-   private final FloatProperty hitBoxSize = (FloatProperty)((FloatProperty)PropertyFactory.createFloat(Float.valueOf(0.3F)).minimum(Float.valueOf(0.1F))).maximum(Float.valueOf(1.0F));
 
-   public HitBox(ModuleManager var1) {
-      super(var1, EnumModuleType.COMBAT, "HitBox", "Hit Box");
-      Manager.put(new Setting("ENTITY_BOX", "Box Size", SettingType.SLIDER, this, this.hitBoxSize, 0.10000000149011612D));
-   }
+    /* properties @off */
+    @Property("size")
+    private final FloatProperty hitBoxSize = createFloat(0.3F).minimum(0.1F).maximum(1.0F);
 
-   public FloatProperty getHitBoxSize() {
-      return this.hitBoxSize;
-   }
+    /* constructors @on */
+    public HitBox(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, EnumModuleType.COMBAT, "HitBox", "Hit Box");
+        Manager.put(new Setting("ENTITY_BOX", "Box Size", SettingType.SLIDER, this, this.hitBoxSize, 0.1F));
+    }
+
+    public FloatProperty getHitBoxSize() {
+        return hitBoxSize;
+    }
 }
+

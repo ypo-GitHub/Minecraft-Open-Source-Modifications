@@ -1,91 +1,105 @@
 package net.optifine;
 
-import net.acE;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
-import net.optifine.MatchBlock;
 import org.lwjgl.opengl.GL11;
 
-public class CloudRenderer {
-   private Minecraft mc;
-   private boolean updated = false;
-   private boolean renderFancy = false;
-   int cloudTickCounter;
-   float partialTicks;
-   private int glListClouds = -1;
-   private int cloudTickCounterUpdate = 0;
-   private double cloudPlayerX = 0.0D;
-   private double cloudPlayerY = 0.0D;
-   private double cloudPlayerZ = 0.0D;
+public class CloudRenderer
+{
+    private Minecraft mc;
+    private boolean updated = false;
+    private boolean renderFancy = false;
+    int cloudTickCounter;
+    float partialTicks;
+    private int glListClouds = -1;
+    private int cloudTickCounterUpdate = 0;
+    private double cloudPlayerX = 0.0D;
+    private double cloudPlayerY = 0.0D;
+    private double cloudPlayerZ = 0.0D;
 
-   public CloudRenderer(Minecraft var1) {
-      this.mc = var1;
-      this.glListClouds = GLAllocation.generateDisplayLists(1);
-   }
+    public CloudRenderer(Minecraft p_i28_1_)
+    {
+        this.mc = p_i28_1_;
+        this.glListClouds = GLAllocation.generateDisplayLists(1);
+    }
 
-   public void a(boolean var1, int var2, float var3) {
-      acE[] var4 = MatchBlock.b();
-      if(this.renderFancy != var1) {
-         this.updated = false;
-      }
+    public void prepareToRender(boolean p_prepareToRender_1_, int p_prepareToRender_2_, float p_prepareToRender_3_)
+    {
+        if (this.renderFancy != p_prepareToRender_1_)
+        {
+            this.updated = false;
+        }
 
-      this.renderFancy = var1;
-      this.cloudTickCounter = var2;
-      this.partialTicks = var3;
-   }
+        this.renderFancy = p_prepareToRender_1_;
+        this.cloudTickCounter = p_prepareToRender_2_;
+        this.partialTicks = p_prepareToRender_3_;
+    }
 
-   public boolean shouldUpdateGlList() {
-      acE[] var1 = MatchBlock.b();
-      if(!this.updated) {
-         return true;
-      } else if(this.cloudTickCounter >= this.cloudTickCounterUpdate + 20) {
-         return true;
-      } else {
-         Entity var2 = this.mc.getRenderViewEntity();
-         boolean var3 = this.cloudPlayerY + (double)var2.getEyeHeight() < 128.0D + (double)(this.mc.gameSettings.ofCloudsHeight * 128.0F);
-         boolean var4 = var2.prevPosY + (double)var2.getEyeHeight() < 128.0D + (double)(this.mc.gameSettings.ofCloudsHeight * 128.0F);
-         return var4 != var3;
-      }
-   }
+    public boolean shouldUpdateGlList()
+    {
+        if (!this.updated)
+        {
+            return true;
+        }
+        else if (this.cloudTickCounter >= this.cloudTickCounterUpdate + 20)
+        {
+            return true;
+        }
+        else
+        {
+            Entity entity = this.mc.getRenderViewEntity();
+            boolean flag = this.cloudPlayerY + (double)entity.getEyeHeight() < 128.0D + (double)(this.mc.gameSettings.ofCloudsHeight * 128.0F);
+            boolean flag1 = entity.prevPosY + (double)entity.getEyeHeight() < 128.0D + (double)(this.mc.gameSettings.ofCloudsHeight * 128.0F);
+            return flag1 != flag;
+        }
+    }
 
-   public void startUpdateGlList() {
-      GL11.glNewList(this.glListClouds, 4864);
-   }
+    public void startUpdateGlList()
+    {
+        GL11.glNewList(this.glListClouds, GL11.GL_COMPILE);
+    }
 
-   public void endUpdateGlList() {
-      GL11.glEndList();
-      this.cloudTickCounterUpdate = this.cloudTickCounter;
-      this.cloudPlayerX = this.mc.getRenderViewEntity().prevPosX;
-      this.cloudPlayerY = this.mc.getRenderViewEntity().prevPosY;
-      this.cloudPlayerZ = this.mc.getRenderViewEntity().prevPosZ;
-      this.updated = true;
-      GlStateManager.resetColor();
-   }
+    public void endUpdateGlList()
+    {
+        GL11.glEndList();
+        this.cloudTickCounterUpdate = this.cloudTickCounter;
+        this.cloudPlayerX = this.mc.getRenderViewEntity().prevPosX;
+        this.cloudPlayerY = this.mc.getRenderViewEntity().prevPosY;
+        this.cloudPlayerZ = this.mc.getRenderViewEntity().prevPosZ;
+        this.updated = true;
+        GlStateManager.resetColor();
+    }
 
-   public void renderGlList() {
-      Entity var2 = this.mc.getRenderViewEntity();
-      MatchBlock.b();
-      double var3 = var2.prevPosX + (var2.posX - var2.prevPosX) * (double)this.partialTicks;
-      double var5 = var2.prevPosY + (var2.posY - var2.prevPosY) * (double)this.partialTicks;
-      double var7 = var2.prevPosZ + (var2.posZ - var2.prevPosZ) * (double)this.partialTicks;
-      double var9 = (double)((float)(this.cloudTickCounter - this.cloudTickCounterUpdate) + this.partialTicks);
-      float var11 = (float)(var3 - this.cloudPlayerX + var9 * 0.03D);
-      float var12 = (float)(var5 - this.cloudPlayerY);
-      float var13 = (float)(var7 - this.cloudPlayerZ);
-      GlStateManager.pushMatrix();
-      if(this.renderFancy) {
-         GlStateManager.translate(-var11 / 12.0F, -var12, -var13 / 12.0F);
-      }
+    public void renderGlList()
+    {
+        Entity entity = this.mc.getRenderViewEntity();
+        double d0 = entity.prevPosX + (entity.posX - entity.prevPosX) * (double)this.partialTicks;
+        double d1 = entity.prevPosY + (entity.posY - entity.prevPosY) * (double)this.partialTicks;
+        double d2 = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double)this.partialTicks;
+        double d3 = (double)((float)(this.cloudTickCounter - this.cloudTickCounterUpdate) + this.partialTicks);
+        float f = (float)(d0 - this.cloudPlayerX + d3 * 0.03D);
+        float f1 = (float)(d1 - this.cloudPlayerY);
+        float f2 = (float)(d2 - this.cloudPlayerZ);
+        GlStateManager.pushMatrix();
 
-      GlStateManager.translate(-var11, -var12, -var13);
-      GlStateManager.callList(this.glListClouds);
-      GlStateManager.popMatrix();
-      GlStateManager.resetColor();
-   }
+        if (this.renderFancy)
+        {
+            GlStateManager.translate(-f / 12.0F, -f1, -f2 / 12.0F);
+        }
+        else
+        {
+            GlStateManager.translate(-f, -f1, -f2);
+        }
 
-   public void reset() {
-      this.updated = false;
-   }
+        GlStateManager.callList(this.glListClouds);
+        GlStateManager.popMatrix();
+        GlStateManager.resetColor();
+    }
+
+    public void reset()
+    {
+        this.updated = false;
+    }
 }

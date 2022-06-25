@@ -1,137 +1,145 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.storage;
 
+import viaversion.viaversion.api.Pair;
+import viaversion.viaversion.api.Via;
+import viaversion.viaversion.api.data.StoredObject;
+import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.minecraft.Position;
+import viaversion.viaversion.api.minecraft.chunks.NibbleArray;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.Protocol1_13To1_12_2;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.WorldPackets;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import net.af_;
-import net.cA;
-import net.cX;
-import viaversion.viaversion.api.Pair;
-import viaversion.viaversion.api.Via;
-import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.api.minecraft.chunks.NibbleArray;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.Protocol1_13To1_12_2;
 
-public class BlockConnectionStorage extends cA {
-   private static final short[] REVERSE_BLOCK_MAPPINGS = new short[8582];
-   private static Constructor fastUtilLongObjectHashMap;
-   private final Map blockStorage = this.createLongObjectMap();
+public class BlockConnectionStorage extends StoredObject {
+    private static final short[] REVERSE_BLOCK_MAPPINGS = new short[8582];
+    private static Constructor<?> fastUtilLongObjectHashMap;
 
-   public BlockConnectionStorage(UserConnection var1) {
-      super(var1);
-   }
+    private final Map<Long, Pair<byte[], NibbleArray>> blockStorage = createLongObjectMap();
 
-   public void store(int var1, int var2, int var3, int var4) {
-      cX.a();
-      short var6 = REVERSE_BLOCK_MAPPINGS[var4];
-      if(var6 != -1) {
-         long var7 = this.getChunkSectionIndex(var1, var2, var3);
-         Pair var9 = this.getChunkSection(var7, (var6 & 15) != 0);
-         short var10 = this.encodeBlockPos(var1, var2, var3);
-         ((byte[])var9.getKey())[var10] = (byte)(var6 >> 4);
-         NibbleArray var11 = (NibbleArray)var9.getValue();
-         if(var11 != null) {
-            var11.a(var10, var6);
-         }
+    static {
+        try {
+            //noinspection StringBufferReplaceableByString - prevent relocation
+            String className = new StringBuilder("it").append(".unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap").toString();
+            fastUtilLongObjectHashMap = Class.forName(className).getConstructor();
+            Via.getPlatform().getLogger().info("Using FastUtil Long2ObjectOpenHashMap for block connections");
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+        }
 
-      }
-   }
+        Arrays.fill(REVERSE_BLOCK_MAPPINGS, (short) -1);
+        for (int i = 0; i < 4096; i++) {
+            int newBlock = Protocol1_13To1_12_2.MAPPINGS.getBlockMappings().getNewId(i);
+            if (newBlock != -1) {
+                REVERSE_BLOCK_MAPPINGS[newBlock] = (short) i;
+            }
+        }
+    }
 
-   public int get(int var1, int var2, int var3) {
-      cX.a();
-      long var5 = this.getChunkSectionIndex(var1, var2, var3);
-      Pair var7 = (Pair)this.blockStorage.get(Long.valueOf(var5));
-      return 0;
-   }
+    public BlockConnectionStorage(UserConnection user) {
+        super(user);
+    }
 
-   public void remove(int var1, int var2, int var3) {
-      cX.a();
-      long var5 = this.getChunkSectionIndex(var1, var2, var3);
-      Pair var7 = (Pair)this.blockStorage.get(Long.valueOf(var5));
-   }
+    public void store(int x, int y, int z, int blockState) {
+        short mapping = REVERSE_BLOCK_MAPPINGS[blockState];
+        if (mapping == -1) return;
 
-   public void clear() {
-      this.blockStorage.clear();
-   }
+        blockState = mapping;
+        long pair = getChunkSectionIndex(x, y, z);
+        Pair<byte[], NibbleArray> map = getChunkSection(pair, (blockState & 0xF) != 0);
+        int blockIndex = encodeBlockPos(x, y, z);
+        map.getKey()[blockIndex] = (byte) (blockState >> 4);
+        NibbleArray nibbleArray = map.getValue();
+        if (nibbleArray != null) {
+            nibbleArray.set(blockIndex, blockState);
+        }
+    }
 
-   public void unloadChunk(int var1, int var2) {
-      cX.a();
-      int var4 = 0;
-      if(var4 < 256) {
-         this.blockStorage.remove(Long.valueOf(this.getChunkSectionIndex(var1 << 4, var4, var2 << 4)));
-         var4 = var4 + 16;
-      }
+    public int get(int x, int y, int z) {
+        long pair = getChunkSectionIndex(x, y, z);
+        Pair<byte[], NibbleArray> map = blockStorage.get(pair);
+        if (map == null) return 0;
+        short blockPosition = encodeBlockPos(x, y, z);
+        NibbleArray nibbleArray = map.getValue();
+        return WorldPackets.toNewId(
+                ((map.getKey()[blockPosition] & 0xFF) << 4)
+                        | (nibbleArray == null ? 0 : nibbleArray.get(blockPosition))
+        );
+    }
 
-   }
+    public void remove(int x, int y, int z) {
+        long pair = getChunkSectionIndex(x, y, z);
+        Pair<byte[], NibbleArray> map = blockStorage.get(pair);
+        if (map == null) return;
+        int blockIndex = encodeBlockPos(x, y, z);
+        NibbleArray nibbleArray = map.getValue();
+        if (nibbleArray != null) {
+            nibbleArray.set(blockIndex, 0);
+            boolean allZero = true;
+            for (int i = 0; i < 4096; i++) {
+                if (nibbleArray.get(i) != 0) {
+                    allZero = false;
+                    break;
+                }
+            }
+            if (allZero) map.setValue(null);
+        }
+        map.getKey()[blockIndex] = 0;
+        for (short entry : map.getKey()) {
+            if (entry != 0) return;
+        }
+        blockStorage.remove(pair);
+    }
 
-   private Pair getChunkSection(long var1, boolean var3) {
-      cX.a();
-      Pair var5 = (Pair)this.blockStorage.get(Long.valueOf(var1));
-      if(var5 == null) {
-         var5 = new Pair(new byte[4096], (Object)null);
-         this.blockStorage.put(Long.valueOf(var1), var5);
-      }
+    public void clear() {
+        blockStorage.clear();
+    }
 
-      if(var5.getValue() == null) {
-         var5.setValue(new NibbleArray(4096));
-      }
+    public void unloadChunk(int x, int z) {
+        for (int y = 0; y < 256; y += 16) {
+            blockStorage.remove(getChunkSectionIndex(x << 4, y, z << 4));
+        }
+    }
 
-      return var5;
-   }
+    private Pair<byte[], NibbleArray> getChunkSection(long index, boolean requireNibbleArray) {
+        Pair<byte[], NibbleArray> map = blockStorage.get(index);
+        if (map == null) {
+            map = new Pair<>(new byte[4096], null);
+            blockStorage.put(index, map);
+        }
+        if (map.getValue() == null && requireNibbleArray) {
+            map.setValue(new NibbleArray(4096));
+        }
+        return map;
+    }
 
-   private long getChunkSectionIndex(int var1, int var2, int var3) {
-      return ((long)(var1 >> 4) & 67108863L) << 38 | ((long)(var2 >> 4) & 4095L) << 26 | (long)(var3 >> 4) & 67108863L;
-   }
+    private long getChunkSectionIndex(int x, int y, int z) {
+        return (((x >> 4) & 0x3FFFFFFL) << 38) | (((y >> 4) & 0xFFFL) << 26) | ((z >> 4) & 0x3FFFFFFL);
+    }
 
-   private long getChunkSectionIndex(Position var1) {
-      return this.getChunkSectionIndex(var1.getX(), var1.getY(), var1.getZ());
-   }
+    private long getChunkSectionIndex(Position position) {
+        return getChunkSectionIndex(position.getX(), position.getY(), position.getZ());
+    }
 
-   private short encodeBlockPos(int var1, int var2, int var3) {
-      return (short)((var2 & 15) << 8 | (var1 & 15) << 4 | var3 & 15);
-   }
+    private short encodeBlockPos(int x, int y, int z) {
+        return (short) (((y & 0xF) << 8) | ((x & 0xF) << 4) | (z & 0xF));
+    }
 
-   private short encodeBlockPos(Position var1) {
-      return this.encodeBlockPos(var1.getX(), var1.getY(), var1.getZ());
-   }
+    private short encodeBlockPos(Position pos) {
+        return encodeBlockPos(pos.getX(), pos.getY(), pos.getZ());
+    }
 
-   private Map createLongObjectMap() {
-      String[] var1 = cX.a();
-      if(fastUtilLongObjectHashMap != null) {
-         try {
-            return (Map)fastUtilLongObjectHashMap.newInstance(new Object[0]);
-         } catch (InstantiationException | InvocationTargetException | IllegalAccessException var3) {
-            var3.printStackTrace();
-         }
-      }
-
-      return new HashMap();
-   }
-
-   static {
-      try {
-         String var8 = "it" + ".unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap";
-         fastUtilLongObjectHashMap = af_.a(var8).getConstructor(new Class[0]);
-         Via.getPlatform().getLogger().info("Using FastUtil Long2ObjectOpenHashMap for block connections");
-      } catch (NoSuchMethodException | ClassNotFoundException var10) {
-         ;
-      }
-
-      Arrays.fill(REVERSE_BLOCK_MAPPINGS, (short)-1);
-
-      for(int var11 = 0; var11 < 4096; ++var11) {
-         int var9 = Protocol1_13To1_12_2.MAPPINGS.getBlockMappings().getNewId(var11);
-         if(var9 != -1) {
-            REVERSE_BLOCK_MAPPINGS[var9] = (short)var11;
-         }
-      }
-
-   }
-
-   private static ReflectiveOperationException a(ReflectiveOperationException var0) {
-      return var0;
-   }
+    private <T> Map<Long, T> createLongObjectMap() {
+        if (fastUtilLongObjectHashMap != null) {
+            try {
+                return (Map<Long, T>) fastUtilLongObjectHashMap.newInstance();
+            } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+        return new HashMap<>();
+    }
 }

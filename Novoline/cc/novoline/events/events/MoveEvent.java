@@ -1,84 +1,81 @@
 package cc.novoline.events.events;
 
 import cc.novoline.Novoline;
-import cc.novoline.events.EventManager;
-import cc.novoline.events.events.Event;
-import cc.novoline.events.events.MotionUpdateEvent;
 import cc.novoline.modules.combat.KillAura;
 import cc.novoline.modules.move.TargetStrafe;
-import net.qL;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovementInput;
 
+/**
+ * @author Gastgame
+ * govno jopa barebuh suka pidor jopa
+ */
+
 public class MoveEvent implements Event {
-   private double x;
-   private double y;
-   private double z;
 
-   public MoveEvent(double var1, double var3, double var5) {
-      qL var7 = new qL(var1, var3, var5);
-      EventManager.call(var7);
-      this.x = var7.getX();
-      this.y = var7.getY();
-      this.z = var7.getZ();
-   }
+    private double x, y, z;
 
-   public double getX() {
-      return this.x;
-   }
+    public MoveEvent(double x, double y, double z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
 
-   public void setX(double var1) {
-      this.x = var1;
-   }
+    public double getX() {
+        return this.x;
+    }
 
-   public double getY() {
-      return this.y;
-   }
+    public void setX(double x) {
+        this.x = x;
+    }
 
-   public void setY(double var1) {
-      this.y = var1;
-   }
+    public double getY() {
+        return this.y;
+    }
 
-   public double getZ() {
-      return this.z;
-   }
+    public void setY(double y) {
+        this.y = y;
+    }
 
-   public void setZ(double var1) {
-      this.z = var1;
-   }
+    public double getZ() {
+        return this.z;
+    }
 
-   public void setMoveSpeed(double var1) {
-      Novoline var4 = Novoline.getInstance();
-      Minecraft var5 = Minecraft.getInstance();
-      KillAura var6 = (KillAura)var4.getModuleManager().getModule(KillAura.class);
-      TargetStrafe var7 = (TargetStrafe)var4.getModuleManager().getModule(TargetStrafe.class);
-      MovementInput var8 = var5.player.movementInput();
-      MotionUpdateEvent.c();
-      double var9 = (double)var8.getMoveForward();
-      double var11 = (double)var8.getMoveStrafe();
-      double var13 = (double)var5.player.rotationYaw;
-      double var15 = var9 == 0.0D?90.0D:(var9 < 0.0D?-45.0D:45.0D);
-      boolean var17 = var9 != 0.0D || var11 != 0.0D;
-      var13 = var13 + (var9 < 0.0D?180.0D:0.0D);
-      if(var11 < 0.0D) {
-         var13 += var15;
-      }
+    public void setZ(double z) {
+        this.z = z;
+    }
 
-      if(var11 > 0.0D) {
-         var13 -= var15;
-      }
+    public void setMoveSpeed(double moveSpeed) {
+        Novoline novoline = Novoline.getInstance();
+        Minecraft mc = Minecraft.getInstance();
+        KillAura killAura = novoline.getModuleManager().getModule(KillAura.class);
+        TargetStrafe targetStrafe = novoline.getModuleManager().getModule(TargetStrafe.class);
+        MovementInput movementInput = mc.player.movementInput();
+        double moveForward = movementInput.getMoveForward();
+        double moveStrafe = movementInput.getMoveStrafe();
+        double yaw = mc.player.rotationYaw;
+        double modifier = moveForward == 0.0F ? 90.0F : moveForward < 0.0F ? -45.0F : 45.0F;
+        boolean moving = moveForward != 0 || moveStrafe != 0;
 
-      if(var17) {
-         if(var7.isEnabled() && var6.isEnabled() && var6.getTarget() != null && var6.shouldAttack() && var7.shouldTarget()) {
-            var7.circleStrafe(this, var1, var6.getTarget());
-         }
+        yaw += moveForward < 0.0F ? 180.0F : 0.0F;
 
-         this.setX(-((double)MathHelper.sin(Math.toRadians(var13)) * var1));
-         this.setZ((double)MathHelper.cos(Math.toRadians(var13)) * var1);
-      }
+        if (moveStrafe < 0.0F) {
+            yaw += modifier;
+        } else if (moveStrafe > 0.0F) {
+            yaw -= modifier;
+        }
 
-      this.setX(0.0D);
-      this.setZ(0.0D);
-   }
+        if (moving) {
+            if (targetStrafe.isEnabled() && killAura.isEnabled() && killAura.getTarget() != null && killAura.shouldAttack() && targetStrafe.shouldTarget()) {
+                targetStrafe.circleStrafe(this, moveSpeed, killAura.getTarget());
+            } else {
+                setX(-(MathHelper.sin(Math.toRadians(yaw)) * moveSpeed));
+                setZ(MathHelper.cos(Math.toRadians(yaw)) * moveSpeed);
+            }
+        } else {
+            setX(0);
+            setZ(0);
+        }
+    }
 }

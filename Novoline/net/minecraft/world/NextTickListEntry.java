@@ -3,51 +3,65 @@ package net.minecraft.world;
 import net.minecraft.block.Block;
 import net.minecraft.util.BlockPos;
 
-public class NextTickListEntry implements Comparable {
-   private static long nextTickEntryID;
-   private final Block block;
-   public final BlockPos position;
-   public long scheduledTime;
-   public int priority;
-   private long tickEntryID;
+public class NextTickListEntry implements Comparable<NextTickListEntry> {
+    /**
+     * The id number for the next tick entry
+     */
+    private static long nextTickEntryID;
+    private final Block block;
+    public final BlockPos position;
 
-   public NextTickListEntry(BlockPos var1, Block var2) {
-      this.tickEntryID = (long)(nextTickEntryID++);
-      this.position = var1;
-      this.block = var2;
-   }
+    /**
+     * Time this tick is scheduled to occur at
+     */
+    public long scheduledTime;
+    public int priority;
 
-   public boolean equals(Object var1) {
-      if(!(var1 instanceof NextTickListEntry)) {
-         return false;
-      } else {
-         NextTickListEntry var2 = (NextTickListEntry)var1;
-         return this.position.equals(var2.position) && Block.isEqualTo(this.block, var2.block);
-      }
-   }
+    /**
+     * The id of the tick entry
+     */
+    private long tickEntryID;
 
-   public int hashCode() {
-      return this.position.hashCode();
-   }
+    public NextTickListEntry(BlockPos p_i45745_1_, Block p_i45745_2_) {
+        this.tickEntryID = (long) nextTickEntryID++;
+        this.position = p_i45745_1_;
+        this.block = p_i45745_2_;
+    }
 
-   public NextTickListEntry setScheduledTime(long var1) {
-      this.scheduledTime = var1;
-      return this;
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (!(p_equals_1_ instanceof NextTickListEntry)) {
+            return false;
+        } else {
+            NextTickListEntry nextticklistentry = (NextTickListEntry) p_equals_1_;
+            return this.position.equals(nextticklistentry.position) && Block.isEqualTo(this.block, nextticklistentry.block);
+        }
+    }
 
-   public void setPriority(int var1) {
-      this.priority = var1;
-   }
+    public int hashCode() {
+        return this.position.hashCode();
+    }
 
-   public int compareTo(NextTickListEntry var1) {
-      return this.scheduledTime < var1.scheduledTime?-1:(this.scheduledTime > var1.scheduledTime?1:(this.priority != var1.priority?this.priority - var1.priority:(this.tickEntryID < var1.tickEntryID?-1:(this.tickEntryID > var1.tickEntryID?1:0))));
-   }
+    /**
+     * Sets the scheduled time for this tick entry
+     */
+    public NextTickListEntry setScheduledTime(long p_77176_1_) {
+        this.scheduledTime = p_77176_1_;
+        return this;
+    }
 
-   public String toString() {
-      return Block.getIdFromBlock(this.block) + ": " + this.position + ", " + this.scheduledTime + ", " + this.priority + ", " + this.tickEntryID;
-   }
+    public void setPriority(int p_82753_1_) {
+        this.priority = p_82753_1_;
+    }
 
-   public Block getBlock() {
-      return this.block;
-   }
+    public int compareTo(NextTickListEntry p_compareTo_1_) {
+        return this.scheduledTime < p_compareTo_1_.scheduledTime ? -1 : this.scheduledTime > p_compareTo_1_.scheduledTime ? 1 : this.priority != p_compareTo_1_.priority ? this.priority - p_compareTo_1_.priority : this.tickEntryID < p_compareTo_1_.tickEntryID ? -1 : this.tickEntryID > p_compareTo_1_.tickEntryID ? 1 : 0;
+    }
+
+    public String toString() {
+        return Block.getIdFromBlock(this.block) + ": " + this.position + ", " + this.scheduledTime + ", " + this.priority + ", " + this.tickEntryID;
+    }
+
+    public Block getBlock() {
+        return this.block;
+    }
 }

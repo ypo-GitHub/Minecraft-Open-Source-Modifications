@@ -3,27 +3,29 @@ package net.minecraft.client.model;
 import net.minecraft.util.Vec3;
 
 public class PositionTextureVertex {
-   public Vec3 vector3D;
-   public float texturePositionX;
-   public float texturePositionY;
 
-   public PositionTextureVertex(float var1, float var2, float var3, float var4, float var5) {
-      this(new Vec3((double)var1, (double)var2, (double)var3), var4, var5);
-   }
+    public Vec3 vector3D;
+    public float texturePositionX;
+    public float texturePositionY;
 
-   public PositionTextureVertex setTexturePosition(float var1, float var2) {
-      return new PositionTextureVertex(this, var1, var2);
-   }
+    public PositionTextureVertex(float p_i1158_1_, float p_i1158_2_, float p_i1158_3_, float p_i1158_4_, float p_i1158_5_) {
+        this(new Vec3(p_i1158_1_, p_i1158_2_, p_i1158_3_), p_i1158_4_, p_i1158_5_);
+    }
 
-   public PositionTextureVertex(PositionTextureVertex var1, float var2, float var3) {
-      this.vector3D = var1.vector3D;
-      this.texturePositionX = var2;
-      this.texturePositionY = var3;
-   }
+    public PositionTextureVertex setTexturePosition(float p_78240_1_, float p_78240_2_) {
+        return new PositionTextureVertex(this, p_78240_1_, p_78240_2_);
+    }
 
-   public PositionTextureVertex(Vec3 var1, float var2, float var3) {
-      this.vector3D = var1;
-      this.texturePositionX = var2;
-      this.texturePositionY = var3;
-   }
+    public PositionTextureVertex(PositionTextureVertex textureVertex, float texturePositionXIn, float texturePositionYIn) {
+        this.vector3D = textureVertex.vector3D;
+        this.texturePositionX = texturePositionXIn;
+        this.texturePositionY = texturePositionYIn;
+    }
+
+    public PositionTextureVertex(Vec3 vector3DIn, float texturePositionXIn, float texturePositionYIn) {
+        this.vector3D = vector3DIn;
+        this.texturePositionX = texturePositionXIn;
+        this.texturePositionY = texturePositionYIn;
+    }
+
 }

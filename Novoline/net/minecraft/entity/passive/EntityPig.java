@@ -3,18 +3,9 @@ package net.minecraft.entity.passive;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityAgeable;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.EntityAIControlledByPlayer;
-import net.minecraft.entity.ai.EntityAIFollowParent;
-import net.minecraft.entity.ai.EntityAILookIdle;
-import net.minecraft.entity.ai.EntityAIMate;
-import net.minecraft.entity.ai.EntityAIPanic;
-import net.minecraft.entity.ai.EntityAISwimming;
-import net.minecraft.entity.ai.EntityAITempt;
-import net.minecraft.entity.ai.EntityAIWander;
-import net.minecraft.entity.ai.EntityAIWatchClosest;
+import net.minecraft.entity.ai.*;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.monster.EntityPigZombie;
-import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -26,140 +17,187 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class EntityPig extends EntityAnimal {
-   private final EntityAIControlledByPlayer aiControlledByPlayer;
+    /**
+     * AI task for player control.
+     */
+    private final EntityAIControlledByPlayer aiControlledByPlayer;
 
-   public EntityPig(World var1) {
-      super(var1);
-      this.setSize(0.9F, 0.9F);
-      ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
-      this.tasks.addTask(0, new EntityAISwimming(this));
-      this.tasks.addTask(1, new EntityAIPanic(this, 1.25D));
-      this.tasks.addTask(2, this.aiControlledByPlayer = new EntityAIControlledByPlayer(this, 0.3F));
-      this.tasks.addTask(3, new EntityAIMate(this, 1.0D));
-      this.tasks.addTask(4, new EntityAITempt(this, 1.2D, Items.carrot_on_a_stick, false));
-      this.tasks.addTask(4, new EntityAITempt(this, 1.2D, Items.carrot, false));
-      this.tasks.addTask(5, new EntityAIFollowParent(this, 1.1D));
-      this.tasks.addTask(6, new EntityAIWander(this, 1.0D));
-      this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
-      this.tasks.addTask(8, new EntityAILookIdle(this));
-   }
+    public EntityPig(World worldIn) {
+        super(worldIn);
+        this.setSize(0.9F, 0.9F);
+        ((PathNavigateGround) this.getNavigator()).setAvoidsWater(true);
+        this.tasks.addTask(0, new EntityAISwimming(this));
+        this.tasks.addTask(1, new EntityAIPanic(this, 1.25D));
+        this.tasks.addTask(2, this.aiControlledByPlayer = new EntityAIControlledByPlayer(this, 0.3F));
+        this.tasks.addTask(3, new EntityAIMate(this, 1.0D));
+        this.tasks.addTask(4, new EntityAITempt(this, 1.2D, Items.carrot_on_a_stick, false));
+        this.tasks.addTask(4, new EntityAITempt(this, 1.2D, Items.carrot, false));
+        this.tasks.addTask(5, new EntityAIFollowParent(this, 1.1D));
+        this.tasks.addTask(6, new EntityAIWander(this, 1.0D));
+        this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
+        this.tasks.addTask(8, new EntityAILookIdle(this));
+    }
 
-   protected void applyEntityAttributes() {
-      super.applyEntityAttributes();
-      this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(10.0D);
-      this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.25D);
-   }
+    protected void applyEntityAttributes() {
+        super.applyEntityAttributes();
+        this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(10.0D);
+        this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.25D);
+    }
 
-   public boolean canBeSteered() {
-      ItemStack var1 = ((EntityPlayer)this.riddenByEntity).getHeldItem();
-      return var1.getItem() == Items.carrot_on_a_stick;
-   }
+    /**
+     * returns true if all the conditions for steering the entity are met. For pigs, this is true if it is being ridden
+     * by a player and the player is holding a carrot-on-a-stick
+     */
+    public boolean canBeSteered() {
+        ItemStack itemstack = ((EntityPlayer) this.riddenByEntity).getHeldItem();
+        return itemstack != null && itemstack.getItem() == Items.carrot_on_a_stick;
+    }
 
-   protected void entityInit() {
-      super.entityInit();
-      this.I.b(16, Byte.valueOf((byte)0));
-   }
+    protected void entityInit() {
+        super.entityInit();
+        this.dataWatcher.addObject(16, (byte) 0);
+    }
 
-   public void writeEntityToNBT(NBTTagCompound var1) {
-      super.writeEntityToNBT(var1);
-      var1.setBoolean("Saddle", this.getSaddled());
-   }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+        super.writeEntityToNBT(tagCompound);
+        tagCompound.setBoolean("Saddle", this.getSaddled());
+    }
 
-   public void readEntityFromNBT(NBTTagCompound var1) {
-      super.readEntityFromNBT(var1);
-      this.setSaddled(var1.getBoolean("Saddle"));
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+        super.readEntityFromNBT(tagCompund);
+        this.setSaddled(tagCompund.getBoolean("Saddle"));
+    }
 
-   protected String getLivingSound() {
-      return "mob.pig.say";
-   }
+    /**
+     * Returns the sound this mob makes while it's alive.
+     */
+    protected String getLivingSound() {
+        return "mob.pig.say";
+    }
 
-   protected String getHurtSound() {
-      return "mob.pig.say";
-   }
+    /**
+     * Returns the sound this mob makes when it is hurt.
+     */
+    protected String getHurtSound() {
+        return "mob.pig.say";
+    }
 
-   protected String getDeathSound() {
-      return "mob.pig.death";
-   }
+    /**
+     * Returns the sound this mob makes on death.
+     */
+    protected String getDeathSound() {
+        return "mob.pig.death";
+    }
 
-   protected void playStepSound(BlockPos var1, Block var2) {
-      this.playSound("mob.pig.step", 0.15F, 1.0F);
-   }
+    protected void playStepSound(BlockPos pos, Block blockIn) {
+        this.playSound("mob.pig.step", 0.15F, 1.0F);
+    }
 
-   public boolean interact(EntityPlayer var1) {
-      if(super.interact(var1)) {
-         return true;
-      } else if(this.getSaddled() && !this.worldObj.isRemote && (this.riddenByEntity == null || this.riddenByEntity == var1)) {
-         var1.mountEntity(this);
-         return true;
-      } else {
-         return false;
-      }
-   }
+    /**
+     * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
+     */
+    public boolean interact(EntityPlayer player) {
+        if (super.interact(player)) {
+            return true;
+        } else if (!this.getSaddled() || this.worldObj.isRemote || this.riddenByEntity != null && this.riddenByEntity != player) {
+            return false;
+        } else {
+            player.mountEntity(this);
+            return true;
+        }
+    }
 
-   protected Item getDropItem() {
-      return this.isBurning()?Items.cooked_porkchop:Items.porkchop;
-   }
+    protected Item getDropItem() {
+        return this.isBurning() ? Items.cooked_porkchop : Items.porkchop;
+    }
 
-   protected void dropFewItems(boolean var1, int var2) {
-      int var3 = this.rand.nextInt(3) + 1 + this.rand.nextInt(1 + var2);
+    /**
+     * Drop 0-2 items of this living's type
+     */
+    protected void dropFewItems(boolean p_70628_1_, int p_70628_2_) {
+        int i = this.rand.nextInt(3) + 1 + this.rand.nextInt(1 + p_70628_2_);
 
-      for(int var4 = 0; var4 < var3; ++var4) {
-         if(this.isBurning()) {
-            this.dropItem(Items.cooked_porkchop, 1);
-         } else {
-            this.dropItem(Items.porkchop, 1);
-         }
-      }
+        for (int j = 0; j < i; ++j) {
+            if (this.isBurning()) {
+                this.dropItem(Items.cooked_porkchop, 1);
+            } else {
+                this.dropItem(Items.porkchop, 1);
+            }
+        }
 
-      if(this.getSaddled()) {
-         this.dropItem(Items.saddle, 1);
-      }
+        if (this.getSaddled()) {
+            this.dropItem(Items.saddle, 1);
+        }
+    }
 
-   }
+    /**
+     * Returns true if the pig is saddled.
+     */
+    public boolean getSaddled() {
+        return (this.dataWatcher.getWatchableObjectByte(16) & 1) != 0;
+    }
 
-   public boolean getSaddled() {
-      return (this.I.g(16) & 1) != 0;
-   }
+    /**
+     * Set or remove the saddle of the pig.
+     */
+    public void setSaddled(boolean saddled) {
+        if (saddled) {
+            this.dataWatcher.updateObject(16, (byte) 1);
+        } else {
+            this.dataWatcher.updateObject(16, (byte) 0);
+        }
+    }
 
-   public void setSaddled(boolean var1) {
-      this.I.a(16, Byte.valueOf((byte)1));
-   }
+    /**
+     * Called when a lightning bolt hits the entity.
+     */
+    public void onStruckByLightning(EntityLightningBolt lightningBolt) {
+        if (!this.worldObj.isRemote && !this.isDead) {
+            EntityPigZombie entitypigzombie = new EntityPigZombie(this.worldObj);
+            entitypigzombie.setCurrentItemOrArmor(0, new ItemStack(Items.golden_sword));
+            entitypigzombie.setLocationAndAngles(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
+            entitypigzombie.setNoAI(this.isAIDisabled());
 
-   public void onStruckByLightning(EntityLightningBolt var1) {
-      if(!this.worldObj.isRemote && !this.isDead) {
-         EntityPigZombie var2 = new EntityPigZombie(this.worldObj);
-         var2.setCurrentItemOrArmor(0, new ItemStack(Items.golden_sword));
-         var2.setLocationAndAngles(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
-         var2.setNoAI(this.isAIDisabled());
-         if(this.hasCustomName()) {
-            var2.setCustomNameTag(this.getCustomNameTag());
-            var2.setAlwaysRenderNameTag(this.getAlwaysRenderNameTag());
-         }
+            if (this.hasCustomName()) {
+                entitypigzombie.setCustomNameTag(this.getCustomNameTag());
+                entitypigzombie.setAlwaysRenderNameTag(this.getAlwaysRenderNameTag());
+            }
 
-         this.worldObj.spawnEntityInWorld(var2);
-         this.setDead();
-      }
+            this.worldObj.spawnEntityInWorld(entitypigzombie);
+            this.setDead();
+        }
+    }
 
-   }
+    public void fall(float distance, float damageMultiplier) {
+        super.fall(distance, damageMultiplier);
 
-   public void fall(float var1, float var2) {
-      super.fall(var1, var2);
-      if(var1 > 5.0F && this.riddenByEntity instanceof EntityPlayer) {
-         ((EntityPlayer)this.riddenByEntity).triggerAchievement(AchievementList.flyPig);
-      }
+        if (distance > 5.0F && this.riddenByEntity instanceof EntityPlayer) {
+            ((EntityPlayer) this.riddenByEntity).triggerAchievement(AchievementList.flyPig);
+        }
+    }
 
-   }
+    public EntityPig createChild(EntityAgeable ageable) {
+        return new EntityPig(this.worldObj);
+    }
 
-   public EntityPig createChild(EntityAgeable var1) {
-      return new EntityPig(this.worldObj);
-   }
+    /**
+     * Checks if the parameter is an item which this animal can be fed to breed it (wheat, carrots or seeds depending on
+     * the animal type)
+     */
+    public boolean isBreedingItem(ItemStack stack) {
+        return stack != null && stack.getItem() == Items.carrot;
+    }
 
-   public boolean isBreedingItem(ItemStack var1) {
-      return var1.getItem() == Items.carrot;
-   }
-
-   public EntityAIControlledByPlayer getAIControlledByPlayer() {
-      return this.aiControlledByPlayer;
-   }
+    /**
+     * Return the AI task for player control.
+     */
+    public EntityAIControlledByPlayer getAIControlledByPlayer() {
+        return this.aiControlledByPlayer;
+    }
 }

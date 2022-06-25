@@ -5,21 +5,8 @@ import cc.novoline.Novoline;
 import cc.novoline.gui.button.HydraButton;
 import cc.novoline.gui.screen.login.textbox.UIDField;
 import cc.novoline.utils.RenderUtils;
-import cc.novoline.utils.fonts.impl.Fonts$ICONFONT$ICONFONT_50;
-import cc.novoline.utils.fonts.impl.Fonts$OXIDE$OXIDE_55;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_16;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_18;
+import cc.novoline.utils.fonts.impl.Fonts;
 import cc.novoline.utils.shader.GLSLSandboxShader;
-import java.awt.Color;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Paths;
-import java.util.Scanner;
-import net.AD;
-import net.acE;
-import net.qf;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
@@ -27,276 +14,242 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import net.skidunion.J;
-import net.skidunion.n;
+
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
-public class GuiLogin extends GuiScreen implements n {
-   private String status;
-   private long ticks;
-   private boolean launched;
-   private boolean authenticated;
-   private boolean darkTheme;
-   private boolean falseError;
-   private String token;
-   private float fraction;
-   public int alpha;
-   private GLSLSandboxShader J;
-   private long initTime;
-   private final Color blackish;
-   private final Color black;
-   private final Color blueish;
-   private final Color blue;
-   private final String N;
-   private AD z;
-   private boolean M;
-   private float hHeight;
-   private float hWidth;
-   private float errorBoxHeight;
-   HydraButton button;
-   UIDField field;
+import java.awt.*;
+import java.io.*;
 
-   public GuiLogin() {
-      label0: {
-         super();
-         this.launched = true;
-         this.authenticated = false;
-         this.darkTheme = false;
-         this.token = null;
-         this.alpha = 0;
-         this.initTime = System.currentTimeMillis();
-         qf.a();
-         this.blackish = new Color(20, 23, 26);
-         this.black = new Color(40, 46, 51);
-         this.blueish = new Color(131, 45, 241);
-         this.blue = new Color(-13930063);
-         this.N = Novoline.getInstance().getPathString() + "shader_properties.novo";
-         this.z = new AD(0.0F, 0.0F, 0.0F, 0.0F, this.blueish.getRGB());
-         this.hHeight = 540.0F;
-         this.hWidth = 960.0F;
-         this.errorBoxHeight = 0.0F;
-         this.button = new HydraButton(0, (int)this.hWidth - 70, (int)(this.hHeight + 5.0F), 140, 30, "Log In");
-         if(!Files.exists(Paths.get(this.N, new String[0]), new LinkOption[0])) {
+
+public class GuiLogin extends GuiScreen {
+
+    private String status;
+
+
+    private long ticks;
+    private boolean launched = true;
+    private boolean authenticated = false;
+    private boolean darkTheme = false;
+    private boolean falseError;
+    private String token = null;
+    private float fraction;
+    public int alpha = 0;
+
+    private GLSLSandboxShader shader;
+    private long initTime = System.currentTimeMillis(); // Initialize as a failsafe
+
+    private final Color blackish = new Color(20, 23, 26);
+    private final Color black = new Color(40, 46, 51);
+    private final Color blueish = new Color(0, 150, 135);
+    private final Color blue = new Color(0xFF2B71B1);
+    private final String path = Novoline.getInstance().getPathString() + "theme.txt";
+
+    public GuiLogin() {
+        status = "Idle";
+
+        try {
+            this.shader = new GLSLSandboxShader("/assets/minecraft/shaders/program/novoline_menu.fsh");
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load backgound shader", e);
+        }
+        initTime = System.currentTimeMillis();
+    }
+
+    @Override
+    public void initGui() {
+        Display.setTitle("Novoline - Not logged in");
+        buttonList.add(button);
+        field = new UIDField(1, mc.fontRendererObj, (int) hWidth - 70, (int) hHeight - 35, 140, 30, "idk");
+        alpha = 100;
+
+        darkTheme = true;
+
+        super.initGui();
+    }
+
+    private float hHeight = 540;
+    private float hWidth = 960;
+    private float errorBoxHeight = 0;
+
+    HydraButton button = new HydraButton(0, (int) hWidth - 70, (int) (hHeight + 5), 140, 30, "Log In");
+    UIDField field;
+
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        GlStateManager.disableCull();
+        shader.useShader(this.width, this.height, mouseX, mouseY, (System.currentTimeMillis() - initTime) / 1000f);
+        GL11.glBegin(GL11.GL_QUADS);
+        GL11.glVertex2f(-1f, -1f);
+        GL11.glVertex2f(-1f, 1f);
+        GL11.glVertex2f(1f, 1f);
+        GL11.glVertex2f(1f, -1f);
+        GL11.glEnd();
+        GL20.glUseProgram(0);
+        if (launched && darkTheme && fraction != 1.0049993F) {
+            fraction = 1.0049993F;
+        }
+
+        if (darkTheme && fraction < 1) {
+            fraction += 0.015;
+        } else if (!darkTheme && fraction > 0) {
+            fraction -= 0.015;
+        }
+
+        if (mouseX <= 20 && mouseY <= 20 && alpha < 255) {
+            alpha++;
+        } else if (alpha > 100) {
+            alpha--;
+        }
+
+        Color whiteish = new Color(0xFFF4F5F8);
+        Color white = Color.WHITE;
+        Color shitGray = new Color(150, 150, 150);
+
+        button.setColor(interpolateColor(
+                button.hovered(mouseX, mouseY) ? blue.brighter() : blue,
+                button.hovered(mouseX, mouseY) ? blueish.brighter() : blueish,
+                fraction));
+        field.setColor(interpolateColor(white, black, fraction));
+        field.setTextColor(interpolateColor(shitGray, white, fraction));
+
+        ScaledResolution scaledResolution = new ScaledResolution(mc);
+        button.updateCoordinates(hWidth - 70, hHeight + 5);
+        field.updateCoordinates(hWidth - 70, hHeight - 35);
+        int scaledWidthScaled = scaledResolution.getScaledWidth();
+        int scaledHeightScaled = scaledResolution.getScaledHeight();
+
+        hHeight = hHeight + (scaledHeightScaled / 2 - hHeight) * 0.02f;
+        hWidth = scaledWidthScaled / 2;
+
+        Gui.drawRect(0, 0, scaledWidthScaled, scaledHeightScaled, new Color(0,0,0,150).getRGB());
+
+        Color vis = new Color(interpolateColor(blue, blueish, fraction));
+
+     //   Fonts.ICONFONT.ICONFONT_35.ICONFONT_35.drawString("M", 5, 5, new Color(vis.getRed(), vis.getGreen(), vis.getBlue(), alpha).getRGB());
+
+        RenderUtils.drawBorderedRect(hWidth - 90, hHeight - 55, hWidth + 90, hHeight + 55, 0.3f, new Color(0,0,0,80).getRGB(),
+                new Color(0,0,0,50).getRGB());
+
+        // LOGO
+        Fonts.OXIDE.OXIDE_55.OXIDE_55.drawString(
+                "NOVOLINE",
+                hWidth - Fonts.OXIDE.OXIDE_55.OXIDE_55.stringWidth("NOVOLINE") / 2 + 12,
+                hHeight - 90,
+                interpolateColor(blue, blueish, fraction));
+        Fonts.ICONFONT.ICONFONT_50.ICONFONT_50.drawString("L", hWidth - 72, hHeight - 90, interpolateColor(blue, blueish, fraction));
+
+
+        // LOG IN BUTTON
+        button.drawButton(mc, mouseX, mouseY);
+
+        //STATUS
+        if (status.startsWith("Idle") || status.startsWith("Initializing") || status.startsWith("Logging")) {
+            Fonts.SF.SF_16.SF_16.drawString(status, hWidth - Fonts.SF.SF_16.SF_16.stringWidth(status) / 2, hHeight + 45, interpolateColor(new Color(150, 150, 150), white, fraction));
+            errorBoxHeight = 0;
+        } else {
+            if (status.equals("Success")) {
+                errorBoxHeight = errorBoxHeight + (10 - errorBoxHeight) * 0.01f;
+                RenderUtils.drawBorderedRect(hWidth - Fonts.SF.SF_16.SF_16.stringWidth(status) / 2 - 10, errorBoxHeight, hWidth + Fonts.SF.SF_16.SF_16.stringWidth(status) / 2 + 10, errorBoxHeight + 12, 1f, new Color(170, 253, 126).getRGB(), interpolateColor(new Color(232, 255, 213), new Color(232, 255, 213).darker().darker(), fraction));
+                Fonts.SF.SF_16.SF_16.drawString(status, hWidth - Fonts.SF.SF_16.SF_16.stringWidth(status) / 2, errorBoxHeight + 7 - Fonts.SF.SF_16.SF_16.getHeight() / 2, new Color(201, 255, 167).darker().getRGB(), true);
+            } else {
+                errorBoxHeight = errorBoxHeight + (10 - errorBoxHeight) * 0.01f;
+                RenderUtils.drawBorderedRect(hWidth - Fonts.SF.SF_16.SF_16.stringWidth(status) / 2 - 10, errorBoxHeight, hWidth + Fonts.SF.SF_16.SF_16.stringWidth(status) / 2 + 10, errorBoxHeight + 12, 1f, 0xFFF5DAE1, interpolateColor(new Color(0xFFF8E5E8), new Color(0xFFF8E5E8).darker().darker(), fraction));
+                Fonts.SF.SF_16.SF_16.drawString(status, hWidth - Fonts.SF.SF_16.SF_16.stringWidth(status) / 2, errorBoxHeight + 7 - Fonts.SF.SF_16.SF_16.getHeight() / 2, 0XFFEB6E85, true);
+            }
+        }
+
+        // UID TEXTBOX
+        field.drawTextBox();
+
+        // CREDITS
+        Fonts.SF.SF_18.SF_18.drawString("made by gast and tasteful. protected by skidunion", hWidth - Fonts.SF.SF_18.SF_18.stringWidth("made by gast and tasteful. protected by skidunion") / 2, scaledHeightScaled - Fonts.SF.SF_18.SF_18.getHeight() - 4, new Color(150, 150, 150).getRGB());
+
+//        if (authenticated) {
+            this.status = "Success";
+            if (System.currentTimeMillis() - ticks > 250) {
+                Initializer.getInstance().onProtection(token);
+            }
+//        }
+
+        if (falseError) {
             try {
-               FileWriter var8 = new FileWriter(this.N);
-               var8.append("loginMenu: true \n");
-               var8.append("mainMenu: true \n");
-               var8.append("altRepository: true \n");
-               var8.close();
-               this.M = true;
-               break label0;
-            } catch (IOException var6) {
-               var6.printStackTrace();
+                ScaledResolution sr = new ScaledResolution(mc);
+                mouseClicked(sr.getScaledWidth() / 2, sr.getScaledHeight() / 2 + 20, 0);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-         }
 
-         Scanner var2 = null;
+            falseError = false;
+        }
 
-         try {
-            var2 = new Scanner(Paths.get(this.N, new String[0]));
-            if(var2.hasNextLine()) {
-               String var3 = var2.nextLine();
-               if(var3.startsWith("loginMenu: ")) {
-                  this.M = Boolean.parseBoolean(var3.split("loginMenu: ")[1].replace(" ", ""));
-               }
-            }
-         } catch (IOException var5) {
-            var5.printStackTrace();
-         }
-      }
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
 
-      this.status = "Idle";
-      if(this.M) {
-         try {
-            this.J = new GLSLSandboxShader("/assets/minecraft/shaders/program/novoline_alt.fsh");
-         } catch (IOException var4) {
-            throw new IllegalStateException("Failed to load backgound shader", var4);
-         }
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (field.isFocused() && keyCode >= 2 && keyCode <= 11 || keyCode == 14 /* number check */) {
+            field.textboxKeyTyped(typedChar, keyCode);
+        }
 
-         this.initTime = System.currentTimeMillis();
-      }
+        if (keyCode == 64) {
+            mc.displayGuiScreen(this);
+        }
+    }
 
-   }
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        field.mouseClicked(mouseX, mouseY, mouseButton);
 
-   public void initGui() {
-      Display.setTitle("Novoline - Not logged in");
-      this.buttonList.add(this.button);
-      qf.b();
-      this.field = new UIDField(1, this.mc.fontRendererObj, (int)this.hWidth - 70, (int)this.hHeight - 35, 140, 30, "idk");
-      this.alpha = 100;
-      this.darkTheme = true;
-      super.initGui();
-   }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      int var4 = qf.a();
-      if(this.M) {
-         GlStateManager.disableCull();
-         this.J.useShader(this.width * 2, this.height * 2, (float)var1, (float)var2, (float)(System.currentTimeMillis() - this.initTime) / 1000.0F);
-         GL11.glBegin(7);
-         GL11.glVertex2f(-1.0F, -1.0F);
-         GL11.glVertex2f(-1.0F, 1.0F);
-         GL11.glVertex2f(1.0F, 1.0F);
-         GL11.glVertex2f(1.0F, -1.0F);
-         GL11.glEnd();
-         GL20.glUseProgram(0);
-      }
+    @Override
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if (button.id == 0) {
+            new Thread(() -> {
+                button.enabled = false;
+                try {
+                    status = "Initializing";
+//                    Novoline.getInstance().setProtection(new Protection(this, true, true));
 
-      if(this.launched && this.darkTheme && this.fraction != 1.0049993F) {
-         this.fraction = 1.0049993F;
-      }
+                    status = "Logging in";
+//                    Novoline.getInstance().getProtection().login(field.getText());
+                    mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("random.orb"), 1F));
+                } catch (Throwable t) {
+                    t.printStackTrace();
 
-      if(this.darkTheme && this.fraction < 1.0F) {
-         this.fraction = (float)((double)this.fraction + 0.015D);
-      }
+                    if (t.getMessage().contains("ConcurrentModificationException")) {
+                        falseError = true;
+                    }
 
-      if(!this.darkTheme && this.fraction > 0.0F) {
-         this.fraction = (float)((double)this.fraction - 0.015D);
-      }
+                    status = t.getMessage();
+                    button.enabled = true;
+                    mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("random.orb"), -1F));
+                }
+            }, "SAL Authentication Thread").start();
+        }
 
-      if(var1 <= 20 && var2 <= 20 && this.alpha < 255) {
-         ++this.alpha;
-      }
+        super.actionPerformed(button);
+    }
 
-      if(this.alpha > 100) {
-         --this.alpha;
-      }
+//    @Override
+//    public void onProtection(String token) {
+//        ticks = System.currentTimeMillis();
+//        authenticated = true;
+//        this.token = token;
+//    }
 
-      new Color(-723464);
-      Color var6 = Color.WHITE;
-      Color var7 = new Color(150, 150, 150);
-      this.button.b(this.interpolateColor(this.button.hovered(var1, var2)?this.blue.brighter():this.blue, this.button.hovered(var1, var2)?this.blueish.brighter():this.blueish, this.fraction));
-      this.field.setColor(this.interpolateColor(var6, this.black, this.fraction));
-      this.field.setTextColor(this.interpolateColor(var7, var6, this.fraction));
-      ScaledResolution var8 = new ScaledResolution(this.mc);
-      this.button.updateCoordinates(this.hWidth - 70.0F, this.hHeight + 5.0F);
-      this.field.updateCoordinates(this.hWidth - 70.0F, this.hHeight - 35.0F);
-      int var9 = var8.getScaledWidth();
-      int var10 = var8.getScaledHeight();
-      this.hHeight += ((float)(var10 / 2) - this.hHeight) * 0.02F;
-      this.hWidth = (float)(var9 / 2);
-      Gui.drawRect(0, 0, var9, var10, (new Color(0, 0, 0, 150)).getRGB());
-      new Color(this.interpolateColor(this.blue, this.blueish, this.fraction));
-      RenderUtils.drawBorderedRect(this.hWidth - 90.0F, this.hHeight - 50.0F, this.hWidth + 90.0F, this.hHeight + 57.0F, 2.0F, (new Color(26, 26, 26, 150)).getRGB(), (new Color(26, 26, 26, 150)).getRGB());
-      this.z.a(this.hWidth - 90.0F, this.hHeight - 50.0F, this.hWidth + 90.0F, this.hHeight + 57.0F);
-      this.z.a();
-      Fonts$OXIDE$OXIDE_55.OXIDE_55.drawString("NOVOLINE", this.hWidth - (float)(Fonts$OXIDE$OXIDE_55.OXIDE_55.stringWidth("NOVOLINE") / 2) + 12.0F, this.hHeight - 85.0F, this.interpolateColor(this.blue, this.blueish, this.fraction));
-      Fonts$ICONFONT$ICONFONT_50.ICONFONT_50.drawString("L", this.hWidth - 72.0F, this.hHeight - 90.0F, this.interpolateColor(this.blue, this.blueish, this.fraction));
-      this.button.drawButton(this.mc, var1, var2);
-      if(this.status.startsWith("Idle") || this.status.startsWith("Initializing") || this.status.startsWith("Logging")) {
-         Fonts$SF$SF_16.SF_16.drawString(this.status, this.hWidth - (float)(Fonts$SF$SF_16.SF_16.stringWidth(this.status) / 2), this.hHeight + 45.0F, this.interpolateColor(new Color(150, 150, 150), var6, this.fraction));
-         this.errorBoxHeight = 0.0F;
-      }
-
-      String var12 = this.status.equals("Success")?"Logged in as " + J.V:this.status;
-      this.errorBoxHeight += (10.0F - this.errorBoxHeight) * 0.01F;
-      RenderUtils.drawBorderedRect(this.hWidth - (float)(Fonts$SF$SF_16.SF_16.stringWidth(var12) / 2) - 10.0F, this.errorBoxHeight, this.hWidth + (float)(Fonts$SF$SF_16.SF_16.stringWidth(var12) / 2) + 10.0F, this.errorBoxHeight + 12.0F, 1.0F, (new Color(131, 45, 241, 150)).getRGB(), (new Color(131, 45, 241, 90)).getRGB());
-      Fonts$SF$SF_16.SF_16.drawString(var12, (double)(this.hWidth - (float)(Fonts$SF$SF_16.SF_16.stringWidth(var12) / 2)), (double)(this.errorBoxHeight + 7.0F - (float)(Fonts$SF$SF_16.SF_16.getHeight() / 2)), (new Color(187, 102, 238)).darker().getRGB(), true);
-      this.field.drawTextBox();
-      Fonts$SF$SF_18.SF_18.drawString("made by gast and tasteful", this.hWidth - (float)(Fonts$SF$SF_18.SF_18.stringWidth("made by gast and tasteful") / 2), (float)(var10 - Fonts$SF$SF_18.SF_18.getHeight() - 4), (new Color(150, 150, 150)).getRGB());
-      if(this.authenticated) {
-         this.status = "Success";
-         if(System.currentTimeMillis() - this.ticks > 250L) {
-            Initializer.getInstance().a(this.token);
-         }
-      }
-
-      if(this.falseError) {
-         try {
-            ScaledResolution var14 = new ScaledResolution(this.mc);
-            this.mouseClicked(var14.getScaledWidth() / 2, var14.getScaledHeight() / 2 + 20, 0);
-         } catch (IOException var13) {
-            var13.printStackTrace();
-         }
-
-         this.falseError = false;
-      }
-
-      super.drawScreen(var1, var2, var3);
-   }
-
-   protected void keyTyped(char var1, int var2) throws IOException {
-      int var3 = qf.a();
-      if(this.field.isFocused() && var2 >= 2 && var2 <= 11 || var2 == 14) {
-         this.field.textboxKeyTyped(var1, var2);
-      }
-
-      if(var2 == 1) {
-         this.initGui();
-      }
-
-      if(var2 == 64) {
-         this.mc.displayGuiScreen(this);
-      }
-
-      if(acE.b() == null) {
-         ++var3;
-         qf.b(var3);
-      }
-
-   }
-
-   protected void mouseClicked(int var1, int var2, int var3) throws IOException {
-      this.field.mouseClicked(var1, var2, var3);
-      super.mouseClicked(var1, var2, var3);
-   }
-
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      int var2 = qf.a();
-      if(var1.id == 0) {
-         (new Thread(this::lambda$actionPerformed$0, "SAL Authentication Thread")).start();
-      }
-
-      super.actionPerformed(var1);
-   }
-
-   public void d(String var1) {
-      this.ticks = System.currentTimeMillis();
-      this.authenticated = true;
-      this.token = var1;
-   }
-
-   private int interpolateColor(Color var1, Color var2, float var3) {
-      int var4 = (int)((float)var1.getRed() + (float)(var2.getRed() - var1.getRed()) * var3);
-      int var5 = (int)((float)var1.getGreen() + (float)(var2.getGreen() - var1.getGreen()) * var3);
-      int var6 = (int)((float)var1.getBlue() + (float)(var2.getBlue() - var1.getBlue()) * var3);
-      int var7 = (int)((float)var1.getAlpha() + (float)(var2.getAlpha() - var1.getAlpha()) * var3);
-
-      try {
-         return (new Color(var4, var5, var6, var7)).getRGB();
-      } catch (Exception var9) {
-         return -1;
-      }
-   }
-
-   private void lambda$actionPerformed$0(GuiButton var1) {
-      qf.b();
-      var1.enabled = false;
-      GuiLogin var10000 = this;
-      String var10001 = "Initializing";
-
-      try {
-         var10000.status = var10001;
-         Novoline.getInstance().a(new J(this, true, true));
-         this.status = "Logging in";
-         Novoline.getInstance().A().a(this.field.getText());
-         this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("random.orb"), 1.0F));
-      } catch (Throwable var4) {
-         var4.printStackTrace();
-         if(var4.getMessage().contains("ConcurrentModificationException")) {
-            this.falseError = true;
-         }
-
-         this.status = var4.getMessage();
-         var1.enabled = true;
-         this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("random.orb"), -1.0F));
-      }
-
-   }
-
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+    private int interpolateColor(Color color1, Color color2, float fraction) {
+        int red = (int) (color1.getRed() + (color2.getRed() - color1.getRed()) * fraction);
+        int green = (int) (color1.getGreen() + (color2.getGreen() - color1.getGreen()) * fraction);
+        int blue = (int) (color1.getBlue() + (color2.getBlue() - color1.getBlue()) * fraction);
+        int alpha = (int) (color1.getAlpha() + (color2.getAlpha() - color1.getAlpha()) * fraction);
+        try {
+            return new Color(red, green, blue, alpha).getRGB();
+        } catch (Exception ex) {
+            return 0xffffffff;
+        }
+    }
 }

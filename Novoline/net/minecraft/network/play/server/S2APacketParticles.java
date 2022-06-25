@@ -1,133 +1,170 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.EnumParticleTypes;
 
-public class S2APacketParticles implements Packet {
-   private EnumParticleTypes particleType;
-   private float xCoord;
-   private float yCoord;
-   private float zCoord;
-   private float xOffset;
-   private float yOffset;
-   private float zOffset;
-   private float particleSpeed;
-   private int particleCount;
-   private boolean longDistance;
-   private int[] particleArguments;
+import java.io.IOException;
 
-   public S2APacketParticles() {
-   }
+public class S2APacketParticles implements Packet<INetHandlerPlayClient> {
+    private EnumParticleTypes particleType;
+    private float xCoord;
+    private float yCoord;
+    private float zCoord;
+    private float xOffset;
+    private float yOffset;
+    private float zOffset;
+    private float particleSpeed;
+    private int particleCount;
+    private boolean longDistance;
 
-   public S2APacketParticles(EnumParticleTypes var1, boolean var2, float var3, float var4, float var5, float var6, float var7, float var8, float var9, int var10, int... var11) {
-      this.particleType = var1;
-      this.longDistance = var2;
-      this.xCoord = var3;
-      this.yCoord = var4;
-      this.zCoord = var5;
-      this.xOffset = var6;
-      this.yOffset = var7;
-      this.zOffset = var8;
-      this.particleSpeed = var9;
-      this.particleCount = var10;
-      this.particleArguments = var11;
-   }
+    /**
+     * These are the block/item ids and possibly metaData ids that are used to color or texture the particle.
+     */
+    private int[] particleArguments;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.particleType = EnumParticleTypes.getParticleFromId(var1.readInt());
-      if(this.particleType == null) {
-         this.particleType = EnumParticleTypes.BARRIER;
-      }
+    public S2APacketParticles() {
+    }
 
-      this.longDistance = var1.readBoolean();
-      this.xCoord = var1.readFloat();
-      this.yCoord = var1.readFloat();
-      this.zCoord = var1.readFloat();
-      this.xOffset = var1.readFloat();
-      this.yOffset = var1.readFloat();
-      this.zOffset = var1.readFloat();
-      this.particleSpeed = var1.readFloat();
-      this.particleCount = var1.readInt();
-      int var2 = this.particleType.getArgumentCount();
-      this.particleArguments = new int[var2];
+    public S2APacketParticles(EnumParticleTypes particleTypeIn, boolean longDistanceIn, float x, float y, float z, float xOffsetIn, float yOffset, float zOffset, float particleSpeedIn, int particleCountIn, int... particleArgumentsIn) {
+        this.particleType = particleTypeIn;
+        this.longDistance = longDistanceIn;
+        this.xCoord = x;
+        this.yCoord = y;
+        this.zCoord = z;
+        this.xOffset = xOffsetIn;
+        this.yOffset = yOffset;
+        this.zOffset = zOffset;
+        this.particleSpeed = particleSpeedIn;
+        this.particleCount = particleCountIn;
+        this.particleArguments = particleArgumentsIn;
+    }
 
-      for(int var3 = 0; var3 < var2; ++var3) {
-         this.particleArguments[var3] = var1.readVarIntFromBuffer();
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.particleType = EnumParticleTypes.getParticleFromId(buf.readInt());
 
-   }
+        if (this.particleType == null) {
+            this.particleType = EnumParticleTypes.BARRIER;
+        }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeInt(this.particleType.getParticleID());
-      var1.writeBoolean(this.longDistance);
-      var1.writeFloat(this.xCoord);
-      var1.writeFloat(this.yCoord);
-      var1.writeFloat(this.zCoord);
-      var1.writeFloat(this.xOffset);
-      var1.writeFloat(this.yOffset);
-      var1.writeFloat(this.zOffset);
-      var1.writeFloat(this.particleSpeed);
-      var1.writeInt(this.particleCount);
-      int var2 = this.particleType.getArgumentCount();
+        this.longDistance = buf.readBoolean();
+        this.xCoord = buf.readFloat();
+        this.yCoord = buf.readFloat();
+        this.zCoord = buf.readFloat();
+        this.xOffset = buf.readFloat();
+        this.yOffset = buf.readFloat();
+        this.zOffset = buf.readFloat();
+        this.particleSpeed = buf.readFloat();
+        this.particleCount = buf.readInt();
+        int i = this.particleType.getArgumentCount();
+        this.particleArguments = new int[i];
 
-      for(int var3 = 0; var3 < var2; ++var3) {
-         var1.writeVarIntToBuffer(this.particleArguments[var3]);
-      }
+        for (int j = 0; j < i; ++j) {
+            this.particleArguments[j] = buf.readVarIntFromBuffer();
+        }
+    }
 
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeInt(this.particleType.getParticleID());
+        buf.writeBoolean(this.longDistance);
+        buf.writeFloat(this.xCoord);
+        buf.writeFloat(this.yCoord);
+        buf.writeFloat(this.zCoord);
+        buf.writeFloat(this.xOffset);
+        buf.writeFloat(this.yOffset);
+        buf.writeFloat(this.zOffset);
+        buf.writeFloat(this.particleSpeed);
+        buf.writeInt(this.particleCount);
+        int i = this.particleType.getArgumentCount();
 
-   public EnumParticleTypes getParticleType() {
-      return this.particleType;
-   }
+        for (int j = 0; j < i; ++j) {
+            buf.writeVarIntToBuffer(this.particleArguments[j]);
+        }
+    }
 
-   public boolean isLongDistance() {
-      return this.longDistance;
-   }
+    public EnumParticleTypes getParticleType() {
+        return this.particleType;
+    }
 
-   public double getXCoordinate() {
-      return (double)this.xCoord;
-   }
+    public boolean isLongDistance() {
+        return this.longDistance;
+    }
 
-   public double getYCoordinate() {
-      return (double)this.yCoord;
-   }
+    /**
+     * Gets the x coordinate to spawn the particle.
+     */
+    public double getXCoordinate() {
+        return (double) this.xCoord;
+    }
 
-   public double getZCoordinate() {
-      return (double)this.zCoord;
-   }
+    /**
+     * Gets the y coordinate to spawn the particle.
+     */
+    public double getYCoordinate() {
+        return (double) this.yCoord;
+    }
 
-   public float getXOffset() {
-      return this.xOffset;
-   }
+    /**
+     * Gets the z coordinate to spawn the particle.
+     */
+    public double getZCoordinate() {
+        return (double) this.zCoord;
+    }
 
-   public float getYOffset() {
-      return this.yOffset;
-   }
+    /**
+     * Gets the x coordinate offset for the particle. The particle may use the offset for particle spread.
+     */
+    public float getXOffset() {
+        return this.xOffset;
+    }
 
-   public float getZOffset() {
-      return this.zOffset;
-   }
+    /**
+     * Gets the y coordinate offset for the particle. The particle may use the offset for particle spread.
+     */
+    public float getYOffset() {
+        return this.yOffset;
+    }
 
-   public float getParticleSpeed() {
-      return this.particleSpeed;
-   }
+    /**
+     * Gets the z coordinate offset for the particle. The particle may use the offset for particle spread.
+     */
+    public float getZOffset() {
+        return this.zOffset;
+    }
 
-   public int getParticleCount() {
-      return this.particleCount;
-   }
+    /**
+     * Gets the speed of the particle animation (used in client side rendering).
+     */
+    public float getParticleSpeed() {
+        return this.particleSpeed;
+    }
 
-   public int[] getParticleArgs() {
-      return this.particleArguments;
-   }
+    /**
+     * Gets the amount of particles to spawn
+     */
+    public int getParticleCount() {
+        return this.particleCount;
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleParticles(this);
-   }
+    /**
+     * Gets the particle arguments. Some particles rely on block and/or item ids and sometimes metadata ids to color or
+     * texture the particle.
+     */
+    public int[] getParticleArgs() {
+        return this.particleArguments;
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleParticles(this);
+    }
 }

@@ -1,13 +1,14 @@
 package net.minecraft.world;
 
-import net.minecraft.world.WorldProvider;
-
 public class WorldProviderSurface extends WorldProvider {
-   public String getDimensionName() {
-      return "Overworld";
-   }
+    /**
+     * Returns the dimension's name, e.g. "The End", "Nether", or "Overworld".
+     */
+    public String getDimensionName() {
+        return "Overworld";
+    }
 
-   public String getInternalNameSuffix() {
-      return "";
-   }
+    public String getInternalNameSuffix() {
+        return "";
+    }
 }

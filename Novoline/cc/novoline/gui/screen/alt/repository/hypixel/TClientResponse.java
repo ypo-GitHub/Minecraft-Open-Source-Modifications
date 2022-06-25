@@ -1,32 +1,42 @@
 package cc.novoline.gui.screen.alt.repository.hypixel;
 
-public class TClientResponse {
-   private static final TClientResponse EMPTY = new TClientResponse(false, (Object)null);
-   private final boolean ok;
-   private final Object content;
+/**
+ * @author xDelsy
+ */
+public class TClientResponse<Content> {
 
-   private TClientResponse(boolean var1, Object var2) {
-      this.ok = var1;
-      this.content = var2;
-   }
+    private static final TClientResponse<?> EMPTY = new TClientResponse<>(false, null);
 
-   public static TClientResponse of(boolean var0, Object var1) {
-      return new TClientResponse(var0, var1);
-   }
+    /* fields */
+    private final boolean ok;
+    private final Content content;
 
-   public static TClientResponse empty() {
-      return EMPTY;
-   }
+    /* constructors */
+    private TClientResponse(boolean ok, Content content) {
+        this.ok = ok;
+        this.content = content;
+    }
 
-   public boolean isOkay() {
-      return this.ok;
-   }
+    public static <Content> TClientResponse<Content> of(boolean ok, Content content) {
+        return new TClientResponse<>(ok, content);
+    }
 
-   public Object getContent() {
-      return this.content;
-   }
+    public static TClientResponse<?> empty() {
+        return EMPTY;
+    }
 
-   public String toString() {
-      return "Response{ok=" + this.ok + ", content=" + this.content + '}';
-   }
+    /* methods */
+    public boolean isOkay() {
+        return this.ok;
+    }
+
+    public Content getContent() {
+        return this.content;
+    }
+
+    @Override
+    public String toString() {
+        return "Response{" + "ok=" + this.ok + ", content=" + this.content + '}';
+    }
+
 }

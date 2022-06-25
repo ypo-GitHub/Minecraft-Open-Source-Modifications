@@ -1,771 +1,914 @@
 package cc.novoline.gui.screen.alt.repository;
 
+import cc.novoline.Initializer;
 import cc.novoline.Novoline;
 import cc.novoline.gui.button.RoundedButton;
 import cc.novoline.gui.group.GuiGroupPlayerBox;
 import cc.novoline.gui.screen.alt.login.AltLoginThread;
-import cc.novoline.gui.screen.alt.repository.Alt;
-import cc.novoline.gui.screen.alt.repository.AltRepositoryGUI$1;
-import cc.novoline.gui.screen.alt.repository.AltRepositoryGUI$EnumSort;
-import cc.novoline.gui.screen.alt.repository.GuiAddAlt;
-import cc.novoline.gui.screen.alt.repository.TokenField;
+import cc.novoline.gui.screen.alt.login.AltType;
+import cc.novoline.gui.screen.alt.login.SessionUpdatingAltLoginListener;
 import cc.novoline.gui.screen.alt.repository.credential.AltCredential;
 import cc.novoline.gui.screen.alt.repository.credential.AlteningAltCredential;
 import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfile;
-import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfileFactory;
 import cc.novoline.gui.screen.alt.repository.tclient.TClient;
 import cc.novoline.modules.visual.HUD;
-import cc.novoline.utils.RenderUtils;
-import cc.novoline.utils.fonts.impl.Fonts$SFBOLD$SFBOLD_16;
-import cc.novoline.utils.fonts.impl.Fonts$SFBOLD$SFBOLD_28;
 import cc.novoline.utils.java.FilteredArrayList;
 import cc.novoline.utils.minecraft.FakeEntityPlayer;
-import cc.novoline.utils.notifications.NotificationType;
 import cc.novoline.utils.shader.GLSLSandboxShader;
 import com.google.common.base.Strings;
 import com.mojang.authlib.GameProfile;
 import com.thealtening.api.TheAlteningException;
-import com.thealtening.api.response.Account;
 import com.thealtening.api.response.AccountDetails;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
-import java.awt.Color;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import net.CI;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Session;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static cc.novoline.gui.screen.alt.repository.Alt.FHD_ANIMATION_STEP;
+import static cc.novoline.gui.screen.alt.repository.GuiAddAlt.isEmail;
+import static cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfileFactory.hypixelProfile;
+import static cc.novoline.utils.RenderUtils.drawRoundedRect;
+import static cc.novoline.utils.fonts.impl.Fonts.SFBOLD.SFBOLD_16.SFBOLD_16;
+import static cc.novoline.utils.fonts.impl.Fonts.SFBOLD.SFBOLD_28.SFBOLD_28;
+import static cc.novoline.utils.notifications.NotificationType.*;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static net.minecraft.util.EnumChatFormatting.GREEN;
+import static net.minecraft.util.EnumChatFormatting.RED;
+
 public class AltRepositoryGUI extends GuiScreen {
-   static final int PLAYER_BOX_WIDTH = 320;
-   static final int PLAYER_BOX_HEIGHT = 36;
-   static final float PLAYER_BOX_SPACE = 3.0F;
-   static final int BUTTON_WIDTH = 159;
-   static final int BUTTON_HEIGHT = 30;
-   static final int VERTICAL_MARGIN = 25;
-   static final int HORIZONTAL_MARGIN = 15;
-   static final int SCROLL_ALTS = 1;
-   private final Novoline novoline;
-   private final TClient tclient;
-   private final Logger logger;
-   private Alt currentAlt;
-   private GLSLSandboxShader N;
-   private long initTime;
-   private GuiGroupPlayerBox groupPlayerBox;
-   private AltRepositoryGUI$EnumSort sortType;
-   private RoundedButton sortButton;
-   private final String F;
-   private boolean A;
-   private TokenField searchField;
-   private final FilteredArrayList alts;
-   private TokenField apiKeyField;
-   private String tokenContent;
-   private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
-   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-   private float altWidth;
-   private float altBoxAnimationStep;
-   private float altBoxAlphaStep;
-   private static final float DOWN_MARGIN = 5.0F;
-   private static final int SCROLL_BAR_EMPTY_COLOR = (new Color(0, 0, 0, 50)).getRGB();
-   private static final int SCROLL_BAR_SELECTED_COLOR = (new Color(255, 255, 255, 30)).getRGB();
-   private int scrolled;
-   private List visibleAlts;
-   private int visibleAltsCount;
-   private float sliderHeight;
-   private boolean dragging;
 
-   public AltRepositoryGUI(Novoline var1) {
-      label0: {
-         super();
-         CI.b();
-         this.tclient = new TClient();
-         this.logger = LogManager.getLogger();
-         this.initTime = System.currentTimeMillis();
-         this.sortType = AltRepositoryGUI$EnumSort.DATE;
-         this.F = Novoline.getInstance().getPathString() + "shader_properties.novo";
-         this.alts = new FilteredArrayList(ObjectLists.synchronize(new ObjectArrayList()), this::lambda$new$0, this::lambda$new$1);
-         this.tokenContent = "";
-         this.altWidth = 0.0F;
-         this.novoline = var1;
-         if(!Files.exists(Paths.get(this.F, new String[0]), new LinkOption[0])) {
+    /* player box constants */
+    static final int PLAYER_BOX_WIDTH = 320;
+    static final int PLAYER_BOX_HEIGHT = 36;
+    static final float PLAYER_BOX_SPACE = 3F;
+    /* buttons constants */
+    static final int BUTTON_WIDTH = PLAYER_BOX_WIDTH / 2 - 1;
+    static final int BUTTON_HEIGHT = 30;
+    /* other constants */
+    static final int VERTICAL_MARGIN = 25;
+    static final int HORIZONTAL_MARGIN = 15;
+    static final int SCROLL_ALTS = 1;
+
+    /* misc */
+    @NonNull
+    private final Novoline novoline;
+    @NonNull
+    private final TClient tclient = new TClient();
+    private final Logger logger = LogManager.getLogger();
+    private Alt currentAlt;
+
+    private GLSLSandboxShader shader;
+    private long initTime = System.currentTimeMillis(); // Initialize as a failsafe
+
+    /* gui */
+    private GuiGroupPlayerBox groupPlayerBox;
+
+    /* sort */
+    @NonNull
+    private EnumSort sortType = EnumSort.DATE;
+    private RoundedButton sortButton;
+
+    /* search */
+    private TokenField searchField;
+    private final FilteredArrayList<Alt, Alt> alts = new FilteredArrayList<>(
+            ObjectLists.synchronize(new ObjectArrayList<>()), alt -> {
+        if (this.searchField == null || StringUtils.isBlank(this.searchField.getText())) return alt;
+        if (alt == null) return null;
+
+        String s;
+
+        if (alt.getPlayer() != null && alt.getPlayer().getName() != null) {
+            s = alt.getPlayer().getName();
+        } else if (alt.getCredential() != null) {
+            s = alt.getCredential().getLogin();
+        } else {
+            return null;
+        }
+
+        return s.toLowerCase().startsWith(this.searchField.getText().trim().toLowerCase()) ? alt : null;
+    }, () -> this.sortType.getComparator());
+
+    /* altening */
+    private TokenField apiKeyField;
+    private String tokenContent = "";
+
+    /* constructors */
+    public AltRepositoryGUI(@NonNull Novoline novoline) {
+        this.novoline = novoline;
+
+        try {
+            this.shader = new GLSLSandboxShader("/assets/minecraft/shaders/program/novoline_menu.fsh");
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load backgound shader", e);
+        }
+        initTime = System.currentTimeMillis();
+        loadAlts();
+
+        if (StringUtils.isBlank(this.tokenContent)) {
             try {
-               FileWriter var11 = new FileWriter(this.F);
-               var11.append("loginMenu: true \n");
-               var11.append("mainMenu: true \n");
-               var11.append("altRepository: true \n");
-               var11.close();
-               this.A = true;
-               break label0;
-            } catch (IOException var9) {
-               var9.printStackTrace();
+                this.tokenContent = Strings.nullToEmpty(readApiKey());
+            } catch (IOException e) {
+                this.logger.error("An error occurred while reading data file", e);
+                this.tokenContent = "";
             }
-         }
+        }
+    }
 
-         Scanner var3 = null;
+    /* methods */
+    @Override
+    protected void actionPerformed(GuiButton button) {
+        switch (button.id) {
+            //region Add button
+            case 69:
+                StringSelection selection = null;
+                try {
+                    selection = new StringSelection("Team Khonsari");
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(selection, selection);
+                if (selection != null) {
+                    novoline.getNotificationManager().pop("Copied your token to a clipboard!", 4000, INFO);
+                } else {
+                    novoline.getNotificationManager().pop("Failed to grab a token!", 4000, ERROR);
+                }
+                break;
+            case 0:
+                this.mc.displayGuiScreen(
+                        new GuiAddAlt(this, "Add Alt", "Add Alt", "Generate and save", (gui, credentials) -> {
+                            addAlt(credentials);
+                            saveAlts();
 
-         try {
-            var3 = new Scanner(Paths.get(this.F, new String[0]));
-            if(var3.hasNextLine()) {
-               String var4 = var3.nextLine();
-               System.out.println(var4);
-               if(var4.startsWith("altRepository: ")) {
-                  String var5 = var4.split("altRepository: ")[1].replace(" ", "");
-                  this.A = Boolean.parseBoolean(var5);
-               }
+                            this.mc.displayGuiScreen(this);
+                        }));
+
+                break;
+            //endregion
+            //region Remove button
+            case 1: // remove
+                removeCurrentAlt();
+                break;
+            //endregion
+            //region Direct login button
+            case 2:
+                this.mc.displayGuiScreen(
+                        new GuiAddAlt(this, "Login", "Alt Login", "Generate and log in", (gui, credentials) -> {
+                            gui.getGroupAltInfo().updateStatus(GREEN + "Logging in...");
+
+                            new AltLoginThread(credentials, new SessionUpdatingAltLoginListener() {
+
+                                @Override
+                                public void onLoginSuccess(AltType altType, Session session) {
+                                    super.onLoginSuccess(altType, session);
+                                    final StringBuilder builder = new StringBuilder(
+                                            "Logged in! Username: " + session.getUsername());
+
+                                    if (credentials instanceof AlteningAltCredential) {
+                                        final AlteningAltCredential alteningCredential = (AlteningAltCredential) credentials;
+
+                                        final AccountDetails details = alteningCredential.getDetails();
+                                        final String hypixelRank = details.getHypixelRank();
+
+                                        builder.append(" | ").append(details.getHypixelLevel()).append(" Lvl")
+                                                .append(hypixelRank != null ? " | " + hypixelRank : "");
+                                    }
+
+                                    Novoline.getInstance().getNotificationManager().pop(builder.toString(), INFO);
+                                    AltRepositoryGUI.this.mc.displayGuiScreen(AltRepositoryGUI.this);
+                                }
+
+                                @Override
+                                public void onLoginFailed() {
+                                    gui.getGroupAltInfo().updateStatus(RED + "Invalid credentials!");
+                                }
+                            }).run();
+                        }));
+                break;
+            //endregion
+            //region Refresh button (refreshes the alts)
+            case 3:
+                refreshAlts();
+                break;
+            //endregion
+            //region Generate button (generates an altening alt)
+            case 4:
+                final String tokenContent = this.apiKeyField.getText();
+
+                if (StringUtils.isBlank(tokenContent)) {
+                    Novoline.getInstance().getNotificationManager().pop("No TheAltening token!", ERROR);
+                    return;
+                }
+
+                this.novoline.getDataRetriever().updateKey(tokenContent);
+
+                ForkJoinPool.commonPool().execute(() -> this.novoline.generateAlteningAlt().whenCompleteAsync((account, throwable) -> {
+                    if (throwable != null) {
+                        Novoline.getLogger().warn("An error occurred while generating an account!", throwable);
+
+                        if (throwable instanceof TheAlteningException) {
+                            Novoline.getInstance().getNotificationManager().pop("Invalid TheAltening token!", ERROR);
+                        } else {
+                            Novoline.getLogger()
+                                    .warn("An unexpected error occurred while generating an alt!", throwable);
+                            Novoline.getInstance().getNotificationManager().pop("Unexpected error occurred!", ERROR);
+                        }
+
+                        return;
+                    }
+
+
+                    final Alt alt = AltRepositoryGUI.this
+                            .addAlt(new AlteningAltCredential(account.getToken(), account.getUsername(),
+                                    account.getInfo()));
+                    if (alt != null)
+                        Novoline.getInstance().getNotificationManager().pop("Added alt! " + alt.toString(), SUCCESS);
+                }));
+
+                break;
+            //endregion
+            //region Sort button (changes sorting mode)
+            case 5:
+                final EnumSort[] values = EnumSort.values();
+
+                this.sortType = values[(this.sortType.ordinal() + 1) % values.length];
+                this.sortButton.displayString = this.sortType.getCriteria();
+
+                this.alts.update();
+                setScrolledAndUpdate(0);
+
+                break;
+            case 10:
+                try {
+                    Runtime rt = Runtime.getRuntime();
+                    String url = "https://shop.thealtening.com/?r=novoline";
+                    rt.exec("rundll32 url.dll,FileProtocolHandler " + url);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                break;
+            //endregion
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        //region fires GuiButton
+        for (int i = 0; i < this.buttonList.size(); ++i) {
+            GuiButton button = this.buttonList.get(i);
+
+            if (button.mousePressed(this.mc, mouseX, mouseY)) {
+                this.selectedButton = button;
+
+                button.playPressSound(this.mc.getSoundHandler());
+                actionPerformed(button);
+                return;
             }
-         } catch (IOException var8) {
-            var8.printStackTrace();
-         }
-      }
+        }
+        //endregion
+        //region fires alt
+        for (int i = 0; i < this.visibleAlts.size(); i++) {
+            Alt alt = this.visibleAlts.get(i);
 
-      if(this.A) {
-         try {
-            this.N = new GLSLSandboxShader("/assets/minecraft/shaders/program/novoline_alt.fsh");
-         } catch (IOException var7) {
-            throw new IllegalStateException("Failed to load backgound shader", var7);
-         }
+            if (alt.mouseClicked(this.altWidth, VERTICAL_MARGIN + i * (PLAYER_BOX_HEIGHT + PLAYER_BOX_SPACE), mouseX,
+                    mouseY)) {
+                return;
+            }
+        }
+        //endregion
+        //region scrolling logic
+        if (mouseX >= 3 && mouseX <= 3 + 9 && mouseY >= VERTICAL_MARGIN && mouseY <= VERTICAL_MARGIN + this.sliderHeight) {
+            final float perAlt = (this.sliderHeight - VERTICAL_MARGIN) / this.alts.size();
+            boolean b = mouseY >= VERTICAL_MARGIN + perAlt * this.scrolled;
 
-         this.initTime = System.currentTimeMillis();
-      }
+            if (b && mouseY <= Math.min(VERTICAL_MARGIN + perAlt * this.visibleAltsCount,
+                    this.sliderHeight) + VERTICAL_MARGIN + perAlt * this.scrolled) {
+                this.dragging = true;
+            } else {
+                setScrolledAndUpdate(
+                        this.scrolled + MathHelper.ceiling_double_int(this.alts.size() / 5.0D) * (b ? 1 : -1));
+            }
+        }
+        //endregion
+        //region fires fields (token, search)
+        this.apiKeyField.mouseClicked(mouseX, mouseY, mouseButton);
+        this.searchField.mouseClicked(mouseX, mouseY, mouseButton);
+        //endregion
+    }
 
-      this.loadAlts();
-      if(StringUtils.isBlank(this.tokenContent)) {
-         try {
-            this.tokenContent = Strings.nullToEmpty(this.readApiKey());
-         } catch (IOException var6) {
-            this.logger.error("An error occurred while reading data file", var6);
-            this.tokenContent = "";
-         }
-      }
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy HH:mm");
 
-   }
+    static {
+        DECIMAL_FORMAT.setGroupingSize(3);
+    }
 
-   protected void actionPerformed(GuiButton var1) {
-      int[] var2 = CI.b();
-      switch(var1.id) {
-      case 69:
-         Object var3 = null;
-         Clipboard var4 = Toolkit.getDefaultToolkit().getSystemClipboard();
-         var4.setContents((Transferable)var3, (ClipboardOwner)var3);
-         this.novoline.getNotificationManager().pop("Copied your token to a clipboard!", 4000, NotificationType.INFO);
-         this.novoline.getNotificationManager().pop("Failed to grab a token!", 4000, NotificationType.ERROR);
-      case 0:
-         this.mc.displayGuiScreen(new GuiAddAlt(this, "Add Alt", "Add Alt", "Generate and save", this::lambda$actionPerformed$2));
-      case 1:
-         this.removeCurrentAlt();
-      case 2:
-         this.mc.displayGuiScreen(new GuiAddAlt(this, "Login", "Alt Login", "Generate and log in", this::lambda$actionPerformed$3));
-      case 3:
-         this.refreshAlts();
-      case 4:
-         String var5 = this.apiKeyField.getText();
-         if(StringUtils.isBlank(var5)) {
-            Novoline.getInstance().getNotificationManager().pop("No TheAltening token!", NotificationType.ERROR);
-            return;
-         } else {
-            this.novoline.getDataRetriever().updateKey(var5);
-            ForkJoinPool.commonPool().execute(this::lambda$actionPerformed$5);
-         }
-      case 5:
-         AltRepositoryGUI$EnumSort[] var6 = AltRepositoryGUI$EnumSort.values();
-         this.sortType = var6[(this.sortType.ordinal() + 1) % var6.length];
-         this.sortButton.displayString = this.sortType.getCriteria();
-         this.alts.update();
-         this.setScrolledAndUpdate(0);
-      case 10:
-         try {
-            Runtime var7 = Runtime.getRuntime();
-            String var8 = "https://shop.thealtening.com/?r=novoline";
-            var7.exec("rundll32 url.dll,FileProtocolHandler " + var8);
-         } catch (Exception var9) {
-            var9.printStackTrace();
-         }
-      default:
-      }
-   }
+    private float altWidth = 0;
+    private float altBoxAnimationStep, altBoxAlphaStep;
 
-   protected void mouseClicked(int var1, int var2, int var3) {
-      CI.b();
-      int var5 = 0;
-      if(var5 < this.buttonList.size()) {
-         GuiButton var6 = (GuiButton)this.buttonList.get(var5);
-         if(var6.mousePressed(this.mc, var1, var2)) {
-            this.selectedButton = var6;
-            var6.playPressSound(this.mc.getSoundHandler());
-            this.actionPerformed(var6);
-            return;
-         }
+    @Override
+    public void initGui() {
+        Keyboard.enableRepeatEvents(true);
 
-         ++var5;
-      }
+        //region Temporary values
+        final TokenField oldSearchField = this.searchField;
+        //endregion
+        //region Updating resolution-depended cached values
+        final int altInfoX = this.width - PLAYER_BOX_WIDTH - HORIZONTAL_MARGIN;
+        final int altInfoH = this.height - VERTICAL_MARGIN - 6 * (3 + 1) - BUTTON_HEIGHT * 3;
+        this.altWidth = -HORIZONTAL_MARGIN + this.width - HORIZONTAL_MARGIN - PLAYER_BOX_WIDTH - HORIZONTAL_MARGIN;
+        this.altBoxAnimationStep = this.altWidth / 564.0F * FHD_ANIMATION_STEP; // rounded up animation step
+        this.altBoxAlphaStep = 0xFF / (this.altWidth / FHD_ANIMATION_STEP);
+        this.apiKeyField = new TokenField(0, this.mc.fontRendererObj, this.width - 255, 4, 100, 20,
+                "The Altening Key:");
+        this.searchField = new TokenField(0, this.mc.fontRendererObj, this.width - 740, 4, 180, 20, "Search:");
+        this.sortType = EnumSort.DATE;
 
-      var5 = 0;
-      if(var5 < this.visibleAlts.size()) {
-         Alt var11 = (Alt)this.visibleAlts.get(var5);
-         if(var11.mouseClicked(this.altWidth, 25.0F + (float)var5 * 39.0F, var1, var2)) {
-            return;
-         }
+        if (oldSearchField != null) {
+            this.searchField.setText(oldSearchField.getText());
+        }
+        //endregion
+        //region Player group (alt info box)
+        this.groupPlayerBox = new GuiGroupPlayerBox(altInfoX, VERTICAL_MARGIN, PLAYER_BOX_WIDTH, altInfoH,
+                this::getSelectedAlt);
+        this.groupPlayerBox.addLine(alt -> "In-game name: " + alt.getPlayer().getName());
 
-         ++var5;
-      }
+        this.groupPlayerBox
+                .addLine(alt -> "Hypixel Level: " + DECIMAL_FORMAT.format(alt.getNetworkLevel()));
+        this.groupPlayerBox.addLine(alt -> "Hypixel Rank: " + alt.getRank());
 
-      if(var1 >= 3 && var1 <= 12 && var2 >= 25 && (float)var2 <= 25.0F + this.sliderHeight) {
-         float var10 = (this.sliderHeight - 25.0F) / (float)this.alts.size();
-         boolean var12 = (float)var2 >= 25.0F + var10 * (float)this.scrolled;
-         if(var12 && (float)var2 <= Math.min(25.0F + var10 * (float)this.visibleAltsCount, this.sliderHeight) + 25.0F + var10 * (float)this.scrolled) {
-            this.dragging = true;
-         }
+        //region debug
+		/*this.groupPlayerBox.addLine(alt -> "Alts: " + this.alts.size());
+		this.groupPlayerBox.addLine(alt -> "Scrolled: " + this.scrolled);*/
+        //endregion
+        //region Scrolling logic
+        this.sliderHeight = -VERTICAL_MARGIN + this.height + -DOWN_MARGIN;
+        final int oldVisibleAltsCount = this.visibleAltsCount;
+        this.visibleAltsCount = getVisibleAltsCount();
 
-         this.setScrolledAndUpdate(this.scrolled + MathHelper.ceiling_double_int((double)this.alts.size() / 5.0D) * (var12?1:-1));
-      }
+        // если окно игры увеличилось при ресайзе
+        if (oldVisibleAltsCount < this.visibleAltsCount && this.alts.size() - this.scrolled < this.visibleAltsCount) {
+            setScrolledAndUpdate(this.alts.size() - this.visibleAltsCount);
+        }
 
-      this.apiKeyField.mouseClicked(var1, var2, var3);
-      this.searchField.mouseClicked(var1, var2, var3);
-   }
+        updateVisibleAlts();
+        //endregion
+        //region Setting altening api token from file
+        this.apiKeyField.setText(this.tokenContent);
+        //endregion
+        //region Registering buttons
+        this.buttonList.add(new RoundedButton("Add", 0, altInfoX, altInfoH + VERTICAL_MARGIN + 5, BUTTON_WIDTH - 1,
+                BUTTON_HEIGHT, 15, SFBOLD_28));
+        this.buttonList.add(new RoundedButton("Remove", 1, altInfoX + BUTTON_WIDTH + 3, altInfoH + VERTICAL_MARGIN + 5,
+                BUTTON_WIDTH - 1, BUTTON_HEIGHT, 15, SFBOLD_28));
+        this.buttonList
+                .add(new RoundedButton("Direct Login", 2, altInfoX, altInfoH + VERTICAL_MARGIN + 5 + BUTTON_HEIGHT + 6,
+                        PLAYER_BOX_WIDTH, BUTTON_HEIGHT, 15, SFBOLD_28));
+        this.buttonList
+                .add(new RoundedButton("Refresh", 3, altInfoX, altInfoH + VERTICAL_MARGIN + 5 + (BUTTON_HEIGHT + 6) * 2,
+                        PLAYER_BOX_WIDTH, BUTTON_HEIGHT, 15, SFBOLD_28));
+        this.buttonList.add(new RoundedButton("Generate", 4, this.width - 150, 2, 75, 20, 8, SFBOLD_16));
+        this.buttonList.add(new RoundedButton("Buy Alts", 10, this.width - 70, 2, 55, 20, 8, SFBOLD_16));
+        this.buttonList
+                .add(this.sortButton = new RoundedButton(this.sortType.getCriteria(), 5, this.width - 550, 2, 100, 20,
+                        8, SFBOLD_16));
+        this.buttonList.add(new RoundedButton("Grab Token", 69, this.width - 445, 2, 95, 20, 8, SFBOLD_16));
+        //endregion
+    }
 
-   public void initGui() {
-      Keyboard.enableRepeatEvents(true);
-      TokenField var2 = this.searchField;
-      int var3 = this.width - 320 - 15;
-      int var4 = this.height - 25 - 24 - 90;
-      CI.b();
-      this.altWidth = (float)(-15 + this.width - 15 - 320 - 15);
-      this.altBoxAnimationStep = this.altWidth / 564.0F * 5.0F;
-      this.altBoxAlphaStep = 255.0F / (this.altWidth / 5.0F);
-      this.apiKeyField = new TokenField(0, this.mc.fontRendererObj, this.width - 255, 4, 100, 20, "The Altening Key:");
-      this.searchField = new TokenField(0, this.mc.fontRendererObj, this.width - 740, 4, 180, 20, "Search:");
-      this.sortType = AltRepositoryGUI$EnumSort.DATE;
-      this.searchField.setText(var2.getText());
-      this.groupPlayerBox = new GuiGroupPlayerBox(var3, 25, 320, var4, this::getSelectedAlt);
-      this.groupPlayerBox.addLine(AltRepositoryGUI::lambda$initGui$6);
-      this.groupPlayerBox.addLine(AltRepositoryGUI::lambda$initGui$7);
-      this.groupPlayerBox.addLine(AltRepositoryGUI::lambda$initGui$8);
-      this.sliderHeight = (float)(-25 + this.height) + -5.0F;
-      int var5 = this.visibleAltsCount;
-      this.visibleAltsCount = this.getVisibleAltsCount();
-      if(var5 < this.visibleAltsCount && this.alts.size() - this.scrolled < this.visibleAltsCount) {
-         this.setScrolledAndUpdate(this.alts.size() - this.visibleAltsCount);
-      }
+    private static final float DOWN_MARGIN = 5;
 
-      this.updateVisibleAlts();
-      this.apiKeyField.setText(this.tokenContent);
-      this.buttonList.add(new RoundedButton("Add", 0, var3, var4 + 25 + 5, 158, 30, 15, Fonts$SFBOLD$SFBOLD_28.SFBOLD_28));
-      this.buttonList.add(new RoundedButton("Remove", 1, var3 + 159 + 3, var4 + 25 + 5, 158, 30, 15, Fonts$SFBOLD$SFBOLD_28.SFBOLD_28));
-      this.buttonList.add(new RoundedButton("Direct Login", 2, var3, var4 + 25 + 5 + 30 + 6, 320, 30, 15, Fonts$SFBOLD$SFBOLD_28.SFBOLD_28));
-      this.buttonList.add(new RoundedButton("Refresh", 3, var3, var4 + 25 + 5 + 72, 320, 30, 15, Fonts$SFBOLD$SFBOLD_28.SFBOLD_28));
-      this.buttonList.add(new RoundedButton("Generate", 4, this.width - 150, 2, 75, 20, 8, Fonts$SFBOLD$SFBOLD_16.SFBOLD_16));
-      this.buttonList.add(new RoundedButton("Buy Alts", 10, this.width - 70, 2, 55, 20, 8, Fonts$SFBOLD$SFBOLD_16.SFBOLD_16));
-      this.buttonList.add(this.sortButton = new RoundedButton(this.sortType.getCriteria(), 5, this.width - 550, 2, 100, 20, 8, Fonts$SFBOLD$SFBOLD_16.SFBOLD_16));
-   }
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        try {
 
-   public void drawScreen(int var1, int var2, float var3) {
-      int[] var4 = CI.b();
-      AltRepositoryGUI var10000 = this;
-
-      try {
-         if(var10000.A) {
             GlStateManager.disableCull();
-            this.N.useShader(this.width * 2, this.height * 2, (float)var1, (float)var2, (float)(System.currentTimeMillis() - this.initTime) / 1000.0F);
-            GL11.glBegin(7);
-            GL11.glVertex2f(-1.0F, -1.0F);
-            GL11.glVertex2f(-1.0F, 1.0F);
-            GL11.glVertex2f(1.0F, 1.0F);
-            GL11.glVertex2f(1.0F, -1.0F);
+            shader.useShader(this.width, this.height, mouseX, mouseY, (System.currentTimeMillis() - initTime) / 1000f);
+            GL11.glBegin(GL11.GL_QUADS);
+            GL11.glVertex2f(-1f, -1f);
+            GL11.glVertex2f(-1f, 1f);
+            GL11.glVertex2f(1f, 1f);
+            GL11.glVertex2f(1f, -1f);
             GL11.glEnd();
             GL20.glUseProgram(0);
-         }
+            final int altsCount = this.alts.size();
+            final float perAlt = this.sliderHeight / this.alts.size();
 
-         Gui.drawRect(0, 0, 9999, 9999, (new Color(50, 50, 50)).getRGB());
-         int var5 = this.alts.size();
-         float var6 = this.sliderHeight / (float)this.alts.size();
-         if(this.dragging) {
-            int var7 = MathHelper.clamp_int(var2 - 25, 0, (int)this.sliderHeight - 25);
-            int var8 = (int)((float)var7 / this.sliderHeight * (float)this.alts.size());
-            this.setScrolledAndUpdate(var8);
-         }
+            if (this.dragging) {
+                int sliderValue = MathHelper
+                        .clamp_int(mouseY - VERTICAL_MARGIN, 0, (int) this.sliderHeight - VERTICAL_MARGIN);
+                final int altIndex = (int) (sliderValue / this.sliderHeight * this.alts.size());
 
-         drawRect(0, 0, this.width, this.height, (new Color(0, 0, 0, 100)).getRGB());
-         Fonts$SFBOLD$SFBOLD_28.SFBOLD_28.drawString("N  O  V  O  L  I  N  E", 15.0F, 5.0F, -1);
-         Fonts$SFBOLD$SFBOLD_28.SFBOLD_28.drawString("N", 15.0F, 5.0F, ((HUD)this.novoline.getModuleManager().getModule(HUD.class)).getHUDColor());
-         this.apiKeyField.drawTextBox();
-         this.searchField.drawTextBox();
-         RenderUtils.drawRoundedRect(3.0F, 25.0F, 9.0F, this.sliderHeight, 8.0F, SCROLL_BAR_EMPTY_COLOR);
-         RenderUtils.drawRoundedRect(3.0F, 25.0F + Math.min(var6 * (float)this.scrolled, this.sliderHeight - Math.min(var6 * (float)this.visibleAltsCount, this.sliderHeight)), 9.0F, Math.min(var6 * (float)this.visibleAltsCount, this.sliderHeight), 8.0F, SCROLL_BAR_SELECTED_COLOR);
-         this.groupPlayerBox.drawGroup(this.mc, var1, var2);
-         if(!this.alts.isEmpty()) {
-            if(var5 > this.visibleAltsCount) {
-               this.scrollWithWheel(var5);
+                setScrolledAndUpdate(altIndex);
             }
 
-            int var10 = 0;
-            if(var10 < this.visibleAlts.size()) {
-               Alt var13 = (Alt)this.visibleAlts.get(var10);
-               var13.drawAlt(this.altWidth, (int)(25.0F + (float)var10 * 39.0F), var1, var2);
-               ++var10;
+            drawRect(0, 0, this.width, this.height,  new Color(0,0,0,100).getRGB()); // background
+            SFBOLD_28.drawString("N  O  V  O  L  I  N  E", HORIZONTAL_MARGIN, 5, 0xFFFFFFFF);
+            SFBOLD_28.drawString("N", HORIZONTAL_MARGIN, 5,
+                    this.novoline.getModuleManager().getModule(HUD.class).getHUDColor());
+
+            this.apiKeyField.drawTextBox();
+            this.searchField.drawTextBox();
+
+            drawRoundedRect(3, VERTICAL_MARGIN, // @off
+                    9, this.sliderHeight,
+                    8, SCROLL_BAR_EMPTY_COLOR);
+            drawRoundedRect(3, VERTICAL_MARGIN + Math.min(perAlt * this.scrolled, this.sliderHeight - Math.min(perAlt * this.visibleAltsCount, this.sliderHeight)),
+                    9, Math.min(perAlt * this.visibleAltsCount, this.sliderHeight),
+                    8, SCROLL_BAR_SELECTED_COLOR); // @on
+
+            this.groupPlayerBox.drawGroup(this.mc, mouseX, mouseY);
+
+            if (!this.alts.isEmpty()) {
+                if (altsCount > this.visibleAltsCount) scrollWithWheel(altsCount);
+
+                for (int i = 0; i < this.visibleAlts.size(); i++) {
+                    final Alt alt = this.visibleAlts.get(i);
+                    alt.drawAlt(this.altWidth, (int) (VERTICAL_MARGIN + i * (PLAYER_BOX_HEIGHT + PLAYER_BOX_SPACE)),
+                            mouseX, mouseY);
+                }
+
+                final Alt selectedAlt = getSelectedAlt();
+                if (selectedAlt != null) selectedAlt.drawEntity(mouseX, mouseY);
             }
 
-            Alt var12 = this.getSelectedAlt();
-            var12.drawEntity(var1, var2);
-         }
+			/*// для дебага слайдера
+			if(this.dragging) {
+				final int normalizedMouseY = MathHelper.clamp_int(mouseY - VERTICAL_MARGIN, 0, (int) sliderHeight);
+				drawFilledCircle(7.5F, (float) (normalizedMouseY + VERTICAL_MARGIN), 3F, 0xFFFF0000);
+			}*/
 
-         super.drawScreen(var1, var2, var3);
-      } catch (Throwable var9) {
-         this.logger.warn("scrolled: " + this.scrolled, var9);
-      }
+            super.drawScreen(mouseX, mouseY, partialTicks);
+        } catch (Throwable t) {
+            this.logger.warn("scrolled: " + this.scrolled, t);
+        }
+    }
 
-   }
+    //region Scrolling
+    private static final int SCROLL_BAR_EMPTY_COLOR = new Color(0, 0, 0,50).getRGB();
+    private static final int SCROLL_BAR_SELECTED_COLOR = new Color(255, 255, 255,30).getRGB();
 
-   private void setScrolledAndUpdate(int var1) {
-      this.setScrolled(var1);
-      this.updateVisibleAlts();
-   }
+    private int scrolled;
+    private List<Alt> visibleAlts;
+    private int visibleAltsCount;
 
-   private void setScrolled(int var1) {
-      this.scrolled = MathHelper.clamp_int(var1, 0, Math.max(0, this.alts.size() - this.visibleAltsCount));
-   }
+    private float sliderHeight;
+    private boolean dragging;
 
-   private void updateVisibleAlts() {
-      int[] var1 = CI.b();
-      if(this.alts.size() - this.scrolled < this.visibleAltsCount) {
-         this.setScrolled(this.alts.size() - this.visibleAltsCount);
-      }
+    private void setScrolledAndUpdate(int value) {
+        setScrolled(value);
+        updateVisibleAlts();
+    }
 
-      int var2 = this.alts.size();
-      this.visibleAlts = this.alts.subList(MathHelper.clamp_int(this.scrolled, 0, var2), MathHelper.clamp_int(this.scrolled + this.visibleAltsCount, 0, var2));
-   }
+    private void setScrolled(int value) {
+        this.scrolled = MathHelper.clamp_int(value, 0, Math.max(0, this.alts.size() - this.visibleAltsCount));
+        // System.out.println("setting value " + scrolled + " (" + value + ")");
+    }
 
-   private void scrollWithWheel(int var1) {
-      CI.b();
-      int var3 = Mouse.getDWheel();
-      if(var3 != 0) {
-         if(var3 < 0) {
-            int var4 = this.scrolled + 1;
-         }
+    private void updateVisibleAlts() {
+        if (this.alts.size() - this.scrolled < this.visibleAltsCount) {
+            setScrolled(this.alts.size() - this.visibleAltsCount);
+        }
 
-         int var5 = this.scrolled - 1;
-         if(var5 >= 0 && var5 <= var1 - this.visibleAltsCount) {
-            this.setScrolledAndUpdate(var5);
-         }
+        final int size = this.alts.size();
+        this.visibleAlts = this.alts.subList(MathHelper.clamp_int(this.scrolled, 0, size),
+                MathHelper.clamp_int(this.scrolled + this.visibleAltsCount, 0, size));
+    }
 
-      }
-   }
+    private void scrollWithWheel(int altsCount) {
+        final int mouse = Mouse.getDWheel();
+        final int newValue;
 
-   private int getVisibleAltsCount() {
-      float var1 = (float)(this.height - 25) / 39.0F;
-      return MathHelper.floor_float(var1);
-   }
-
-   public String readApiKey() throws IOException {
-      CI.b();
-      Path var2 = this.novoline.getDataFolder().resolve("Data.txt");
-      if(Files.notExists(var2, new LinkOption[0])) {
-         return null;
-      } else {
-         List var3 = Files.readAllLines(var2);
-         return !var3.isEmpty()?(this.tokenContent = (String)var3.get(0)):null;
-      }
-   }
-
-   public Alt getRandomAlt() {
-      CI.b();
-      List var2 = (List)this.alts.stream().filter(AltRepositoryGUI::lambda$getRandomAlt$9).collect(Collectors.toList());
-      if(var2.isEmpty()) {
-         return null;
-      } else {
-         Alt var3 = (Alt)var2.get(var2.size() == 1?0:ThreadLocalRandom.current().nextInt(0, var2.size() - 1));
-         var3.select();
-         return var3;
-      }
-   }
-
-   public Alt getSelectedAlt() {
-      return (Alt)this.alts.stream().filter(Alt::isSelected).findAny().orElse((Object)null);
-   }
-
-   public void onGuiClosed() {
-      Keyboard.enableRepeatEvents(false);
-      this.saveAlts();
-      this.tokenContent = this.apiKeyField.getText();
-      AltRepositoryGUI var10000 = this;
-
-      try {
-         Files.write(var10000.novoline.getDataFolder().resolve("Data.txt"), this.tokenContent.getBytes(StandardCharsets.UTF_8), new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING});
-      } catch (Throwable var2) {
-         this.logger.error("Unable to reach clients folder", var2);
-      }
-
-   }
-
-   protected void mouseReleased(int var1, int var2, int var3) {
-      this.dragging = false;
-      super.mouseReleased(var1, var2, var3);
-   }
-
-   protected void keyTyped(char param1, int param2) throws IOException {
-      // $FF: Couldn't be decompiled
-   }
-
-   void selectAlt(Alt var1, Alt var2, Integer var3) {
-      int[] var4 = CI.b();
-      if(var3 != null || (var3 = Integer.valueOf(this.alts.indexOf(var2))).intValue() != -1) {
-         if(var1 != null) {
-            var1.setSelectedProperty(false);
-         }
-
-         var2.setSelectedProperty(true);
-         if(var3.intValue() < this.scrolled) {
-            this.setScrolledAndUpdate(var3.intValue());
-         }
-
-         if(var3.intValue() >= this.scrolled + this.visibleAltsCount) {
-            this.setScrolledAndUpdate(var3.intValue() - this.visibleAltsCount + 1);
-         }
-
-      }
-   }
-
-   private void refreshAlts() {
-      this.loadAlts();
-      this.setScrolledAndUpdate(0);
-   }
-
-   private void pasteAltsFromClipboard() {
-      int[] var1 = CI.b();
-
-      try {
-         Transferable var2 = Toolkit.getDefaultToolkit().getSystemClipboard().getContents((Object)null);
-         if(var2 != null) {
-            if(var2.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-               Stream var3 = Arrays.stream(((String)var2.getTransferData(DataFlavor.stringFlavor)).split("\n"));
-            }
-
-            if(var2.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-               Stream var5 = ((List)var2.getTransferData(DataFlavor.javaFileListFlavor)).stream().map(AltRepositoryGUI::lambda$pasteAltsFromClipboard$10).filter(Objects::nonNull).flatMap(AltRepositoryGUI::lambda$pasteAltsFromClipboard$11);
-            }
-
-         }
-      } catch (Exception var4) {
-         var4.printStackTrace();
-      }
-   }
-
-   private void removeCurrentAlt() {
-      CI.b();
-      Object var2 = null;
-      Iterator var3 = this.alts.iterator();
-      if(var3.hasNext()) {
-         Alt var4 = (Alt)var3.next();
-         if(var4.isSelected()) {
-            this.removeAlt(var4);
-            if(var2 != null) {
-               ((Alt)var2).setSelectedProperty(true);
-            }
-
+        if (mouse == 0) {
             return;
-         }
-      }
+        } else if (mouse < 0) {
+            newValue = this.scrolled + SCROLL_ALTS;
+        } else {
+            newValue = this.scrolled - SCROLL_ALTS;
+        }
 
-      this.saveAlts();
-   }
+        if (newValue >= 0 && newValue <= altsCount - this.visibleAltsCount) {
+            setScrolledAndUpdate(newValue);
+        }
+    }
 
-   public boolean hasAlt(AltCredential var1) {
-      return this.alts.getUnfiltered().stream().anyMatch(AltRepositoryGUI::lambda$hasAlt$17);
-   }
+    private int getVisibleAltsCount() {
+        final float value = (this.height - /*19*/VERTICAL_MARGIN) / (PLAYER_BOX_HEIGHT + PLAYER_BOX_SPACE);
+        return MathHelper.floor_float(value);
+    }
+    //endregion
 
-   public Alt addAlt(AltCredential var1) {
-      int[] var2 = CI.b();
-      if(!this.hasAlt(var1)) {
-         if(var1 instanceof AlteningAltCredential) {
-            AlteningAltCredential var4 = (AlteningAltCredential)var1;
-            AccountDetails var5 = var4.getDetails();
-            new Alt(var1, new FakeEntityPlayer(new GameProfile(UUID.randomUUID(), var4.getName()), (ResourceLocation)null), HypixelProfileFactory.hypixelProfile(var5.getHypixelRank(), Math.max(1, var5.getHypixelLevel())), this, Long.valueOf(0L), "Default", 1.0D, false);
-         }
+    @Nullable
+    public String readApiKey() throws IOException {
+        final Path dataPath = this.novoline.getDataFolder().resolve("Data.txt");
 
-         String var6 = var1.getLogin();
-         String var7 = GuiAddAlt.isEmail(var6)?"<Unknown Name>":var6;
-         Alt var3 = new Alt(var1, new FakeEntityPlayer(new GameProfile(UUID.randomUUID(), var7), (ResourceLocation)null), HypixelProfile.empty(), this, Long.valueOf(0L), "Default", 1.0D, false);
-         this.alts.add(var3);
-         this.updateVisibleAlts();
-         var3.select();
-         return var3;
-      } else {
-         Novoline.getInstance().getNotificationManager().pop("Account is already added!", NotificationType.ERROR);
-         return null;
-      }
-   }
-
-   public void removeAlt(Alt var1) {
-      int[] var2 = CI.b();
-      if(this.alts.remove(var1)) {
-         this.updateVisibleAlts();
-      }
-
-   }
-
-   public void loadAlts() {
-      CI.b();
-      this.alts.clear();
-
-      try {
-         NBTTagCompound var2 = CompressedStreamTools.read(new File(Novoline.getInstance().getPathString(), "alts.novo"));
-         if(var2 == null) {
-            return;
-         }
-
-         NBTTagList var3 = var2.getTagList("alts", 10);
-         int var4 = 0;
-         if(var4 < var3.tagCount()) {
-            AltRepositoryGUI var10000 = this;
-            NBTTagList var10001 = var3;
-            int var10002 = var4;
-
-            label67: {
-               Alt var5;
-               try {
-                  var5 = Alt.fromNBT(var10000, var10001.getCompoundTagAt(var10002));
-               } catch (Throwable var7) {
-                  this.logger.error("Failed to parse account: " + var3.getCompoundTagAt(var4).toString(), var7);
-                  break label67;
-               }
-
-               this.alts.add(var5);
-            }
-
-            ++var4;
-         }
-      } catch (Exception var8) {
-         this.logger.error("Couldn\'t load alt list", var8);
-      }
-
-      this.updateVisibleAlts();
-   }
-
-   public void saveAlts() {
-      int[] var1 = CI.b();
-
-      try {
-         NBTTagList var2 = new NBTTagList();
-         Iterator var3 = this.alts.getUnfiltered().iterator();
-         if(var3.hasNext()) {
-            Alt var4 = (Alt)var3.next();
-            var2.appendTag(var4.asNBTCompound());
-         }
-
-         NBTTagCompound var6 = new NBTTagCompound();
-         var6.setTag("alts", var2);
-         CompressedStreamTools.safeWrite(var6, new File(Novoline.getInstance().getPathString(), "alts.novo"));
-      } catch (Exception var5) {
-         this.logger.error("Couldn\'t save alt list", var5);
-      }
-
-   }
-
-   public List getAlts() {
-      return (List)this.alts.getUnfiltered();
-   }
-
-   public TClient getTClient() {
-      return this.tclient;
-   }
-
-   public String getTokenContent() {
-      return this.tokenContent;
-   }
-
-   public Alt getCurrentAlt() {
-      return this.currentAlt;
-   }
-
-   public void setCurrentAlt(Alt var1) {
-      this.currentAlt = var1;
-   }
-
-   public float getAltBoxAlphaStep() {
-      return this.altBoxAlphaStep;
-   }
-
-   public float getAltBoxAnimationStep() {
-      return this.altBoxAnimationStep;
-   }
-
-   public TokenField getApiKeyField() {
-      return this.apiKeyField;
-   }
-
-   private static boolean lambda$hasAlt$17(AltCredential var0, Alt var1) {
-      return var1.getCredential().getLogin().equals(var0.getLogin());
-   }
-
-   private void lambda$pasteAltsFromClipboard$16(String[] var1) {
-      this.addAlt(new AltCredential(var1[0], var1[1]));
-   }
-
-   private static String lambda$pasteAltsFromClipboard$15(String[] var0) {
-      return var0[0];
-   }
-
-   private static boolean lambda$pasteAltsFromClipboard$14(Set var0, String[] var1) {
-      return var0.add(var1[0]);
-   }
-
-   private static boolean lambda$pasteAltsFromClipboard$13(String[] var0) {
-      int[] var1 = CI.b();
-      return !var0[0].trim().isEmpty() && !var0[1].trim().isEmpty();
-   }
-
-   private static String[] lambda$pasteAltsFromClipboard$12(String var0) {
-      int[] var1 = CI.b();
-      if(!var0.endsWith("@alt.com")) {
-         int var2 = var0.indexOf(58);
-         return var2 == -1?null:new String[]{var0.substring(0, var2), var0.substring(var2 + 1)};
-      } else {
-         return new String[]{var0, (new String(new char[ThreadLocalRandom.current().nextInt(7) + 1])).replace('\u0000', 'a')};
-      }
-   }
-
-   private static Stream lambda$pasteAltsFromClipboard$11(Stream var0) {
-      return var0;
-   }
-
-   private static Stream lambda$pasteAltsFromClipboard$10(File var0) {
-      File var10000 = var0;
-
-      try {
-         return Files.lines(var10000.toPath());
-      } catch (Exception var2) {
-         return null;
-      }
-   }
-
-   private static boolean lambda$getRandomAlt$9(Alt var0) {
-      int[] var1 = CI.b();
-      return var0.getUnbanDate() == 0L && !var0.isInvalid();
-   }
-
-   private static String lambda$initGui$8(Alt var0) {
-      return "Hypixel Rank: " + var0.getRank();
-   }
-
-   private static String lambda$initGui$7(Alt var0) {
-      return "Hypixel Level: " + DECIMAL_FORMAT.format(var0.getNetworkLevel());
-   }
-
-   private static String lambda$initGui$6(Alt var0) {
-      return "In-game name: " + var0.getPlayer().getName();
-   }
-
-   private void lambda$actionPerformed$5() {
-      this.novoline.generateAlteningAlt().whenCompleteAsync(this::lambda$null$4);
-   }
-
-   private void lambda$null$4(Account var1, Throwable var2) {
-      int[] var3 = CI.b();
-      if(var2 != null) {
-         Novoline.getLogger().warn("An error occurred while generating an account!", var2);
-         if(var2 instanceof TheAlteningException) {
-            Novoline.getInstance().getNotificationManager().pop("Invalid TheAltening token!", NotificationType.ERROR);
-         }
-
-         Novoline.getLogger().warn("An unexpected error occurred while generating an alt!", var2);
-         Novoline.getInstance().getNotificationManager().pop("Unexpected error occurred!", NotificationType.ERROR);
-      } else {
-         Alt var4 = this.addAlt(new AlteningAltCredential(var1.getToken(), var1.getUsername(), var1.getInfo()));
-         Novoline.getInstance().getNotificationManager().pop("Added alt! " + var4.toString(), NotificationType.SUCCESS);
-      }
-   }
-
-   private void lambda$actionPerformed$3(GuiAddAlt var1, AltCredential var2) {
-      var1.getGroupAltInfo().updateStatus(EnumChatFormatting.GREEN + "Logging in...");
-      (new AltLoginThread(var2, new AltRepositoryGUI$1(this, var2, var1))).run();
-   }
-
-   private void lambda$actionPerformed$2(GuiAddAlt var1, AltCredential var2) {
-      this.addAlt(var2);
-      this.saveAlts();
-      this.mc.displayGuiScreen(this);
-   }
-
-   private Comparator lambda$new$1() {
-      return this.sortType.getComparator();
-   }
-
-   private Alt lambda$new$0(Alt var1) {
-      int[] var2 = CI.b();
-      if(this.searchField != null && !StringUtils.isBlank(this.searchField.getText())) {
-         if(var1 == null) {
+        if (Files.notExists(dataPath)) {
             return null;
-         } else {
-            if(var1.getPlayer() != null && var1.getPlayer().getName() != null) {
-               String var3 = var1.getPlayer().getName();
+        }
+
+        final List<String> lines = Files.readAllLines(dataPath);
+        return !lines.isEmpty() ? this.tokenContent = lines.get(0) : null;
+    }
+
+    @Nullable
+    public Alt getRandomAlt() {
+        List<Alt> alts = this.alts.stream().filter(alt1 -> alt1.getUnbanDate() == 0L && !alt1.isInvalid()).collect(Collectors.toList());
+
+        if (alts.isEmpty()) return null;
+
+        final Alt alt = alts.get(alts.size() == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, alts.size() - 1));
+        alt.select();
+
+        return alt;
+    }
+
+    public Alt getSelectedAlt() {
+        return this.alts.stream().filter(Alt::isSelected).findAny().orElse(null);
+    }
+
+	/*private Alt getLoggedAlt() {
+		return this.alts.stream().filter(Alt::isLoginSuccessful).findAny().orElse(null);
+	}*/
+
+    @Override
+    public void onGuiClosed() {
+        Keyboard.enableRepeatEvents(false);
+
+        saveAlts();
+        this.tokenContent = this.apiKeyField.getText();
+
+        try {
+            Files.write(this.novoline.getDataFolder().resolve("Data.txt"),
+                    this.tokenContent.getBytes(StandardCharsets.UTF_8), CREATE, TRUNCATE_EXISTING);
+        } catch (Throwable t) {
+            this.logger.error("Unable to reach clients folder", t);
+        }
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state) {
+        this.dragging = false;
+        super.mouseReleased(mouseX, mouseY, state);
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (isKeyComboCtrlV(keyCode)) {
+            pasteAltsFromClipboard();
+        } else if (isKeyComboCtrlC(keyCode)) {
+            Alt selectedAlt = getSelectedAlt();
+
+            if (selectedAlt == null) return;
+
+            final String credential = selectedAlt.getCredential().toString();
+            final StringSelection selection = new StringSelection(credential);
+
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+        } else {
+            try {
+                switch (keyCode) {
+                    case Keyboard.KEY_NUMPAD8:
+                    case Keyboard.KEY_UP: {
+                        Alt previous = null;
+
+                        for (int i = 0; i < this.alts.size(); i++) {
+                            final Alt alt = this.alts.get(i);
+
+                            if (alt.isSelected()) {
+                                if (previous != null) selectAlt(alt, previous, i - 1);
+                                return;
+                            } else {
+                                previous = alt;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    case Keyboard.KEY_NUMPAD2:
+                    case Keyboard.KEY_DOWN:
+                        final int size = this.alts.size();
+
+                        for (int i = 0; i < size; i++) {
+                            final Alt alt = this.alts.get(i);
+
+                            if (alt.isSelected()) {
+                                if (i + 1 < size) selectAlt(alt, this.alts.get(i + 1), i + 1);
+                                return;
+                            }
+                        }
+
+                        break;
+
+                    case Keyboard.KEY_F5:
+                        refreshAlts();
+                        break;
+
+                    case Keyboard.KEY_NUMPADENTER:
+                    case Keyboard.KEY_RETURN: {
+                        final Alt alt = getSelectedAlt();
+                        if (alt != null) alt.logIn(true);
+
+                        break;
+                    }
+
+                    case Keyboard.KEY_DELETE: {
+                        removeCurrentAlt();
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        this.apiKeyField.textboxKeyTyped(typedChar, keyCode);
+
+        if (this.searchField.textboxKeyTyped(typedChar, keyCode) && this.searchField.isEnabled()) {
+            this.alts.update();
+            setScrolledAndUpdate(0);
+        }
+
+        super.keyTyped(typedChar, keyCode);
+    }
+
+    void selectAlt(@Nullable Alt oldValue, @NonNull Alt newValue, Integer newValueIndex) {
+        if (newValueIndex == null) {
+            if ((newValueIndex = this.alts.indexOf(newValue)) == -1) {
+                return;
+            }
+        }
+
+        if (oldValue != null) {
+            oldValue.setSelectedProperty(false);
+        }
+
+        newValue.setSelectedProperty(true);
+
+        if (newValueIndex < this.scrolled) { // если выделенный аккаунт выше view
+            setScrolledAndUpdate(newValueIndex);
+        } else if (newValueIndex >= this.scrolled + this.visibleAltsCount) { // если выделенный аккаунт ниже view
+            setScrolledAndUpdate(newValueIndex - this.visibleAltsCount + 1);
+        }
+    }
+
+    private void refreshAlts() {
+        loadAlts();
+        setScrolledAndUpdate(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void pasteAltsFromClipboard() {
+        try {
+            final Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
+            if (contents == null) return;
+
+            final Stream<String> stream;
+
+            if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                stream = Arrays.stream(((String) contents.getTransferData(DataFlavor.stringFlavor)).split("\n"));
+            } else if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                stream = ((List<File>) contents.getTransferData(DataFlavor.javaFileListFlavor)).stream().map(file -> {
+                    try {
+                        return Files.lines(file.toPath());
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }).filter(Objects::nonNull).flatMap(s -> s);
+            } else {
+                return;
             }
 
-            if(var1.getCredential() != null) {
-               String var4 = var1.getCredential().getLogin();
+            final Set<Object> seen = ConcurrentHashMap.newKeySet();
+
+            stream.map(s -> {
+                if (!s.endsWith("@alt.com")) {
+                    final int index = s.indexOf(':');
+                    return index == -1 ? null : new String[]{s.substring(0, index), s.substring(index + 1)};
+                } else {
+                    return new String[]{s, new String(new char[ThreadLocalRandom.current().nextInt(7) + 1]).replace(
+                            '\0', 'a')};
+                }
+            }).filter(Objects::nonNull).filter(alt -> !alt[0].trim().isEmpty() && !alt[1].trim().isEmpty()) //
+                    .filter(t -> seen.add(t[0])) // distinct
+                    .sorted(Comparator.comparing(o -> o[0])).forEach(alt -> addAlt(new AltCredential(alt[0], alt[1])));
+        } catch (Exception e) { // not gonna happen
+            e.printStackTrace();
+        }
+    }
+
+    private void removeCurrentAlt() {
+        Alt previous = null;
+
+        for (Alt alt : this.alts) {
+            if (alt.isSelected()) {
+                removeAlt(alt);
+
+                if (previous != null) previous.setSelectedProperty(true);
+                return;
+            } else {
+                previous = alt;
+            }
+        }
+
+        saveAlts();
+    }
+
+    public boolean hasAlt(@NonNull AltCredential credential) {
+        return this.alts.getUnfiltered().stream()
+                .anyMatch(alt -> alt.getCredential().getLogin().equals(credential.getLogin()));
+    }
+
+    public Alt addAlt(@NonNull AltCredential credential) {
+        if (!hasAlt(credential)) {
+            final Alt alt;
+
+            if (credential instanceof AlteningAltCredential) {
+                final AlteningAltCredential alteningCredential = (AlteningAltCredential) credential;
+
+                final AccountDetails details = alteningCredential.getDetails();
+                alt = new Alt(credential,
+                        new FakeEntityPlayer(new GameProfile(UUID.randomUUID(), alteningCredential.getName()), null),
+                        hypixelProfile(details.getHypixelRank(), Math.max(1, details.getHypixelLevel())), this,0L,"Default",1,false);
+            } else {
+                final String login = credential.getLogin();
+                final String name = isEmail(login) ? "<Unknown Name>" : login;
+
+                alt = new Alt(credential, new FakeEntityPlayer(new GameProfile(UUID.randomUUID(), name), null),
+                        HypixelProfile.empty(), this,0L,"Default",1,false);
             }
 
+            this.alts.add(alt);
+            updateVisibleAlts();
+
+            alt.select();
+            return alt;
+        } else {
+            Novoline.getInstance().getNotificationManager().pop("Account is already added!", ERROR);
             return null;
-         }
-      } else {
-         return var1;
-      }
-   }
+        }
+    }
 
-   static Minecraft access$000(AltRepositoryGUI var0) {
-      return var0.mc;
-   }
+    public void removeAlt(@NonNull Alt alt) {
+        if (this.alts.remove(alt)) {
+            updateVisibleAlts();
+        }
+    }
 
-   static {
-      DECIMAL_FORMAT.setGroupingSize(3);
-   }
+    public void loadAlts() {
+        this.alts.clear();
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+        try {
+            final NBTTagCompound tagCompound = CompressedStreamTools
+                    .read(new File(Novoline.getInstance().getPathString(), "alts.novo"));
+            if (tagCompound == null) return;
+
+            final NBTTagList altListTag = tagCompound.getTagList("alts", 10);
+
+            for (int i = 0; i < altListTag.tagCount(); ++i) {
+                final Alt alt;
+
+                try {
+                    alt = Alt.fromNBT(this, altListTag.getCompoundTagAt(i));
+                } catch (Throwable t) {
+                    this.logger.error("Failed to parse account: " + altListTag.getCompoundTagAt(i).toString(), t);
+                    continue;
+                }
+
+                this.alts.add(alt);
+            }
+        } catch (Exception e) {
+            this.logger.error("Couldn't load alt list", e);
+        }
+
+        updateVisibleAlts();
+    }
+
+    public void saveAlts() {
+        try {
+            final NBTTagList tagList = new NBTTagList();
+
+            for (Alt alt : this.alts.getUnfiltered()) {
+                tagList.appendTag(alt.asNBTCompound());
+            }
+
+            final NBTTagCompound tagCompound = new NBTTagCompound();
+            tagCompound.setTag("alts", tagList);
+
+            CompressedStreamTools.safeWrite(tagCompound, new File(Novoline.getInstance().getPathString(), "alts.novo"));
+        } catch (Exception e) {
+            this.logger.error("Couldn't save alt list", e);
+        }
+    }
+
+    private enum EnumSort {
+
+        DATE("Date", (o1, o2) -> 0),
+        LEVEL("Level", (o1, o2) -> {
+            if (o1.getHypixelProfile() == null) {
+                if (o2.getHypixelProfile() == null) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            } else if (o2.getHypixelProfile() == null) {
+                return -1;
+            }
+
+            return Integer.compare(o2.getHypixelProfile().getLevel(), o1.getHypixelProfile().getLevel());
+        }),
+        NAME("Name", (o1, o2) -> o1.getPlayer().getGameProfile().getName()
+                .compareTo(o2.getPlayer().getGameProfile().getName())),
+        EMAIL("Email", (o1, o2) -> o1.getCredential().getLogin().compareTo(o2.getCredential().getLogin())),
+        ;
+
+        private final String criteria;
+        private final Comparator<Alt> comparator;
+
+        EnumSort(String criteria, Comparator<Alt> comparator) {
+            this.criteria = criteria;
+            this.comparator = comparator;
+        }
+
+        @NonNull
+        public String getCriteria() {
+            return "By " + this.criteria;
+        }
+
+        public Comparator<Alt> getComparator() {
+            return this.comparator;
+        }
+    }
+
+    //region Lombok-alternative
+    public List<Alt> getAlts() {
+        return (List<Alt>) this.alts.getUnfiltered();
+    }
+
+    public TClient getTClient() {
+        return this.tclient;
+    }
+
+    public String getTokenContent() {
+        return this.tokenContent;
+    }
+
+    public Alt getCurrentAlt() {
+        return this.currentAlt;
+    }
+
+    public void setCurrentAlt(Alt currentAlt) {
+        this.currentAlt = currentAlt;
+    }
+
+    public float getAltBoxAlphaStep() {
+        return this.altBoxAlphaStep;
+    }
+
+    public float getAltBoxAnimationStep() {
+        return this.altBoxAnimationStep;
+    }
+
+    public TokenField getApiKeyField() {
+        return this.apiKeyField;
+    }
+    //endregion
+
 }

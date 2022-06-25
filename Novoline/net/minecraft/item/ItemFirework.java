@@ -1,13 +1,8 @@
 package net.minecraft.item;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.entity.item.EntityFireworkRocket;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemFireworkCharge;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.BlockPos;
@@ -15,44 +10,57 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
+import java.util.List;
+
 public class ItemFirework extends Item {
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var3.isRemote) {
-         EntityFireworkRocket var9 = new EntityFireworkRocket(var3, (double)((float)var4.getX() + var6), (double)((float)var4.getY() + var7), (double)((float)var4.getZ() + var8), var1);
-         var3.spawnEntityInWorld(var9);
-         if(!var2.abilities.isCreative()) {
-            --var1.stackSize;
-         }
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            EntityFireworkRocket entityfireworkrocket = new EntityFireworkRocket(worldIn, (float) pos.getX() + hitX, (float) pos.getY() + hitY, (float) pos.getZ() + hitZ, stack);
+            worldIn.spawnEntityInWorld(entityfireworkrocket);
 
-         return true;
-      } else {
-         return false;
-      }
-   }
-
-   public void addInformation(ItemStack var1, EntityPlayer var2, List var3, boolean var4) {
-      if(var1.hasTagCompound()) {
-         NBTTagCompound var5 = var1.getTagCompound().getCompoundTag("Fireworks");
-         if(var5.hasKey("Flight", 99)) {
-            var3.add(StatCollector.translateToLocal("item.fireworks.flight") + " " + var5.getByte("Flight"));
-         }
-
-         NBTTagList var6 = var5.getTagList("Explosions", 10);
-         if(var6.tagCount() > 0) {
-            for(int var7 = 0; var7 < var6.tagCount(); ++var7) {
-               NBTTagCompound var8 = var6.getCompoundTagAt(var7);
-               ArrayList var9 = Lists.newArrayList();
-               ItemFireworkCharge.addExplosionInfo(var8, var9);
-               if(!var9.isEmpty()) {
-                  for(int var10 = 1; var10 < var9.size(); ++var10) {
-                     var9.set(var10, "  " + (String)var9.get(var10));
-                  }
-
-                  var3.addAll(var9);
-               }
+            if (!playerIn.abilities.isCreative()) {
+                --stack.stackSize;
             }
-         }
-      }
 
-   }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * allows items to add custom lines of information to the mouseover description
+     */
+    public void addInformation(ItemStack stack, EntityPlayer playerIn, List<String> tooltip, boolean advanced) {
+        if (stack.hasTagCompound()) {
+            NBTTagCompound nbttagcompound = stack.getTagCompound().getCompoundTag("Fireworks");
+
+            if (nbttagcompound != null) {
+                if (nbttagcompound.hasKey("Flight", 99)) {
+                    tooltip.add(StatCollector.translateToLocal("item.fireworks.flight") + " " + nbttagcompound.getByte("Flight"));
+                }
+
+                NBTTagList nbttaglist = nbttagcompound.getTagList("Explosions", 10);
+
+                if (nbttaglist != null && nbttaglist.tagCount() > 0) {
+                    for (int i = 0; i < nbttaglist.tagCount(); ++i) {
+                        NBTTagCompound nbttagcompound1 = nbttaglist.getCompoundTagAt(i);
+                        List<String> list = Lists.newArrayList();
+                        ItemFireworkCharge.addExplosionInfo(nbttagcompound1, list);
+
+                        if (!list.isEmpty()) {
+                            for (int j = 1; j < list.size(); ++j) {
+                                list.set(j, "  " + list.get(j));
+                            }
+
+                            tooltip.addAll(list);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,25 +1,32 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import net.Gh;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.TypeConverter;
 
-public class IntType extends Type implements TypeConverter {
-   public IntType() {
-      super("Integer", Integer.class);
-   }
+public class IntType extends Type<Integer> implements TypeConverter<Integer> {
+    public IntType() {
+        super("Integer", Integer.class);
+    }
 
-   public Integer read(ByteBuf var1) {
-      return Integer.valueOf(var1.readInt());
-   }
+    @Override
+    public Integer read(ByteBuf buffer) {
+        return buffer.readInt();
+    }
 
-   public void write(ByteBuf var1, Integer var2) {
-      var1.writeInt(var2.intValue());
-   }
+    @Override
+    public void write(ByteBuf buffer, Integer object) {
+        buffer.writeInt(object);
+    }
 
-   public Integer from(Object var1) {
-      String var2 = Gh.b();
-      return var1 instanceof Number?Integer.valueOf(((Number)var1).intValue()):(var1 instanceof Boolean?Integer.valueOf(((Boolean)var1).booleanValue()?1:0):(Integer)var1);
-   }
+    @Override
+    public Integer from(Object o) {
+        if (o instanceof Number) {
+            return ((Number) o).intValue();
+        }
+        if (o instanceof Boolean) {
+            return ((Boolean) o) ? 1 : 0;
+        }
+        return (Integer) o;
+    }
 }

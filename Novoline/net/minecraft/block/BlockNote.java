@@ -1,9 +1,6 @@
 package net.minecraft.block;
 
 import com.google.common.collect.Lists;
-import java.util.List;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
@@ -16,72 +13,93 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
 
+import java.util.List;
+
 public class BlockNote extends BlockContainer {
-   private static final List INSTRUMENTS = Lists.newArrayList(new String[]{"harp", "bd", "snare", "hat", "bassattack"});
 
-   public BlockNote() {
-      super(Material.wood);
-      this.setCreativeTab(CreativeTabs.tabRedstone);
-   }
+    private static final List<String> INSTRUMENTS = Lists.newArrayList("harp", "bd", "snare", "hat", "bassattack");
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      boolean var5 = var1.isBlockPowered(var2);
-      TileEntity var6 = var1.getTileEntity(var2);
-      if(var6 instanceof TileEntityNote) {
-         TileEntityNote var7 = (TileEntityNote)var6;
-         if(var7.previousRedstoneState != var5) {
-            var7.triggerNote(var1, var2);
-            var7.previousRedstoneState = var5;
-         }
-      }
+    public BlockNote() {
+        super(Material.wood);
+        this.setCreativeTab(CreativeTabs.tabRedstone);
+    }
 
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        final boolean flag = worldIn.isBlockPowered(pos);
+        final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var1.isRemote) {
-         TileEntity var9 = var1.getTileEntity(var2);
-         if(var9 instanceof TileEntityNote) {
-            TileEntityNote var10 = (TileEntityNote)var9;
-            var10.changePitch();
-            var10.triggerNote(var1, var2);
-            var4.triggerAchievement(StatList.field_181735_S);
-         }
-      }
+        if (tileentity instanceof TileEntityNote) {
+            final TileEntityNote tileentitynote = (TileEntityNote) tileentity;
 
-      return true;
-   }
+            if (tileentitynote.previousRedstoneState != flag) {
+                if (flag) {
+                    tileentitynote.triggerNote(worldIn, pos);
+                }
 
-   public void onBlockClicked(World var1, BlockPos var2, EntityPlayer var3) {
-      if(!var1.isRemote) {
-         TileEntity var4 = var1.getTileEntity(var2);
-         if(var4 instanceof TileEntityNote) {
-            ((TileEntityNote)var4).triggerNote(var1, var2);
-            var3.triggerAchievement(StatList.field_181734_R);
-         }
-      }
+                tileentitynote.previousRedstoneState = flag;
+            }
+        }
+    }
 
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityNote();
-   }
+            if (tileentity instanceof TileEntityNote) {
+                final TileEntityNote tileentitynote = (TileEntityNote) tileentity;
+                tileentitynote.changePitch();
+                tileentitynote.triggerNote(worldIn, pos);
+                playerIn.triggerAchievement(StatList.field_181735_S);
+            }
 
-   private String getInstrument(int var1) {
-      if(var1 >= INSTRUMENTS.size()) {
-         var1 = 0;
-      }
+        }
+        return true;
+    }
 
-      return (String)INSTRUMENTS.get(var1);
-   }
+    public void onBlockClicked(World worldIn, BlockPos pos, EntityPlayer playerIn) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public boolean onBlockEventReceived(World var1, BlockPos var2, IBlockState var3, int var4, int var5) {
-      float var6 = (float)Math.pow(2.0D, (double)(var5 - 12) / 12.0D);
-      var1.playSoundEffect((double)var2.getX() + 0.5D, (double)var2.getY() + 0.5D, (double)var2.getZ() + 0.5D, "note." + this.getInstrument(var4), 3.0F, var6);
-      var1.spawnParticle(EnumParticleTypes.NOTE, (double)var2.getX() + 0.5D, (double)var2.getY() + 1.2D, (double)var2.getZ() + 0.5D, (double)var5 / 24.0D, 0.0D, 0.0D, new int[0]);
-      return true;
-   }
+            if (tileentity instanceof TileEntityNote) {
+                ((TileEntityNote) tileentity).triggerNote(worldIn, pos);
+                playerIn.triggerAchievement(StatList.field_181734_R);
+            }
+        }
+    }
 
-   public int getRenderType() {
-      return 3;
-   }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityNote();
+    }
+
+    private String getInstrument(int id) {
+        if (id < 0 || id >= INSTRUMENTS.size()) {
+            id = 0;
+        }
+
+        return INSTRUMENTS.get(id);
+    }
+
+    /**
+     * Called on both Client and Server when World#addBlockEvent is called
+     */
+    public boolean onBlockEventReceived(World worldIn, BlockPos pos, IBlockState state, int eventID, int eventParam) {
+        final float f = (float) Math.pow(2.0D, (double) (eventParam - 12) / 12.0D);
+        worldIn.playSoundEffect((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, "note." + this.getInstrument(eventID), 3.0F, f);
+        worldIn.spawnParticle(EnumParticleTypes.NOTE, (double) pos.getX() + 0.5D, (double) pos.getY() + 1.2D, (double) pos.getZ() + 0.5D, (double) eventParam / 24.0D, 0.0D, 0.0D);
+        return true;
+    }
+
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return 3;
+    }
+
 }

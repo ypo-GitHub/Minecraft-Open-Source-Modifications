@@ -1,133 +1,92 @@
 package viaversion.viarewind.utils.math;
 
 import java.util.Objects;
-import net.acE;
 
 public class Vector3d {
-   double x;
-   double y;
-   double z;
-   private static int[] b;
+	double x, y, z;
 
-   public Vector3d(double var1, double var3, double var5) {
-      this.x = var1;
-      this.y = var3;
-      this.z = var5;
-   }
+	public Vector3d(double x, double y, double z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
 
-   public Vector3d() {
-   }
+	public Vector3d() {}
 
-   public void set(Vector3d var1) {
-      this.x = var1.x;
-      this.y = var1.y;
-      this.z = var1.z;
-   }
+	public void set(Vector3d vec) {
+		this.x = vec.x;
+		this.y = vec.y;
+		this.z = vec.z;
+	}
 
-   public Vector3d set(double var1, double var3, double var5) {
-      this.x = var1;
-      this.y = var3;
-      this.z = var5;
-      return this;
-   }
+	public Vector3d set(double x, double y, double z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		return this;
+	}
 
-   public Vector3d multiply(double var1) {
-      this.x *= var1;
-      this.y *= var1;
-      this.z *= var1;
-      return this;
-   }
+	public Vector3d multiply(double a) {
+		this.x *= a;
+		this.y *= a;
+		this.z *= a;
+		return this;
+	}
 
-   public Vector3d add(Vector3d var1) {
-      this.x += var1.x;
-      this.y += var1.y;
-      this.z += var1.z;
-      return this;
-   }
+	public Vector3d add(Vector3d vec) {
+		this.x += vec.x;
+		this.y += vec.y;
+		this.z += vec.z;
+		return this;
+	}
 
-   public Vector3d b(Vector3d var1) {
-      e();
-      this.x -= var1.x;
-      this.y -= var1.y;
-      this.z -= var1.z;
-      if(acE.b() == null) {
-         b(new int[3]);
-      }
+	public Vector3d substract(Vector3d vec) {
+		this.x -= vec.x;
+		this.y -= vec.y;
+		this.z -= vec.z;
+		return this;
+	}
 
-      return this;
-   }
+	public double length() {
+		return Math.sqrt(lengthSquared());
+	}
 
-   public double length() {
-      return Math.sqrt(this.lengthSquared());
-   }
+	public double lengthSquared() {
+		return this.x * this.x + this.y * this.y + this.z * this.z;
+	}
 
-   public double lengthSquared() {
-      return this.x * this.x + this.y * this.y + this.z * this.z;
-   }
+	public Vector3d normalize() {
+		double length = length();
+		multiply(1.0 / length);
+		return this;
+	}
 
-   public Vector3d normalize() {
-      double var1 = this.length();
-      this.multiply(1.0D / var1);
-      return this;
-   }
+	public Vector3d clone() {
+		return new Vector3d(this.x, this.y, this.z);
+	}
 
-   public Vector3d clone() {
-      return new Vector3d(this.x, this.y, this.z);
-   }
+	public double getX() { return x; }
+	public void setX(double x) { this.x = x; }
+	public double getY() { return y; }
+	public void setY(double y) { this.y = y; }
+	public double getZ() { return z; }
+	public void setZ(double z) { this.z = z; }
 
-   public double getX() {
-      return this.x;
-   }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Vector3d vector3d = (Vector3d) o;
+		return Double.compare(vector3d.x, x) == 0 && Double.compare(vector3d.y, y) == 0 && Double.compare(vector3d.z, z) == 0;
+	}
 
-   public void setX(double var1) {
-      this.x = var1;
-   }
+	@Override
+	public int hashCode() {
+		return Objects.hash(x, y, z);
+	}
 
-   public double getY() {
-      return this.y;
-   }
-
-   public void setY(double var1) {
-      this.y = var1;
-   }
-
-   public double getZ() {
-      return this.z;
-   }
-
-   public void setZ(double var1) {
-      this.z = var1;
-   }
-
-   public boolean equals(Object var1) {
-      int[] var2 = e();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         Vector3d var3 = (Vector3d)var1;
-         return Double.compare(var3.x, this.x) == 0 && Double.compare(var3.y, this.y) == 0 && Double.compare(var3.z, this.z) == 0;
-      } else {
-         return false;
-      }
-   }
-
-   public int hashCode() {
-      return Objects.hash(new Object[]{Double.valueOf(this.x), Double.valueOf(this.y), Double.valueOf(this.z)});
-   }
-
-   public String toString() {
-      return "Vector3d{x=" + this.x + ", y=" + this.y + ", z=" + this.z + '}';
-   }
-
-   public static void b(int[] var0) {
-      b = var0;
-   }
-
-   public static int[] e() {
-      return b;
-   }
-
-   static {
-      b((int[])null);
-   }
+	@Override
+	public String toString() {
+		return "Vector3d{" + "x=" + x + ", y=" + y + ", z=" + z + '}';
+	}
 }

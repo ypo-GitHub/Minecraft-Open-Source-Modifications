@@ -1,26 +1,17 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
-import net.minecraft.block.BlockPistonBase;
-import net.minecraft.block.BlockSourceImpl;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
-import net.minecraft.dispenser.IBehaviorDispenseItem;
-import net.minecraft.dispenser.IBlockSource;
-import net.minecraft.dispenser.IPosition;
-import net.minecraft.dispenser.PositionImpl;
+import net.minecraft.dispenser.*;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.InventoryHelper;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
@@ -31,169 +22,226 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.RegistryDefaulted;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockDispenser extends BlockContainer {
-   public static final PropertyDirection FACING = PropertyDirection.create("facing");
-   public static final PropertyBool TRIGGERED = PropertyBool.create("triggered");
-   public static final RegistryDefaulted dispenseBehaviorRegistry = new RegistryDefaulted(new BehaviorDefaultDispenseItem());
-   protected Random rand = new Random();
 
-   protected BlockDispenser() {
-      super(Material.rock);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(TRIGGERED, Boolean.FALSE));
-      this.setCreativeTab(CreativeTabs.tabRedstone);
-   }
+    public static final PropertyDirection FACING = PropertyDirection.create("facing");
+    public static final PropertyBool TRIGGERED = PropertyBool.create("triggered");
+    public static final RegistryDefaulted<Item, IBehaviorDispenseItem> dispenseBehaviorRegistry = new RegistryDefaulted<>(new BehaviorDefaultDispenseItem());
+    protected Random rand = new Random();
 
-   public int tickRate(World var1) {
-      return 4;
-   }
+    protected BlockDispenser() {
+        super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(TRIGGERED, Boolean.FALSE));
+        this.setCreativeTab(CreativeTabs.tabRedstone);
+    }
 
-   public void onBlockAdded(World var1, BlockPos var2, IBlockState var3) {
-      super.onBlockAdded(var1, var2, var3);
-      this.setDefaultDirection(var1, var2, var3);
-   }
+    /**
+     * How many world ticks before ticking
+     */
+    public int tickRate(World worldIn) {
+        return 4;
+    }
 
-   private void setDefaultDirection(World var1, BlockPos var2, IBlockState var3) {
-      if(!var1.isRemote) {
-         EnumFacing var4 = (EnumFacing)var3.getValue(FACING);
-         boolean var5 = var1.getBlockState(var2.north()).getBlock().isFullBlock();
-         boolean var6 = var1.getBlockState(var2.south()).getBlock().isFullBlock();
-         if(var4 == EnumFacing.NORTH) {
-            var4 = EnumFacing.SOUTH;
-         } else if(var4 == EnumFacing.SOUTH) {
-            var4 = EnumFacing.NORTH;
-         } else {
-            boolean var7 = var1.getBlockState(var2.west()).getBlock().isFullBlock();
-            boolean var8 = var1.getBlockState(var2.east()).getBlock().isFullBlock();
-            if(var4 == EnumFacing.WEST) {
-               var4 = EnumFacing.EAST;
-            } else if(var4 == EnumFacing.EAST) {
-               var4 = EnumFacing.WEST;
-            }
-         }
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
+        super.onBlockAdded(worldIn, pos, state);
+        this.setDefaultDirection(worldIn, pos, state);
+    }
 
-         var1.setBlockState(var2, var3.withProperty(FACING, var4).withProperty(TRIGGERED, Boolean.FALSE), 2);
-      }
+    private void setDefaultDirection(World worldIn, BlockPos pos, IBlockState state) {
+        if (!worldIn.isRemote) {
+            EnumFacing enumfacing = state.getValue(FACING);
+            final boolean flag = worldIn.getBlockState(pos.north()).getBlock().isFullBlock();
+            final boolean flag1 = worldIn.getBlockState(pos.south()).getBlock().isFullBlock();
 
-   }
-
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var1.isRemote) {
-         TileEntity var9 = var1.getTileEntity(var2);
-         if(var9 instanceof TileEntityDispenser) {
-            var4.displayGUIChest((TileEntityDispenser)var9);
-            if(var9 instanceof TileEntityDropper) {
-               var4.triggerAchievement(StatList.field_181731_O);
+            if (enumfacing == EnumFacing.NORTH && flag && !flag1) {
+                enumfacing = EnumFacing.SOUTH;
+            } else if (enumfacing == EnumFacing.SOUTH && flag1 && !flag) {
+                enumfacing = EnumFacing.NORTH;
             } else {
-               var4.triggerAchievement(StatList.field_181733_Q);
+                final boolean flag2 = worldIn.getBlockState(pos.west()).getBlock().isFullBlock();
+                final boolean flag3 = worldIn.getBlockState(pos.east()).getBlock().isFullBlock();
+
+                if (enumfacing == EnumFacing.WEST && flag2 && !flag3) {
+                    enumfacing = EnumFacing.EAST;
+                } else if (enumfacing == EnumFacing.EAST && flag3 && !flag2) {
+                    enumfacing = EnumFacing.WEST;
+                }
             }
-         }
-      }
 
-      return true;
-   }
+            worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing).withProperty(TRIGGERED, Boolean.FALSE), 2);
+        }
+    }
 
-   protected void a(World var1, BlockPos var2) {
-      BlockSourceImpl var3 = new BlockSourceImpl(var1, var2);
-      TileEntityDispenser var4 = (TileEntityDispenser)var3.getBlockTileEntity();
-      int var5 = var4.getDispenseSlot();
-      var1.playAuxSFX(1001, var2, 0);
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   protected IBehaviorDispenseItem getBehavior(ItemStack var1) {
-      return (IBehaviorDispenseItem)dispenseBehaviorRegistry.getObject((Object)null);
-   }
+            if (tileentity instanceof TileEntityDispenser) {
+                playerIn.displayGUIChest((TileEntityDispenser) tileentity);
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      if(!var1.isBlockPowered(var2) && !var1.isBlockPowered(var2.up())) {
-         boolean var7 = false;
-      } else {
-         boolean var10000 = true;
-      }
+                if (tileentity instanceof TileEntityDropper) {
+                    playerIn.triggerAchievement(StatList.field_181731_O);
+                } else {
+                    playerIn.triggerAchievement(StatList.field_181733_Q);
+                }
+            }
 
-      boolean var6 = ((Boolean)var3.getValue(TRIGGERED)).booleanValue();
-      var1.scheduleUpdate(var2, this, this.tickRate(var1));
-      var1.setBlockState(var2, var3.withProperty(TRIGGERED, Boolean.TRUE), 4);
-   }
+        }
+        return true;
+    }
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      if(!var1.isRemote) {
-         this.a(var1, var2);
-      }
+    protected void dispense(World worldIn, BlockPos pos) {
+        final BlockSourceImpl blocksourceimpl = new BlockSourceImpl(worldIn, pos);
+        final TileEntityDispenser tileentitydispenser = blocksourceimpl.getBlockTileEntity();
 
-   }
+        if (tileentitydispenser != null) {
+            final int i = tileentitydispenser.getDispenseSlot();
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityDispenser();
-   }
+            if (i < 0) {
+                worldIn.playAuxSFX(1001, pos, 0);
+            } else {
+                final ItemStack itemstack = tileentitydispenser.getStackInSlot(i);
+                final IBehaviorDispenseItem ibehaviordispenseitem = this.getBehavior(itemstack);
 
-   public IBlockState onBlockPlaced(World var1, BlockPos var2, EnumFacing var3, float var4, float var5, float var6, int var7, EntityLivingBase var8) {
-      return this.getDefaultState().withProperty(FACING, BlockPistonBase.getFacingFromEntity(var1, var2, var8)).withProperty(TRIGGERED, Boolean.FALSE);
-   }
+                if (ibehaviordispenseitem != IBehaviorDispenseItem.itemDispenseBehaviorProvider) {
+                    final ItemStack itemstack1 = ibehaviordispenseitem.dispense(blocksourceimpl, itemstack);
+                    tileentitydispenser.setInventorySlotContents(i, itemstack1.stackSize <= 0 ? null : itemstack1);
+                }
+            }
+        }
+    }
 
-   public void onBlockPlacedBy(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4, ItemStack var5) {
-      var1.setBlockState(var2, var3.withProperty(FACING, BlockPistonBase.getFacingFromEntity(var1, var2, var4)), 2);
-      if(var5.hasDisplayName()) {
-         TileEntity var6 = var1.getTileEntity(var2);
-         if(var6 instanceof TileEntityDispenser) {
-            ((TileEntityDispenser)var6).setCustomName(var5.getDisplayName());
-         }
-      }
+    protected IBehaviorDispenseItem getBehavior(ItemStack stack) {
+        return dispenseBehaviorRegistry.getObject(stack == null ? null : stack.getItem());
+    }
 
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        final boolean flag = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.up());
+        final boolean flag1 = state.getValue(TRIGGERED);
 
-   public void breakBlock(World var1, BlockPos var2, IBlockState var3) {
-      TileEntity var4 = var1.getTileEntity(var2);
-      if(var4 instanceof TileEntityDispenser) {
-         InventoryHelper.dropInventoryItems(var1, var2, (TileEntityDispenser)var4);
-         var1.updateComparatorOutputLevel(var2, this);
-      }
+        if (flag && !flag1) {
+            worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
+            worldIn.setBlockState(pos, state.withProperty(TRIGGERED, Boolean.TRUE), 4);
+        } else if (!flag && flag1) {
+            worldIn.setBlockState(pos, state.withProperty(TRIGGERED, Boolean.FALSE), 4);
+        }
+    }
 
-      super.breakBlock(var1, var2, var3);
-   }
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        if (!worldIn.isRemote) {
+            this.dispense(worldIn, pos);
+        }
+    }
 
-   public static IPosition getDispensePosition(IBlockSource var0) {
-      EnumFacing var1 = getFacing(var0.getBlockMetadata());
-      double var2 = var0.getX() + 0.7D * (double)var1.getFrontOffsetX();
-      double var4 = var0.getY() + 0.7D * (double)var1.getFrontOffsetY();
-      double var6 = var0.getZ() + 0.7D * (double)var1.getFrontOffsetZ();
-      return new PositionImpl(var2, var4, var6);
-   }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityDispenser();
+    }
 
-   public static EnumFacing getFacing(int var0) {
-      return EnumFacing.getFront(var0 & 7);
-   }
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+        return this.getDefaultState().withProperty(FACING, BlockPistonBase.getFacingFromEntity(worldIn, pos, placer)).withProperty(TRIGGERED, Boolean.FALSE);
+    }
 
-   public boolean hasComparatorInputOverride() {
-      return true;
-   }
+    /**
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
+     */
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+        worldIn.setBlockState(pos, state.withProperty(FACING, BlockPistonBase.getFacingFromEntity(worldIn, pos, placer)), 2);
 
-   public int getComparatorInputOverride(World var1, BlockPos var2) {
-      return Container.calcRedstone(var1.getTileEntity(var2));
-   }
+        if (stack.hasDisplayName()) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public int getRenderType() {
-      return 3;
-   }
+            if (tileentity instanceof TileEntityDispenser) {
+                ((TileEntityDispenser) tileentity).setCustomName(stack.getDisplayName());
+            }
+        }
+    }
 
-   public IBlockState getStateForEntityRender(IBlockState var1) {
-      return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
-   }
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(FACING, getFacing(var1)).withProperty(TRIGGERED, Boolean.valueOf((var1 & 8) > 0));
-   }
+        if (tileentity instanceof TileEntityDispenser) {
+            InventoryHelper.dropInventoryItems(worldIn, pos, (TileEntityDispenser) tileentity);
+            worldIn.updateComparatorOutputLevel(pos, this);
+        }
 
-   public int getMetaFromState(IBlockState var1) {
-      int var2 = 0;
-      var2 = var2 | ((EnumFacing)var1.getValue(FACING)).getIndex();
-      if(((Boolean)var1.getValue(TRIGGERED)).booleanValue()) {
-         var2 |= 8;
-      }
+        super.breakBlock(worldIn, pos, state);
+    }
 
-      return var2;
-   }
+    /**
+     * Get the position where the dispenser at the given Coordinates should dispense to.
+     */
+    public static IPosition getDispensePosition(IBlockSource coords) {
+        final EnumFacing enumfacing = getFacing(coords.getBlockMetadata());
+        final double d0 = coords.getX() + 0.7D * (double) enumfacing.getFrontOffsetX();
+        final double d1 = coords.getY() + 0.7D * (double) enumfacing.getFrontOffsetY();
+        final double d2 = coords.getZ() + 0.7D * (double) enumfacing.getFrontOffsetZ();
+        return new PositionImpl(d0, d1, d2);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{FACING, TRIGGERED});
-   }
+    /**
+     * Get the facing of a dispenser with the given metadata
+     */
+    public static EnumFacing getFacing(int meta) {
+        return EnumFacing.getFront(meta & 7);
+    }
+
+    public boolean hasComparatorInputOverride() {
+        return true;
+    }
+
+    public int getComparatorInputOverride(World worldIn, BlockPos pos) {
+        return Container.calcRedstone(worldIn.getTileEntity(pos));
+    }
+
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return 3;
+    }
+
+    /**
+     * Possibly modify the given BlockState before rendering it on an Entity (Minecarts, Endermen, ...)
+     */
+    public IBlockState getStateForEntityRender(IBlockState state) {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(FACING, getFacing(meta)).withProperty(TRIGGERED, (meta & 8) > 0);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        int i = 0;
+        i = i | state.getValue(FACING).getIndex();
+
+        if (state.getValue(TRIGGERED)) {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, FACING, TRIGGERED);
+    }
+
 }

@@ -1,50 +1,46 @@
 package net.minecraft.client.renderer.block.statemap;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.UnmodifiableIterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.statemap.IStateMapper;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 public abstract class StateMapperBase implements IStateMapper {
-   protected Map mapStateModelLocations = Maps.newLinkedHashMap();
+    protected Map<IBlockState, ModelResourceLocation> mapStateModelLocations = Maps.<IBlockState, ModelResourceLocation>newLinkedHashMap();
 
-   public String getPropertyString(Map var1) {
-      StringBuilder var2 = new StringBuilder();
+    public String getPropertyString(Map<IProperty, Comparable> p_178131_1_) {
+        StringBuilder stringbuilder = new StringBuilder();
 
-      for(Entry var4 : var1.entrySet()) {
-         if(var2.length() != 0) {
-            var2.append(",");
-         }
+        for (Entry<IProperty, Comparable> entry : p_178131_1_.entrySet()) {
+            if (stringbuilder.length() != 0) {
+                stringbuilder.append(",");
+            }
 
-         IProperty var5 = (IProperty)var4.getKey();
-         Comparable var6 = (Comparable)var4.getValue();
-         var2.append(var5.getName());
-         var2.append("=");
-         var2.append(var5.getName(var6));
-      }
+            IProperty iproperty = (IProperty) entry.getKey();
+            Comparable comparable = (Comparable) entry.getValue();
+            stringbuilder.append(iproperty.getName());
+            stringbuilder.append("=");
+            stringbuilder.append(iproperty.getName(comparable));
+        }
 
-      if(var2.length() == 0) {
-         var2.append("normal");
-      }
+        if (stringbuilder.length() == 0) {
+            stringbuilder.append("normal");
+        }
 
-      return var2.toString();
-   }
+        return stringbuilder.toString();
+    }
 
-   public Map putStateModelLocations(Block var1) {
-      UnmodifiableIterator var2 = var1.getBlockState().getValidStates().iterator();
+    public Map<IBlockState, ModelResourceLocation> putStateModelLocations(Block blockIn) {
+        for (IBlockState iblockstate : blockIn.getBlockState().getValidStates()) {
+            this.mapStateModelLocations.put(iblockstate, this.getModelResourceLocation(iblockstate));
+        }
 
-      while(var2.hasNext()) {
-         IBlockState var3 = (IBlockState)var2.next();
-         this.mapStateModelLocations.put(var3, this.getModelResourceLocation(var3));
-      }
+        return this.mapStateModelLocations;
+    }
 
-      return this.mapStateModelLocations;
-   }
-
-   protected abstract ModelResourceLocation getModelResourceLocation(IBlockState var1);
+    protected abstract ModelResourceLocation getModelResourceLocation(IBlockState state);
 }

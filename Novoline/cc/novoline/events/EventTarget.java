@@ -1,14 +1,22 @@
 package cc.novoline.events;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import cc.novoline.events.types.Priority;
 
+import java.lang.annotation.*;
+
+/**
+ * Marks a method so that the EventManager knows that it should be registered.
+ * The priority of the method is also set with this.
+ *
+ * @author DarkMagician6
+ * @see cc.novoline.events.types.Priority
+ * @since July 30, 2013
+ */
 @Documented
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventTarget {
-   byte value() default 2;
+
+    byte value() default Priority.MEDIUM;
+
 }

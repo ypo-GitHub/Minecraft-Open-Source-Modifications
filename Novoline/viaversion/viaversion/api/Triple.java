@@ -1,61 +1,55 @@
 package viaversion.viaversion.api;
 
-import java.util.Objects;
-import net.acE;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.PacketWrapper;
 
-public class Triple {
-   private final Object first;
-   private final Object second;
-   private final Object third;
+import java.util.Objects;
 
-   public Triple(@Nullable Object var1, @Nullable Object var2, @Nullable Object var3) {
-      this.first = var1;
-      this.second = var2;
-      this.third = var3;
-   }
+public class Triple<A, B, C> {
+    private final A first;
+    private final B second;
+    private final C third;
 
-   @Nullable
-   public Object getFirst() {
-      return this.first;
-   }
+    public Triple(@Nullable A first, @Nullable B second, @Nullable C third) {
+        this.first = first;
+        this.second = second;
+        this.third = third;
+    }
 
-   @Nullable
-   public Object getSecond() {
-      return this.second;
-   }
+    @Nullable
+    public A getFirst() {
+        return first;
+    }
 
-   @Nullable
-   public Object getThird() {
-      return this.third;
-   }
+    @Nullable
+    public B getSecond() {
+        return second;
+    }
 
-   public String toString() {
-      return "Triple{" + this.first + ", " + this.second + ", " + this.third + '}';
-   }
+    @Nullable
+    public C getThird() {
+        return third;
+    }
 
-   public boolean equals(Object var1) {
-      boolean var2 = PacketWrapper.k();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         Triple var3 = (Triple)var1;
-         return !Objects.equals(this.first, var3.first)?false:(!Objects.equals(this.second, var3.second)?false:Objects.equals(this.third, var3.third));
-      } else {
-         return false;
-      }
-   }
+    @Override
+    public String toString() {
+        return "Triple{" + first + ", " + second + ", " + third + '}';
+    }
 
-   public int hashCode() {
-      boolean var1 = PacketWrapper.k();
-      int var2 = this.first != null?this.first.hashCode():0;
-      var2 = 31 * var2 + (this.second != null?this.second.hashCode():0);
-      var2 = 31 * var2 + (this.third != null?this.third.hashCode():0);
-      if(acE.b() == null) {
-         PacketWrapper.b(false);
-      }
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Triple<?, ?, ?> triple = (Triple<?, ?, ?>) o;
+        if (!Objects.equals(first, triple.first)) return false;
+        if (!Objects.equals(second, triple.second)) return false;
+        return Objects.equals(third, triple.third);
+    }
 
-      return var2;
-   }
+    @Override
+    public int hashCode() {
+        int result = first != null ? first.hashCode() : 0;
+        result = 31 * result + (second != null ? second.hashCode() : 0);
+        result = 31 * result + (third != null ? third.hashCode() : 0);
+        return result;
+    }
 }

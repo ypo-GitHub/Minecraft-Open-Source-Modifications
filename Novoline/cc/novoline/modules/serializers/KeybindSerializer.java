@@ -3,36 +3,62 @@ package cc.novoline.modules.serializers;
 import cc.novoline.modules.binds.KeyboardKeybind;
 import cc.novoline.modules.binds.ModuleKeybind;
 import cc.novoline.modules.binds.MouseKeybind;
-import cc.novoline.modules.serializers.PropertySerializer;
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public final class KeybindSerializer implements TypeSerializer {
-   public void serialize(TypeToken var1, ModuleKeybind var2, ConfigurationNode var3) {
-      int[] var4 = PropertySerializer.b();
-      if(var2 == null) {
-         var3.setValue((Object)null);
-      } else if(var2.getKey() != 0) {
-         if(var2 instanceof KeyboardKeybind) {
-            String var5 = "keyboard";
-         }
+/**
+ * @author xDelsy
+ */
+public final class KeybindSerializer implements TypeSerializer<ModuleKeybind> {
 
-         if(var2 instanceof MouseKeybind) {
-            String var6 = "mouse";
-         }
+    @Override
+    public void serialize(@NonNull TypeToken<?> typeToken, @Nullable ModuleKeybind obj,
+                          @NonNull ConfigurationNode node) {
+        if (obj == null) {
+            node.setValue(null);
+            return;
+        } else if (obj.getKey() == 0) {
+            return;
+        }
 
-         var3.setValue((Object)null);
-      }
-   }
+        final String type;
 
-   public ModuleKeybind deserialize(TypeToken var1, ConfigurationNode var2) {
-      int[] var3 = PropertySerializer.b();
-      if(var2.getValue() == null) {
-         return null;
-      } else {
-         String var4 = var2.getNode(new Object[]{"type"}).getString();
-         return null;
-      }
-   }
+        if (obj instanceof KeyboardKeybind) {
+            type = "keyboard";
+        } else if (obj instanceof MouseKeybind) {
+            type = "mouse";
+        } else {
+            node.setValue(null);
+            return;
+        }
+
+        node.getNode("type").setValue(type);
+        node.getNode("key").setValue(obj.getKey());
+    }
+
+    @Override
+    @Nullable
+    public ModuleKeybind deserialize(@NonNull TypeToken<?> typeToken, ConfigurationNode node) {
+        if (node.getValue() == null) {
+            return null;
+        }
+
+        final String type = node.getNode("type").getString();
+        if (type == null) return null;
+
+        final int key = node.getNode("key").getInt();
+
+        switch (type.toLowerCase()) { // @off
+            case "keyboard":
+                return KeyboardKeybind.of(key);
+            case "mouse":
+                return MouseKeybind.of(key);
+            default:
+                return null;
+        } // @on
+    }
+
 }

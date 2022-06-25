@@ -1,211 +1,168 @@
 package viaversion.viaversion.commands;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import net.abo;
-import net.acE;
 import net.md_5.bungee.api.ChatColor;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.command.ViaCommandSender;
 import viaversion.viaversion.api.command.ViaSubCommand;
 import viaversion.viaversion.api.command.ViaVersionCommand;
-import viaversion.viaversion.commands.defaultsubs.AutoTeamSubCmd;
-import viaversion.viaversion.commands.defaultsubs.DebugSubCmd;
-import viaversion.viaversion.commands.defaultsubs.DisplayLeaksSubCmd;
-import viaversion.viaversion.commands.defaultsubs.DontBugMeSubCmd;
-import viaversion.viaversion.commands.defaultsubs.DumpSubCmd;
-import viaversion.viaversion.commands.defaultsubs.HelpSubCmd;
-import viaversion.viaversion.commands.defaultsubs.PPSSubCmd;
-import viaversion.viaversion.commands.defaultsubs.ReloadSubCmd;
+import viaversion.viaversion.commands.defaultsubs.*;
+
+import java.util.*;
 
 public abstract class ViaCommandHandler implements ViaVersionCommand {
-   private final Map commandMap = new HashMap();
-   private static int[] b;
+    private final Map<String, ViaSubCommand> commandMap;
 
-   public ViaCommandHandler() {
-      ViaCommandHandler var10000 = this;
+    public ViaCommandHandler() {
+        commandMap = new HashMap<>();
+        try {
+            registerDefaults();
+        } catch (Exception e) {
+            //ignore never throws exception because it doesn't exists
+        }
+    }
 
-      try {
-         var10000.registerDefaults();
-      } catch (Exception var2) {
-         ;
-      }
+    @Override
+    public void registerSubCommand(ViaSubCommand command) throws Exception {
+        Preconditions.checkArgument(command.name().matches("^[a-z0-9_-]{3,15}$"), command.name() + " is not a valid sub-command name.");
+        if (hasSubCommand(command.name()))
+            throw new Exception("ViaSubCommand " + command.name() + " does already exists!"); //Maybe another exception later.
+        commandMap.put(command.name().toLowerCase(Locale.ROOT), command);
+    }
 
-   }
+    @Override
+    public boolean hasSubCommand(String name) {
+        return commandMap.containsKey(name.toLowerCase(Locale.ROOT));
+    }
 
-   public void registerSubCommand(ViaSubCommand var1) throws Exception {
-      b();
-      Preconditions.checkArgument(var1.name().matches("^[a-z0-9_-]{3,15}$"), var1.name() + " is not a valid sub-command name.");
-      if(this.hasSubCommand(var1.name())) {
-         throw new Exception("ViaSubCommand " + var1.name() + " does already exists!");
-      } else {
-         this.commandMap.put(var1.name().toLowerCase(Locale.ROOT), var1);
-      }
-   }
+    @Override
+    public ViaSubCommand getSubCommand(String name) {
+        return commandMap.get(name.toLowerCase(Locale.ROOT));
+    }
 
-   public boolean hasSubCommand(String var1) {
-      return this.commandMap.containsKey(var1.toLowerCase(Locale.ROOT));
-   }
-
-   public ViaSubCommand getSubCommand(String var1) {
-      return (ViaSubCommand)this.commandMap.get(var1.toLowerCase(Locale.ROOT));
-   }
-
-   public boolean onCommand(ViaCommandSender var1, String[] var2) {
-      int[] var3 = b();
-      if(var2.length == 0) {
-         this.showHelp(var1);
-         return false;
-      } else if(!this.hasSubCommand(var2[0])) {
-         var1.sendMessage(color("&cThis command does not exist."));
-         this.showHelp(var1);
-         return false;
-      } else {
-         ViaSubCommand var4 = this.getSubCommand(var2[0]);
-         if(!this.hasPermission(var1, var4.permission())) {
-            var1.sendMessage(color("&cYou are not allowed to use this command!"));
+    @Override
+    public boolean onCommand(ViaCommandSender sender, String[] args) {
+        if (args.length == 0) {
+            showHelp(sender);
             return false;
-         } else {
-            String[] var5 = (String[])Arrays.copyOfRange(var2, 1, var2.length);
-            boolean var6 = var4.execute(var1, var5);
-            if(!var6) {
-               var1.sendMessage("Usage: /viaversion " + var4.usage());
+        }
+
+        if (!hasSubCommand(args[0])) {
+            sender.sendMessage(color("&cThis command does not exist."));
+            showHelp(sender);
+            return false;
+        }
+        ViaSubCommand handler = getSubCommand(args[0]);
+
+        if (!hasPermission(sender, handler.permission())) {
+            sender.sendMessage(color("&cYou are not allowed to use this command!"));
+            return false;
+        }
+
+        String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
+        boolean result = handler.execute(sender, subArgs);
+        if (!result)
+            sender.sendMessage("Usage: /viaversion " + handler.usage());
+        return result;
+    }
+
+    @Override
+    public List<String> onTabComplete(ViaCommandSender sender, String[] args) {
+        Set<ViaSubCommand> allowed = calculateAllowedCommands(sender);
+        List<String> output = new ArrayList<>();
+
+        //SubCommands tabcomplete
+        if (args.length == 1) {
+            if (!args[0].isEmpty()) {
+                for (ViaSubCommand sub : allowed)
+                    if (sub.name().toLowerCase().startsWith(args[0].toLowerCase(Locale.ROOT)))
+                        output.add(sub.name());
+            } else {
+                for (ViaSubCommand sub : allowed)
+                    output.add(sub.name());
             }
+        }
+        //Let the SubCommand handle it
+        else if (args.length >= 2) {
+            if (getSubCommand(args[0]) != null) {
+                ViaSubCommand sub = getSubCommand(args[0]);
+                if (!allowed.contains(sub))
+                    return output;
 
-            return var6;
-         }
-      }
-   }
+                String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
 
-   public List onTabComplete(ViaCommandSender var1, String[] var2) {
-      Set var4 = this.calculateAllowedCommands(var1);
-      b();
-      ArrayList var5 = new ArrayList();
-      if(var2.length == 1) {
-         if(!var2[0].isEmpty()) {
-            Iterator var6 = var4.iterator();
-            if(var6.hasNext()) {
-               ViaSubCommand var7 = (ViaSubCommand)var6.next();
-               if(var7.name().toLowerCase().startsWith(var2[0].toLowerCase(Locale.ROOT))) {
-                  var5.add(var7.name());
-               }
+                List<String> tab = sub.onTabComplete(sender, subArgs);
+                Collections.sort(tab);
+                return tab;
             }
-         }
+        }
+        return output;
+    }
 
-         Iterator var9 = var4.iterator();
-         if(var9.hasNext()) {
-            ViaSubCommand var11 = (ViaSubCommand)var9.next();
-            var5.add(var11.name());
-         }
-      }
+    /**
+     * Shows the ViaVersion help to a sender
+     *
+     * @param sender The sender to send the help to
+     */
+    public void showHelp(ViaCommandSender sender) {
+        Set<ViaSubCommand> allowed = calculateAllowedCommands(sender);
+        if (allowed.isEmpty()) {
+            sender.sendMessage(color("&cYou are not allowed to use these commands!"));
+            return;
+        }
+        sender.sendMessage(color("&aViaVersion &c" + Via.getPlatform().getPluginVersion()));
+        sender.sendMessage(color("&6Commands:"));
+        for (ViaSubCommand cmd : allowed)
+            sender.sendMessage(color(String.format("&2/viaversion %s &7- &6%s", cmd.usage(), cmd.description())));
+        allowed.clear();
+    }
 
-      if(var2.length >= 2 && this.getSubCommand(var2[0]) != null) {
-         ViaSubCommand var10 = this.getSubCommand(var2[0]);
-         if(!var4.contains(var10)) {
-            return var5;
-         } else {
-            String[] var12 = (String[])Arrays.copyOfRange(var2, 1, var2.length);
-            List var8 = var10.onTabComplete(var1, var12);
-            Collections.sort(var8);
-            return var8;
-         }
-      } else {
-         if(acE.b() == null) {
-            b(new int[3]);
-         }
+    private Set<ViaSubCommand> calculateAllowedCommands(ViaCommandSender sender) {
+        Set<ViaSubCommand> cmds = new HashSet<>();
+        for (ViaSubCommand sub : commandMap.values())
+            if (hasPermission(sender, sub.permission()))
+                cmds.add(sub);
+        return cmds;
+    }
 
-         return var5;
-      }
-   }
+    private boolean hasPermission(ViaCommandSender sender, String permission) {
+        return permission == null || sender.hasPermission(permission);
+    }
 
-   public void showHelp(ViaCommandSender var1) {
-      b();
-      Set var3 = this.calculateAllowedCommands(var1);
-      if(var3.isEmpty()) {
-         var1.sendMessage(color("&cYou are not allowed to use these commands!"));
-      } else {
-         var1.sendMessage(color("&aViaVersion &c" + Via.getPlatform().getPluginVersion()));
-         var1.sendMessage(color("&6Commands:"));
-         Iterator var4 = var3.iterator();
-         if(var4.hasNext()) {
-            ViaSubCommand var5 = (ViaSubCommand)var4.next();
-            var1.sendMessage(color(String.format("&2/viaversion %s &7- &6%s", new Object[]{var5.usage(), var5.description()})));
-         }
+    private void registerDefaults() throws Exception {
+        registerSubCommand(new ListSubCmd());
+        registerSubCommand(new PPSSubCmd());
+        registerSubCommand(new DebugSubCmd());
+        registerSubCommand(new DumpSubCmd());
+        registerSubCommand(new DisplayLeaksSubCmd());
+        registerSubCommand(new DontBugMeSubCmd());
+        registerSubCommand(new AutoTeamSubCmd());
+        registerSubCommand(new HelpSubCmd());
+        registerSubCommand(new ReloadSubCmd());
+    }
 
-         var3.clear();
-      }
-   }
+    /**
+     * Replaces colour codes in a string
+     *
+     * @param string String to replace
+     * @return The output String
+     */
+    public static String color(String string) {
+        try {
+            string = ChatColor.translateAlternateColorCodes('&', string); //Dont replace all & with $ like we did before.
+        } catch (Exception ignored) {
+        }
+        return string;
+    }
 
-   private Set calculateAllowedCommands(ViaCommandSender var1) {
-      HashSet var3 = new HashSet();
-      b();
-      Iterator var4 = this.commandMap.values().iterator();
-      if(var4.hasNext()) {
-         ViaSubCommand var5 = (ViaSubCommand)var4.next();
-         if(this.hasPermission(var1, var5.permission())) {
-            var3.add(var5);
-         }
-      }
-
-      return var3;
-   }
-
-   private boolean hasPermission(ViaCommandSender var1, String var2) {
-      int[] var3 = b();
-      return var1.hasPermission(var2);
-   }
-
-   private void registerDefaults() throws Exception {
-      this.registerSubCommand(new abo());
-      this.registerSubCommand(new PPSSubCmd());
-      this.registerSubCommand(new DebugSubCmd());
-      this.registerSubCommand(new DumpSubCmd());
-      this.registerSubCommand(new DisplayLeaksSubCmd());
-      this.registerSubCommand(new DontBugMeSubCmd());
-      this.registerSubCommand(new AutoTeamSubCmd());
-      this.registerSubCommand(new HelpSubCmd());
-      this.registerSubCommand(new ReloadSubCmd());
-   }
-
-   public static String color(String var0) {
-      char var10000 = 38;
-      String var10001 = var0;
-
-      try {
-         var0 = ChatColor.translateAlternateColorCodes(var10000, var10001);
-      } catch (Exception var2) {
-         ;
-      }
-
-      return var0;
-   }
-
-   public static void sendMessage(ViaCommandSender var0, String var1, Object... var2) {
-      var0.sendMessage(color(var1));
-   }
-
-   public static void b(int[] var0) {
-      b = var0;
-   }
-
-   public static int[] b() {
-      return b;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
-
-   static {
-      b((int[])null);
-   }
+    /**
+     * Send a colour coded string with replacements to a user
+     *
+     * @param sender  The target to send the message to
+     * @param message The message
+     * @param args    The objects to replace
+     */
+    public static void sendMessage(ViaCommandSender sender, String message, Object... args) {
+        sender.sendMessage(color(args == null ? message : String.format(message, args)));
+    }
 }

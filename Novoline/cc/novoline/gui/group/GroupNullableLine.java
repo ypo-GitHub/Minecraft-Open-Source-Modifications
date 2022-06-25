@@ -1,14 +1,21 @@
 package cc.novoline.gui.group;
 
-import cc.novoline.gui.group.GroupSupplierLine;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.function.Function;
 
-public class GroupNullableLine extends GroupSupplierLine {
-   protected GroupNullableLine(Function var1) {
-      super(var1);
-   }
+/**
+ * @author xDelsy
+ */
+public class GroupNullableLine<T> extends GroupSupplierLine<T> {
 
-   static GroupNullableLine of(Function var0) {
-      return new GroupNullableLine(var0);
-   }
+    protected GroupNullableLine(@NonNull Function<T, String> stringFunction) {
+        super(stringFunction);
+    }
+
+    @NonNull
+    static <T> GroupNullableLine<T> of(@NonNull Function<T, String> stringFunction) {
+        return new GroupNullableLine<>(stringFunction);
+    }
+
 }

@@ -1,75 +1,83 @@
 package net.minecraft.world.gen.feature;
 
 import com.google.common.base.Predicate;
-import java.util.Random;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.block.state.pattern.BlockHelper;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenMinable extends WorldGenerator {
-   private final IBlockState oreBlock;
-   private final int numberOfBlocks;
-   private final Predicate predicate;
+    private final IBlockState oreBlock;
 
-   public WorldGenMinable(IBlockState var1, int var2) {
-      this(var1, var2, BlockHelper.forBlock(Blocks.stone));
-   }
+    /**
+     * The number of blocks to generate.
+     */
+    private final int numberOfBlocks;
+    private final Predicate<IBlockState> predicate;
 
-   public WorldGenMinable(IBlockState var1, int var2, Predicate var3) {
-      this.oreBlock = var1;
-      this.numberOfBlocks = var2;
-      this.predicate = var3;
-   }
+    public WorldGenMinable(IBlockState state, int blockCount) {
+        this(state, blockCount, BlockHelper.forBlock(Blocks.stone));
+    }
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      float var4 = var2.nextFloat() * 3.1415927F;
-      double var5 = (double)((float)(var3.getX() + 8) + MathHelper.sin(var4) * (float)this.numberOfBlocks / 8.0F);
-      double var7 = (double)((float)(var3.getX() + 8) - MathHelper.sin(var4) * (float)this.numberOfBlocks / 8.0F);
-      double var9 = (double)((float)(var3.getZ() + 8) + MathHelper.cos(var4) * (float)this.numberOfBlocks / 8.0F);
-      double var11 = (double)((float)(var3.getZ() + 8) - MathHelper.cos(var4) * (float)this.numberOfBlocks / 8.0F);
-      double var13 = (double)(var3.getY() + var2.nextInt(3) - 2);
-      double var15 = (double)(var3.getY() + var2.nextInt(3) - 2);
+    public WorldGenMinable(IBlockState state, int blockCount, Predicate<IBlockState> p_i45631_3_) {
+        this.oreBlock = state;
+        this.numberOfBlocks = blockCount;
+        this.predicate = p_i45631_3_;
+    }
 
-      for(int var17 = 0; var17 < this.numberOfBlocks; ++var17) {
-         float var18 = (float)var17 / (float)this.numberOfBlocks;
-         double var19 = var5 + (var7 - var5) * (double)var18;
-         double var21 = var13 + (var15 - var13) * (double)var18;
-         double var23 = var9 + (var11 - var9) * (double)var18;
-         double var25 = var2.nextDouble() * (double)this.numberOfBlocks / 16.0D;
-         double var27 = (double)(MathHelper.sin(3.1415927F * var18) + 1.0F) * var25 + 1.0D;
-         double var29 = (double)(MathHelper.sin(3.1415927F * var18) + 1.0F) * var25 + 1.0D;
-         int var31 = MathHelper.floor_double(var19 - var27 / 2.0D);
-         int var32 = MathHelper.floor_double(var21 - var29 / 2.0D);
-         int var33 = MathHelper.floor_double(var23 - var27 / 2.0D);
-         int var34 = MathHelper.floor_double(var19 + var27 / 2.0D);
-         int var35 = MathHelper.floor_double(var21 + var29 / 2.0D);
-         int var36 = MathHelper.floor_double(var23 + var27 / 2.0D);
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        float f = rand.nextFloat() * (float) Math.PI;
+        double d0 = (double) ((float) (position.getX() + 8) + MathHelper.sin(f) * (float) this.numberOfBlocks / 8.0F);
+        double d1 = (double) ((float) (position.getX() + 8) - MathHelper.sin(f) * (float) this.numberOfBlocks / 8.0F);
+        double d2 = (double) ((float) (position.getZ() + 8) + MathHelper.cos(f) * (float) this.numberOfBlocks / 8.0F);
+        double d3 = (double) ((float) (position.getZ() + 8) - MathHelper.cos(f) * (float) this.numberOfBlocks / 8.0F);
+        double d4 = (double) (position.getY() + rand.nextInt(3) - 2);
+        double d5 = (double) (position.getY() + rand.nextInt(3) - 2);
 
-         for(int var37 = var31; var37 <= var34; ++var37) {
-            double var38 = ((double)var37 + 0.5D - var19) / (var27 / 2.0D);
-            if(var38 * var38 < 1.0D) {
-               for(int var40 = var32; var40 <= var35; ++var40) {
-                  double var41 = ((double)var40 + 0.5D - var21) / (var29 / 2.0D);
-                  if(var38 * var38 + var41 * var41 < 1.0D) {
-                     for(int var43 = var33; var43 <= var36; ++var43) {
-                        double var44 = ((double)var43 + 0.5D - var23) / (var27 / 2.0D);
-                        if(var38 * var38 + var41 * var41 + var44 * var44 < 1.0D) {
-                           BlockPos var46 = new BlockPos(var37, var40, var43);
-                           if(this.predicate.apply(var1.getBlockState(var46))) {
-                              var1.setBlockState(var46, this.oreBlock, 2);
-                           }
+        for (int i = 0; i < this.numberOfBlocks; ++i) {
+            float f1 = (float) i / (float) this.numberOfBlocks;
+            double d6 = d0 + (d1 - d0) * (double) f1;
+            double d7 = d4 + (d5 - d4) * (double) f1;
+            double d8 = d2 + (d3 - d2) * (double) f1;
+            double d9 = rand.nextDouble() * (double) this.numberOfBlocks / 16.0D;
+            double d10 = (double) (MathHelper.sin((float) Math.PI * f1) + 1.0F) * d9 + 1.0D;
+            double d11 = (double) (MathHelper.sin((float) Math.PI * f1) + 1.0F) * d9 + 1.0D;
+            int j = MathHelper.floor_double(d6 - d10 / 2.0D);
+            int k = MathHelper.floor_double(d7 - d11 / 2.0D);
+            int l = MathHelper.floor_double(d8 - d10 / 2.0D);
+            int i1 = MathHelper.floor_double(d6 + d10 / 2.0D);
+            int j1 = MathHelper.floor_double(d7 + d11 / 2.0D);
+            int k1 = MathHelper.floor_double(d8 + d10 / 2.0D);
+
+            for (int l1 = j; l1 <= i1; ++l1) {
+                double d12 = ((double) l1 + 0.5D - d6) / (d10 / 2.0D);
+
+                if (d12 * d12 < 1.0D) {
+                    for (int i2 = k; i2 <= j1; ++i2) {
+                        double d13 = ((double) i2 + 0.5D - d7) / (d11 / 2.0D);
+
+                        if (d12 * d12 + d13 * d13 < 1.0D) {
+                            for (int j2 = l; j2 <= k1; ++j2) {
+                                double d14 = ((double) j2 + 0.5D - d8) / (d10 / 2.0D);
+
+                                if (d12 * d12 + d13 * d13 + d14 * d14 < 1.0D) {
+                                    BlockPos blockpos = new BlockPos(l1, i2, j2);
+
+                                    if (this.predicate.apply(worldIn.getBlockState(blockpos))) {
+                                        worldIn.setBlockState(blockpos, this.oreBlock, 2);
+                                    }
+                                }
+                            }
                         }
-                     }
-                  }
-               }
+                    }
+                }
             }
-         }
-      }
+        }
 
-      return true;
-   }
+        return true;
+    }
 }

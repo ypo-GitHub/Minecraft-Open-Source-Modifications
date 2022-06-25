@@ -3,32 +3,68 @@ package net.minecraft.world;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.village.VillageCollection;
-import net.minecraft.world.MinecraftException;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.WorldServerMulti$1;
+import net.minecraft.world.border.IBorderListener;
+import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.storage.DerivedWorldInfo;
 import net.minecraft.world.storage.ISaveHandler;
 
 public class WorldServerMulti extends WorldServer {
-   private WorldServer delegate;
+    private WorldServer delegate;
 
-   public WorldServerMulti(MinecraftServer var1, ISaveHandler var2, int var3, WorldServer var4, Profiler var5) {
-      super(var1, var2, new DerivedWorldInfo(var4.getWorldInfo()), var3, var5);
-      this.delegate = var4;
-      var4.getWorldBorder().addListener(new WorldServerMulti$1(this));
-   }
+    public WorldServerMulti(MinecraftServer server, ISaveHandler saveHandlerIn, int dimensionId, WorldServer delegate, Profiler profilerIn) {
+        super(server, saveHandlerIn, new DerivedWorldInfo(delegate.getWorldInfo()), dimensionId, profilerIn);
+        this.delegate = delegate;
+        delegate.getWorldBorder().addListener(new IBorderListener() {
+            public void onSizeChanged(WorldBorder border, double newSize) {
+                WorldServerMulti.this.getWorldBorder().setTransition(newSize);
+            }
 
-   protected void saveLevel() throws MinecraftException {
-   }
+            public void onTransitionStarted(WorldBorder border, double oldSize, double newSize, long time) {
+                WorldServerMulti.this.getWorldBorder().setTransition(oldSize, newSize, time);
+            }
 
-   public World init() {
-      this.mapStorage = this.delegate.getMapStorage();
-      this.worldScoreboard = this.delegate.getScoreboard();
-      String var1 = VillageCollection.fileNameForProvider(this.provider);
-      VillageCollection var2 = (VillageCollection)this.mapStorage.loadData(VillageCollection.class, var1);
-      this.villageCollectionObj = new VillageCollection(this);
-      this.mapStorage.setData(var1, this.villageCollectionObj);
-      return this;
-   }
+            public void onCenterChanged(WorldBorder border, double x, double z) {
+                WorldServerMulti.this.getWorldBorder().setCenter(x, z);
+            }
+
+            public void onWarningTimeChanged(WorldBorder border, int newTime) {
+                WorldServerMulti.this.getWorldBorder().setWarningTime(newTime);
+            }
+
+            public void onWarningDistanceChanged(WorldBorder border, int newDistance) {
+                WorldServerMulti.this.getWorldBorder().setWarningDistance(newDistance);
+            }
+
+            public void onDamageAmountChanged(WorldBorder border, double newAmount) {
+                WorldServerMulti.this.getWorldBorder().setDamageAmount(newAmount);
+            }
+
+            public void onDamageBufferChanged(WorldBorder border, double newSize) {
+                WorldServerMulti.this.getWorldBorder().setDamageBuffer(newSize);
+            }
+        });
+    }
+
+    /**
+     * Saves the chunks to disk.
+     */
+    protected void saveLevel() throws MinecraftException {
+    }
+
+    public World init() {
+        this.mapStorage = this.delegate.getMapStorage();
+        this.worldScoreboard = this.delegate.getScoreboard();
+        String s = VillageCollection.fileNameForProvider(this.provider);
+        VillageCollection villagecollection = (VillageCollection) this.mapStorage.loadData(VillageCollection.class, s);
+
+        if (villagecollection == null) {
+            this.villageCollectionObj = new VillageCollection(this);
+            this.mapStorage.setData(s, this.villageCollectionObj);
+        } else {
+            this.villageCollectionObj = villagecollection;
+            this.villageCollectionObj.setWorldsForAll(this);
+        }
+
+        return this;
+    }
 }

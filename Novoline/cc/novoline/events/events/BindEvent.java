@@ -1,28 +1,28 @@
 package cc.novoline.events.events;
 
-import cc.novoline.events.events.Event;
 import cc.novoline.modules.AbstractModule;
 
 public class BindEvent implements Event {
-   private final int keyCode;
-   private final String keyName;
-   private final AbstractModule module;
 
-   public BindEvent(AbstractModule var1, int var2, String var3) {
-      this.module = var1;
-      this.keyCode = var2;
-      this.keyName = var3;
-   }
+    private final int keyCode;
+    private final String keyName;
+    private final AbstractModule module;
 
-   public String getKeyName() {
-      return this.keyName;
-   }
+    public BindEvent(AbstractModule module, int keyCode, String keyName) {
+        this.module = module;
+        this.keyCode = keyCode;
+        this.keyName = keyName;
+    }
 
-   public int getKeyCode() {
-      return this.keyCode;
-   }
+    public String getKeyName() {
+        return keyName;
+    }
 
-   public AbstractModule getModule() {
-      return this.module;
-   }
+    public int getKeyCode() {
+        return keyCode;
+    }
+
+    public AbstractModule getModule() {
+        return module;
+    }
 }

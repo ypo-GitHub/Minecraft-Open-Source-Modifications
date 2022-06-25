@@ -1,38 +1,54 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
-import net.minecraft.network.play.client.C19PacketResourcePackStatus$Action;
 
-public class C19PacketResourcePackStatus implements Packet {
-   private String hash;
-   private C19PacketResourcePackStatus$Action status;
+import java.io.IOException;
 
-   public C19PacketResourcePackStatus() {
-   }
+public class C19PacketResourcePackStatus implements Packet<INetHandlerPlayServer> {
+    private String hash;
+    private C19PacketResourcePackStatus.Action status;
 
-   public C19PacketResourcePackStatus(String var1, C19PacketResourcePackStatus$Action var2) {
-      if(var1.length() > 40) {
-         var1 = var1.substring(0, 40);
-      }
+    public C19PacketResourcePackStatus() {
+    }
 
-      this.hash = var1;
-      this.status = var2;
-   }
+    public C19PacketResourcePackStatus(String hashIn, C19PacketResourcePackStatus.Action statusIn) {
+        if (hashIn.length() > 40) {
+            hashIn = hashIn.substring(0, 40);
+        }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.hash = var1.a(40);
-      this.status = (C19PacketResourcePackStatus$Action)var1.readEnumValue(C19PacketResourcePackStatus$Action.class);
-   }
+        this.hash = hashIn;
+        this.status = statusIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeString(this.hash);
-      var1.writeEnumValue(this.status);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.hash = buf.readStringFromBuffer(40);
+        this.status = buf.readEnumValue(Action.class);
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.handleResourcePackStatus(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeString(this.hash);
+        buf.writeEnumValue(this.status);
+    }
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.handleResourcePackStatus(this);
+    }
+
+    public enum Action {
+        SUCCESSFULLY_LOADED,
+        DECLINED,
+        FAILED_DOWNLOAD,
+        ACCEPTED
+    }
 }

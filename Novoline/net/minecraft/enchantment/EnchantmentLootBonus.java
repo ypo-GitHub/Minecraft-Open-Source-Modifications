@@ -1,35 +1,45 @@
 package net.minecraft.enchantment;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.util.ResourceLocation;
 
 public class EnchantmentLootBonus extends Enchantment {
-   protected EnchantmentLootBonus(int var1, ResourceLocation var2, int var3, EnumEnchantmentType var4) {
-      super(var1, var2, var3, var4);
-      if(var4 == EnumEnchantmentType.DIGGER) {
-         this.setName("lootBonusDigger");
-      } else if(var4 == EnumEnchantmentType.FISHING_ROD) {
-         this.setName("lootBonusFishing");
-      } else {
-         this.setName("lootBonus");
-      }
+    protected EnchantmentLootBonus(int p_i45767_1_, ResourceLocation p_i45767_2_, int p_i45767_3_, EnumEnchantmentType p_i45767_4_) {
+        super(p_i45767_1_, p_i45767_2_, p_i45767_3_, p_i45767_4_);
 
-   }
+        if (p_i45767_4_ == EnumEnchantmentType.DIGGER) {
+            this.setName("lootBonusDigger");
+        } else if (p_i45767_4_ == EnumEnchantmentType.FISHING_ROD) {
+            this.setName("lootBonusFishing");
+        } else {
+            this.setName("lootBonus");
+        }
+    }
 
-   public int getMinEnchantability(int var1) {
-      return 15 + (var1 - 1) * 9;
-   }
+    /**
+     * Returns the minimal value of enchantability needed on the enchantment level passed.
+     */
+    public int getMinEnchantability(int enchantmentLevel) {
+        return 15 + (enchantmentLevel - 1) * 9;
+    }
 
-   public int getMaxEnchantability(int var1) {
-      return super.getMinEnchantability(var1) + 50;
-   }
+    /**
+     * Returns the maximum value of enchantability nedded on the enchantment level passed.
+     */
+    public int getMaxEnchantability(int enchantmentLevel) {
+        return super.getMinEnchantability(enchantmentLevel) + 50;
+    }
 
-   public int getMaxLevel() {
-      return 3;
-   }
+    /**
+     * Returns the maximum level that the enchantment can have.
+     */
+    public int getMaxLevel() {
+        return 3;
+    }
 
-   public boolean canApplyTogether(Enchantment var1) {
-      return super.canApplyTogether(var1) && var1.effectId != silkTouch.effectId;
-   }
+    /**
+     * Determines if the enchantment passed can be applyied together with this enchantment.
+     */
+    public boolean canApplyTogether(Enchantment ench) {
+        return super.canApplyTogether(ench) && ench.effectId != silkTouch.effectId;
+    }
 }

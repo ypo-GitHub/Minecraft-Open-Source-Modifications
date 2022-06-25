@@ -1,9 +1,5 @@
 package net.minecraft.block;
 
-import java.util.List;
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockSlab$EnumBlockHalf;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
@@ -15,116 +11,146 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Random;
+
 public abstract class BlockSlab extends Block {
-   public static final PropertyEnum HALF = PropertyEnum.create("half", BlockSlab$EnumBlockHalf.class);
 
-   public BlockSlab(Material var1) {
-      super(var1);
-      if(this.isDouble()) {
-         this.fullBlock = true;
-      } else {
-         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
-      }
+    public static final PropertyEnum<BlockSlab.EnumBlockHalf> HALF = PropertyEnum.create("half", BlockSlab.EnumBlockHalf.class);
 
-      this.setLightOpacity(255);
-   }
+    public BlockSlab(Material materialIn) {
+        super(materialIn);
 
-   protected boolean canSilkHarvest() {
-      return false;
-   }
+        if (this.isDouble()) {
+            this.fullBlock = true;
+        } else {
+            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+        }
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      if(this.isDouble()) {
-         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-      } else {
-         IBlockState var3 = var1.getBlockState(var2);
-         if(var3.getBlock() == this) {
-            if(var3.getValue(HALF) == BlockSlab$EnumBlockHalf.TOP) {
-               this.setBlockBounds(0.0F, 0.5F, 0.0F, 1.0F, 1.0F, 1.0F);
-            } else {
-               this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+        this.setLightOpacity(255);
+    }
+
+    protected boolean canSilkHarvest() {
+        return false;
+    }
+
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        if (this.isDouble()) {
+            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+        } else {
+            final IBlockState iblockstate = worldIn.getBlockState(pos);
+
+            if (iblockstate.getBlock() == this) {
+                if (iblockstate.getValue(HALF) == BlockSlab.EnumBlockHalf.TOP) {
+                    this.setBlockBounds(0.0F, 0.5F, 0.0F, 1.0F, 1.0F, 1.0F);
+                } else {
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    /**
+     * Sets the block's bounds for rendering it as an item
+     */
+    public void setBlockBoundsForItemRender() {
+        if (this.isDouble()) {
+            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+        } else {
+            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+        }
+    }
 
-   public void setBlockBoundsForItemRender() {
-      if(this.isDouble()) {
-         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-      } else {
-         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
-      }
+    /**
+     * Add all collision boxes of this Block to the list that intersect with the given mask.
+     */
+    public void addCollisionBoxesToList(World worldIn, BlockPos pos, IBlockState state, AxisAlignedBB mask, List<AxisAlignedBB> list, Entity collidingEntity) {
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+    }
 
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return this.isDouble();
+    }
 
-   public void addCollisionBoxesToList(World var1, BlockPos var2, IBlockState var3, AxisAlignedBB var4, List var5, Entity var6) {
-      this.setBlockBoundsBasedOnState(var1, var2);
-      super.addCollisionBoxesToList(var1, var2, var3, var4, var5, var6);
-   }
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+        final IBlockState iblockstate = super.onBlockPlaced(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer).withProperty(HALF, BlockSlab.EnumBlockHalf.BOTTOM);
+        return this.isDouble() ? iblockstate : facing != EnumFacing.DOWN && (facing == EnumFacing.UP || (double) hitY <= 0.5D) ? iblockstate : iblockstate.withProperty(HALF, EnumBlockHalf.TOP);
+    }
 
-   public boolean isOpaqueCube() {
-      return this.isDouble();
-   }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return this.isDouble() ? 2 : 1;
+    }
 
-   public IBlockState onBlockPlaced(World var1, BlockPos var2, EnumFacing var3, float var4, float var5, float var6, int var7, EntityLivingBase var8) {
-      IBlockState var9 = super.onBlockPlaced(var1, var2, var3, var4, var5, var6, var7, var8).withProperty(HALF, BlockSlab$EnumBlockHalf.BOTTOM);
-      return this.isDouble()?var9:(var3 == EnumFacing.DOWN || var3 != EnumFacing.UP && (double)var5 > 0.5D?var9.withProperty(HALF, BlockSlab$EnumBlockHalf.TOP):var9);
-   }
+    public boolean isFullCube() {
+        return this.isDouble();
+    }
 
-   public int quantityDropped(Random var1) {
-      return this.isDouble()?2:1;
-   }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        if (this.isDouble()) {
+            return super.shouldSideBeRendered(worldIn, pos, side);
+        } else if (side != EnumFacing.UP && side != EnumFacing.DOWN && !super.shouldSideBeRendered(worldIn, pos, side)) {
+            return false;
+        } else {
+            final BlockPos blockpos = pos.offset(side.getOpposite());
+            final IBlockState iblockstate = worldIn.getBlockState(pos);
+            final IBlockState iblockstate1 = worldIn.getBlockState(blockpos);
+            final boolean flag = isSlab(iblockstate.getBlock()) && iblockstate.getValue(HALF) == BlockSlab.EnumBlockHalf.TOP;
+            final boolean flag1 = isSlab(iblockstate1.getBlock()) && iblockstate1.getValue(HALF) == BlockSlab.EnumBlockHalf.TOP;
+            return flag1 ? side == EnumFacing.DOWN || side == EnumFacing.UP && super.shouldSideBeRendered(worldIn, pos, side) || !isSlab(iblockstate.getBlock()) || !flag : side == EnumFacing.UP || side == EnumFacing.DOWN && super.shouldSideBeRendered(worldIn, pos, side) || !isSlab(iblockstate.getBlock()) || flag;
+        }
+    }
 
-   public boolean isFullCube() {
-      return this.isDouble();
-   }
+    protected static boolean isSlab(Block blockIn) {
+        return blockIn == Blocks.stone_slab || blockIn == Blocks.wooden_slab || blockIn == Blocks.stone_slab2;
+    }
 
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      if(this.isDouble()) {
-         return super.shouldSideBeRendered(var1, var2, var3);
-      } else if(var3 != EnumFacing.UP && var3 != EnumFacing.DOWN && !super.shouldSideBeRendered(var1, var2, var3)) {
-         return false;
-      } else {
-         BlockPos var4 = var2.offset(var3.getOpposite());
-         IBlockState var5 = var1.getBlockState(var2);
-         IBlockState var6 = var1.getBlockState(var4);
-         if(isSlab(var5.getBlock()) && var5.getValue(HALF) == BlockSlab$EnumBlockHalf.TOP) {
-            boolean var9 = true;
-         } else {
-            boolean var10000 = false;
-         }
+    /**
+     * Returns the slab block name with the type associated with it
+     */
+    public abstract String getUnlocalizedName(int meta);
 
-         if(isSlab(var6.getBlock()) && var6.getValue(HALF) == BlockSlab$EnumBlockHalf.TOP) {
-            boolean var11 = true;
-         } else {
-            boolean var10 = false;
-         }
+    public int getDamageValue(World worldIn, BlockPos pos) {
+        return super.getDamageValue(worldIn, pos) & 7;
+    }
 
-         if(var3 != EnumFacing.DOWN && (var3 != EnumFacing.UP || !super.shouldSideBeRendered(var1, var2, var3)) && isSlab(var5.getBlock())) {
-            ;
-         }
+    public abstract boolean isDouble();
 
-         return true;
-      }
-   }
+    public abstract IProperty<?> getVariantProperty();
 
-   protected static boolean isSlab(Block var0) {
-      return var0 == Blocks.stone_slab || var0 == Blocks.wooden_slab || var0 == Blocks.stone_slab2;
-   }
+    public abstract Object getVariant(ItemStack stack);
 
-   public abstract String getUnlocalizedName(int var1);
+    public enum EnumBlockHalf implements IStringSerializable {
+        TOP("top"),
+        BOTTOM("bottom");
 
-   public int getDamageValue(World var1, BlockPos var2) {
-      return super.getDamageValue(var1, var2) & 7;
-   }
+        private final String name;
 
-   public abstract boolean isDouble();
+        EnumBlockHalf(String name) {
+            this.name = name;
+        }
 
-   public abstract IProperty getVariantProperty();
+        public String toString() {
+            return this.name;
+        }
 
-   public abstract Object getVariant(ItemStack var1);
+        public String getName() {
+            return this.name;
+        }
+    }
+
 }

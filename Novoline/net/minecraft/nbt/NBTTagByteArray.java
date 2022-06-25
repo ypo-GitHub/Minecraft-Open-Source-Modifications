@@ -4,55 +4,65 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTSizeTracker;
 
 public class NBTTagByteArray extends NBTBase {
-   private byte[] data;
+    /**
+     * The byte array stored in the tag.
+     */
+    private byte[] data;
 
-   NBTTagByteArray() {
-   }
+    NBTTagByteArray() {
+    }
 
-   public NBTTagByteArray(byte[] var1) {
-      this.data = var1;
-   }
+    public NBTTagByteArray(byte[] data) {
+        this.data = data;
+    }
 
-   void write(DataOutput var1) throws IOException {
-      var1.writeInt(this.data.length);
-      var1.write(this.data);
-   }
+    /**
+     * Write the actual data contents of the tag, implemented in NBT extension classes
+     */
+    void write(DataOutput output) throws IOException {
+        output.writeInt(this.data.length);
+        output.write(this.data);
+    }
 
-   void read(DataInput var1, int var2, NBTSizeTracker var3) throws IOException {
-      var3.read(192L);
-      int var4 = var1.readInt();
-      var3.read((long)(8 * var4));
-      this.data = new byte[var4];
-      var1.readFully(this.data);
-   }
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException {
+        sizeTracker.read(192L);
+        int i = input.readInt();
+        sizeTracker.read((long) (8 * i));
+        this.data = new byte[i];
+        input.readFully(this.data);
+    }
 
-   public byte getId() {
-      return (byte)7;
-   }
+    /**
+     * Gets the type byte for the tag.
+     */
+    public byte getId() {
+        return (byte) 7;
+    }
 
-   public String toString() {
-      return "[" + this.data.length + " bytes]";
-   }
+    public String toString() {
+        return "[" + this.data.length + " bytes]";
+    }
 
-   public NBTBase copy() {
-      byte[] var1 = new byte[this.data.length];
-      System.arraycopy(this.data, 0, var1, 0, this.data.length);
-      return new NBTTagByteArray(var1);
-   }
+    /**
+     * Creates a clone of the tag.
+     */
+    public NBTBase copy() {
+        byte[] abyte = new byte[this.data.length];
+        System.arraycopy(this.data, 0, abyte, 0, this.data.length);
+        return new NBTTagByteArray(abyte);
+    }
 
-   public boolean equals(Object var1) {
-      return super.equals(var1) && Arrays.equals(this.data, ((NBTTagByteArray)var1).data);
-   }
+    public boolean equals(Object p_equals_1_) {
+        return super.equals(p_equals_1_) && Arrays.equals(this.data, ((NBTTagByteArray) p_equals_1_).data);
+    }
 
-   public int hashCode() {
-      return super.hashCode() ^ Arrays.hashCode(this.data);
-   }
+    public int hashCode() {
+        return super.hashCode() ^ Arrays.hashCode(this.data);
+    }
 
-   public byte[] getByteArray() {
-      return this.data;
-   }
+    public byte[] getByteArray() {
+        return this.data;
+    }
 }

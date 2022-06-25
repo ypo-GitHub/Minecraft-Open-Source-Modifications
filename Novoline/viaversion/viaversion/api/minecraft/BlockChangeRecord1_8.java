@@ -1,45 +1,54 @@
 package viaversion.viaversion.api.minecraft;
 
-import viaversion.viaversion.api.minecraft.BlockChangeRecord;
-
 public class BlockChangeRecord1_8 implements BlockChangeRecord {
-   private final byte sectionX;
-   private final short y;
-   private final byte sectionZ;
-   private int blockId;
+    private final byte sectionX;
+    private final short y;
+    private final byte sectionZ;
+    private int blockId;
 
-   public BlockChangeRecord1_8(byte var1, short var2, byte var3, int var4) {
-      this.sectionX = var1;
-      this.y = var2;
-      this.sectionZ = var3;
-      this.blockId = var4;
-   }
+    public BlockChangeRecord1_8(byte sectionX, short y, byte sectionZ, int blockId) {
+        this.sectionX = sectionX;
+        this.y = y;
+        this.sectionZ = sectionZ;
+        this.blockId = blockId;
+    }
 
-   public BlockChangeRecord1_8(int var1, int var2, int var3, int var4) {
-      this((byte)var1, (short)var2, (byte)var3, var4);
-   }
+    public BlockChangeRecord1_8(int sectionX, int y, int sectionZ, int blockId) {
+        this((byte) sectionX, (short) y, (byte) sectionZ, blockId);
+    }
 
-   public byte getSectionX() {
-      return this.sectionX;
-   }
+    /**
+     * @return x coordinate within the chunk section
+     */
+    public byte getSectionX() {
+        return sectionX;
+    }
 
-   public byte getSectionY() {
-      return (byte)(this.y & 15);
-   }
+    @Override
+    public byte getSectionY() {
+        return (byte) (y & 0xF);
+    }
 
-   public short getY(int var1) {
-      return this.y;
-   }
+    /**
+     * @return y coordinate
+     */
+    @Override
+    public short getY(int chunkSectionY) {
+        return y;
+    }
 
-   public byte getSectionZ() {
-      return this.sectionZ;
-   }
+    /**
+     * @return z coordinate within the chunk section
+     */
+    public byte getSectionZ() {
+        return sectionZ;
+    }
 
-   public int getBlockId() {
-      return this.blockId;
-   }
+    public int getBlockId() {
+        return blockId;
+    }
 
-   public void setBlockId(int var1) {
-      this.blockId = var1;
-   }
+    public void setBlockId(int blockId) {
+        this.blockId = blockId;
+    }
 }

@@ -1,37 +1,47 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S2EPacketCloseWindow implements Packet {
-   private int windowId;
+import java.io.IOException;
 
-   public S2EPacketCloseWindow() {
-   }
+public class S2EPacketCloseWindow implements Packet<INetHandlerPlayClient> {
+    private int windowId;
 
-   public S2EPacketCloseWindow(int var1) {
-      this.windowId = var1;
-   }
+    public S2EPacketCloseWindow() {
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleCloseWindow(this);
-   }
+    public S2EPacketCloseWindow(int windowIdIn) {
+        this.windowId = windowIdIn;
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readUnsignedByte();
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleCloseWindow(this);
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readUnsignedByte();
+    }
 
-   public int getWindowId() {
-      return this.windowId;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+    }
 
-   public void setWindowId(int var1) {
-      this.windowId = var1;
-   }
+    public int getWindowId() {
+        return windowId;
+    }
+
+    public void setWindowId(int windowId) {
+        this.windowId = windowId;
+    }
 }

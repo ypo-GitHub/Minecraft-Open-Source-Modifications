@@ -1,24 +1,29 @@
 package cc.novoline.gui;
 
+/**
+ * @author xDelsy
+ */
 public interface Element {
-   void draw(int var1, int var2);
 
-   void onDraw(int var1, int var2);
+    void draw(int mouseX, int mouseY);
 
-   boolean isVisible();
+    void onDraw(int mouseX, int mouseY);
 
-   void setVisible(boolean var1);
+    boolean isVisible();
 
-   int getX();
+    void setVisible(boolean visible);
 
-   void setX(int var1);
+    int getX();
 
-   int getY();
+    void setX(int x);
 
-   void setY(int var1);
+    int getY();
 
-   default void setPosition(int var1, int var2) {
-      this.setX(var1);
-      this.setY(var2);
-   }
+    void setY(int y);
+
+    default void setPosition(int x, int y) {
+        setX(x);
+        setY(y);
+    }
+
 }

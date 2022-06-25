@@ -1,92 +1,90 @@
 package cc.novoline.gui.button;
 
 import cc.novoline.gui.AbstractElementWithBody;
-import cc.novoline.gui.button.Button;
 import cc.novoline.gui.label.Label;
-import cc.novoline.utils.RenderUtils;
 import cc.novoline.utils.java.Checks;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.Objects;
-import net.acE;
 
+import static cc.novoline.utils.RenderUtils.drawRoundedRect;
+
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractButton extends AbstractElementWithBody implements Button {
-   protected Label name;
-   private static acE[] g;
 
-   public AbstractButton(Label var1, int var2, int var3, int var4, int var5) {
-      super(var2, var3, var4, var5);
-      this.setName(var1);
-   }
+    /* fields */
+    @Nullable
+    protected Label name;
 
-   public AbstractButton(Label var1, int var2, int var3) {
-      super(var2, var3, 200, 20);
-      this.setName(var1);
-   }
+    /* constructors */
+    public AbstractButton(@Nullable Label name, int x, int y, int width, int height) {
+        super(x, y, width, height);
+        setName(name);
+    }
 
-   public void onDraw(int var1, int var2) {
-      acE[] var3 = a();
-      if(this.visible) {
-         int var4 = !this.isHovered(var1, var2)?210:125;
-         RenderUtils.drawRoundedRect((float)this.x, (float)this.y, (float)this.width, (float)this.height, 15.0F, 3158326 | var4 << 24);
-         if(this.name != null) {
-            this.name.draw(var1, var2);
-         }
-      }
+    public AbstractButton(@Nullable Label name, int x, int y) {
+        super(x, y, 200, 20);
+        setName(name);
+    }
 
-   }
+    /* methods */
+    @Override
+    public void onDraw(int mouseX, int mouseY) {
+        if (this.visible) {
+            final int alpha = !isHovered(mouseX, mouseY) ? 210 : 125;
 
-   public void updateNamePosition() throws NullPointerException {
-      a();
-      Checks.notNull(this.name, "name");
-      int var2 = (int)((float)this.x + (float)(this.width - this.name.getWidth()) / 2.0F);
-      int var3 = (int)((float)this.y + (float)(this.height - this.name.getFontRenderer().getHeight()) / 2.0F);
-      this.name.setPosition(var2, var3);
-   }
+            drawRoundedRect(this.x, this.y, this.width, this.height, 15, 0x303136 | alpha << 24);
 
-   public Label getName() {
-      return this.name;
-   }
+            if (this.name != null) {
+                this.name.draw(mouseX, mouseY);
+            }
+        }
+    }
 
-   public void setName(Label var1) {
-      acE[] var2 = a();
-      this.name = var1;
-      this.updateNamePosition();
-   }
+    public void updateNamePosition() throws NullPointerException {
+        Checks.notNull(this.name, "name");
 
-   public boolean equals(Object var1) {
-      acE[] var2 = a();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractButton)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         AbstractButton var3 = (AbstractButton)var1;
-         return Objects.equals(this.name, var3.name);
-      }
-   }
+        final int x = (int) (this.x + (this.width - this.name.getWidth()) / 2F), // @off
+                y = (int) (this.y + (this.height - this.name.getFontRenderer().getHeight()) / 2F); // @on
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(super.hashCode()), this.name});
-   }
+        this.name.setPosition(x, y);
+    }
 
-   public String toString() {
-      return "AbstractButton{name=" + this.name + '}';
-   }
+    //region Lombok
+    @Override
+    @Nullable
+    public Label getName() {
+        return this.name;
+    }
 
-   public static void b(acE[] var0) {
-      g = var0;
-   }
+    @Override
+    public void setName(@Nullable Label name) {
+        if (name != null) {
+            this.name = name;
+            updateNamePosition();
+        }
+    }
 
-   public static acE[] a() {
-      return g;
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractButton)) return false;
+        if (!super.equals(o)) return false;
+        final AbstractButton that = (AbstractButton) o;
+        return Objects.equals(this.name, that.name);
+    }
 
-   private static NullPointerException a(NullPointerException var0) {
-      return var0;
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.name);
+    }
 
-   static {
-      b((acE[])null);
-   }
+    @Override
+    public String toString() {
+        return "AbstractButton{" + "name=" + this.name + '}';
+    }
+    //endregion
+
 }

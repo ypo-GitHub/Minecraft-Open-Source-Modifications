@@ -2,70 +2,118 @@ package viaversion.viaversion.protocols.protocol1_16to1_15_2.packets;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.IntArrayTag;
+import com.github.steveice10.opennbt.tag.builtin.LongArrayTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
-import java.util.Iterator;
-import java.util.UUID;
-import net.Mo;
-import net.aVq;
-import net.adT;
+import viaversion.viaversion.api.minecraft.Position;
+import viaversion.viaversion.api.minecraft.chunks.Chunk;
+import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.rewriters.BlockRewriter;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.types.UUIDIntArrayType;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.ClientboundPackets1_15;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.types.Chunk1_15Type;
 import viaversion.viaversion.protocols.protocol1_16to1_15_2.Protocol1_16To1_15_2;
-import viaversion.viaversion.protocols.protocol1_16to1_15_2.packets.WorldPackets$1;
-import viaversion.viaversion.protocols.protocol1_16to1_15_2.packets.WorldPackets$3;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.types.Chunk1_16Type;
+import viaversion.viaversion.util.CompactArrayUtil;
+
+import java.util.UUID;
 
 public class WorldPackets {
-   public static void register(Protocol1_16To1_15_2 var0) {
-      BlockRewriter var1 = new BlockRewriter(var0, Type.POSITION1_14);
-      var1.registerBlockAction(Mo.BLOCK_ACTION);
-      var1.registerBlockChange(Mo.BLOCK_CHANGE);
-      var1.registerMultiBlockChange(Mo.MULTI_BLOCK_CHANGE);
-      var1.registerAcknowledgePlayerDigging(Mo.ACKNOWLEDGE_PLAYER_DIGGING);
-      var0.a(Mo.UPDATE_LIGHT, new WorldPackets$1());
-      var0.a(Mo.CHUNK_DATA, new aVq(var0));
-      var0.a(Mo.BLOCK_ENTITY_DATA, new WorldPackets$3());
-      var1.registerEffect(Mo.EFFECT, 1010, 2001);
-   }
 
-   private static void handleBlockEntity(CompoundTag var0) {
-      adT.b();
-      StringTag var2 = (StringTag)var0.get("id");
-      if(var2 != null) {
-         String var3 = var2.getValue();
-         if(var3.equals("minecraft:conduit")) {
-            Tag var4 = var0.remove("target_uuid");
-            if(!(var4 instanceof StringTag)) {
-               return;
+    public static void register(Protocol1_16To1_15_2 protocol) {
+        BlockRewriter blockRewriter = new BlockRewriter(protocol, Type.POSITION1_14);
+
+        blockRewriter.registerBlockAction(ClientboundPackets1_15.BLOCK_ACTION);
+        blockRewriter.registerBlockChange(ClientboundPackets1_15.BLOCK_CHANGE);
+        blockRewriter.registerMultiBlockChange(ClientboundPackets1_15.MULTI_BLOCK_CHANGE);
+        blockRewriter.registerAcknowledgePlayerDigging(ClientboundPackets1_15.ACKNOWLEDGE_PLAYER_DIGGING);
+
+        protocol.registerOutgoing(ClientboundPackets1_15.UPDATE_LIGHT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // x
+                map(Type.VAR_INT); // y
+                handler(wrapper -> wrapper.write(Type.BOOLEAN, true)); // Take neighbour's light into account as well
+            }
+        });
+
+        protocol.registerOutgoing(ClientboundPackets1_15.CHUNK_DATA, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    Chunk chunk = wrapper.read(new Chunk1_15Type());
+                    wrapper.write(new Chunk1_16Type(), chunk);
+
+                    chunk.setIgnoreOldLightData(chunk.isFullChunk());
+
+                    for (int s = 0; s < 16; s++) {
+                        ChunkSection section = chunk.getSections()[s];
+                        if (section == null) continue;
+                        for (int i = 0; i < section.getPaletteSize(); i++) {
+                            int old = section.getPaletteEntry(i);
+                            section.setPaletteEntry(i, protocol.getMappingData().getNewBlockStateId(old));
+                        }
+                    }
+
+                    CompoundTag heightMaps = chunk.getHeightMap();
+                    for (Tag heightMapTag : heightMaps) {
+                        LongArrayTag heightMap = (LongArrayTag) heightMapTag;
+                        int[] heightMapData = new int[256];
+                        CompactArrayUtil.iterateCompactArray(9, heightMapData.length, heightMap.getValue(), (i, v) -> heightMapData[i] = v);
+                        heightMap.setValue(CompactArrayUtil.createCompactArrayWithPadding(9, heightMapData.length, i -> heightMapData[i]));
+                    }
+
+                    if (chunk.getBlockEntities() == null) return;
+                    for (CompoundTag blockEntity : chunk.getBlockEntities()) {
+                        handleBlockEntity(blockEntity);
+                    }
+                });
+            }
+        });
+
+        protocol.registerOutgoing(ClientboundPackets1_15.BLOCK_ENTITY_DATA, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    Position position = wrapper.passthrough(Type.POSITION1_14);
+                    short action = wrapper.passthrough(Type.UNSIGNED_BYTE);
+                    CompoundTag tag = wrapper.passthrough(Type.NBT);
+                    handleBlockEntity(tag);
+                });
+            }
+        });
+
+        blockRewriter.registerEffect(ClientboundPackets1_15.EFFECT, 1010, 2001);
+    }
+
+    private static void handleBlockEntity(CompoundTag compoundTag) {
+        StringTag idTag = compoundTag.get("id");
+        if (idTag == null) return;
+
+        String id = idTag.getValue();
+        if (id.equals("minecraft:conduit")) {
+            Tag targetUuidTag = compoundTag.remove("target_uuid");
+            if (!(targetUuidTag instanceof StringTag)) return;
+
+            // target_uuid -> Target
+            UUID targetUuid = UUID.fromString((String) targetUuidTag.getValue());
+            compoundTag.put(new IntArrayTag("Target", UUIDIntArrayType.uuidToIntArray(targetUuid)));
+        } else if (id.equals("minecraft:skull") && compoundTag.get("Owner") instanceof CompoundTag) {
+            CompoundTag ownerTag = compoundTag.remove("Owner");
+            StringTag ownerUuidTag = ownerTag.remove("Id");
+            if (ownerUuidTag != null) {
+                UUID ownerUuid = UUID.fromString(ownerUuidTag.getValue());
+                ownerTag.put(new IntArrayTag("Id", UUIDIntArrayType.uuidToIntArray(ownerUuid)));
             }
 
-            UUID var5 = UUID.fromString((String)var4.getValue());
-            var0.put(new IntArrayTag("Target", UUIDIntArrayType.uuidToIntArray(var5)));
-         }
-
-         if(var3.equals("minecraft:skull") && var0.get("Owner") instanceof CompoundTag) {
-            CompoundTag var9 = (CompoundTag)var0.remove("Owner");
-            StringTag var10 = (StringTag)var9.remove("Id");
-            if(var10 != null) {
-               UUID var6 = UUID.fromString(var10.getValue());
-               var9.put(new IntArrayTag("Id", UUIDIntArrayType.uuidToIntArray(var6)));
+            // Owner -> SkullOwner
+            CompoundTag skullOwnerTag = new CompoundTag("SkullOwner");
+            for (Tag tag : ownerTag) {
+                skullOwnerTag.put(tag);
             }
-
-            CompoundTag var11 = new CompoundTag("SkullOwner");
-            Iterator var7 = var9.iterator();
-            if(var7.hasNext()) {
-               Tag var8 = (Tag)var7.next();
-               var11.put(var8);
-            }
-
-            var0.put(var11);
-         }
-
-      }
-   }
-
-   static void access$000(CompoundTag var0) {
-      handleBlockEntity(var0);
-   }
+            compoundTag.put(skullOwnerTag);
+        }
+    }
 }

@@ -1,41 +1,51 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class C01PacketChatMessage implements Packet {
-   private String message;
+import java.io.IOException;
 
-   public C01PacketChatMessage() {
-   }
+public class C01PacketChatMessage implements Packet<INetHandlerPlayServer> {
+    private String message;
 
-   public C01PacketChatMessage(String var1) {
-      if(var1.length() > 100) {
-         var1 = var1.substring(0, 100);
-      }
+    public C01PacketChatMessage() {
+    }
 
-      this.message = var1;
-   }
+    public C01PacketChatMessage(String messageIn) {
+        if (messageIn.length() > 100) {
+            messageIn = messageIn.substring(0, 100);
+        }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.message = var1.a(100);
-   }
+        this.message = messageIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeString(this.message);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.message = buf.readStringFromBuffer(100);
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processChatMessage(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeString(this.message);
+    }
 
-   public String getMessage() {
-      return this.message;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processChatMessage(this);
+    }
 
-   public void setMessage(String var1) {
-      this.message = var1;
-   }
+    public String getMessage() {
+        return this.message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

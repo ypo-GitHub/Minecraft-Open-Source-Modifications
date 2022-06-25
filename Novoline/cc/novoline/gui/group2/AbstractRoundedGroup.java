@@ -1,49 +1,58 @@
 package cc.novoline.gui.group2;
 
-import cc.novoline.gui.group2.AbstractGroup;
-import cc.novoline.gui.group2.RoundedGroup;
-import cc.novoline.utils.RenderUtils;
 import java.util.Objects;
 
+import static cc.novoline.utils.RenderUtils.drawRoundedRect;
+
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractRoundedGroup extends AbstractGroup implements RoundedGroup {
-   protected int radius;
 
-   public AbstractRoundedGroup(int var1, int var2, int var3, int var4, int var5, int var6) {
-      super(var2, var3, var4, var5, var6);
-      this.radius = var1;
-   }
+    /* fields */
+    protected int radius;
 
-   public void onDraw(int var1, int var2) {
-      RenderUtils.drawRoundedRect((float)this.x, (float)this.y, (float)this.width, (float)this.height, (float)this.radius, this.color);
-   }
+    /* constructors */
+    public AbstractRoundedGroup(int radius, int color, int x, int y, int width, int height) {
+        super(color, x, y, width, height);
+        this.radius = radius;
+    }
 
-   public int getRadius() {
-      return this.radius;
-   }
+    /* methods */
+    @Override
+    public void onDraw(int mouseX, int mouseY) {
+        drawRoundedRect(this.x, this.y, this.width, this.height, this.radius, this.color);
+    }
 
-   public void setRadius(int var1) {
-      this.radius = var1;
-   }
+    //region Lombok
+    @Override
+    public int getRadius() {
+        return this.radius;
+    }
 
-   public boolean equals(Object var1) {
-      int[] var2 = AbstractGroup.a();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractRoundedGroup)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         AbstractRoundedGroup var3 = (AbstractRoundedGroup)var1;
-         return this.radius == var3.radius;
-      }
-   }
+    @Override
+    public void setRadius(int radius) {
+        this.radius = radius;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(super.hashCode()), Integer.valueOf(this.radius)});
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractRoundedGroup)) return false;
+        if (!super.equals(o)) return false;
+        final AbstractRoundedGroup that = (AbstractRoundedGroup) o;
+        return this.radius == that.radius;
+    }
 
-   public String toString() {
-      return "AbstractRoundedGroup{radius=" + this.radius + ", color=" + this.color + ", width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.radius);
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractRoundedGroup{" + "radius=" + this.radius + ", color=" + this.color + ", width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
+    }
+    //endregion
+
 }

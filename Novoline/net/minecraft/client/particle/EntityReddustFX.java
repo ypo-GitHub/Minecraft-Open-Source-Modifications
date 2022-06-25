@@ -1,68 +1,82 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntityReddustFX extends EntityFX {
-   float reddustParticleScale;
+    float reddustParticleScale;
 
-   protected EntityReddustFX(World var1, double var2, double var4, double var6, float var8, float var9, float var10) {
-      this(var1, var2, var4, var6, 1.0F, var8, var9, var10);
-   }
+    protected EntityReddustFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, float p_i46349_8_, float p_i46349_9_, float p_i46349_10_) {
+        this(worldIn, xCoordIn, yCoordIn, zCoordIn, 1.0F, p_i46349_8_, p_i46349_9_, p_i46349_10_);
+    }
 
-   protected EntityReddustFX(World var1, double var2, double var4, double var6, float var8, float var9, float var10, float var11) {
-      super(var1, var2, var4, var6, 0.0D, 0.0D, 0.0D);
-      this.motionX *= 0.10000000149011612D;
-      this.motionY *= 0.10000000149011612D;
-      this.motionZ *= 0.10000000149011612D;
-      if(var9 == 0.0F) {
-         var9 = 1.0F;
-      }
+    protected EntityReddustFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, float p_i46350_8_, float p_i46350_9_, float p_i46350_10_, float p_i46350_11_) {
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
+        this.motionX *= 0.10000000149011612D;
+        this.motionY *= 0.10000000149011612D;
+        this.motionZ *= 0.10000000149011612D;
 
-      float var12 = (float)Math.random() * 0.4F + 0.6F;
-      this.particleRed = ((float)(Math.random() * 0.20000000298023224D) + 0.8F) * var9 * var12;
-      this.particleGreen = ((float)(Math.random() * 0.20000000298023224D) + 0.8F) * var10 * var12;
-      this.particleBlue = ((float)(Math.random() * 0.20000000298023224D) + 0.8F) * var11 * var12;
-      this.particleScale *= 0.75F;
-      this.particleScale *= var8;
-      this.reddustParticleScale = this.particleScale;
-      this.particleMaxAge = (int)(8.0D / (Math.random() * 0.8D + 0.2D));
-      this.particleMaxAge = (int)((float)this.particleMaxAge * var8);
-      this.noClip = false;
-   }
+        if (p_i46350_9_ == 0.0F) {
+            p_i46350_9_ = 1.0F;
+        }
 
-   public void renderParticle(WorldRenderer var1, Entity var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      float var9 = ((float)this.particleAge + var3) / (float)this.particleMaxAge * 32.0F;
-      var9 = MathHelper.clamp_float(var9, 0.0F, 1.0F);
-      this.particleScale = this.reddustParticleScale * var9;
-      super.renderParticle(var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+        float f = (float) Math.random() * 0.4F + 0.6F;
+        this.particleRed = ((float) (Math.random() * 0.20000000298023224D) + 0.8F) * p_i46350_9_ * f;
+        this.particleGreen = ((float) (Math.random() * 0.20000000298023224D) + 0.8F) * p_i46350_10_ * f;
+        this.particleBlue = ((float) (Math.random() * 0.20000000298023224D) + 0.8F) * p_i46350_11_ * f;
+        this.particleScale *= 0.75F;
+        this.particleScale *= p_i46350_8_;
+        this.reddustParticleScale = this.particleScale;
+        this.particleMaxAge = (int) (8.0D / (Math.random() * 0.8D + 0.2D));
+        this.particleMaxAge = (int) ((float) this.particleMaxAge * p_i46350_8_);
+        this.noClip = false;
+    }
 
-   public void onUpdate() {
-      this.prevPosX = this.posX;
-      this.prevPosY = this.posY;
-      this.prevPosZ = this.posZ;
-      if(this.particleAge++ >= this.particleMaxAge) {
-         this.setDead();
-      }
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float p_180434_4_, float p_180434_5_, float p_180434_6_, float p_180434_7_, float p_180434_8_) {
+        float f = ((float) this.particleAge + partialTicks) / (float) this.particleMaxAge * 32.0F;
+        f = MathHelper.clamp_float(f, 0.0F, 1.0F);
+        this.particleScale = this.reddustParticleScale * f;
+        super.renderParticle(worldRendererIn, entityIn, partialTicks, p_180434_4_, p_180434_5_, p_180434_6_, p_180434_7_, p_180434_8_);
+    }
 
-      this.setParticleTextureIndex(7 - this.particleAge * 8 / this.particleMaxAge);
-      this.moveEntity(this.motionX, this.motionY, this.motionZ);
-      if(this.posY == this.prevPosY) {
-         this.motionX *= 1.1D;
-         this.motionZ *= 1.1D;
-      }
+    /**
+     * Called to update the entity's position/logic.
+     */
+    public void onUpdate() {
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
 
-      this.motionX *= 0.9599999785423279D;
-      this.motionY *= 0.9599999785423279D;
-      this.motionZ *= 0.9599999785423279D;
-      if(this.onGround) {
-         this.motionX *= 0.699999988079071D;
-         this.motionZ *= 0.699999988079071D;
-      }
+        if (this.particleAge++ >= this.particleMaxAge) {
+            this.setDead();
+        }
 
-   }
+        this.setParticleTextureIndex(7 - this.particleAge * 8 / this.particleMaxAge);
+        this.moveEntity(this.motionX, this.motionY, this.motionZ);
+
+        if (this.posY == this.prevPosY) {
+            this.motionX *= 1.1D;
+            this.motionZ *= 1.1D;
+        }
+
+        this.motionX *= 0.9599999785423279D;
+        this.motionY *= 0.9599999785423279D;
+        this.motionZ *= 0.9599999785423279D;
+
+        if (this.onGround) {
+            this.motionX *= 0.699999988079071D;
+            this.motionZ *= 0.699999988079071D;
+        }
+    }
+
+    public static class Factory implements IParticleFactory {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_) {
+            return new EntityReddustFX(worldIn, xCoordIn, yCoordIn, zCoordIn, (float) xSpeedIn, (float) ySpeedIn, (float) zSpeedIn);
+        }
+    }
 }

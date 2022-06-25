@@ -1,82 +1,137 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.EntityTracker;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.GameProfileStorage$GameProfile;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.GameProfileStorage$Property;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.ListTag;
+import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import viaversion.viarewind.utils.ChatUtil;
+import java.util.*;
+import net.md_5.bungee.api.ChatColor;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.minecraft.item.Item;
 
-public class GameProfileStorage extends cA {
-   private final Map properties = new HashMap();
+public class GameProfileStorage extends StoredObject {
 
-   public GameProfileStorage(UserConnection var1) {
-      super(var1);
-   }
+	private final Map<UUID, GameProfile> properties = new HashMap<>();
 
-   public GameProfileStorage$GameProfile put(UUID var1, String var2) {
-      GameProfileStorage$GameProfile var3 = new GameProfileStorage$GameProfile(var1, var2);
-      this.properties.put(var1, var3);
-      return var3;
-   }
+	public GameProfileStorage(UserConnection user) {
+		super(user);
+	}
 
-   public void putProperty(UUID var1, GameProfileStorage$Property var2) {
-      ((GameProfileStorage$GameProfile)this.properties.computeIfAbsent(var1, GameProfileStorage::lambda$putProperty$0)).properties.add(var2);
-   }
+	public GameProfile put(UUID uuid, String name) {
+		GameProfile gameProfile = new GameProfile(uuid, name);
+		properties.put(uuid, gameProfile);
+		return gameProfile;
+	}
 
-   public void putProperty(UUID var1, String var2, String var3, String var4) {
-      this.putProperty(var1, new GameProfileStorage$Property(var2, var3, var4));
-   }
+	public void putProperty(UUID uuid, Property property) {
+		properties.computeIfAbsent(uuid, profile -> new GameProfile(uuid, null)).properties.add(property);
+	}
 
-   public GameProfileStorage$GameProfile get(UUID var1) {
-      return (GameProfileStorage$GameProfile)this.properties.get(var1);
-   }
+	public void putProperty(UUID uuid, String name, String value, String signature) {
+		putProperty(uuid, new Property(name, value, signature));
+	}
 
-   public GameProfileStorage$GameProfile get(String var1, boolean var2) {
-      String var3 = EntityTracker.b();
-      var1 = var1.toLowerCase();
+	public GameProfile get(UUID uuid) {
+		return properties.get(uuid);
+	}
 
-      for(GameProfileStorage$GameProfile var5 : this.properties.values()) {
-         if(var5.name != null) {
-            String var6 = var5.name.toLowerCase();
-            if(var6.equals(var1)) {
-               return var5;
-            }
-            break;
-         }
-      }
+	public GameProfile get(String name, boolean ignoreCase) {
+		if(ignoreCase) name = name.toLowerCase();
 
-      return null;
-   }
+		for(GameProfile profile : properties.values()) {
+			if(profile.name == null) continue;
 
-   public List getAllWithPrefix(String var1, boolean var2) {
-      String var3 = EntityTracker.b();
-      var1 = var1.toLowerCase();
-      ArrayList var4 = new ArrayList();
+			String n = ignoreCase ? profile.name.toLowerCase() : profile.name;
 
-      for(GameProfileStorage$GameProfile var6 : this.properties.values()) {
-         if(var6.name != null) {
-            String var7 = var6.name.toLowerCase();
-            if(var7.startsWith(var1)) {
-               var4.add(var6);
-            }
-            break;
-         }
-      }
+			if(n.equals(name)) {
+				return profile;
+			}
+		}
+		return null;
+	}
 
-      return var4;
-   }
+	public List<GameProfile> getAllWithPrefix(String prefix, boolean ignoreCase) {
+		if(ignoreCase) prefix = prefix.toLowerCase();
 
-   public GameProfileStorage$GameProfile remove(UUID var1) {
-      return (GameProfileStorage$GameProfile)this.properties.remove(var1);
-   }
+		ArrayList<GameProfile> profiles = new ArrayList<>();
 
-   private static GameProfileStorage$GameProfile lambda$putProperty$0(UUID var0, UUID var1) {
-      return new GameProfileStorage$GameProfile(var0, (String)null);
-   }
+		for(GameProfile profile : properties.values()) {
+			if(profile.name == null) continue;
+
+			String n = ignoreCase ? profile.name.toLowerCase() : profile.name;
+
+			if(n.startsWith(prefix)) profiles.add(profile);
+		}
+
+		return profiles;
+	}
+
+	public GameProfile remove(UUID uuid) {
+		return properties.remove(uuid);
+	}
+
+
+	public static class GameProfile {
+
+		public String name;
+		public String displayName;
+		public int ping;
+		public UUID uuid;
+		public List<Property> properties = new ArrayList<>();
+		public int gamemode = 0;
+
+		public GameProfile(UUID uuid, String name) {
+			this.name = name;
+			this.uuid = uuid;
+		}
+
+		public Item getSkull() {
+			CompoundTag tag = new CompoundTag("");
+			CompoundTag ownerTag = new CompoundTag("SkullOwner");
+			tag.put(ownerTag);
+			ownerTag.put(new StringTag("Id", uuid.toString()));
+			CompoundTag properties = new CompoundTag("Properties");
+			ownerTag.put(properties);
+			ListTag textures = new ListTag("textures", CompoundTag.class);
+			properties.put(textures);
+			for(Property property : this.properties) {
+				if(property.name.equals("textures")) {
+					CompoundTag textureTag = new CompoundTag("");
+					textureTag.put(new StringTag("Value", property.value));
+					if(property.signature != null) {
+						textureTag.put(new StringTag("Signature", property.signature));
+					}
+					textures.add(textureTag);
+				}
+			}
+
+			return new Item((short) 397, (byte) 1, (short) 3, tag);
+		}
+
+		public String getDisplayName() {
+			String displayName = this.displayName == null ? name : this.displayName;
+			if(displayName.length() > 16) displayName = ChatUtil.removeUnusedColor(displayName, 'f');
+			if(displayName.length() > 16) displayName = ChatColor.stripColor(displayName);
+			if(displayName.length() > 16) displayName = displayName.substring(0, 16);
+			return displayName;
+		}
+
+		public void setDisplayName(String displayName) {
+			this.displayName = displayName;
+		}
+	}
+
+	public static class Property {
+
+		public String name;
+		public String value;
+		public String signature;
+
+		public Property(String name, String value, String signature) {
+			this.name = name;
+			this.value = value;
+			this.signature = signature;
+		}
+	}
 }

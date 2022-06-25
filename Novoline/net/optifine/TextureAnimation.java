@@ -2,160 +2,184 @@ package net.optifine;
 
 import java.nio.ByteBuffer;
 import java.util.Properties;
-import net.acE;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.ITextureObject;
 import net.minecraft.util.ResourceLocation;
-import net.optifine.Config;
-import net.optifine.MatchBlock;
-import net.optifine.TextureAnimationFrame;
-import net.optifine.TextureUtils;
 import org.lwjgl.opengl.GL11;
 
-public class TextureAnimation {
-   private String srcTex = null;
-   private String dstTex = null;
-   ResourceLocation dstTexLoc = null;
-   private int dstTextId = -1;
-   private int dstX = 0;
-   private int dstY;
-   private int frameWidth;
-   private int frameHeight;
-   private TextureAnimationFrame[] frames;
-   private int activeFrame;
-   byte[] srcData;
-   private ByteBuffer imageData;
+public class TextureAnimation
+{
+    private String srcTex = null;
+    private String dstTex = null;
+    ResourceLocation dstTexLoc = null;
+    private int dstTextId = -1;
+    private int dstX = 0;
+    private int dstY = 0;
+    private int frameWidth = 0;
+    private int frameHeight = 0;
+    private TextureAnimationFrame[] frames = null;
+    private int activeFrame = 0;
+    byte[] srcData = null;
+    private ByteBuffer imageData = null;
 
-   public TextureAnimation(String var1, byte[] var2, String var3, ResourceLocation var4, int var5, int var6, int var7, int var8, Properties var9, int var10) {
-      MatchBlock.b();
-      this.dstY = 0;
-      this.frameWidth = 0;
-      this.frameHeight = 0;
-      this.frames = null;
-      this.activeFrame = 0;
-      this.srcData = null;
-      this.imageData = null;
-      this.srcTex = var1;
-      this.dstTex = var3;
-      this.dstTexLoc = var4;
-      this.dstX = var5;
-      this.dstY = var6;
-      this.frameWidth = var7;
-      this.frameHeight = var8;
-      int var12 = var7 * var8 * 4;
-      if(var2.length % var12 != 0) {
-         Config.warn("Invalid animated texture length: " + var2.length + ", frameWidth: " + var7 + ", frameHeight: " + var8);
-      }
+    public TextureAnimation(String p_i95_1_, byte[] p_i95_2_, String p_i95_3_, ResourceLocation p_i95_4_, int p_i95_5_, int p_i95_6_, int p_i95_7_, int p_i95_8_, Properties p_i95_9_, int p_i95_10_)
+    {
+        this.srcTex = p_i95_1_;
+        this.dstTex = p_i95_3_;
+        this.dstTexLoc = p_i95_4_;
+        this.dstX = p_i95_5_;
+        this.dstY = p_i95_6_;
+        this.frameWidth = p_i95_7_;
+        this.frameHeight = p_i95_8_;
+        int i = p_i95_7_ * p_i95_8_ * 4;
 
-      this.srcData = var2;
-      int var13 = var2.length / var12;
-      if(var9.get("tile.0") != null) {
-         int var14 = 0;
-         if(var9.get("tile." + var14) != null) {
-            var13 = var14 + 1;
-            ++var14;
-         }
-      }
+        if (p_i95_2_.length % i != 0)
+        {
+            Config.warn("Invalid animated texture length: " + p_i95_2_.length + ", frameWidth: " + p_i95_7_ + ", frameHeight: " + p_i95_8_);
+        }
 
-      String var23 = (String)var9.get("duration");
-      int var15 = Config.parseInt(var23, var10);
-      this.frames = new TextureAnimationFrame[var13];
-      int var16 = 0;
-      if(var16 < this.frames.length) {
-         String var17 = (String)var9.get("tile." + var16);
-         int var18 = Config.parseInt(var17, var16);
-         String var19 = (String)var9.get("duration." + var16);
-         int var20 = Config.parseInt(var19, var15);
-         TextureAnimationFrame var21 = new TextureAnimationFrame(var18, var20);
-         this.frames[var16] = var21;
-         ++var16;
-      }
+        this.srcData = p_i95_2_;
+        int j = p_i95_2_.length / i;
 
-   }
+        if (p_i95_9_.get("tile.0") != null)
+        {
+            for (int k = 0; p_i95_9_.get("tile." + k) != null; ++k)
+            {
+                j = k + 1;
+            }
+        }
 
-   public boolean nextFrame() {
-      acE[] var1 = MatchBlock.b();
-      if(this.frames.length <= 0) {
-         return false;
-      } else {
-         if(this.activeFrame >= this.frames.length) {
-            this.activeFrame = 0;
-         }
+        String s2 = (String)p_i95_9_.get("duration");
+        int l = Config.parseInt(s2, p_i95_10_);
+        this.frames = new TextureAnimationFrame[j];
 
-         TextureAnimationFrame var2 = this.frames[this.activeFrame];
-         ++var2.counter;
-         if(var2.counter < var2.duration) {
+        for (int i1 = 0; i1 < this.frames.length; ++i1)
+        {
+            String s = (String)p_i95_9_.get("tile." + i1);
+            int j1 = Config.parseInt(s, i1);
+            String s1 = (String)p_i95_9_.get("duration." + i1);
+            int k1 = Config.parseInt(s1, l);
+            TextureAnimationFrame textureanimationframe = new TextureAnimationFrame(j1, k1);
+            this.frames[i1] = textureanimationframe;
+        }
+    }
+
+    public boolean nextFrame()
+    {
+        if (this.frames.length <= 0)
+        {
             return false;
-         } else {
-            var2.counter = 0;
-            ++this.activeFrame;
-            if(this.activeFrame >= this.frames.length) {
-               this.activeFrame = 0;
+        }
+        else
+        {
+            if (this.activeFrame >= this.frames.length)
+            {
+                this.activeFrame = 0;
             }
 
-            return true;
-         }
-      }
-   }
+            TextureAnimationFrame textureanimationframe = this.frames[this.activeFrame];
+            ++textureanimationframe.counter;
 
-   public int getActiveFrameIndex() {
-      acE[] var1 = MatchBlock.b();
-      if(this.frames.length <= 0) {
-         return 0;
-      } else {
-         if(this.activeFrame >= this.frames.length) {
-            this.activeFrame = 0;
-         }
+            if (textureanimationframe.counter < textureanimationframe.duration)
+            {
+                return false;
+            }
+            else
+            {
+                textureanimationframe.counter = 0;
+                ++this.activeFrame;
 
-         TextureAnimationFrame var2 = this.frames[this.activeFrame];
-         return var2.index;
-      }
-   }
+                if (this.activeFrame >= this.frames.length)
+                {
+                    this.activeFrame = 0;
+                }
 
-   public int getFrameCount() {
-      return this.frames.length;
-   }
+                return true;
+            }
+        }
+    }
 
-   public boolean updateTexture() {
-      acE[] var1 = MatchBlock.b();
-      if(this.dstTextId < 0) {
-         ITextureObject var5 = TextureUtils.getTexture(this.dstTexLoc);
-         return false;
-      } else {
-         if(this.imageData == null) {
+    public int getActiveFrameIndex()
+    {
+        if (this.frames.length <= 0)
+        {
+            return 0;
+        }
+        else
+        {
+            if (this.activeFrame >= this.frames.length)
+            {
+                this.activeFrame = 0;
+            }
+
+            TextureAnimationFrame textureanimationframe = this.frames[this.activeFrame];
+            return textureanimationframe.index;
+        }
+    }
+
+    public int getFrameCount()
+    {
+        return this.frames.length;
+    }
+
+    public boolean updateTexture()
+    {
+        if (this.dstTextId < 0)
+        {
+            ITextureObject itextureobject = TextureUtils.getTexture(this.dstTexLoc);
+
+            if (itextureobject == null)
+            {
+                return false;
+            }
+
+            this.dstTextId = itextureobject.getGlTextureId();
+        }
+
+        if (this.imageData == null)
+        {
             this.imageData = GLAllocation.createDirectByteBuffer(this.srcData.length);
             this.imageData.put(this.srcData);
             this.srcData = null;
-         }
+        }
 
-         if(!this.nextFrame()) {
+        if (!this.nextFrame())
+        {
             return false;
-         } else {
-            int var2 = this.frameWidth * this.frameHeight * 4;
-            int var3 = this.getActiveFrameIndex();
-            int var4 = var2 * var3;
-            if(var4 + var2 > this.imageData.capacity()) {
-               return false;
-            } else {
-               this.imageData.position(var4);
-               GlStateManager.bindTexture(this.dstTextId);
-               GL11.glTexSubImage2D(3553, 0, this.dstX, this.dstY, this.frameWidth, this.frameHeight, 6408, 5121, this.imageData);
-               return true;
+        }
+        else
+        {
+            int k = this.frameWidth * this.frameHeight * 4;
+            int i = this.getActiveFrameIndex();
+            int j = k * i;
+
+            if (j + k > this.imageData.capacity())
+            {
+                return false;
             }
-         }
-      }
-   }
+            else
+            {
+                this.imageData.position(j);
+                GlStateManager.bindTexture(this.dstTextId);
+                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, this.dstX, this.dstY, this.frameWidth, this.frameHeight, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer)this.imageData);
+                return true;
+            }
+        }
+    }
 
-   public String getSrcTex() {
-      return this.srcTex;
-   }
+    public String getSrcTex()
+    {
+        return this.srcTex;
+    }
 
-   public String getDstTex() {
-      return this.dstTex;
-   }
+    public String getDstTex()
+    {
+        return this.dstTex;
+    }
 
-   public ResourceLocation getDstTexLoc() {
-      return this.dstTexLoc;
-   }
+    public ResourceLocation getDstTexLoc()
+    {
+        return this.dstTexLoc;
+    }
 }

@@ -1,100 +1,109 @@
 package cc.novoline.modules.configurations.property.mapper;
 
 import cc.novoline.modules.configurations.property.Property;
-import cc.novoline.modules.configurations.property.mapper.PropertyMapper;
-import cc.novoline.modules.configurations.property.object.BooleanProperty;
-import cc.novoline.modules.configurations.property.object.DoubleProperty;
-import cc.novoline.modules.configurations.property.object.FloatProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import cc.novoline.modules.configurations.property.object.ListProperty;
-import cc.novoline.modules.configurations.property.object.LongProperty;
-import cc.novoline.modules.configurations.property.object.StringProperty;
+import cc.novoline.modules.configurations.property.object.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.lang.reflect.Field;
-import java.util.Objects;
-import net.X9;
-import net.aBM;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ValueType;
+import ninja.leaping.configurate.objectmapping.ObjectMapper;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public final class PropertyFieldData extends aBM {
-   public PropertyFieldData(Field var1, String var2) {
-      super(var1, var2);
-   }
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Objects;
 
-   protected void deserializeAndSet(Object param1, ConfigurationNode param2, TypeSerializer param3) throws X9 {
-      // $FF: Couldn't be decompiled
-   }
+/**
+ * @author xDelsy
+ */
+public final class PropertyFieldData extends ObjectMapper.SampleFieldData {
 
-   private Property getPropertyFromContainer(Field var1, Object var2) throws IllegalAccessException {
-      return (Property)var1.get(var2);
-   }
+    public PropertyFieldData(Field field, String comment) {
+        super(field, comment);
+        // System.out.println("created new field data");
+    }
 
-   private void set(Object var1, Field var2, Object var3) throws X9, IllegalAccessException {
-      Property var4 = this.getPropertyFromContainer(var2, var1);
-      Object var5 = ((Property)var3).get();
-      PropertyFieldData var10000 = this;
-      Property var10001 = var4;
-      Object var10002 = var5;
+    @Override
+    protected void deserializeAndSet(Object container, ConfigurationNode node,
+                                     TypeSerializer<?> serial) throws ObjectMappingException {
+        try {
+            if (node.getValueType() == ValueType.LIST) {
+                final Property<?> propertyFromContainer = getPropertyFromContainer(this.field, container);
+                final List<?> value = (List<?>) node.getValue();
+                final ObjectArrayList<?> newValue = value != null ?
+                        new ObjectArrayList<>(value) :
+                        new ObjectArrayList<>();
 
-      try {
-         var10000.updatePropertyValue(var10001, var10002);
-      } catch (ClassCastException var9) {
-         var10000 = this;
-         var10001 = var4;
-         var10002 = var5;
+                updatePropertyValue(propertyFromContainer, newValue);
+            } else {
+                final Object newVal = node.isVirtual() ? null : serial.deserialize(this.fieldType, node);
 
-         try {
-            var10000.castAndUpdatePropertyValue(var10001, Objects.requireNonNull(var10002));
-         } catch (Throwable var8) {
-            throw new X9("Cannot update value", var8);
-         }
-      } catch (Throwable var10) {
-         throw new X9("Cannot update value", var10);
-      }
+                if (newVal == null) {
+                    final Object existingVal = this.field.get(container);
+                    if (existingVal != null) serializeTo(container, node);
+                } else {
+                    set(container, this.field, newVal);
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new ObjectMappingException("Unable to deserialize field " + this.field.getName(), e);
+        }
+    }
 
-   }
+    private Property<?> getPropertyFromContainer(@NonNull Field field,
+                                                 @NonNull Object container) throws IllegalAccessException {
+        return (Property<?>) field.get(container);
+    }
 
-   private void updatePropertyValue(Property var1, Object var2) {
-      var1.set(var2);
-   }
+    private void set(@NonNull Object container, @NonNull Field field,
+                     Object newVal) throws ObjectMappingException, IllegalAccessException {
+        // System.out.println("set \"" + newVal + "\" to \"" + field.getName() + "\"");
 
-   private void castAndUpdatePropertyValue(Property var1, Object var2) throws Throwable {
-      String[] var3 = PropertyMapper.b();
-      if(var1 instanceof IntProperty) {
-         this.updatePropertyValue(var1, Integer.valueOf(((Number)var2).intValue()));
-      }
+        final Property<?> property = getPropertyFromContainer(field, container);
+        final Object newValue = ((Property<?>) newVal).get();
 
-      if(var1 instanceof DoubleProperty) {
-         this.updatePropertyValue(var1, Double.valueOf(((Number)var2).doubleValue()));
-      }
+        try {
+            updatePropertyValue(property, newValue);
+        } catch (ClassCastException e) {
+            try {
+                castAndUpdatePropertyValue(property, Objects.requireNonNull(newValue));
+            } catch (Throwable t) {
+                throw new ObjectMappingException("Cannot update value", t);
+            }
+        } catch (Throwable e) {
+            throw new ObjectMappingException("Cannot update value", e);
+        }
+    }
 
-      if(var1 instanceof FloatProperty) {
-         this.updatePropertyValue(var1, Float.valueOf(((Number)var2).floatValue()));
-      }
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void updatePropertyValue(@NonNull Property property, @Nullable Object newValue) {
+        property.set(newValue);
+    }
 
-      if(var1 instanceof LongProperty) {
-         this.updatePropertyValue(var1, Long.valueOf(((Number)var2).longValue()));
-      }
+    @SuppressWarnings("rawtypes")
+    private void castAndUpdatePropertyValue(@NonNull Property property, @NonNull Object newValue) throws Throwable {
+        if (property instanceof IntProperty) {
+            updatePropertyValue(property, ((Number) newValue).intValue());
+        } else if (property instanceof DoubleProperty) {
+            updatePropertyValue(property, ((Number) newValue).doubleValue());
+        } else if (property instanceof FloatProperty) {
+            updatePropertyValue(property, ((Number) newValue).floatValue());
+        } else if (property instanceof LongProperty) {
+            updatePropertyValue(property, ((Number) newValue).longValue());
+        } else if (property instanceof StringProperty) {
+            updatePropertyValue(property, newValue.toString());
+        } else if (property instanceof ListProperty) {
+            updatePropertyValue(property, new ObjectArrayList<>(new Object[]{newValue}));
+        } else if (property instanceof BooleanProperty) {
+            if (newValue instanceof Number) {
+                updatePropertyValue(property, ((Number) newValue).shortValue() > 0);
+                return;
+            }
 
-      if(var1 instanceof StringProperty) {
-         this.updatePropertyValue(var1, var2.toString());
-      }
+            throw new ObjectMappingException();
+        }
+    }
 
-      if(var1 instanceof ListProperty) {
-         this.updatePropertyValue(var1, new ObjectArrayList(new Object[]{var2}));
-      }
-
-      if(var1 instanceof BooleanProperty) {
-         if(var2 instanceof Number) {
-            this.updatePropertyValue(var1, Boolean.valueOf(((Number)var2).shortValue() > 0));
-         } else {
-            throw new X9();
-         }
-      }
-   }
-
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
 }

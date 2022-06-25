@@ -2,44 +2,19 @@ package net.minecraft.client.entity;
 
 import cc.novoline.Novoline;
 import cc.novoline.events.EventManager;
-import cc.novoline.events.events.DisplayChestGuiEvent;
-import cc.novoline.events.events.EventState;
-import cc.novoline.events.events.MotionUpdateEvent;
-import cc.novoline.events.events.MoveEvent;
-import cc.novoline.events.events.PlayerUpdateEvent;
-import cc.novoline.events.events.PushBlockEvent;
-import cc.novoline.events.events.SlowdownEvent;
+import cc.novoline.events.events.*;
 import cc.novoline.modules.combat.Criticals;
 import cc.novoline.modules.combat.KillAura;
 import cc.novoline.modules.misc.GuiMove;
-import cc.novoline.modules.player.SpeedMine;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import net.aHM;
-import net.asJ;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockAir;
-import net.minecraft.block.BlockGlass;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.MovingSoundMinecartRiding;
 import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.gui.GuiCommandBlock;
-import net.minecraft.client.gui.GuiEnchantment;
-import net.minecraft.client.gui.GuiHopper;
-import net.minecraft.client.gui.GuiMerchant;
-import net.minecraft.client.gui.GuiRepair;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiScreenBook;
-import net.minecraft.client.gui.inventory.GuiBeacon;
-import net.minecraft.client.gui.inventory.GuiBrewingStand;
-import net.minecraft.client.gui.inventory.GuiChest;
-import net.minecraft.client.gui.inventory.GuiCrafting;
-import net.minecraft.client.gui.inventory.GuiDispenser;
-import net.minecraft.client.gui.inventory.GuiEditSign;
-import net.minecraft.client.gui.inventory.GuiFurnace;
-import net.minecraft.client.gui.inventory.GuiScreenHorseInventory;
+import net.minecraft.client.gui.*;
+import net.minecraft.client.gui.inventory.*;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.command.server.CommandBlockLogic;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -48,1093 +23,1152 @@ import net.minecraft.entity.IMerchant;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.passive.EntityHorse;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C01PacketChatMessage;
-import net.minecraft.network.play.client.C03PacketPlayer$C05PacketPlayerLook;
-import net.minecraft.network.play.client.C03PacketPlayer$C06PacketPlayerPosLook;
-import net.minecraft.network.play.client.C07PacketPlayerDigging;
-import net.minecraft.network.play.client.C07PacketPlayerDigging$Action;
-import net.minecraft.network.play.client.C0APacketAnimation;
-import net.minecraft.network.play.client.C0BPacketEntityAction;
-import net.minecraft.network.play.client.C0BPacketEntityAction$Action;
-import net.minecraft.network.play.client.C0CPacketInput;
-import net.minecraft.network.play.client.C0DPacketCloseWindow;
-import net.minecraft.network.play.client.C13PacketPlayerAbilities;
-import net.minecraft.network.play.client.C16PacketClientStatus;
-import net.minecraft.network.play.client.C16PacketClientStatus$EnumState;
+import net.minecraft.network.play.client.*;
 import net.minecraft.potion.Potion;
 import net.minecraft.stats.StatBase;
 import net.minecraft.stats.StatFileWriter;
 import net.minecraft.tileentity.TileEntitySign;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.IChatComponent;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovementInput;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.*;
 import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
+import net.optifine.RenderEnv;
 
-public class EntityPlayerSP extends asJ {
-   private List list = new CopyOnWriteArrayList();
-   private int b4;
-   public final NetHandlerPlayClient connection;
-   private final StatFileWriter statWriter;
-   private MovementInput movementInput;
-   public float renderArmYaw;
-   public float renderArmPitch;
-   public float prevRenderArmYaw;
-   public float prevRenderArmPitch;
-   public float timeInPortal;
-   public float prevTimeInPortal;
-   protected Minecraft mc;
-   protected int sprintToggleTimer;
-   private int sprintingTicksLeft;
-   private double lastReportedPosX;
-   private double lastReportedPosY;
-   private double lastReportedPosZ;
-   private float lastReportedYaw;
-   private float lastReportedPitch;
-   private boolean serverSneakState;
-   private boolean serverSprintState;
-   public int positionUpdateTicks;
-   private boolean hasValidHealth;
-   private String clientBrand;
-   private int horseJumpPowerCounter;
-   private float horseJumpPower;
-   private String[] coomands = new String[]{".msg", ".binding", ".dm", ".conf", ".bind", ".friend", ".reply", ".tar", ".vc", ".users", ".panic", ".name", ".status", ".binds", ".waypoint", ".Hide", ".configs", ".sults", ".configuration", ".ping", ".killsults", ".setbind", ".modulerename", ".waypoints", ".onlinelist", ".wp", ".irc", ".b", ".c", ".cfg", ".f", ".h", ".ks", ".i", ".toggle", ".configure", ".vclip", ".message", ".m", ".target", ".p", ".hide", ".r", ".names", ".t", ".rename", ".chat", ".keybind", ".Online", ".config", ".tp", ".teleport", "fb", "findbounty", ".ign", ".font"};
-   private float bV;
-   private float b3;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-   public EntityPlayerSP(Minecraft var1, World var2, NetHandlerPlayClient var3, StatFileWriter var4) {
-      super(var2, var3.getGameProfile());
-      this.connection = var3;
-      this.statWriter = var4;
-      this.mc = var1;
-      this.dimension = 0;
-   }
+import static java.lang.Math.toRadians;
+import static net.minecraft.potion.Potion.*;
+import static net.minecraft.util.MathHelper.ceiling_double_int;
 
-   public boolean attackEntityFrom(DamageSource var1, float var2) {
-      return false;
-   }
+public class EntityPlayerSP extends AbstractClientPlayer {
 
-   public void heal(float var1) {
-   }
+    private List<Integer> list = new CopyOnWriteArrayList<>();
+    int maxY;
 
-   public void mountEntity(Entity var1) {
-      super.mountEntity(var1);
-      if(var1 instanceof EntityMinecart) {
-         this.mc.getSoundHandler().playSound(new MovingSoundMinecartRiding(this, (EntityMinecart)var1));
-      }
+    public final NetHandlerPlayClient connection;
+    private final StatFileWriter statWriter;
+    private MovementInput movementInput;
+    public float renderArmYaw;
+    public float renderArmPitch;
+    public float prevRenderArmYaw;
+    public float prevRenderArmPitch;
+    /**
+     * The amount of time an entity has been in a Portal
+     */
+    public float timeInPortal;
+    /**
+     * The amount of time an entity has been in a Portal the previous tick
+     */
+    public float prevTimeInPortal;
+    protected Minecraft mc;
+    /**
+     * Used to tell if the player pressed forward twice. If this is at 0 and it's pressed (And they are allowed to
+     * sprint, aka enough food on the ground etc) it sets this to 7. If it's pressed and it's greater than 0 enable
+     * sprinting.
+     */
+    protected int sprintToggleTimer;
+    /**
+     * Ticks left before sprinting is disabled.
+     */
+    private int sprintingTicksLeft;
+    /**
+     * The last X position which was transmitted to the server, used to determine when the X position changes and needs
+     * to be re-trasmitted
+     */
+    private double lastReportedPosX;
+    /**
+     * The last Y position which was transmitted to the server, used to determine when the Y position changes and needs
+     * to be re-transmitted
+     */
+    private double lastReportedPosY;
+    /**
+     * The last Z position which was transmitted to the server, used to determine when the Z position changes and needs
+     * to be re-transmitted
+     */
+    private double lastReportedPosZ;
+    /**
+     * The last yaw value which was transmitted to the server, used to determine when the yaw changes and needs to be
+     * re-transmitted
+     */
+    private float lastReportedYaw;
+    /**
+     * The last pitch value which was transmitted to the server, used to determine when the pitch changes and needs to
+     * be re-transmitted
+     */
+    private float lastReportedPitch;
+    /**
+     * the last sneaking state sent to the server
+     */
+    private boolean serverSneakState;
+    /**
+     * the last sprinting state sent to the server
+     */
+    private boolean serverSprintState;
+    /**
+     * Reset to 0 every time position is sent to the server, used to send periodic updates every 20 ticks even when the
+     * player is not moving.
+     */
+    private int positionUpdateTicks;
+    private boolean hasValidHealth;
+    private String clientBrand;
+    private int horseJumpPowerCounter;
+    private float horseJumpPower;
 
-   }
+    private String[] coomands = new String[]{".msg", ".binding", ".dm", ".conf", ".bind", ".friend", ".reply", ".tar", ".vc", ".users", ".panic", ".name",
+            ".status", ".binds", ".waypoint", ".Hide", ".configs", ".sults", ".configuration", ".ping", ".killsults", ".setbind", ".modulerename",
+            ".waypoints", ".onlinelist", ".wp", ".irc", ".b", ".c", ".cfg", ".f", ".h", ".ks", ".i", ".toggle", ".configure", ".vclip", ".message",
+            ".m", ".target", ".p", ".hide", ".r", ".names", ".t", ".rename", ".chat", ".keybind", ".Online", ".config", ".tp", ".teleport"};
 
-   public void onUpdate() {
-      if(this.worldObj.isBlockLoaded(new BlockPos(this.posX, 0.0D, this.posZ))) {
-         EventManager.call(new PlayerUpdateEvent());
-         super.onUpdate();
-         if(this.isRiding()) {
-            this.connection.b(new C03PacketPlayer$C05PacketPlayerLook(this.rotationYaw, this.rotationPitch, this.onGround));
-            this.connection.b(new C0CPacketInput(this.moveStrafing, this.moveForward, this.movementInput().jump(), this.movementInput().sneak()));
-         } else {
-            this.onUpdateWalkingPlayer();
-         }
-      }
+    public EntityPlayerSP(Minecraft mcIn, World worldIn, NetHandlerPlayClient netHandler, StatFileWriter statFile) {
+        super(worldIn, netHandler.getGameProfile());
+        this.connection = netHandler;
+        this.statWriter = statFile;
+        this.mc = mcIn;
+        this.dimension = 0;
+    }
 
-   }
+    /**
+     * Called when the entity is attacked.
+     */
+    public boolean attackEntityFrom(DamageSource source, float amount) {
+        return false;
+    }
 
-   public void onUpdateWalkingPlayer() {
-      boolean var1 = this.isSprinting();
-      if(var1 != this.serverSprintState) {
-         this.connection.b(new C0BPacketEntityAction(this, C0BPacketEntityAction$Action.START_SPRINTING));
-         this.serverSprintState = var1;
-      }
+    /**
+     * Heal living entity (param: amount of half-hearts)
+     */
+    public void heal(float healAmount) {
+    }
 
-      boolean var2 = this.isSneaking();
-      if(var2 != this.serverSneakState) {
-         this.connection.b(new C0BPacketEntityAction(this, C0BPacketEntityAction$Action.START_SNEAKING));
-         this.serverSneakState = var2;
-      }
+    /**
+     * Called when a player mounts an entity. e.g. mounts a pig, mounts a boat.
+     */
+    public void mountEntity(Entity entityIn) {
+        super.mountEntity(entityIn);
 
-      if(this.isCurrentViewEntity()) {
-         MotionUpdateEvent var3 = new MotionUpdateEvent(this.posX, this.getEntityBoundingBox().minY, this.posZ, this.rotationYaw, this.rotationPitch, this.onGround, EventState.PRE);
-         EventManager.call(var3);
-         double var4 = var3.getX() - this.lastReportedPosX;
-         double var6 = var3.getY() - this.lastReportedPosY;
-         double var8 = var3.getZ() - this.lastReportedPosZ;
-         double var10 = (double)(var3.getYaw() - this.lastReportedYaw);
-         double var12 = (double)(var3.getPitch() - this.lastReportedPitch);
-         if(((Criticals)Novoline.getInstance().getModuleManager().getModule(Criticals.class)).a().equals("Edit") && ((Criticals)Novoline.getInstance().getModuleManager().getModule(Criticals.class)).shouldCrit((KillAura)Novoline.getInstance().getModuleManager().getModule(KillAura.class))) {
-            boolean var18 = true;
-         } else {
-            boolean var10000 = false;
-         }
+        if (entityIn instanceof EntityMinecart) {
+            this.mc.getSoundHandler().playSound(new MovingSoundMinecartRiding(this, (EntityMinecart) entityIn));
+        }
+    }
 
-         if(var4 * var4 + var6 * var6 + var8 * var8 <= 9.0E-4D && this.positionUpdateTicks < 20) {
-            ;
-         }
+    /**
+     * Called to update the entity's position/logic.
+     */
+    public void onUpdate() {
+        if (this.worldObj.isBlockLoaded(new BlockPos(this.posX, 0.0D, this.posZ))) {
+            EventManager.call(new PlayerUpdateEvent());
+            super.onUpdate();
 
-         boolean var15 = true;
-         boolean var16 = var10 != 0.0D || var12 != 0.0D;
-         if(this.ridingEntity == null) {
-            this.connection.b(new C03PacketPlayer$C06PacketPlayerPosLook(var3.getX(), var3.getY(), var3.getZ(), var3.getYaw(), var3.getPitch(), var3.isOnGround()));
-         } else {
-            this.connection.b(new C03PacketPlayer$C06PacketPlayerPosLook(this.motionX, -999.0D, this.motionZ, var3.getYaw(), var3.getPitch(), var3.isOnGround()));
-            var15 = false;
-         }
-
-         ++this.positionUpdateTicks;
-         this.lastReportedPosX = var3.getX();
-         this.lastReportedPosY = var3.getY();
-         this.lastReportedPosZ = var3.getZ();
-         this.positionUpdateTicks = 0;
-         this.lastReportedYaw = var3.getYaw();
-         this.lastReportedPitch = var3.getPitch();
-         EventManager.call(new MotionUpdateEvent(this, EventState.POST));
-      }
-
-   }
-
-   public boolean a(MotionUpdateEvent var1) {
-      double var2 = var1.getX() - this.lastReportedPosX;
-      double var4 = var1.getY() - this.lastReportedPosY;
-      double var6 = var1.getZ() - this.lastReportedPosZ;
-      return var2 * var2 + var4 * var4 + var6 * var6 > 9.0E-4D;
-   }
-
-   public float ax() {
-      float var1 = MathHelper.wrapAngleTo180_float(this.mc.player.rotationYaw);
-      MovementInput var2 = this.mc.player.movementInput();
-      float var3 = var2.getMoveStrafe();
-      float var4 = var2.getMoveForward();
-      if(var4 != 0.0F) {
-         if(var3 < 0.0F) {
-            var1 += var4 < 0.0F?135.0F:45.0F;
-         } else if(var3 > 0.0F) {
-            var1 -= var4 < 0.0F?135.0F:45.0F;
-         } else if(var3 == 0.0F && var4 < 0.0F) {
-            var1 -= 180.0F;
-         }
-      } else if(var3 < 0.0F) {
-         var1 += 90.0F;
-      } else if(var3 > 0.0F) {
-         var1 -= 90.0F;
-      }
-
-      return MathHelper.wrapAngleTo180_float(var1);
-   }
-
-   public float o(float var1) {
-      float var2 = MathHelper.wrapAngleTo180_float(this.mc.player.rotationYaw);
-      MovementInput var3 = this.mc.player.movementInput();
-      float var4 = var3.getMoveStrafe();
-      float var5 = var3.getMoveForward();
-      if(var5 != 0.0F) {
-         if(var4 < 0.0F) {
-            var2 += var5 < 0.0F?135.0F:45.0F;
-         } else if(var4 > 0.0F) {
-            var2 -= var5 < 0.0F?135.0F:45.0F;
-         } else if(var4 == 0.0F && var5 < 0.0F) {
-            var2 -= 180.0F;
-         }
-      } else if(var4 < 0.0F) {
-         var2 += 90.0F;
-      } else if(var4 > 0.0F) {
-         var2 -= 90.0F;
-      }
-
-      return MathHelper.wrapAngleTo180_float(var2 + var1);
-   }
-
-   public void dropOneItem(boolean var1) {
-      C07PacketPlayerDigging$Action var2 = C07PacketPlayerDigging$Action.DROP_ALL_ITEMS;
-      this.connection.b(new C07PacketPlayerDigging(var2, BlockPos.ORIGIN, EnumFacing.DOWN));
-   }
-
-   protected void joinEntityItemWithWorld(EntityItem var1) {
-   }
-
-   public void c(String var1) {
-      for(String var5 : this.coomands) {
-         if(var1.toLowerCase().startsWith(var5)) {
-            String[] var6 = var1.split(" ");
-            String var7 = var6[0].toLowerCase() + var1.replace(var6[0], "");
-            this.mc.getNovoline().getNovoCommandHandler().executeCommand(this, var7);
-            return;
-         }
-      }
-
-      this.connection.b(new C01PacketChatMessage(var1));
-   }
-
-   public void swingItem() {
-      super.swingItem();
-      this.connection.b(new C0APacketAnimation());
-   }
-
-   public void swingItemNoPacket() {
-      super.swingItem();
-   }
-
-   public void respawnPlayer() {
-      this.connection.b(new C16PacketClientStatus(C16PacketClientStatus$EnumState.PERFORM_RESPAWN));
-   }
-
-   protected void damageEntity(DamageSource var1, float var2) {
-      if(!this.isEntityInvulnerable(var1)) {
-         this.setHealth(this.getHealth() - var2);
-      }
-
-   }
-
-   public void closeScreen() {
-      this.connection.b(new C0DPacketCloseWindow(this.openContainer.windowId));
-      this.closeScreenAndDropStack();
-   }
-
-   public void o(int var1) {
-      this.connection.b(new C0DPacketCloseWindow(var1));
-      this.closeScreenAndDropStack();
-   }
-
-   public void closeScreen(GuiScreen var1, int var2) {
-      this.connection.sendPacketNoEvent(new C0DPacketCloseWindow(var2));
-      this.closeScreenAndDropStack(var1);
-   }
-
-   public void closeScreenAndDropStack() {
-      this.inventory.setItemStack((ItemStack)null);
-      super.closeScreen();
-      this.mc.displayGuiScreen((GuiScreen)null);
-   }
-
-   public void closeScreenAndDropStack(GuiScreen var1) {
-      this.inventory.setItemStack((ItemStack)null);
-      super.closeScreen();
-      this.mc.displayGuiScreen(var1);
-   }
-
-   public void setPlayerSPHealth(float var1) {
-      if(this.hasValidHealth) {
-         float var2 = this.getHealth() - var1;
-         if(var2 <= 0.0F) {
-            this.setHealth(var1);
-            if(var2 < 0.0F) {
-               this.hurtResistantTime = this.maxHurtResistantTime / 2;
+            if (this.isRiding()) {
+                this.connection.sendPacket(new C03PacketPlayer.C05PacketPlayerLook(this.rotationYaw, this.rotationPitch, this.onGround));
+                this.connection.sendPacket(new C0CPacketInput(this.moveStrafing, this.moveForward, this.movementInput().jump(), this.movementInput().sneak()));
+            } else {
+                this.onUpdateWalkingPlayer();
             }
-         } else {
-            this.lastDamage = var2;
-            this.setHealth(this.getHealth());
-            this.hurtResistantTime = this.maxHurtResistantTime;
-            this.damageEntity(DamageSource.generic, var2);
-            this.hurtTime = this.maxHurtTime = 10;
-         }
-      } else {
-         this.setHealth(var1);
-         this.hasValidHealth = true;
-      }
+        }
+    }
 
-   }
+    /**
+     * called every tick when the player is on foot. Performs all the things that normally happen during movement.
+     */
+    public void onUpdateWalkingPlayer() {
+        boolean flag = this.isSprinting();
 
-   public void addStat(StatBase var1, int var2) {
-      if(var1.isIndependent) {
-         super.addStat(var1, var2);
-      }
+        MotionUpdateEvent preUpdate = new MotionUpdateEvent(posX, posY, posZ, rotationYaw, rotationPitch, onGround, MotionUpdateEvent.State.PRE);
+        MotionUpdateEvent postUpdate = new MotionUpdateEvent(MotionUpdateEvent.State.POST);
+        EventManager.call(preUpdate);
 
-   }
+        if (preUpdate.isCancelled()) {
+            EventManager.call(postUpdate);
+        }
 
-   public void sendPlayerAbilities() {
-      this.connection.b(new C13PacketPlayerAbilities(this.abilities));
-   }
+        if (flag != this.serverSprintState) {
+            this.connection.sendPacket(new C0BPacketEntityAction(this,
+                    flag ? C0BPacketEntityAction.Action.START_SPRINTING : C0BPacketEntityAction.Action.STOP_SPRINTING));
 
-   public void sendFakeAbilities() {
-      this.connection.b(new C13PacketPlayerAbilities(this.abilities.getFlySpeed(), this.abilities.getWalkSpeed(), true, true, this.abilities.isCreative(), this.abilities.isDisabledDamage()));
-   }
+            this.serverSprintState = flag;
+        }
 
-   public void sendHorseJump() {
-      this.connection.b(new C0BPacketEntityAction(this, C0BPacketEntityAction$Action.RIDING_JUMP, (int)(this.getHorseJumpPower() * 100.0F)));
-   }
+        boolean flag1 = this.isSneaking();
 
-   public void sendHorseInventory() {
-      this.connection.b(new C0BPacketEntityAction(this, C0BPacketEntityAction$Action.OPEN_INVENTORY));
-   }
+        if (flag1 != this.serverSneakState) {
+            this.connection.sendPacket(new C0BPacketEntityAction(this,
+                    flag1 ? C0BPacketEntityAction.Action.START_SNEAKING : C0BPacketEntityAction.Action.STOP_SNEAKING));
 
-   public String getClientBrand() {
-      return this.clientBrand;
-   }
+            this.serverSneakState = flag1;
+        }
 
-   public void setClientBrand(String var1) {
-      this.clientBrand = var1;
-   }
+        if (this.isCurrentViewEntity()) {
+            double d0 = preUpdate.getX() - this.lastReportedPosX;
+            double d1 = preUpdate.getY() - this.lastReportedPosY;
+            double d2 = preUpdate.getZ() - this.lastReportedPosZ;
+            double d3 = preUpdate.getYaw() - this.lastReportedYaw;
+            double d4 = preUpdate.getPitch() - this.lastReportedPitch;
+            boolean flag2 = d0 * d0 + d1 * d1 + d2 * d2 > 9.0E-4D || this.positionUpdateTicks >= 20 ||
+                    Novoline.getInstance().getModuleManager().getModule(Criticals.class).shouldCrit(Novoline.getInstance().getModuleManager().getModule(KillAura.class));
+            boolean flag3 = d3 != 0.0D || d4 != 0.0D;
 
-   public StatFileWriter getStatFileWriter() {
-      return this.statWriter;
-   }
+            if (this.ridingEntity == null) {
+                if (flag2 && flag3) {
+                    this.connection.sendPacket(new C03PacketPlayer.C06PacketPlayerPosLook(preUpdate.getX(), preUpdate.getY(), preUpdate.getZ(), preUpdate.getYaw(), preUpdate.getPitch(), preUpdate.isOnGround()));
+                } else if (flag2) {
+                    this.connection.sendPacket(new C03PacketPlayer.C04PacketPlayerPosition(preUpdate.getX(), preUpdate.getY(), preUpdate.getZ(), preUpdate.isOnGround()));
+                } else if (flag3) {
+                    this.connection.sendPacket(new C03PacketPlayer.C05PacketPlayerLook(preUpdate.getYaw(), preUpdate.getPitch(), preUpdate.isOnGround()));
+                } else {
+                    this.connection.sendPacket(new C03PacketPlayer(preUpdate.isOnGround()));
+                }
 
-   public void addChatComponentMessage(IChatComponent var1) {
-      this.mc.ingameGUI.n().a(var1);
-   }
-
-   protected boolean pushOutOfBlocks(double var1, double var3, double var5) {
-      PushBlockEvent var7 = new PushBlockEvent();
-      EventManager.call(var7);
-      if(!this.noClip && !var7.isCancelled()) {
-         BlockPos var8 = new BlockPos(var1, var3, var5);
-         double var9 = var1 - (double)var8.getX();
-         double var11 = var5 - (double)var8.getZ();
-         if(!this.isOpenBlockSpace(var8)) {
-            byte var13 = -1;
-            double var14 = 9999.0D;
-            if(this.isOpenBlockSpace(var8.west()) && var9 < var14) {
-               var14 = var9;
-               var13 = 0;
+            } else {
+                this.connection.sendPacket(new C03PacketPlayer.C06PacketPlayerPosLook(this.motionX, -999.0D, this.motionZ, preUpdate.getYaw(), preUpdate.getPitch(), preUpdate.isOnGround()));
+                flag2 = false;
             }
 
-            if(this.isOpenBlockSpace(var8.east()) && 1.0D - var9 < var14) {
-               var14 = 1.0D - var9;
-               var13 = 1;
+            ++this.positionUpdateTicks;
+
+            if (flag2) {
+                this.lastReportedPosX = preUpdate.getX();
+                this.lastReportedPosY = preUpdate.getY();
+                this.lastReportedPosZ = preUpdate.getZ();
+                this.positionUpdateTicks = 0;
             }
 
-            if(this.isOpenBlockSpace(var8.north()) && var11 < var14) {
-               var14 = var11;
-               var13 = 4;
+            if (flag3) {
+                this.lastReportedYaw = preUpdate.getYaw();
+                this.lastReportedPitch = preUpdate.getPitch();
+            }
+        }
+
+        EventManager.call(postUpdate);
+    }
+
+    /**
+     * Called when player presses the drop item key
+     */
+    public void dropOneItem(boolean dropAll) {
+        final C07PacketPlayerDigging.Action c07PacketPlayerDigging$Action =
+                dropAll ? C07PacketPlayerDigging.Action.DROP_ALL_ITEMS : C07PacketPlayerDigging.Action.DROP_ITEM;
+        this.connection.sendPacket(new C07PacketPlayerDigging(c07PacketPlayerDigging$Action, BlockPos.ORIGIN, EnumFacing.DOWN));
+    }
+
+    /**
+     * Joins the passed in entity item with the world. Args: entityItem
+     */
+    protected void joinEntityItemWithWorld(EntityItem itemIn) {
+    }
+
+    /**
+     * Sends a chat message from the player. Args: chatMessage
+     */
+    public void sendChatMessage(String message) {
+        for (String command : this.coomands) {
+            if (message.toLowerCase().startsWith(command)) {
+                this.mc.getNovoline().getNovoCommandHandler().executeCommand(this, message.toLowerCase());
+                return;
+            }
+        }
+
+        this.connection.sendPacket(new C01PacketChatMessage(message));
+    }
+
+    /**
+     * Swings the item the player is holding.
+     */
+    public void swingItem() {
+        super.swingItem();
+        this.connection.sendPacket(new C0APacketAnimation());
+    }
+
+    public void swingItemNoPacket() {
+        super.swingItem();
+    }
+
+    public void respawnPlayer() {
+        this.connection.sendPacket(new C16PacketClientStatus(C16PacketClientStatus.EnumState.PERFORM_RESPAWN));
+    }
+
+    /**
+     * Deals damage to the entity. If its a EntityPlayer then will take damage from the armor first and then health
+     * second with the reduced value. Args: damageAmount
+     */
+    protected void damageEntity(DamageSource damageSrc, float damageAmount) {
+        if (!this.isEntityInvulnerable(damageSrc)) {
+            this.setHealth(this.getHealth() - damageAmount);
+        }
+    }
+
+    /**
+     * set current crafting inventory back to the 2x2 square
+     */
+    public void closeScreen() {
+        this.connection.sendPacket(new C0DPacketCloseWindow(this.openContainer.windowId));
+        this.closeScreenAndDropStack();
+    }
+
+    public void closeScreen(GuiScreen current, int windowsID) {
+        this.connection.sendPacketNoEvent(new C0DPacketCloseWindow(windowsID));
+        this.closeScreenAndDropStack(current);
+    }
+
+    public void closeScreenAndDropStack() {
+        this.inventory.setItemStack(null);
+        super.closeScreen();
+        this.mc.displayGuiScreen(null);
+    }
+
+    public void closeScreenAndDropStack(GuiScreen screen) {
+        this.inventory.setItemStack(null);
+        super.closeScreen();
+        this.mc.displayGuiScreen(screen);
+    }
+
+    /**
+     * Updates health locally.
+     */
+    public void setPlayerSPHealth(float health) {
+        if (this.hasValidHealth) {
+            final float f = this.getHealth() - health;
+
+            if (f <= 0.0F) {
+                this.setHealth(health);
+
+                if (f < 0.0F) {
+                    this.hurtResistantTime = this.maxHurtResistantTime / 2;
+                }
+
+            } else {
+                this.lastDamage = f;
+                this.setHealth(this.getHealth());
+                this.hurtResistantTime = this.maxHurtResistantTime;
+                this.damageEntity(DamageSource.generic, f);
+                this.hurtTime = this.maxHurtTime = 10;
             }
 
-            if(this.isOpenBlockSpace(var8.south()) && 1.0D - var11 < var14) {
-               var13 = 5;
+        } else {
+            this.setHealth(health);
+            this.hasValidHealth = true;
+        }
+    }
+
+    /**
+     * Adds a value to a statistic field.
+     */
+    public void addStat(StatBase stat, int amount) {
+        if (stat != null) {
+            if (stat.isIndependent) {
+                super.addStat(stat, amount);
+            }
+        }
+    }
+
+    /*
+     * Sends the player's abilities to the server (if there is one).
+     */
+    public void sendPlayerAbilities() {
+        connection.sendPacket(new C13PacketPlayerAbilities(abilities));
+    }
+
+    public void sendFakeAbilities() {
+        if (this != null) {
+            connection.sendPacket(new C13PacketPlayerAbilities(abilities.getFlySpeed(), abilities.getWalkSpeed(),
+                    true, true, abilities.isCreative(), abilities.isDisabledDamage()));
+        }
+    }
+
+    /**
+     * returns true if this is an EntityPlayerSP, or the logged in player.
+     */
+    public void sendHorseJump() {
+        this.connection.sendPacket(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.RIDING_JUMP, (int) (this.getHorseJumpPower() * 100.0F)));
+    }
+
+    public void sendHorseInventory() {
+        this.connection.sendPacket(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.OPEN_INVENTORY));
+    }
+
+    public String getClientBrand() {
+        return this.clientBrand;
+    }
+
+    public void setClientBrand(String brand) {
+        this.clientBrand = brand;
+    }
+
+    public StatFileWriter getStatFileWriter() {
+        return this.statWriter;
+    }
+
+    public void addChatComponentMessage(IChatComponent chatComponent) {
+        this.mc.ingameGUI.getChatGUI().printChatMessage(chatComponent);
+    }
+
+    protected boolean pushOutOfBlocks(double x, double y, double z) {
+        if (!this.noClip) {
+            final BlockPos blockpos = new BlockPos(x, y, z);
+            final double d0 = x - (double) blockpos.getX();
+            final double d1 = z - (double) blockpos.getZ();
+
+            if (!this.isOpenBlockSpace(blockpos)) {
+                int i = -1;
+                double d2 = 9999.0D;
+
+                if (this.isOpenBlockSpace(blockpos.west()) && d0 < d2) {
+                    d2 = d0;
+                    i = 0;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.east()) && 1.0D - d0 < d2) {
+                    d2 = 1.0D - d0;
+                    i = 1;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.north()) && d1 < d2) {
+                    d2 = d1;
+                    i = 4;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.south()) && 1.0D - d1 < d2) {
+                    i = 5;
+                }
+
+                final float f = 0.1F;
+
+                if (i == 0) {
+                    this.motionX = -f;
+                }
+
+                if (i == 1) {
+                    this.motionX = f;
+                }
+
+                if (i == 4) {
+                    this.motionZ = -f;
+                }
+
+                if (i == 5) {
+                    this.motionZ = f;
+                }
             }
 
-            double var16 = 0.10000000149011612D;
-            this.motionX = -var16;
-            if(var13 == 1) {
-               this.motionX = var16;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the block at the given BlockPos and the block above it are NOT full cubes.
+     */
+    private boolean isOpenBlockSpace(BlockPos pos) {
+        return !this.worldObj.getBlockState(pos).getBlock().isNormalCube() && !this.worldObj.getBlockState(pos.up())
+                .getBlock().isNormalCube();
+    }
+
+    /**
+     * Set sprinting switch for Entity.
+     */
+    public void setSprinting(boolean sprinting) {
+        super.setSprinting(sprinting);
+        this.sprintingTicksLeft = sprinting ? 600 : 0;
+    }
+
+    /**
+     * Sets the current XP, total XP, and level number.
+     */
+    public void setXPStats(float currentXP, int maxXP, int level) {
+        this.experience = currentXP;
+        this.experienceTotal = maxXP;
+        this.experienceLevel = level;
+    }
+
+    /**
+     * Send a chat message to the CommandSender
+     */
+    public void addChatMessage(IChatComponent component) {
+        this.mc.ingameGUI.getChatGUI().printChatMessage(component);
+    }
+
+    /**
+     * Returns {@code true} if the CommandSender is allowed to execute the command, {@code false} if not
+     */
+    public boolean canCommandSenderUseCommand(int permLevel, String commandName) {
+        return permLevel <= 0;
+    }
+
+    /**
+     * Get the position in the world. <b>{@code null} is not allowed!</b> If you are not an entity in the world, return
+     * the coordinates 0, 0, 0
+     */
+    public BlockPos getPosition() {
+        return new BlockPos(this.posX + 0.5D, this.posY + 0.5D, this.posZ + 0.5D);
+    }
+
+    public void playSound(String name, float volume, float pitch) {
+        this.worldObj.playSound(this.posX, this.posY, this.posZ, name, volume, pitch, false);
+    }
+
+    /**
+     * Returns whether the entity is in a server world
+     */
+    public boolean isServerWorld() {
+        return true;
+    }
+
+    public boolean isRidingHorse() {
+        return this.ridingEntity != null && this.ridingEntity instanceof EntityHorse && ((EntityHorse) this.ridingEntity).isHorseSaddled();
+    }
+
+    public float getHorseJumpPower() {
+        return this.horseJumpPower;
+    }
+
+    public void openEditSign(TileEntitySign signTile) {
+        this.mc.displayGuiScreen(new GuiEditSign(signTile));
+    }
+
+    public void openEditCommandBlock(CommandBlockLogic cmdBlockLogic) {
+        this.mc.displayGuiScreen(new GuiCommandBlock(cmdBlockLogic));
+    }
+
+    /**
+     * Displays the GUI for interacting with a book.
+     */
+    public void displayGUIBook(ItemStack bookStack) {
+        final Item item = bookStack.getItem();
+
+        if (item == Items.writable_book) {
+            this.mc.displayGuiScreen(new GuiScreenBook(this, bookStack, true));
+        }
+    }
+
+    /**
+     * Displays the GUI for interacting with a chest inventory. Args: chestInventory
+     */
+    public void displayGUIChest(IInventory chestInventory) {
+        final String s = chestInventory instanceof IInteractionObject ?
+                ((IInteractionObject) chestInventory).getGuiID() : "minecraft:container";
+
+        if (s.equals("minecraft:chest")) {
+            this.mc.displayGuiScreen(new GuiChest(this.inventory, chestInventory));
+        } else if (s.equals("minecraft:hopper")) {
+            this.mc.displayGuiScreen(new GuiHopper(this.inventory, chestInventory));
+        } else if (s.equals("minecraft:furnace")) {
+            this.mc.displayGuiScreen(new GuiFurnace(this.inventory, chestInventory));
+        } else if (s.equals("minecraft:brewing_stand")) {
+            this.mc.displayGuiScreen(new GuiBrewingStand(this.inventory, chestInventory));
+        } else if (s.equals("minecraft:beacon")) {
+            this.mc.displayGuiScreen(new GuiBeacon(this.inventory, chestInventory));
+        } else if (!s.equals("minecraft:dispenser") && !s.equals("minecraft:dropper")) {
+            this.mc.displayGuiScreen(new GuiChest(this.inventory, chestInventory));
+        } else {
+            this.mc.displayGuiScreen(new GuiDispenser(this.inventory, chestInventory));
+        }
+
+        EventManager.call(new DisplayChestGuiEvent(s));
+    }
+
+    public void displayGUIHorse(EntityHorse horse, IInventory horseInventory) {
+        this.mc.displayGuiScreen(new GuiScreenHorseInventory(this.inventory, horseInventory, horse));
+    }
+
+    public void displayGui(IInteractionObject guiOwner) {
+        final String s = guiOwner.getGuiID();
+
+        if ("minecraft:crafting_table".equals(s)) {
+            this.mc.displayGuiScreen(new GuiCrafting(this.inventory, this.worldObj));
+        } else if ("minecraft:enchanting_table".equals(s)) {
+            this.mc.displayGuiScreen(new GuiEnchantment(this.inventory, this.worldObj, guiOwner));
+        } else if ("minecraft:anvil".equals(s)) {
+            this.mc.displayGuiScreen(new GuiRepair(this.inventory, this.worldObj));
+        }
+    }
+
+    public void displayVillagerTradeGui(IMerchant villager) {
+        this.mc.displayGuiScreen(new GuiMerchant(this.inventory, villager, this.worldObj));
+    }
+
+    /**
+     * Called when the player performs a critical hit on the Entity. Args: entity that was hit critically
+     */
+    public void onCriticalHit(Entity entityHit) {
+        this.mc.effectRenderer.emitParticleAtEntity(entityHit, EnumParticleTypes.CRIT);
+    }
+
+    public void onEnchantmentCritical(Entity entityHit) {
+        this.mc.effectRenderer.emitParticleAtEntity(entityHit, EnumParticleTypes.CRIT_MAGIC);
+    }
+
+    /**
+     * Returns if this entity is sneaking.
+     */
+    public boolean isSneaking() {
+        final boolean flag = this.movementInput() != null && this.movementInput().sneak();
+        return flag && !this.sleeping;
+    }
+
+    public void updateEntityActionState() {
+        super.updateEntityActionState();
+        if (this.isCurrentViewEntity()) {
+            this.moveStrafing = this.movementInput().getMoveStrafe();
+            this.moveForward = this.movementInput().getMoveForward();
+            this.isJumping = this.movementInput().jump();
+            this.prevRenderArmYaw = this.renderArmYaw;
+            this.prevRenderArmPitch = this.renderArmPitch;
+            this.renderArmPitch = (float) ((double) this.renderArmPitch + (double) (this.rotationPitch - this.renderArmPitch) * 0.5D);
+            this.renderArmYaw = (float) ((double) this.renderArmYaw + (double) (this.rotationYaw - this.renderArmYaw) * 0.5D);
+        }
+    }
+
+    protected boolean isCurrentViewEntity() {
+        return this.mc.getRenderViewEntity() == this;
+    }
+
+    @Override
+    public float getToolDigEfficiency(Block p_180471_1_) {
+        float f = this.inventory.getStrVsBlock(p_180471_1_);
+
+        if (f > 1.0F) {
+            int i = EnchantmentHelper.getEfficiencyModifier(this);
+            ItemStack itemstack = this.inventory.getCurrentItem();
+
+            if (i > 0 && itemstack != null) {
+                f += (float) (i * i + 1);
+            }
+        }
+
+        if (this.isPotionActive(Potion.digSpeed)) {
+            f *= 1.0F + (float) (this.getActivePotionEffect(Potion.digSpeed).getAmplifier() + 1) * 0.2F;
+        }
+
+        if (this.isPotionActive(Potion.digSlowdown)) {
+            float f1 = 1.0F;
+
+            switch (this.getActivePotionEffect(Potion.digSlowdown).getAmplifier()) {
+                case 0:
+                    f1 = 0.3F;
+                    break;
+
+                case 1:
+                    f1 = 0.09F;
+                    break;
+
+                case 2:
+                    f1 = 0.0027F;
+                    break;
+
+                case 3:
+                default:
+                    f1 = 8.1E-4F;
             }
 
-            if(var13 == 4) {
-               this.motionZ = -var16;
+            f *= f1;
+        }
+
+        if (this.isInsideOfMaterial(Material.water) && !EnchantmentHelper.getAquaAffinityModifier(this)) {
+            f /= 5.0F;
+        }
+
+        if (!this.onGround) {
+            f /= 5.0F;
+        }
+
+        return f;
+    }
+
+    /**
+     * Called frequently so the entity can update its state every tick as required. For example, zombies and skeletons
+     * use this to react to sunlight and start to burn.
+     */
+    public void onLivingUpdate() {
+        if (this.sprintingTicksLeft > 0) {
+            --this.sprintingTicksLeft;
+
+            if (this.sprintingTicksLeft == 0) {
+                this.setSprinting(false);
+            }
+        }
+
+        if (this.sprintToggleTimer > 0) {
+            --this.sprintToggleTimer;
+        }
+
+        this.prevTimeInPortal = this.timeInPortal;
+
+        if (this.inPortal) {
+            if (this.mc.currentScreen != null && !this.mc.currentScreen.doesGuiPauseGame()) {
+                this.mc.displayGuiScreen(null);
             }
 
-            if(var13 == 5) {
-               this.motionZ = var16;
+            if (this.timeInPortal == 0.0F) {
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord
+                        .create(new ResourceLocation("portal.trigger"), this.rand.nextFloat() * 0.4F + 0.8F));
             }
-         }
-      }
 
-      return false;
-   }
+            this.timeInPortal += 0.0125F;
 
-   private boolean isOpenBlockSpace(BlockPos var1) {
-      return !this.worldObj.getBlockState(var1).getBlock().isNormalCube() && !this.worldObj.getBlockState(var1.up()).getBlock().isNormalCube();
-   }
+            if (this.timeInPortal >= 1.0F) {
+                this.timeInPortal = 1.0F;
+            }
 
-   public void setSprinting(boolean var1) {
-      super.setSprinting(var1);
-      this.sprintingTicksLeft = 600;
-   }
+            this.inPortal = false;
+        } else if (this.isPotionActive(confusion) && this.getActivePotionEffect(confusion).getDuration() > 60) {
+            this.timeInPortal += 0.006666667F;
 
-   public void setXPStats(float var1, int var2, int var3) {
-      this.experience = var1;
-      this.experienceTotal = var2;
-      this.experienceLevel = var3;
-   }
+            if (this.timeInPortal > 1.0F) {
+                this.timeInPortal = 1.0F;
+            }
+        } else {
+            if (this.timeInPortal > 0.0F) {
+                this.timeInPortal -= 0.05F;
+            }
 
-   public void addChatMessage(IChatComponent var1) {
-      this.mc.ingameGUI.n().a(var1);
-   }
+            if (this.timeInPortal < 0.0F) {
+                this.timeInPortal = 0.0F;
+            }
+        }
 
-   public boolean canCommandSenderUseCommand(int var1, String var2) {
-      return true;
-   }
+        if (this.timeUntilPortal > 0) {
+            --this.timeUntilPortal;
+        }
 
-   public BlockPos getPosition() {
-      return new BlockPos(this.posX + 0.5D, this.posY + 0.5D, this.posZ + 0.5D);
-   }
+        final boolean flag = this.movementInput().jump();
+        final boolean flag1 = this.movementInput().sneak();
+        final float f = 0.8F;
+        final boolean flag2 = this.movementInput().getMoveForward() >= f;
 
-   public void playSound(String var1, float var2, float var3) {
-      this.worldObj.playSound(this.posX, this.posY, this.posZ, var1, var2, var3, false);
-   }
+        if (Novoline.getInstance().getModuleManager().getModule(GuiMove.class).isEnabled() && !(mc.currentScreen instanceof GuiChat)) {
+            Novoline.getInstance().getModuleManager().getModule(GuiMove.class).updatePlayerMoveState();
+        } else {
+            this.movementInput().updatePlayerMoveState();
+        }
 
-   public boolean isServerWorld() {
-      return true;
-   }
+        if (this.isUsingItem() && !this.isRiding()) {
+            SlowdownEvent event = new SlowdownEvent();
+            EventManager.call(event);
 
-   public boolean isRidingHorse() {
-      return this.ridingEntity != null && this.ridingEntity instanceof EntityHorse && ((EntityHorse)this.ridingEntity).isHorseSaddled();
-   }
+            if (!event.isCancelled()) {
+                this.movementInput().setMoveStrafe(this.movementInput().getMoveStrafe() * 0.2F);
+                this.movementInput().setMoveForward(this.movementInput().getMoveForward() * 0.2F);
+                this.sprintToggleTimer = 0;
+            }
+        }
 
-   public float getHorseJumpPower() {
-      return this.horseJumpPower;
-   }
+        PushBlockEvent pushBlock = new PushBlockEvent();
+        EventManager.call(pushBlock);
+        if (!pushBlock.isCancelled()) {
+            this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D,
+                    this.posZ + (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D,
+                    this.posZ - (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D,
+                    this.posZ - (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D,
+                    this.posZ + (double) this.width * 0.35D);
+        }
 
-   public void openEditSign(TileEntitySign var1) {
-      this.mc.displayGuiScreen(new GuiEditSign(var1));
-   }
+        final boolean flag3 = (float) this.getFoodStats().getFoodLevel() > 6.0F || this.abilities.isAllowFlying();
 
-   public void openEditCommandBlock(CommandBlockLogic var1) {
-      this.mc.displayGuiScreen(new GuiCommandBlock(var1));
-   }
+        if (this.onGround && !flag1 && !flag2 && this.movementInput().getMoveForward() >= f && !this
+                .isSprinting() && flag3 && !this.isUsingItem() && !this.isPotionActive(blindness)) {
+            if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+                this.sprintToggleTimer = 7;
+            } else {
+                this.setSprinting(true);
+            }
+        }
 
-   public void displayGUIBook(ItemStack var1) {
-      Item var2 = var1.getItem();
-      if(var2 == Items.writable_book) {
-         this.mc.displayGuiScreen(new GuiScreenBook(this, var1, true));
-      }
-
-   }
-
-   public void displayGUIChest(IInventory var1) {
-      String var2 = var1 instanceof IInteractionObject?((IInteractionObject)var1).getGuiID():"minecraft:container";
-      if(var2.equals("minecraft:chest")) {
-         this.mc.displayGuiScreen(new GuiChest(this.inventory, var1));
-      } else if(var2.equals("minecraft:hopper")) {
-         this.mc.displayGuiScreen(new GuiHopper(this.inventory, var1));
-      } else if(var2.equals("minecraft:furnace")) {
-         this.mc.displayGuiScreen(new GuiFurnace(this.inventory, var1));
-      } else if(var2.equals("minecraft:brewing_stand")) {
-         this.mc.displayGuiScreen(new GuiBrewingStand(this.inventory, var1));
-      } else if(var2.equals("minecraft:beacon")) {
-         this.mc.displayGuiScreen(new GuiBeacon(this.inventory, var1));
-      } else if(!var2.equals("minecraft:dispenser") && !var2.equals("minecraft:dropper")) {
-         this.mc.displayGuiScreen(new GuiChest(this.inventory, var1));
-      } else {
-         this.mc.displayGuiScreen(new GuiDispenser(this.inventory, var1));
-      }
-
-      EventManager.call(new DisplayChestGuiEvent(var2));
-   }
-
-   public void displayGUIHorse(EntityHorse var1, IInventory var2) {
-      this.mc.displayGuiScreen(new GuiScreenHorseInventory(this.inventory, var2, var1));
-   }
-
-   public void displayGui(IInteractionObject var1) {
-      String var2 = var1.getGuiID();
-      if("minecraft:crafting_table".equals(var2)) {
-         this.mc.displayGuiScreen(new GuiCrafting(this.inventory, this.worldObj));
-      } else if("minecraft:enchanting_table".equals(var2)) {
-         this.mc.displayGuiScreen(new GuiEnchantment(this.inventory, this.worldObj, var1));
-      } else if("minecraft:anvil".equals(var2)) {
-         this.mc.displayGuiScreen(new GuiRepair(this.inventory, this.worldObj));
-      }
-
-   }
-
-   public void displayVillagerTradeGui(IMerchant var1) {
-      this.mc.displayGuiScreen(new GuiMerchant(this.inventory, var1, this.worldObj));
-   }
-
-   public void onCriticalHit(Entity var1) {
-      this.mc.effectRenderer.emitParticleAtEntity(var1, EnumParticleTypes.CRIT);
-   }
-
-   public void onEnchantmentCritical(Entity var1) {
-      this.mc.effectRenderer.emitParticleAtEntity(var1, EnumParticleTypes.CRIT_MAGIC);
-   }
-
-   public boolean isSneaking() {
-      boolean var1 = this.movementInput() != null && this.movementInput().sneak();
-      return !this.sleeping;
-   }
-
-   public void updateEntityActionState() {
-      super.updateEntityActionState();
-      if(this.isCurrentViewEntity()) {
-         this.moveStrafing = this.movementInput().getMoveStrafe();
-         this.moveForward = this.movementInput().getMoveForward();
-         this.isJumping = this.movementInput().jump();
-         this.prevRenderArmYaw = this.renderArmYaw;
-         this.prevRenderArmPitch = this.renderArmPitch;
-         this.renderArmPitch = (float)((double)this.renderArmPitch + (double)(this.rotationPitch - this.renderArmPitch) * 0.5D);
-         this.renderArmYaw = (float)((double)this.renderArmYaw + (double)(this.rotationYaw - this.renderArmYaw) * 0.5D);
-      }
-
-   }
-
-   protected boolean isCurrentViewEntity() {
-      return this.mc.getRenderViewEntity() == this;
-   }
-
-   public float getToolDigEfficiency(Block var1) {
-      float var2 = this.inventory.getStrVsBlock(var1);
-      if(var2 > 1.0F) {
-         int var3 = EnchantmentHelper.getEfficiencyModifier(this);
-         ItemStack var4 = this.inventory.getCurrentItem();
-         var2 += (float)(var3 * var3 + 1);
-      }
-
-      if(this.isPotionActive(Potion.digSpeed)) {
-         var2 *= 1.0F + (float)(this.getActivePotionEffect(Potion.digSpeed).getAmplifier() + 1) * 0.2F;
-      }
-
-      if(this.isPotionActive(Potion.digSlowdown)) {
-         float var5 = 1.0F;
-         switch(this.getActivePotionEffect(Potion.digSlowdown).getAmplifier()) {
-         case 0:
-            var5 = 0.3F;
-            break;
-         case 1:
-            var5 = 0.09F;
-            break;
-         case 2:
-            var5 = 0.0027F;
-            break;
-         case 3:
-         default:
-            var5 = 8.1E-4F;
-         }
-
-         var2 *= var5;
-      }
-
-      if(Novoline.getInstance().isAnythingNull() || !((SpeedMine)Novoline.getInstance().getModuleManager().getModule(SpeedMine.class)).isEnabled() || !((SpeedMine)Novoline.getInstance().getModuleManager().getModule(SpeedMine.class)).a()) {
-         if(this.isInsideOfMaterial(Material.water) && !EnchantmentHelper.getAquaAffinityModifier(this)) {
-            var2 /= 5.0F;
-         }
-
-         if(!this.onGround) {
-            var2 /= 5.0F;
-         }
-      }
-
-      return var2;
-   }
-
-   public void onLivingUpdate() {
-      if(this.sprintingTicksLeft > 0) {
-         --this.sprintingTicksLeft;
-         if(this.sprintingTicksLeft == 0) {
-            this.setSprinting(false);
-         }
-      }
-
-      if(this.sprintToggleTimer > 0) {
-         --this.sprintToggleTimer;
-      }
-
-      this.prevTimeInPortal = this.timeInPortal;
-      if(this.inPortal) {
-         if(this.mc.currentScreen != null && !this.mc.currentScreen.doesGuiPauseGame()) {
-            this.mc.displayGuiScreen((GuiScreen)null);
-         }
-
-         if(this.timeInPortal == 0.0F) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("portal.trigger"), this.rand.nextFloat() * 0.4F + 0.8F));
-         }
-
-         this.timeInPortal += 0.0125F;
-         if(this.timeInPortal >= 1.0F) {
-            this.timeInPortal = 1.0F;
-         }
-
-         this.inPortal = false;
-      } else if(this.isPotionActive(Potion.confusion) && this.getActivePotionEffect(Potion.confusion).getDuration() > 60) {
-         this.timeInPortal += 0.006666667F;
-         if(this.timeInPortal > 1.0F) {
-            this.timeInPortal = 1.0F;
-         }
-      } else {
-         if(this.timeInPortal > 0.0F) {
-            this.timeInPortal -= 0.05F;
-         }
-
-         if(this.timeInPortal < 0.0F) {
-            this.timeInPortal = 0.0F;
-         }
-      }
-
-      if(this.timeUntilPortal > 0) {
-         --this.timeUntilPortal;
-      }
-
-      boolean var1 = this.movementInput().jump();
-      boolean var2 = this.movementInput().sneak();
-      float var3 = 0.8F;
-      boolean var4 = this.movementInput().getMoveForward() >= 0.8F;
-      if(((GuiMove)Novoline.getInstance().getModuleManager().getModule(GuiMove.class)).isEnabled() && !(this.mc.currentScreen instanceof aHM)) {
-         ((GuiMove)Novoline.getInstance().getModuleManager().getModule(GuiMove.class)).updatePlayerMoveState();
-      } else {
-         this.movementInput().updatePlayerMoveState();
-      }
-
-      if(this.isUsingItem() && !this.isRiding()) {
-         SlowdownEvent var5 = new SlowdownEvent();
-         EventManager.call(var5);
-         if(!var5.isCancelled()) {
-            this.movementInput().setMoveStrafe(this.movementInput().getMoveStrafe() * 0.2F);
-            this.movementInput().setMoveForward(this.movementInput().getMoveForward() * 0.2F);
-            this.sprintToggleTimer = 0;
-         }
-      }
-
-      this.pushOutOfBlocks(this.posX - (double)this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double)this.width * 0.35D);
-      this.pushOutOfBlocks(this.posX - (double)this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double)this.width * 0.35D);
-      this.pushOutOfBlocks(this.posX + (double)this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double)this.width * 0.35D);
-      this.pushOutOfBlocks(this.posX + (double)this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double)this.width * 0.35D);
-      boolean var6 = (float)this.getFoodStats().getFoodLevel() > 6.0F || this.abilities.isAllowFlying();
-      if(this.onGround && this.movementInput().getMoveForward() >= 0.8F && !this.isSprinting() && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
-         if(this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
-            this.sprintToggleTimer = 7;
-         } else {
+        if (!this.isSprinting() && this.movementInput().getMoveForward() >= f && flag3 && !this.isUsingItem() && !this
+                .isPotionActive(blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
             this.setSprinting(true);
-         }
-      }
+        }
 
-      if(!this.isSprinting() && this.movementInput().getMoveForward() >= 0.8F && !this.isUsingItem() && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
-         this.setSprinting(true);
-      }
+        if (this.isSprinting() && (this.movementInput().getMoveForward() < f || this.isCollidedHorizontally || !flag3)) {
+            this.setSprinting(false);
+        }
 
-      if(this.isSprinting()) {
-         if(this.movementInput().getMoveForward() >= 0.8F && !this.isCollidedHorizontally) {
-            ;
-         }
-
-         this.setSprinting(false);
-      }
-
-      if(this.abilities.isAllowFlying()) {
-         if(this.mc.at.o()) {
-            if(!this.abilities.isFlying()) {
-               this.abilities.setFlying(true);
-               this.sendPlayerAbilities();
+        if (this.abilities.isAllowFlying()) {
+            if (this.mc.playerController.isSpectatorMode()) {
+                if (!this.abilities.isFlying()) {
+                    this.abilities.setFlying(true);
+                    this.sendPlayerAbilities();
+                }
+            } else if (!flag && this.movementInput().jump()) {
+                if (this.flyToggleTimer == 0) {
+                    this.flyToggleTimer = 7;
+                } else {
+                    this.abilities.setFlying(!this.abilities.isFlying());
+                    this.sendPlayerAbilities();
+                    this.flyToggleTimer = 0;
+                }
             }
-         } else if(this.movementInput().jump()) {
-            if(this.flyToggleTimer == 0) {
-               this.flyToggleTimer = 7;
-            } else {
-               this.abilities.setFlying(!this.abilities.isFlying());
-               this.sendPlayerAbilities();
-               this.flyToggleTimer = 0;
+        }
+
+        if (this.abilities.isFlying() && this.isCurrentViewEntity()) {
+            if (this.movementInput().sneak()) {
+                this.motionY -= this.abilities.getFlySpeed() * 3.0F;
             }
-         }
-      }
 
-      if(this.abilities.isFlying() && this.isCurrentViewEntity()) {
-         if(this.movementInput().sneak()) {
-            this.motionY -= (double)(this.abilities.getFlySpeed() * 3.0F);
-         }
-
-         if(this.movementInput().jump()) {
-            this.motionY += (double)(this.abilities.getFlySpeed() * 3.0F);
-         }
-      }
-
-      if(this.isRidingHorse()) {
-         if(this.horseJumpPowerCounter < 0) {
-            ++this.horseJumpPowerCounter;
-            if(this.horseJumpPowerCounter == 0) {
-               this.horseJumpPower = 0.0F;
+            if (this.movementInput().jump()) {
+                this.motionY += this.abilities.getFlySpeed() * 3.0F;
             }
-         }
+        }
 
-         if(!this.movementInput().jump()) {
-            this.horseJumpPowerCounter = -10;
-            this.sendHorseJump();
-         } else if(this.movementInput().jump()) {
-            this.horseJumpPowerCounter = 0;
+        if (this.isRidingHorse()) {
+            if (this.horseJumpPowerCounter < 0) {
+                ++this.horseJumpPowerCounter;
+
+                if (this.horseJumpPowerCounter == 0) {
+                    this.horseJumpPower = 0.0F;
+                }
+            }
+
+            if (flag && !this.movementInput().jump()) {
+                this.horseJumpPowerCounter = -10;
+                this.sendHorseJump();
+            } else if (!flag && this.movementInput().jump()) {
+                this.horseJumpPowerCounter = 0;
+                this.horseJumpPower = 0.0F;
+            } else if (flag) {
+                ++this.horseJumpPowerCounter;
+
+                if (this.horseJumpPowerCounter < 10) {
+                    this.horseJumpPower = (float) this.horseJumpPowerCounter * 0.1F;
+                } else {
+                    this.horseJumpPower = 0.8F + 2.0F / (float) (this.horseJumpPowerCounter - 9) * 0.1F;
+                }
+            }
+        } else {
             this.horseJumpPower = 0.0F;
-         } else {
-            ++this.horseJumpPowerCounter;
-            if(this.horseJumpPowerCounter < 10) {
-               this.horseJumpPower = (float)this.horseJumpPowerCounter * 0.1F;
-            } else {
-               this.horseJumpPower = 0.8F + 2.0F / (float)(this.horseJumpPowerCounter - 9) * 0.1F;
+        }
+
+        super.onLivingUpdate();
+
+        if (this.onGround && this.abilities.isFlying() && !this.mc.playerController.isSpectatorMode()) {
+            this.abilities.setFlying(false);
+            this.sendPlayerAbilities();
+        }
+    }
+
+    @Override
+    public void moveEntity(double x, double y, double z) {
+        final MoveEvent event = new MoveEvent(x, y, z);
+
+        if (RenderEnv.wasInitialized) {
+            EventManager.call(event);
+        }
+
+        super.moveEntity(event.getX(), event.getY(), event.getZ());
+    }
+
+    public boolean isMoving() {
+        return this.moveForward != 0 || this.moveStrafing != 0;
+    }
+
+    public boolean isRotating() {
+        return this.rotationYaw - this.lastReportedYaw != 0 || this.rotationPitch - this.lastReportedPitch != 0;
+    }
+
+    public void drop(int slot) {
+        this.mc.playerController.windowClick(this.inventoryContainer.windowId, slot, 1, 4, this);
+    }
+
+    public void shiftClick(int slot) {
+        this.mc.playerController.windowClick(this.inventoryContainer.windowId, slot, 0, 1, this);
+    }
+
+    public void swap(int inventorySlot, int hotbarSlot) {
+        this.mc.playerController.windowClick(this.inventoryContainer.windowId, inventorySlot, hotbarSlot, 2, this);
+    }
+
+    public Slot getSlotFromPlayerContainer(int slot) {
+        return this.inventoryContainer.getSlot(slot);
+    }
+
+    public void setSpeed(double speed) {
+        final double forward = this.moveForward, strafe = this.moveStrafing;
+        double yaw = this.rotationYaw;
+        final boolean isMovingForward = forward > 0.0f, isMovingBackward = forward < 0.0f, isMovingRight = strafe > 0.0f, isMovingLeft = strafe < 0.0f, isMovingSideways = isMovingLeft || isMovingRight, isMovingStraight = isMovingForward || isMovingBackward;
+        if (isMoving()) {
+            if (isMovingForward && !isMovingSideways) {
+                yaw += 0.0;
+            } else if (isMovingBackward && !isMovingSideways) {
+                yaw += 180;
+            } else if (isMovingForward && isMovingLeft) {
+                yaw += 45;
+            } else if (isMovingForward) {
+                yaw -= 45;
+            } else if (!isMovingStraight && isMovingLeft) {
+                yaw += 90;
+            } else if (!isMovingStraight && isMovingRight) {
+                yaw -= 90;
+            } else if (isMovingBackward && isMovingLeft) {
+                yaw += 126;
+            } else if (isMovingBackward) {
+                yaw -= 126;
             }
-         }
-      } else {
-         this.horseJumpPower = 0.0F;
-      }
 
-      super.onLivingUpdate();
-      if(this.onGround && this.abilities.isFlying() && !this.mc.at.o()) {
-         this.abilities.setFlying(false);
-         this.sendPlayerAbilities();
-      }
+            yaw = toRadians(yaw);
+            this.motionX = -MathHelper.sin(yaw) * speed;
+            this.motionZ = MathHelper.cos(yaw) * speed;
+        } else {
+            this.motionX = 0;
+            this.motionZ = 0;
+        }
+    }
 
-   }
+    public boolean isInWeb() {
+        return this.isInWeb;
+    }
 
-   public void moveEntity(double var1, double var3, double var5) {
-      MoveEvent var7 = new MoveEvent(var1, var3, var5);
-      EventManager.call(var7);
-      super.moveEntity(var7.getX(), var7.getY(), var7.getZ());
-   }
+    public double getSpeed() {
+        return Math.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
+    }
 
-   public boolean isMoving() {
-      return this.moveForward != 0.0F || this.moveStrafing != 0.0F;
-   }
 
-   public boolean isRotating() {
-      return this.rotationYaw - this.lastReportedYaw != 0.0F || this.rotationPitch - this.lastReportedPitch != 0.0F;
-   }
+    public double getBaseMoveSpeed() {
+        double baseSpeed = getBySprinting();
+        if (this.isPotionActive(moveSpeed)) {
+            int amplifier = this.getActivePotionEffect(moveSpeed).getAmplifier() +
+                    1 - (this.isPotionActive(moveSlowdown) ? this.getActivePotionEffect(moveSlowdown).getAmplifier() + 1 : 0);
+            baseSpeed *= 1.0 + 0.2 * amplifier;
+        }
 
-   public void drop(int var1) {
-      this.mc.at.a(this.inventoryContainer.windowId, var1, 1, 4, this);
-   }
+        return baseSpeed;
+    }
 
-   public void shiftClick(int var1) {
-      this.mc.at.a(this.inventoryContainer.windowId, var1, 0, 1, this);
-   }
+    public double getBaseMoveSpeed(double multiplier) {
+        double baseSpeed = getBySprinting();
+        if (this.isPotionActive(moveSpeed)) {
+            int amplifier = this.getActivePotionEffect(moveSpeed).getAmplifier() +
+                    1 - (this.isPotionActive(moveSlowdown) ? this.getActivePotionEffect(moveSlowdown).getAmplifier() + 1 : 0);
+            baseSpeed *= 1.0 + multiplier * amplifier;
+        }
 
-   public void swap(int var1, int var2) {
-      this.mc.at.a(this.inventoryContainer.windowId, var1, var2, 2, this);
-   }
+        return baseSpeed;
+    }
 
-   public Slot getSlotFromPlayerContainer(int var1) {
-      return this.inventoryContainer.getSlot(var1);
-   }
+    public double getBaseMoveSpeed(double multiplier, int amplifier) {
+        double baseSpeed = getBySprinting();
+        if (this.isPotionActive(moveSpeed)) {
+            baseSpeed *= 1.0 + multiplier * amplifier;
+        }
 
-   public void setSpeed(double var1) {
-      if(var1 != 0.0D && this.isMoving()) {
-         float var3 = this.movementInput.getMoveForward();
-         float var4 = this.movementInput.getMoveStrafe();
-         float var5 = this.rotationYaw;
-         boolean var6 = var3 > 0.0F;
-         boolean var7 = var3 < 0.0F;
-         boolean var8 = var4 > 0.0F;
-         boolean var9 = var4 < 0.0F;
-         boolean var10 = true;
-         boolean var11 = true;
-         if(this.isMoving()) {
-            var5 = (float)((double)var5 + 0.0D);
-            this.motionX = (double)(-MathHelper.sin(Math.toRadians((double)var5))) * var1;
-            this.motionZ = (double)MathHelper.cos(Math.toRadians((double)var5)) * var1;
-         }
-      } else {
-         this.motionX = 0.0D;
-         this.motionZ = 0.0D;
-      }
+        return baseSpeed;
+    }
 
-   }
+    public double getBySprinting() {
+        return isSprinting() ? 0.28700000047683716 : 0.22300000488758087;
+    }
 
-   public boolean isInWeb() {
-      return this.isInWeb;
-   }
+    public double getBySprinting(boolean sprint) {
+        return sprint ? 0.28700000047683716 : 0.22300000488758087;
+    }
 
-   public double getSpeed() {
-      return Math.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
-   }
+    public double getBaseMotionY() {
+        return this.isPotionActive(jump) ? 0.419999986886978 + 0.1 * (this.getActivePotionEffect(jump).getAmplifier() + 1) : 0.419999986886978;
+    }
 
-   public double getBaseMoveSpeed() {
-      double var1 = this.getBySprinting();
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         int var3 = this.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1 - (this.isPotionActive(Potion.moveSlowdown)?this.getActivePotionEffect(Potion.moveSlowdown).getAmplifier() + 1:0);
-         var1 *= 1.0D + 0.2D * (double)var3;
-      }
+    public double getBaseMotionY(double motionY) {
+        return this.isPotionActive(jump) ? motionY + 0.1 * (this.getActivePotionEffect(jump).getAmplifier() + 1) : motionY;
+    }
 
-      return var1;
-   }
-
-   public double a(boolean var1) {
-      double var2 = this.l(var1);
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         int var4 = this.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1 - (this.isPotionActive(Potion.moveSlowdown)?this.getActivePotionEffect(Potion.moveSlowdown).getAmplifier() + 1:0);
-         var2 *= 1.0D + 0.2D * (double)var4;
-      }
-
-      return var2;
-   }
-
-   public double a(boolean var1, double var2) {
-      double var4 = this.l(var1);
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         int var6 = this.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1 - (this.isPotionActive(Potion.moveSlowdown)?this.getActivePotionEffect(Potion.moveSlowdown).getAmplifier() + 1:0);
-         var4 *= 1.0D + var2 * (double)var6;
-      }
-
-      return var4;
-   }
-
-   public double b(double var1, double var3) {
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         int var5 = this.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1 - (this.isPotionActive(Potion.moveSlowdown)?this.getActivePotionEffect(Potion.moveSlowdown).getAmplifier() + 1:0);
-         var1 *= 1.0D + var3 * (double)var5;
-      }
-
-      return var1;
-   }
-
-   public double a(double var1) {
-      double var3 = this.getBySprinting();
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         int var5 = this.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1 - (this.isPotionActive(Potion.moveSlowdown)?this.getActivePotionEffect(Potion.moveSlowdown).getAmplifier() + 1:0);
-         var3 *= 1.0D + var1 * (double)var5;
-      }
-
-      return var3;
-   }
-
-   public double getBaseMoveSpeed(double var1, int var3) {
-      double var4 = this.getBySprinting();
-      if(this.isPotionActive(Potion.moveSpeed)) {
-         var4 *= 1.0D + var1 * (double)var3;
-      }
-
-      return var4;
-   }
-
-   public double getBySprinting() {
-      return this.isSprinting()?0.28630206268501246D:0.2202643217126144D;
-   }
-
-   public double ad() {
-      return 0.09158124432567855D;
-   }
-
-   public double D() {
-      return this.movementInput().sneak()?0.02940000465343299D:0.09799999956493638D;
-   }
-
-   public double l(boolean var1) {
-      return 0.28630206268501246D;
-   }
-
-   public double aq() {
-      return this.isInLiquid()?(this.movementInput().sneak()?0.02940000465343299D:0.09799999956493638D):(this.movementInput().sneak()?(this.isSprinting()?0.09158124432567855D:0.06475771408831245D):(this.isSprinting()?0.28630206268501246D:0.2202643217126144D));
-   }
-
-   public double m(boolean var1) {
-      return this.isInLiquid()?(this.movementInput().sneak()?0.02940000465343299D:0.09799999956493638D):(this.movementInput().sneak()?0.09158124432567855D:0.28630206268501246D);
-   }
-
-   public double getBaseMotionY() {
-      return this.isPotionActive(Potion.jump)?0.419999986886978D + 0.1D * (double)(this.getActivePotionEffect(Potion.jump).getAmplifier() + 1):0.419999986886978D;
-   }
-
-   public double getBaseMotionY(double var1) {
-      return this.isPotionActive(Potion.jump)?var1 + 0.1D * (double)(this.getActivePotionEffect(Potion.jump).getAmplifier() + 1):var1;
-   }
-
-   public Block[] am() {
-      Block var1 = this.mc.world.getBlockState(new BlockPos(this.mc.player.posX, this.mc.player.getEntityBoundingBox().maxY, this.mc.player.posZ)).getBlock();
-      Block var2 = this.mc.world.getBlockState(new BlockPos(this.mc.player.posX, this.mc.player.getEntityBoundingBox().minY, this.mc.player.posZ)).getBlock();
-      return new Block[]{var1, var2};
-   }
-
-   public boolean isInLiquid() {
-      double var1 = this.posY + 0.01D;
-
-      for(int var3 = MathHelper.floor_double(this.posX); var3 < MathHelper.ceiling_double_int(this.posX); ++var3) {
-         for(int var4 = MathHelper.floor_double(this.posZ); var4 < MathHelper.ceiling_double_int(this.posZ); ++var4) {
-            BlockPos var5 = new BlockPos(var3, (int)var1, var4);
-            if(this.mc.world.getBlockState(var5).getBlock() instanceof BlockLiquid) {
-               return true;
+    public boolean isInLiquid() {
+        final double y = this.posY + 0.01;
+        for (int x = MathHelper.floor_double(this.posX); x < ceiling_double_int(this.posX); ++x) {
+            for (int z = MathHelper.floor_double(this.posZ); z < ceiling_double_int(this.posZ); ++z) {
+                final BlockPos pos = new BlockPos(x, (int) y, z);
+                if (this.mc.world.getBlockState(pos).getBlock() instanceof BlockLiquid) {
+                    return true;
+                }
             }
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
-
-   public boolean N() {
-      double var1 = this.posY - 0.01D;
-
-      for(int var3 = MathHelper.floor_double(this.posX); var3 < MathHelper.ceiling_double_int(this.posX); ++var3) {
-         for(int var4 = MathHelper.floor_double(this.posZ); var4 < MathHelper.ceiling_double_int(this.posZ); ++var4) {
-            BlockPos var5 = new BlockPos(var3, MathHelper.floor_double(var1), var4);
-            if(this.mc.world.getBlockState(var5).getBlock() instanceof BlockLiquid) {
-               return true;
+    public boolean isOnLiquid() {
+        final double y = this.posY - 0.1;
+        for (int x = MathHelper.floor_double(this.posX); x < ceiling_double_int(this.posX); ++x) {
+            for (int z = MathHelper.floor_double(this.posZ); z < ceiling_double_int(this.posZ); ++z) {
+                final BlockPos pos = new BlockPos(x, MathHelper.floor_double(y), z);
+                if (this.mc.world.getBlockState(pos).getBlock() instanceof BlockLiquid) {
+                    return true;
+                }
             }
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
-
-   public boolean c(double var1) {
-      return var1 % 1.0D == 0.015625D || var1 % 1.0D == 0.0625D || var1 % 0.125D == 0.0D;
-   }
-
-   public Block ag() {
-      double var1 = this.posY - 0.01D;
-
-      for(int var3 = MathHelper.floor_double(this.posX); var3 < MathHelper.ceiling_double_int(this.posX); ++var3) {
-         int var4 = MathHelper.floor_double(this.posZ);
-         if(var4 < MathHelper.ceiling_double_int(this.posZ)) {
-            return this.mc.world.getBlockState(new BlockPos(var3, MathHelper.floor_double(var1), var4)).getBlock();
-         }
-      }
-
-      return null;
-   }
-
-   public BlockPos x() {
-      double var1 = this.posY - 0.01D;
-
-      for(int var3 = MathHelper.floor_double(this.posX); var3 < MathHelper.ceiling_double_int(this.posX); ++var3) {
-         int var4 = MathHelper.floor_double(this.posZ);
-         if(var4 < MathHelper.ceiling_double_int(this.posZ)) {
-            return new BlockPos(var3, MathHelper.floor_double(var1), var4);
-         }
-      }
-
-      return null;
-   }
-
-   public boolean isOnWater() {
-      double var1 = this.posY - 0.01D;
-
-      for(int var3 = MathHelper.floor_double(this.posX); var3 < MathHelper.ceiling_double_int(this.posX); ++var3) {
-         for(int var4 = MathHelper.floor_double(this.posZ); var4 < MathHelper.ceiling_double_int(this.posZ); ++var4) {
-            BlockPos var5 = new BlockPos(var3, MathHelper.floor_double(var1), var4);
-            if(this.mc.world.getBlockState(var5).getBlock() instanceof BlockLiquid && this.mc.world.getBlockState(var5).getBlock().getMaterial() == Material.water) {
-               return true;
+    public boolean isOnWater() {
+        final double y = this.posY - 0.01;
+        for (int x = MathHelper.floor_double(this.posX); x < ceiling_double_int(this.posX); ++x) {
+            for (int z = MathHelper.floor_double(this.posZ); z < ceiling_double_int(this.posZ); ++z) {
+                final BlockPos pos = new BlockPos(x, MathHelper.floor_double(y), z);
+                if (this.mc.world.getBlockState(pos).getBlock() instanceof BlockLiquid && this.mc.world
+                        .getBlockState(pos).getBlock().getMaterial() == Material.water) {
+                    return true;
+                }
             }
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
-
-   public boolean isInsideBlock(Block var1) {
-      for(int var2 = MathHelper.floor_double(this.getEntityBoundingBox().minX); var2 < MathHelper.floor_double(this.getEntityBoundingBox().maxX) + 1; ++var2) {
-         for(int var3 = MathHelper.floor_double(this.getEntityBoundingBox().minY); var3 < MathHelper.floor_double(this.getEntityBoundingBox().maxY) + 1; ++var3) {
-            for(int var4 = MathHelper.floor_double(this.getEntityBoundingBox().minZ); var4 < MathHelper.floor_double(this.getEntityBoundingBox().maxZ) + 1; ++var4) {
-               Block var5 = this.mc.world.getBlockState(new BlockPos(var2, var3, var4)).getBlock();
-               AxisAlignedBB var6;
-               if(var5 == var1 && !(var5 instanceof BlockAir) && (var6 = var5.getCollisionBoundingBox(this.mc.world, new BlockPos(var2, var3, var4), this.mc.world.getBlockState(new BlockPos(var2, var3, var4)))) != null && this.getEntityBoundingBox().intersectsWith(var6)) {
-                  return true;
-               }
+    public boolean isInsideBlock(Block Block) {
+        for (int x = MathHelper.floor_double(this.getEntityBoundingBox().minX); x < MathHelper.floor_double(
+                this.getEntityBoundingBox().maxX) + 1; x++) {
+            for (int y = MathHelper.floor_double(this.getEntityBoundingBox().minY); y < MathHelper.floor_double(
+                    this.getEntityBoundingBox().maxY) + 1; y++) {
+                for (int z = MathHelper.floor_double(this.getEntityBoundingBox().minZ); z < MathHelper.floor_double(
+                        this.getEntityBoundingBox().maxZ) + 1; z++) {
+                    final Block block = this.mc.world.getBlockState(new BlockPos(x, y, z)).getBlock();
+                    final AxisAlignedBB boundingBox;
+                    if (block == Block && block != null && !(block instanceof BlockAir) && (boundingBox = block
+                            .getCollisionBoundingBox(this.mc.world, new BlockPos(x, y, z),
+                                    this.mc.world.getBlockState(new BlockPos(x, y, z)))) != null) {
+                        if (this.getEntityBoundingBox().intersectsWith(boundingBox)) {
+                            return true;
+                        }
+                    }
+                }
             }
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
-
-   public boolean isInsideBlock() {
-      for(int var1 = MathHelper.floor_double(this.getEntityBoundingBox().minX); var1 < MathHelper.floor_double(this.getEntityBoundingBox().maxX) + 1; ++var1) {
-         for(int var2 = MathHelper.floor_double(this.getEntityBoundingBox().minY); var2 < MathHelper.floor_double(this.getEntityBoundingBox().maxY) + 1; ++var2) {
-            for(int var3 = MathHelper.floor_double(this.getEntityBoundingBox().minZ); var3 < MathHelper.floor_double(this.getEntityBoundingBox().maxZ) + 1; ++var3) {
-               Block var4 = this.mc.world.getBlockState(new BlockPos(var1, var2, var3)).getBlock();
-               AxisAlignedBB var5;
-               if(!(var4 instanceof BlockAir) && (var5 = var4.getCollisionBoundingBox(this.mc.world, new BlockPos(var1, var2, var3), this.mc.world.getBlockState(new BlockPos(var1, var2, var3)))) != null && this.getEntityBoundingBox().intersectsWith(var5)) {
-                  return true;
-               }
+    public boolean isInsideBlock() {
+        for (int x = MathHelper.floor_double(this.getEntityBoundingBox().minX); x < MathHelper.floor_double(
+                this.getEntityBoundingBox().maxX) + 1; x++) {
+            for (int y = MathHelper.floor_double(this.getEntityBoundingBox().minY); y < MathHelper.floor_double(
+                    this.getEntityBoundingBox().maxY) + 1; y++) {
+                for (int z = MathHelper.floor_double(this.getEntityBoundingBox().minZ); z < MathHelper.floor_double(
+                        this.getEntityBoundingBox().maxZ) + 1; z++) {
+                    final Block block = this.mc.world.getBlockState(new BlockPos(x, y, z)).getBlock();
+                    final AxisAlignedBB boundingBox;
+                    if (block != null && !(block instanceof BlockAir) && (boundingBox = block
+                            .getCollisionBoundingBox(this.mc.world, new BlockPos(x, y, z),
+                                    this.mc.world.getBlockState(new BlockPos(x, y, z)))) != null) {
+                        if (this.getEntityBoundingBox().intersectsWith(boundingBox)) {
+                            return true;
+                        }
+                    }
+                }
             }
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
+    public void setMotion(double speed) {
+        this.motionX *= speed;
+        this.motionZ *= speed;
+    }
 
-   public void setMotion(double var1) {
-      this.motionX *= var1;
-      this.motionZ *= var1;
-   }
+    public boolean isOnGround(double height) {
+        return !this.mc.world.getCollidingBoundingBoxes(this, this.getEntityBoundingBox().offset(0.0D, -height, 0.0D)).isEmpty();
+    }
 
-   public boolean isOnGround(double var1) {
-      return !this.mc.world.getCollidingBoundingBoxes(this, this.getEntityBoundingBox().offset(0.0D, -var1, 0.0D)).isEmpty();
-   }
+    public void updateTool(BlockPos pos) {
+        Block block = mc.world.getBlockState(pos).getBlock();
+        float strength = 1.0F;
+        int slot = -1;
 
-   public void updateTool(BlockPos var1) {
-      Block var2 = this.mc.world.getBlockState(var1).getBlock();
-      float var3 = 1.0F;
-      int var4 = -1;
+        for (int i = 0; i < 9; ++i) {
+            ItemStack itemStack = inventory.getStackInSlot(i);
 
-      for(int var5 = 0; var5 < 9; ++var5) {
-         ItemStack var6 = this.inventory.getStackInSlot(var5);
-         if(var6.getStrVsBlock(var2) > var3) {
-            var4 = var5;
-            var3 = var6.getStrVsBlock(var2);
-         }
-      }
+            if (itemStack != null && itemStack.getStrVsBlock(block) > strength) {
+                slot = i;
+                strength = itemStack.getStrVsBlock(block);
+            }
+        }
 
-      if(var4 != -1 && this.mc.player.inventory.getStackInSlot(this.inventory.currentItem) != this.inventory.getStackInSlot(var4)) {
-         this.inventory.currentItem = var4;
-      }
+        if (slot != -1 && mc.player.inventory.getStackInSlot(inventory.currentItem) != inventory.getStackInSlot(slot)) {
+            inventory.currentItem = slot;
+        }
+    }
 
-   }
+    public int getSlotByItem(Item item) {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
 
-   public int getSlotByItem(Item var1) {
-      for(int var2 = 0; var2 < 9; ++var2) {
-         ItemStack var3 = this.inventory.getStackInSlot(var2);
-         if(var3.getItem() == var1) {
-            return var2;
-         }
-      }
+            if (stack != null && stack.getItem() == item) {
+                return i;
+            }
+        }
 
-      return -1;
-   }
+        return -1;
+    }
 
-   public void movePlayer(double var1, double var3, double var5) {
-      double[] var7 = this.moveLooking(0.0F);
-      double var8 = var7[0];
-      double var10 = var7[1];
-      this.moveEntity(var8 * var1, var3, var10 * var5);
-   }
+    public void movePlayer(double x, double y, double z) {
+        double[] dir = moveLooking(0);
+        double xDir = dir[0], zDir = dir[1];
+        moveEntity(xDir * x, y, zDir * z);
+    }
 
-   public double[] moveLooking(float var1) {
-      float var2 = this.rotationYaw + var1;
-      if(this.moveForward < 0.0F) {
-         var2 += 180.0F;
-      }
+    public double[] moveLooking(float yawOffset) {
+        float dir = rotationYaw + yawOffset;
 
-      if(this.moveStrafing > 0.0F) {
-         var2 -= 90.0F * (this.moveForward < 0.0F?-0.5F:(this.moveForward > 0.0F?0.5F:1.0F));
-      }
+        if (moveForward < 0.0F) {
+            dir += 180.0F;
+        }
 
-      if(this.moveStrafing < 0.0F) {
-         var2 += 90.0F * (this.moveForward < 0.0F?-0.5F:(this.moveForward > 0.0F?0.5F:1.0F));
-      }
+        if (moveStrafing > 0.0F) {
+            dir -= 90.0F * (moveForward < 0.0F ? -0.5F : moveForward > 0.0F ? 0.5F : 1.0F);
+        }
 
-      float var3 = MathHelper.cos((double)(var2 + 90.0F) * 3.141592653589793D / 180.0D);
-      float var4 = MathHelper.sin((double)(var2 + 90.0F) * 3.141592653589793D / 180.0D);
-      return new double[]{(double)var3, (double)var4};
-   }
+        if (moveStrafing < 0.0F) {
+            dir += 90.0F * (moveForward < 0.0F ? -0.5F : moveForward > 0.0F ? 0.5F : 1.0F);
+        }
 
-   public double blocksInSecond() {
-      return this.getLastTickDistance() * 20.0D;
-   }
+        float xD = MathHelper.cos((dir + 90.0F) * Math.PI / 180.0D);
+        float zD = MathHelper.sin((dir + 90.0F) * Math.PI / 180.0D);
+        return new double[]{xD, zD};
+    }
 
-   public MovementInput movementInput() {
-      return this.movementInput;
-   }
+    public double blocksInSecond() {
+        return getLastTickDistance() * 20;
+    }
 
-   public void setMovementInput(MovementInput var1) {
-      this.movementInput = var1;
-   }
+/*    public Block groundBlock() {
+        return !ServerUtils.isHypixel() || Novoline.getInstance().getModuleManager().getModule(Disabler.class).isEnabled() ? worldObj.getBlockState(new BlockPos(MathHelper.floor_double(posX),
+                MathHelper.floor_double(getEntityBoundingBox().minY) - 1, MathHelper.floor_double(posZ))).getBlock() : Blocks.stone;
+    }*/
 
-   public double Q() {
-      int var1 = (int)this.posY;
+    public short getInventoryTransaction() {
+        return openContainer.getNextTransactionID(inventory);
+    }
 
-      while(true) {
-         BlockPos var2 = new BlockPos(this.posX, (double)var1, this.posZ);
-         Block var3 = this.mc.world.getBlockState(var2).getBlock();
-         if((var3.isSolidFullCube() || var3 instanceof BlockGlass) && !this.list.contains(Integer.valueOf(var2.getY()))) {
-            this.list.add(Integer.valueOf(var2.getY()));
-         }
+    public MovementInput movementInput() {
+        return movementInput;
+    }
 
-         --var1;
-      }
-   }
+    public void setMovementInput(MovementInput movementInput) {
+        this.movementInput = movementInput;
+    }
 
-   public void k(boolean var1) {
-      this.serverSprintState = var1;
-   }
+    public double constantFallDistance() {
+        for (int i = (int) this.posY; i > 0; i--) {
+            BlockPos pos = new BlockPos(this.posX, i, this.posZ);
+            Block block = mc.world.getBlockState(pos).getBlock();
 
-   public boolean u() {
-      return this.serverSprintState;
-   }
+            if (block.isSolidFullCube()) {
+                if (!list.contains(pos.getY())) {
+                    list.add(pos.getY());
+                }
+            }
+        }
 
-   public float an() {
-      return this.bV;
-   }
+        list.sort(Integer::compare);
+        maxY = list.get(list.size() - 1) + 1;
 
-   public float ak() {
-      return this.b3;
-   }
+        BlockPos pos = new BlockPos(this.posX, maxY, this.posZ);
+        Block block = mc.world.getBlockState(pos).getBlock();
 
-   public void k(float var1) {
-      this.bV = var1;
-   }
+        if (block == Blocks.air) {
+            list.clear();
+        }
 
-   public void n(float var1) {
-      this.b3 = var1;
-   }
+        return this.getDistanceY(maxY);
+    }
 }

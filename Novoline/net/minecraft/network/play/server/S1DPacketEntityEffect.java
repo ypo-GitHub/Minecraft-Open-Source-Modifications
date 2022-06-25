@@ -1,100 +1,110 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.potion.PotionEffect;
 
-public class S1DPacketEntityEffect implements Packet {
-   private int entityId;
-   private byte effectId;
-   private byte amplifier;
-   private int duration;
-   private byte hideParticles;
-   private PotionEffect effect;
+import java.io.IOException;
 
-   public S1DPacketEntityEffect() {
-   }
+public class S1DPacketEntityEffect implements Packet<INetHandlerPlayClient> {
+    private int entityId;
+    private byte effectId;
+    private byte amplifier;
+    private int duration;
+    private byte hideParticles;
+    private PotionEffect effect;
 
-   public S1DPacketEntityEffect(int var1, PotionEffect var2) {
-      this.effect = var2;
-      this.entityId = var1;
-      this.effectId = (byte)(var2.getPotionID() & 255);
-      this.amplifier = (byte)(var2.getAmplifier() & 255);
-      this.duration = Math.min(var2.getDuration(), 32767);
-      this.hideParticles = (byte)(var2.getIsShowParticles()?1:0);
-   }
+    public S1DPacketEntityEffect() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readVarIntFromBuffer();
-      this.effectId = var1.readByte();
-      this.amplifier = var1.readByte();
-      this.duration = var1.readVarIntFromBuffer();
-      this.hideParticles = var1.readByte();
-   }
+    public S1DPacketEntityEffect(int entityIdIn, PotionEffect effect) {
+        this.effect = effect;
+        this.entityId = entityIdIn;
+        this.effectId = (byte) (effect.getPotionID() & 255);
+        this.amplifier = (byte) (effect.getAmplifier() & 255);
+        this.duration = Math.min(effect.getDuration(), Short.MAX_VALUE);
+        this.hideParticles = (byte) (effect.getIsShowParticles() ? 1 : 0);
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityId);
-      var1.writeByte(this.effectId);
-      var1.writeByte(this.amplifier);
-      var1.writeVarIntToBuffer(this.duration);
-      var1.writeByte(this.hideParticles);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.effectId = buf.readByte();
+        this.amplifier = buf.readByte();
+        this.duration = buf.readVarIntFromBuffer();
+        this.hideParticles = buf.readByte();
+    }
 
-   public boolean func_149429_c() {
-      return this.duration == 32767;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.effectId);
+        buf.writeByte(this.amplifier);
+        buf.writeVarIntToBuffer(this.duration);
+        buf.writeByte(this.hideParticles);
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEntityEffect(this);
-   }
+    public boolean func_149429_c() {
+        return this.duration == 32767;
+    }
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEntityEffect(this);
+    }
 
-   public byte getEffectId() {
-      return this.effectId;
-   }
+    public int getEntityId() {
+        return this.entityId;
+    }
 
-   public byte getAmplifier() {
-      return this.amplifier;
-   }
+    public byte getEffectId() {
+        return this.effectId;
+    }
 
-   public int getDuration() {
-      return this.duration;
-   }
+    public byte getAmplifier() {
+        return this.amplifier;
+    }
 
-   public boolean func_179707_f() {
-      return this.hideParticles != 0;
-   }
+    public int getDuration() {
+        return this.duration;
+    }
 
-   public PotionEffect getEffect() {
-      return this.effect;
-   }
+    public boolean func_179707_f() {
+        return this.hideParticles != 0;
+    }
 
-   public void setEntityId(int var1) {
-      this.entityId = var1;
-   }
+    public PotionEffect getEffect() {
+        return effect;
+    }
 
-   public void setEffectId(byte var1) {
-      this.effectId = var1;
-   }
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
 
-   public void setAmplifier(byte var1) {
-      this.amplifier = var1;
-   }
+    public void setEffectId(byte effectId) {
+        this.effectId = effectId;
+    }
 
-   public void setDuration(int var1) {
-      this.duration = var1;
-   }
+    public void setAmplifier(byte amplifier) {
+        this.amplifier = amplifier;
+    }
 
-   public void setHideParticles(byte var1) {
-      this.hideParticles = var1;
-   }
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
 
-   public void setEffect(PotionEffect var1) {
-      this.effect = var1;
-   }
+    public void setHideParticles(byte hideParticles) {
+        this.hideParticles = hideParticles;
+    }
+
+    public void setEffect(PotionEffect effect) {
+        this.effect = effect;
+    }
 }

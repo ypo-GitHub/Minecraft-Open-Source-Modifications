@@ -2,78 +2,67 @@ package viaversion.viarewind.replacement;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
-import viaversion.viarewind.replacement.ReplacementRegistry;
 import viaversion.viarewind.storage.BlockState;
 import viaversion.viaversion.api.minecraft.item.Item;
 
 public class Replacement {
-   private int id;
-   private int data;
-   private String name;
-   private String d;
-   private String c;
+	private int id, data;
+	private String name, resetName, bracketName;
 
-   public Replacement(int var1) {
-      this(var1, -1);
-   }
+	public Replacement(int id) {
+		this(id, -1);
+	}
 
-   public Replacement(int var1, int var2) {
-      this(var1, var2, (String)null);
-   }
+	public Replacement(int id, int data) {
+		this(id, data, null);
+	}
 
-   public Replacement(int var1, String var2) {
-      this(var1, -1, var2);
-   }
+	public Replacement(int id, String name) {
+		this(id, -1, name);
+	}
 
-   public Replacement(int var1, int var2, String var3) {
-      this.id = var1;
-      this.data = var2;
-      this.name = var3;
-      this.d = "§r" + var3;
-      this.c = " §r§7(" + var3 + "§r§7)";
-   }
+	public Replacement(int id, int data, String name) {
+		this.id = id;
+		this.data = data;
+		this.name = name;
+		if (name!=null) {
+			this.resetName = "§r" + name;
+			this.bracketName = " §r§7(" + name + "§r§7)";
+		}
+	}
 
-   public int getId() {
-      return this.id;
-   }
+	public int getId() {
+		return id;
+	}
 
-   public int getData() {
-      return this.data;
-   }
+	public int getData() {
+		return data;
+	}
 
-   public String getName() {
-      return this.name;
-   }
+	public String getName() {
+		return name;
+	}
 
-   public Item replace(Item var1) {
-      ReplacementRegistry.a();
-      var1.setIdentifier(this.id);
-      if(this.data != -1) {
-         var1.setData((short)this.data);
-      }
+	public Item replace(Item item) {
+		item.setIdentifier(id);
+		if (data!=-1) item.setData((short)data);
+		if (name!=null) {
+			CompoundTag compoundTag = item.getTag()==null ? new CompoundTag("") : item.getTag();
+			if (!compoundTag.contains("display")) compoundTag.put(new CompoundTag("display"));
+			CompoundTag display = compoundTag.get("display");
+			if (display.contains("Name")) {
+				StringTag name = display.get("Name");
+				if (!name.getValue().equals(resetName) && !name.getValue().endsWith(bracketName))
+					name.setValue(name.getValue() + bracketName);
+			} else {
+				display.put(new StringTag("Name", resetName));
+			}
+			item.setTag(compoundTag);
+		}
+		return item;
+	}
 
-      if(this.name != null) {
-         CompoundTag var3 = var1.getTag() == null?new CompoundTag(""):var1.getTag();
-         if(!var3.contains("display")) {
-            var3.put(new CompoundTag("display"));
-         }
-
-         CompoundTag var4 = (CompoundTag)var3.get("display");
-         if(var4.contains("Name")) {
-            StringTag var5 = (StringTag)var4.get("Name");
-            if(!var5.getValue().equals(this.d) && !var5.getValue().endsWith(this.c)) {
-               var5.setValue(var5.getValue() + this.c);
-            }
-         }
-
-         var4.put(new StringTag("Name", this.d));
-         var1.setTag(var3);
-      }
-
-      return var1;
-   }
-
-   public BlockState replace(BlockState var1) {
-      return new BlockState(this.id, this.data == -1?var1.getData():this.data);
-   }
+	public BlockState replace(BlockState block) {
+		return new BlockState(id, data==-1 ? block.getData() : data);
+	}
 }

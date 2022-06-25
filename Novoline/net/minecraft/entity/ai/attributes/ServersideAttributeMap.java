@@ -1,69 +1,74 @@
 package net.minecraft.entity.ai.attributes;
 
 import com.google.common.collect.Sets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import net.minecraft.entity.ai.attributes.BaseAttributeMap;
-import net.minecraft.entity.ai.attributes.IAttribute;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
-import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
-import net.minecraft.entity.ai.attributes.RangedAttribute;
 import net.minecraft.server.management.LowerStringMap;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
 public class ServersideAttributeMap extends BaseAttributeMap {
-   private final Set attributeInstanceSet = Sets.newHashSet();
-   protected final Map descriptionToAttributeInstanceMap = new LowerStringMap();
+    private final Set<IAttributeInstance> attributeInstanceSet = Sets.<IAttributeInstance>newHashSet();
+    protected final Map<String, IAttributeInstance> descriptionToAttributeInstanceMap = new LowerStringMap();
 
-   public ModifiableAttributeInstance getAttributeInstance(IAttribute var1) {
-      return (ModifiableAttributeInstance)super.getAttributeInstance(var1);
-   }
+    public ModifiableAttributeInstance getAttributeInstance(IAttribute attribute) {
+        return (ModifiableAttributeInstance) super.getAttributeInstance(attribute);
+    }
 
-   public ModifiableAttributeInstance getAttributeInstanceByName(String var1) {
-      IAttributeInstance var2 = super.getAttributeInstanceByName(var1);
-      var2 = (IAttributeInstance)this.descriptionToAttributeInstanceMap.get(var1);
-      return (ModifiableAttributeInstance)var2;
-   }
+    public ModifiableAttributeInstance getAttributeInstanceByName(String attributeName) {
+        IAttributeInstance iattributeinstance = super.getAttributeInstanceByName(attributeName);
 
-   public IAttributeInstance registerAttribute(IAttribute var1) {
-      IAttributeInstance var2 = super.registerAttribute(var1);
-      if(var1 instanceof RangedAttribute && ((RangedAttribute)var1).getDescription() != null) {
-         this.descriptionToAttributeInstanceMap.put(((RangedAttribute)var1).getDescription(), var2);
-      }
+        if (iattributeinstance == null) {
+            iattributeinstance = (IAttributeInstance) this.descriptionToAttributeInstanceMap.get(attributeName);
+        }
 
-      return var2;
-   }
+        return (ModifiableAttributeInstance) iattributeinstance;
+    }
 
-   protected IAttributeInstance func_180376_c(IAttribute var1) {
-      return new ModifiableAttributeInstance(this, var1);
-   }
+    /**
+     * Registers an attribute with this AttributeMap, returns a modifiable AttributeInstance associated with this map
+     */
+    public IAttributeInstance registerAttribute(IAttribute attribute) {
+        IAttributeInstance iattributeinstance = super.registerAttribute(attribute);
 
-   public void func_180794_a(IAttributeInstance var1) {
-      if(var1.getAttribute().getShouldWatch()) {
-         this.attributeInstanceSet.add(var1);
-      }
+        if (attribute instanceof RangedAttribute && ((RangedAttribute) attribute).getDescription() != null) {
+            this.descriptionToAttributeInstanceMap.put(((RangedAttribute) attribute).getDescription(), iattributeinstance);
+        }
 
-      for(IAttribute var3 : this.field_180377_c.get(var1.getAttribute())) {
-         ModifiableAttributeInstance var4 = this.getAttributeInstance(var3);
-         var4.flagForUpdate();
-      }
+        return iattributeinstance;
+    }
 
-   }
+    protected IAttributeInstance func_180376_c(IAttribute p_180376_1_) {
+        return new ModifiableAttributeInstance(this, p_180376_1_);
+    }
 
-   public Set getAttributeInstanceSet() {
-      return this.attributeInstanceSet;
-   }
+    public void func_180794_a(IAttributeInstance p_180794_1_) {
+        if (p_180794_1_.getAttribute().getShouldWatch()) {
+            this.attributeInstanceSet.add(p_180794_1_);
+        }
 
-   public Collection getWatchedAttributes() {
-      HashSet var1 = Sets.newHashSet();
+        for (IAttribute iattribute : this.field_180377_c.get(p_180794_1_.getAttribute())) {
+            ModifiableAttributeInstance modifiableattributeinstance = this.getAttributeInstance(iattribute);
 
-      for(IAttributeInstance var3 : this.getAllAttributes()) {
-         if(var3.getAttribute().getShouldWatch()) {
-            var1.add(var3);
-         }
-      }
+            if (modifiableattributeinstance != null) {
+                modifiableattributeinstance.flagForUpdate();
+            }
+        }
+    }
 
-      return var1;
-   }
+    public Set<IAttributeInstance> getAttributeInstanceSet() {
+        return this.attributeInstanceSet;
+    }
+
+    public Collection<IAttributeInstance> getWatchedAttributes() {
+        Set<IAttributeInstance> set = Sets.<IAttributeInstance>newHashSet();
+
+        for (IAttributeInstance iattributeinstance : this.getAllAttributes()) {
+            if (iattributeinstance.getAttribute().getShouldWatch()) {
+                set.add(iattributeinstance);
+            }
+        }
+
+        return set;
+    }
 }

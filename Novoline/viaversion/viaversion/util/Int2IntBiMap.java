@@ -5,96 +5,124 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
+
+/**
+ * Simple wrapper class for two {@link Int2IntMap}s.
+ *
+ * @see #inverse() to get the inversed map
+ */
 public class Int2IntBiMap implements Int2IntMap {
-   private final Int2IntMap map = new Int2IntOpenHashMap();
-   private final Int2IntBiMap inverse;
 
-   public Int2IntBiMap() {
-      this.inverse = new Int2IntBiMap(this);
-   }
+    private final Int2IntMap map;
+    private final Int2IntBiMap inverse;
 
-   private Int2IntBiMap(Int2IntBiMap var1) {
-      this.inverse = var1;
-   }
+    public Int2IntBiMap() {
+        this.map = new Int2IntOpenHashMap();
+        this.inverse = new Int2IntBiMap(this);
+    }
 
-   public Int2IntBiMap inverse() {
-      return this.inverse;
-   }
+    private Int2IntBiMap(Int2IntBiMap inverse) {
+        this.map = new Int2IntOpenHashMap();
+        this.inverse = inverse;
+    }
 
-   public int put(int var1, int var2) {
-      if(this.containsKey(var1) && var2 == this.get(var1)) {
-         return var2;
-      } else {
-         Preconditions.checkArgument(!this.containsValue(var2), "value already present: %s", new Object[]{Integer.valueOf(var2)});
-         this.map.put(var1, var2);
-         this.inverse.map.put(var2, var1);
-         return this.defaultReturnValue();
-      }
-   }
+    /**
+     * @return the inverse of this bimap
+     */
+    public Int2IntBiMap inverse() {
+        return inverse;
+    }
 
-   public boolean remove(int var1, int var2) {
-      this.map.remove(var1, var2);
-      return this.inverse.map.remove(var1, var2);
-   }
+    /**
+     * Puts the key and value into the maps.
+     *
+     * @param key   key
+     * @param value value
+     * @return old value if present
+     * @throws IllegalArgumentException if the value already exists in the map
+     */
+    @Override
+    public int put(int key, int value) {
+        if (containsKey(key) && value == get(key)) return value;
 
-   public int get(int var1) {
-      return this.map.get(var1);
-   }
+        Preconditions.checkArgument(!containsValue(value), "value already present: %s", value);
+        map.put(key, value);
+        inverse.map.put(value, key);
+        return defaultReturnValue();
+    }
 
-   public void clear() {
-      this.map.clear();
-      this.inverse.map.clear();
-   }
+    @Override
+    public boolean remove(int key, int value) {
+        map.remove(key, value);
+        return inverse.map.remove(key, value);
+    }
 
-   public int size() {
-      return this.map.size();
-   }
+    @Override
+    public int get(int key) {
+        return map.get(key);
+    }
 
-   public boolean isEmpty() {
-      return this.map.isEmpty();
-   }
+    @Override
+    public void clear() {
+        map.clear();
+        inverse.map.clear();
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public void putAll(@NotNull Map var1) {
-      throw new UnsupportedOperationException();
-   }
+    @Override
+    public int size() {
+        return map.size();
+    }
 
-   public void defaultReturnValue(int var1) {
-      this.map.defaultReturnValue(var1);
-      this.inverse.map.defaultReturnValue(var1);
-   }
+    @Override
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
 
-   public int defaultReturnValue() {
-      return this.map.defaultReturnValue();
-   }
+    @Override
+    @Deprecated
+    public void putAll(@NotNull Map<? extends Integer, ? extends Integer> m) {
+        throw new UnsupportedOperationException();
+    }
 
-   public ObjectSet int2IntEntrySet() {
-      return this.map.int2IntEntrySet();
-   }
+    @Override
+    public void defaultReturnValue(int rv) {
+        map.defaultReturnValue(rv);
+        inverse.map.defaultReturnValue(rv);
+    }
 
-   @NotNull
-   public IntSet keySet() {
-      return this.map.keySet();
-   }
+    @Override
+    public int defaultReturnValue() {
+        return map.defaultReturnValue();
+    }
 
-   @NotNull
-   public IntSet values() {
-      return this.inverse.map.keySet();
-   }
+    @Override
+    public ObjectSet<Entry> int2IntEntrySet() {
+        return map.int2IntEntrySet();
+    }
 
-   public boolean containsKey(int var1) {
-      return this.map.containsKey(var1);
-   }
+    @Override
+    @NotNull
+    public IntSet keySet() {
+        return map.keySet();
+    }
 
-   public boolean containsValue(int var1) {
-      return this.inverse.map.containsKey(var1);
-   }
+    @Override
+    @NotNull
+    public IntSet values() {
+        return inverse.map.keySet();
+    }
 
-   private static UnsupportedOperationException a(UnsupportedOperationException var0) {
-      return var0;
-   }
+    @Override
+    public boolean containsKey(int key) {
+        return map.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(int value) {
+        return inverse.map.containsKey(value);
+    }
 }

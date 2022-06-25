@@ -4,50 +4,47 @@ import cc.novoline.modules.AbstractModule;
 import com.google.common.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class ModuleHolder implements Cloneable {
-   protected final String name;
-   protected AbstractModule module;
-   protected TypeToken typeToken;
-   private static String[] b;
+/**
+ * @author xDelsy
+ */
+public abstract class ModuleHolder<Module extends AbstractModule> implements Cloneable {
 
-   public ModuleHolder(@NotNull String var1, @NotNull AbstractModule var2) {
-      this.name = var1;
-      this.module = var2;
-   }
+	/* fields */
+	protected final String name;
+	protected Module module;
 
-   @NotNull
-   public String getName() {
-      return this.name;
-   }
+	protected TypeToken<Module> typeToken;
 
-   @NotNull
-   public AbstractModule getModule() {
-      return this.module;
-   }
+	/* constructors */
+	public ModuleHolder(@NotNull String name, @NotNull Module module) {
+		this.name = name;
+		this.module = module;
+	}
 
-   @NotNull
-   public TypeToken getTypeToken() {
-      String[] var1 = d();
-      return this.typeToken != null?this.typeToken:(this.typeToken = TypeToken.of(this.module.getClass()));
-   }
+	/* methods */
 
-   public Object clone() throws CloneNotSupportedException {
-      return super.clone();
-   }
+	//region Lombok
+	public @NotNull String getName() {
+		return name;
+	}
 
-   public String toString() {
-      return "ModuleHolder{name=\'" + this.name + '\'' + ", module=" + this.module + '}';
-   }
+	public @NotNull Module getModule() {
+		return module;
+	}
 
-   public static void b(String[] var0) {
-      b = var0;
-   }
+	@SuppressWarnings("unchecked")
+	public @NotNull TypeToken<Module> getTypeToken() {
+		return typeToken != null ? typeToken : (this.typeToken = (TypeToken<Module>) TypeToken.of(module.getClass()));
+	}
 
-   public static String[] d() {
-      return b;
-   }
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
 
-   static {
-      b(new String[1]);
-   }
+	@Override
+	public String toString() {
+		return "ModuleHolder{" + "name='" + name + '\'' + ", module=" + module + '}';
+	}
+	//endregion
 }

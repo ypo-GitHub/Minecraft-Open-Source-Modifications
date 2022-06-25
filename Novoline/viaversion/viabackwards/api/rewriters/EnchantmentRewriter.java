@@ -1,185 +1,163 @@
 package viaversion.viabackwards.api.rewriters;
 
-import com.github.steveice10.opennbt.tag.builtin.ByteTag;
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import com.github.steveice10.opennbt.tag.builtin.ListTag;
-import com.github.steveice10.opennbt.tag.builtin.ShortTag;
-import com.github.steveice10.opennbt.tag.builtin.StringTag;
-import com.github.steveice10.opennbt.tag.builtin.Tag;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import net.aqu;
+import com.github.steveice10.opennbt.tag.builtin.*;
 import viaversion.viaversion.api.minecraft.item.Item;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.ChatRewriter;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class EnchantmentRewriter {
-   private final Map enchantmentMappings;
-   private final String nbtTagName;
-   private final boolean jsonFormat;
 
-   public EnchantmentRewriter(String var1, boolean var2) {
-      this.enchantmentMappings = new HashMap();
-      this.nbtTagName = var1;
-      this.jsonFormat = var2;
-   }
+    private final Map<String, String> enchantmentMappings = new HashMap<>();
+    private final String nbtTagName;
+    private final boolean jsonFormat;
 
-   public EnchantmentRewriter(String var1) {
-      this(var1, true);
-   }
+    public EnchantmentRewriter(String nbtTagName, boolean jsonFormat) {
+        this.nbtTagName = nbtTagName;
+        this.jsonFormat = jsonFormat;
+    }
 
-   public void registerEnchantment(String var1, String var2) {
-      this.enchantmentMappings.put(var1, var2);
-   }
+    public EnchantmentRewriter(String nbtTagName) {
+        this(nbtTagName, true);
+    }
 
-   public void handleToClient(Item var1) {
-      aqu.d();
-      CompoundTag var3 = var1.getTag();
-      if(var3 != null) {
-         if(var3.get("Enchantments") instanceof ListTag) {
-            this.rewriteEnchantmentsToClient(var3, false);
-         }
+    public void registerEnchantment(String key, String replacementLore) {
+        enchantmentMappings.put(key, replacementLore);
+    }
 
-         if(var3.get("StoredEnchantments") instanceof ListTag) {
-            this.rewriteEnchantmentsToClient(var3, true);
-         }
+    public void handleToClient(Item item) {
+        CompoundTag tag = item.getTag();
+        if (tag == null) return;
 
-      }
-   }
+        if (tag.get("Enchantments") instanceof ListTag) {
+            rewriteEnchantmentsToClient(tag, false);
+        }
+        if (tag.get("StoredEnchantments") instanceof ListTag) {
+            rewriteEnchantmentsToClient(tag, true);
+        }
+    }
 
-   public void handleToServer(Item var1) {
-      aqu.d();
-      CompoundTag var3 = var1.getTag();
-      if(var3 != null) {
-         if(var3.contains(this.nbtTagName + "|Enchantments")) {
-            this.rewriteEnchantmentsToServer(var3, false);
-         }
+    public void handleToServer(Item item) {
+        CompoundTag tag = item.getTag();
+        if (tag == null) return;
 
-         if(var3.contains(this.nbtTagName + "|StoredEnchantments")) {
-            this.rewriteEnchantmentsToServer(var3, true);
-         }
+        if (tag.contains(nbtTagName + "|Enchantments")) {
+            rewriteEnchantmentsToServer(tag, false);
+        }
+        if (tag.contains(nbtTagName + "|StoredEnchantments")) {
+            rewriteEnchantmentsToServer(tag, true);
+        }
+    }
 
-      }
-   }
+    public void rewriteEnchantmentsToClient(CompoundTag tag, boolean storedEnchant) {
+        String key = storedEnchant ? "StoredEnchantments" : "Enchantments";
+        ListTag enchantments = tag.get(key);
+        ListTag remappedEnchantments = new ListTag(nbtTagName + "|" + key, CompoundTag.class);
+        List<Tag> lore = new ArrayList<>();
+        for (Tag enchantmentEntry : enchantments.clone()) {
+            String newId = (String) ((CompoundTag) enchantmentEntry).get("id").getValue();
+            String enchantmentName = enchantmentMappings.get(newId);
+            if (enchantmentName != null) {
+                enchantments.remove(enchantmentEntry);
+                Number level = (Number) ((CompoundTag) enchantmentEntry).get("lvl").getValue();
+                String loreValue = enchantmentName + " " + getRomanNumber(level.intValue());
+                if (jsonFormat) {
+                    loreValue = ChatRewriter.legacyTextToJson(loreValue).toString();
+                }
 
-   public void rewriteEnchantmentsToClient(CompoundTag var1, boolean var2) {
-      int var3 = aqu.e();
-      String var4 = "StoredEnchantments";
-      ListTag var5 = (ListTag)var1.get(var4);
-      ListTag var6 = new ListTag(this.nbtTagName + "|" + var4, CompoundTag.class);
-      ArrayList var7 = new ArrayList();
-      Iterator var8 = var5.clone().iterator();
-      if(var8.hasNext()) {
-         Tag var9 = (Tag)var8.next();
-         String var10 = (String)((CompoundTag)var9).get("id").getValue();
-         String var11 = (String)this.enchantmentMappings.get(var10);
-         if(var11 != null) {
-            var5.remove(var9);
-            Number var12 = (Number)((CompoundTag)var9).get("lvl").getValue();
-            String var13 = var11 + " " + getRomanNumber(var12.intValue());
-            if(this.jsonFormat) {
-               var13 = ChatRewriter.legacyTextToJson(var13).toString();
+                lore.add(new StringTag("", loreValue));
+                remappedEnchantments.add(enchantmentEntry);
+            }
+        }
+        if (!lore.isEmpty()) {
+            if (!storedEnchant && enchantments.size() == 0) {
+                CompoundTag dummyEnchantment = new CompoundTag("");
+                dummyEnchantment.put(new StringTag("id", ""));
+                dummyEnchantment.put(new ShortTag("lvl", (short) 0));
+                enchantments.add(dummyEnchantment);
+
+                tag.put(new ByteTag(nbtTagName + "|dummyEnchant"));
             }
 
-            var7.add(new StringTag("", var13));
-            var6.add(var9);
-         }
-      }
+            tag.put(remappedEnchantments);
 
-      if(!var7.isEmpty()) {
-         if(!var2 && var5.size() == 0) {
-            CompoundTag var14 = new CompoundTag("");
-            var14.put(new StringTag("id", ""));
-            var14.put(new ShortTag("lvl", (short)0));
-            var5.add(var14);
-            var1.put(new ByteTag(this.nbtTagName + "|dummyEnchant"));
-         }
-
-         var1.put(var6);
-         CompoundTag var15 = (CompoundTag)var1.get("display");
-         if(var15 == null) {
-            var1.put(var15 = new CompoundTag("display"));
-         }
-
-         ListTag var16 = (ListTag)var15.get("Lore");
-         if(var16 == null) {
-            var15.put(var16 = new ListTag("Lore", StringTag.class));
-         }
-
-         var7.addAll(var16.getValue());
-         var16.setValue(var7);
-      }
-
-   }
-
-   public void rewriteEnchantmentsToServer(CompoundTag var1, boolean var2) {
-      int var3 = aqu.e();
-      String var4 = "StoredEnchantments";
-      ListTag var5 = (ListTag)var1.get(this.nbtTagName + "|" + var4);
-      ListTag var6 = (ListTag)var1.get(var4);
-      if(var6 == null) {
-         var6 = new ListTag(var4, CompoundTag.class);
-      }
-
-      if(var1.remove(this.nbtTagName + "|dummyEnchant") != null) {
-         Iterator var7 = var6.clone().iterator();
-         if(var7.hasNext()) {
-            Tag var8 = (Tag)var7.next();
-            String var9 = (String)((CompoundTag)var8).get("id").getValue();
-            if(var9.isEmpty()) {
-               var6.remove(var8);
+            CompoundTag display = tag.get("display");
+            if (display == null) {
+                tag.put(display = new CompoundTag("display"));
             }
-         }
-      }
+            ListTag loreTag = display.get("Lore");
+            if (loreTag == null) {
+                display.put(loreTag = new ListTag("Lore", StringTag.class));
+            }
 
-      CompoundTag var11 = (CompoundTag)var1.get("display");
-      ListTag var12 = var11 != null?(ListTag)var11.get("Lore"):null;
-      Iterator var13 = var5.clone().iterator();
-      if(var13.hasNext()) {
-         Tag var10 = (Tag)var13.next();
-         var6.add(var10);
-         if(var12 != null && var12.size() != 0) {
-            var12.remove(var12.get(0));
-         }
-      }
+            lore.addAll(loreTag.getValue());
+            loreTag.setValue(lore);
+        }
+    }
 
-      if(var12 != null && var12.size() == 0) {
-         var11.remove("Lore");
-         if(var11.isEmpty()) {
-            var1.remove("display");
-         }
-      }
+    public void rewriteEnchantmentsToServer(CompoundTag tag, boolean storedEnchant) {
+        String key = storedEnchant ? "StoredEnchantments" : "Enchantments";
+        ListTag remappedEnchantments = tag.get(nbtTagName + "|" + key);
+        ListTag enchantments = tag.get(key);
+        if (enchantments == null) {
+            enchantments = new ListTag(key, CompoundTag.class);
+        }
 
-      var1.put(var6);
-      var1.remove(var5.getName());
-   }
+        if (!storedEnchant && tag.remove(nbtTagName + "|dummyEnchant") != null) {
+            for (Tag enchantment : enchantments.clone()) {
+                String id = (String) ((CompoundTag) enchantment).get("id").getValue();
+                if (id.isEmpty()) {
+                    enchantments.remove(enchantment);
+                }
+            }
+        }
 
-   public static String getRomanNumber(int var0) {
-      int var1 = aqu.d();
-      switch(var0) {
-      case 1:
-         return "I";
-      case 2:
-         return "II";
-      case 3:
-         return "III";
-      case 4:
-         return "IV";
-      case 5:
-         return "V";
-      case 6:
-         return "VI";
-      case 7:
-         return "VII";
-      case 8:
-         return "VIII";
-      case 9:
-         return "IX";
-      case 10:
-         return "X";
-      default:
-         return Integer.toString(var0);
-      }
-   }
+        CompoundTag display = tag.get("display");
+        // A few null checks just to be safe, though they shouldn't actually be
+        ListTag lore = display != null ? display.get("Lore") : null;
+        for (Tag enchantment : remappedEnchantments.clone()) {
+            enchantments.add(enchantment);
+            if (lore != null && lore.size() != 0) {
+                lore.remove(lore.get(0));
+            }
+        }
+        if (lore != null && lore.size() == 0) {
+            display.remove("Lore");
+            if (display.isEmpty()) {
+                tag.remove("display");
+            }
+        }
+        tag.put(enchantments);
+        tag.remove(remappedEnchantments.getName());
+    }
+
+    public static String getRomanNumber(int number) {
+        switch (number) {
+            case 1:
+                return "I";
+            case 2:
+                return "II";
+            case 3:
+                return "III";
+            case 4:
+                return "IV";
+            case 5:
+                return "V";
+            case 6:
+                return "VI";
+            case 7:
+                return "VII";
+            case 8:
+                return "VIII";
+            case 9:
+                return "IX";
+            case 10:
+                return "X";
+            default:
+                return Integer.toString(number);
+        }
+    }
 }

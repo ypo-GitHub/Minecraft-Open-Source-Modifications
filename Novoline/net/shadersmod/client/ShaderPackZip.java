@@ -1,74 +1,62 @@
 package net.shadersmod.client;
 
+import net.optifine.StrUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import net.optifine.StrUtils;
-import net.shadersmod.client.IShaderPack;
-import net.shadersmod.client.ShaderOption;
 
 public class ShaderPackZip implements IShaderPack {
-   protected File packFile;
-   protected ZipFile packZipFile;
+    protected File packFile;
+    protected ZipFile packZipFile;
 
-   public ShaderPackZip(String var1, File var2) {
-      this.packFile = var2;
-      this.packZipFile = null;
-   }
+    public ShaderPackZip(String name, File file) {
+        this.packFile = file;
+        this.packZipFile = null;
+    }
 
-   public void close() {
-      String[] var1 = ShaderOption.p();
-      if(this.packZipFile != null) {
-         try {
-            this.packZipFile.close();
-         } catch (Exception var3) {
-            ;
-         }
+    public void close() {
+        if (this.packZipFile != null) {
+            try {
+                this.packZipFile.close();
+            } catch (Exception var2) {
+            }
 
-         this.packZipFile = null;
-      }
+            this.packZipFile = null;
+        }
+    }
 
-   }
+    public InputStream getResourceAsStream(String resName) {
+        try {
+            if (this.packZipFile == null) {
+                this.packZipFile = new ZipFile(this.packFile);
+            }
 
-   public InputStream getResourceAsStream(String var1) {
-      String[] var2 = ShaderOption.p();
+            String s = StrUtils.removePrefix(resName, "/");
+            ZipEntry zipentry = this.packZipFile.getEntry(s);
+            return zipentry == null ? null : this.packZipFile.getInputStream(zipentry);
+        } catch (Exception var4) {
+            return null;
+        }
+    }
 
-      try {
-         if(this.packZipFile == null) {
-            this.packZipFile = new ZipFile(this.packFile);
-         }
+    public boolean hasDirectory(String resName) {
+        try {
+            if (this.packZipFile == null) {
+                this.packZipFile = new ZipFile(this.packFile);
+            }
 
-         String var3 = StrUtils.removePrefix(var1, "/");
-         ZipEntry var4 = this.packZipFile.getEntry(var3);
-         return null;
-      } catch (Exception var5) {
-         return null;
-      }
-   }
+            String s = StrUtils.removePrefix(resName, "/");
+            ZipEntry zipentry = this.packZipFile.getEntry(s);
+            return zipentry != null;
+        } catch (IOException var4) {
+            return false;
+        }
+    }
 
-   public boolean hasDirectory(String var1) {
-      String[] var2 = ShaderOption.p();
-
-      try {
-         if(this.packZipFile == null) {
-            this.packZipFile = new ZipFile(this.packFile);
-         }
-
-         String var3 = StrUtils.removePrefix(var1, "/");
-         ZipEntry var4 = this.packZipFile.getEntry(var3);
-         return true;
-      } catch (IOException var5) {
-         return false;
-      }
-   }
-
-   public String getName() {
-      return this.packFile.getName();
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    public String getName() {
+        return this.packFile.getName();
+    }
 }

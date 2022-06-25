@@ -2,46 +2,40 @@ package net.minecraft.server.management;
 
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
+
 import java.util.UUID;
-import net.minecraft.server.management.UserListEntry;
 
-public class UserListWhitelistEntry extends UserListEntry {
-   public UserListWhitelistEntry(GameProfile var1) {
-      super(var1);
-   }
+public class UserListWhitelistEntry extends UserListEntry<GameProfile> {
+    public UserListWhitelistEntry(GameProfile profile) {
+        super(profile);
+    }
 
-   public UserListWhitelistEntry(JsonObject var1) {
-      super(gameProfileFromJsonObject(var1), var1);
-   }
+    public UserListWhitelistEntry(JsonObject p_i1130_1_) {
+        super(gameProfileFromJsonObject(p_i1130_1_), p_i1130_1_);
+    }
 
-   protected void onSerialization(JsonObject var1) {
-      if(this.getValue() != null) {
-         var1.addProperty("uuid", ((GameProfile)this.getValue()).getId() == null?"":((GameProfile)this.getValue()).getId().toString());
-         var1.addProperty("name", ((GameProfile)this.getValue()).getName());
-         super.onSerialization(var1);
-      }
+    protected void onSerialization(JsonObject data) {
+        if (this.getValue() != null) {
+            data.addProperty("uuid", ((GameProfile) this.getValue()).getId() == null ? "" : ((GameProfile) this.getValue()).getId().toString());
+            data.addProperty("name", ((GameProfile) this.getValue()).getName());
+            super.onSerialization(data);
+        }
+    }
 
-   }
+    private static GameProfile gameProfileFromJsonObject(JsonObject p_152646_0_) {
+        if (p_152646_0_.has("uuid") && p_152646_0_.has("name")) {
+            String s = p_152646_0_.get("uuid").getAsString();
+            UUID uuid;
 
-   private static GameProfile gameProfileFromJsonObject(JsonObject var0) {
-      if(var0.has("uuid") && var0.has("name")) {
-         String var1 = var0.get("uuid").getAsString();
-         String var10000 = var1;
+            try {
+                uuid = UUID.fromString(s);
+            } catch (Throwable var4) {
+                return null;
+            }
 
-         UUID var2;
-         try {
-            var2 = UUID.fromString(var10000);
-         } catch (Throwable var4) {
+            return new GameProfile(uuid, p_152646_0_.get("name").getAsString());
+        } else {
             return null;
-         }
-
-         return new GameProfile(var2, var0.get("name").getAsString());
-      } else {
-         return null;
-      }
-   }
-
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+        }
+    }
 }

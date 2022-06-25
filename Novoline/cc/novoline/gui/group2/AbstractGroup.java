@@ -1,60 +1,53 @@
 package cc.novoline.gui.group2;
 
 import cc.novoline.gui.AbstractElementWithBody;
-import cc.novoline.gui.group2.Group;
+
 import java.util.Objects;
 
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractGroup extends AbstractElementWithBody implements Group {
-   protected int color;
-   private static int[] g;
 
-   public AbstractGroup(int var1, int var2, int var3, int var4, int var5) {
-      super(var2, var3, var4, var5);
-      this.color = var1;
-   }
+    /* fields */
+    protected int color;
 
-   public int getColor() {
-      return this.color;
-   }
+    /* constructors */
+    public AbstractGroup(int color, int x, int y, int width, int height) {
+        super(x, y, width, height);
+        this.color = color;
+    }
 
-   public void setColor(int var1) {
-      this.color = var1;
-   }
+    /* methods */
+    //region Lombok
+    @Override
+    public int getColor() {
+        return this.color;
+    }
 
-   public boolean equals(Object var1) {
-      int[] var2 = a();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractGroup)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         AbstractGroup var3 = (AbstractGroup)var1;
-         return this.color == var3.color;
-      }
-   }
+    @Override
+    public void setColor(int color) {
+        this.color = color;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(super.hashCode()), Integer.valueOf(this.color)});
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractGroup)) return false;
+        if (!super.equals(o)) return false;
+        final AbstractGroup that = (AbstractGroup) o;
+        return this.color == that.color;
+    }
 
-   public String toString() {
-      return "AbstractGroup{color=" + this.color + '}';
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.color);
+    }
 
-   public static void a(int[] var0) {
-      g = var0;
-   }
+    @Override
+    public String toString() {
+        return "AbstractGroup{" + "color=" + this.color + '}';
+    }
+    //endregion
 
-   public static int[] a() {
-      return g;
-   }
-
-   static {
-      if(a() == null) {
-         a(new int[2]);
-      }
-
-   }
 }

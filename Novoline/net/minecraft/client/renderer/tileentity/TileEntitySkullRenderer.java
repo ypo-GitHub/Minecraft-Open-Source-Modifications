@@ -1,76 +1,132 @@
 package net.minecraft.client.renderer.tileentity;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelHumanoidHead;
 import net.minecraft.client.model.ModelSkeletonHead;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.tileentity.TileEntitySkullRenderer$1;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 
-public class TileEntitySkullRenderer extends TileEntitySpecialRenderer {
-   private static final ResourceLocation g = new ResourceLocation("textures/entity/skeleton/skeleton.png");
-   private static final ResourceLocation f = new ResourceLocation("textures/entity/skeleton/wither_skeleton.png");
-   private static final ResourceLocation h = new ResourceLocation("textures/entity/zombie/zombie.png");
-   private static final ResourceLocation d = new ResourceLocation("textures/entity/creeper/creeper.png");
-   public static TileEntitySkullRenderer instance;
-   private final ModelSkeletonHead skeletonHead = new ModelSkeletonHead(0, 0, 64, 32);
-   private final ModelSkeletonHead c = new ModelHumanoidHead();
+import java.util.Map;
+import java.util.UUID;
 
-   public void renderTileEntityAt(TileEntitySkull var1, double var2, double var4, double var6, float var8, int var9) {
-      EnumFacing var10 = EnumFacing.getFront(var1.getBlockMetadata() & 7);
-      this.renderSkull((float)var2, (float)var4, (float)var6, var10, (float)(var1.getSkullRotation() * 360) / 16.0F, var1.getSkullType(), var1.getPlayerProfile(), var9);
-   }
+public class TileEntitySkullRenderer extends TileEntitySpecialRenderer<TileEntitySkull> {
 
-   public void setRendererDispatcher(TileEntityRendererDispatcher var1) {
-      super.setRendererDispatcher(var1);
-      instance = this;
-   }
+    private static final ResourceLocation SKELETON_TEXTURES = new ResourceLocation("textures/entity/skeleton/skeleton.png");
+    private static final ResourceLocation WITHER_SKELETON_TEXTURES = new ResourceLocation("textures/entity/skeleton/wither_skeleton.png");
+    private static final ResourceLocation ZOMBIE_TEXTURES = new ResourceLocation("textures/entity/zombie/zombie.png");
+    private static final ResourceLocation CREEPER_TEXTURES = new ResourceLocation("textures/entity/creeper/creeper.png");
+    public static TileEntitySkullRenderer instance;
+    private final ModelSkeletonHead skeletonHead = new ModelSkeletonHead(0, 0, 64, 32);
+    private final ModelSkeletonHead humanoidHead = new ModelHumanoidHead();
 
-   public void renderSkull(float var1, float var2, float var3, EnumFacing var4, float var5, int var6, GameProfile var7, int var8) {
-      ModelSkeletonHead var9 = this.skeletonHead;
-      this.bindTexture(DESTROY_STAGES[var8]);
-      GlStateManager.matrixMode(5890);
-      GlStateManager.pushMatrix();
-      GlStateManager.scale(4.0F, 2.0F, 1.0F);
-      GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
-      GlStateManager.matrixMode(5888);
-      GlStateManager.pushMatrix();
-      GlStateManager.disableCull();
-      if(var4 != EnumFacing.UP) {
-         switch(TileEntitySkullRenderer$1.$SwitchMap$net$minecraft$util$EnumFacing[var4.ordinal()]) {
-         case 1:
-            GlStateManager.translate(var1 + 0.5F, var2 + 0.25F, var3 + 0.74F);
-            break;
-         case 2:
-            GlStateManager.translate(var1 + 0.5F, var2 + 0.25F, var3 + 0.26F);
-            var5 = 180.0F;
-            break;
-         case 3:
-            GlStateManager.translate(var1 + 0.74F, var2 + 0.25F, var3 + 0.5F);
-            var5 = 270.0F;
-            break;
-         case 4:
-         default:
-            GlStateManager.translate(var1 + 0.26F, var2 + 0.25F, var3 + 0.5F);
-            var5 = 90.0F;
-         }
-      } else {
-         GlStateManager.translate(var1 + 0.5F, var2, var3 + 0.5F);
-      }
+    public void renderTileEntityAt(TileEntitySkull te, double x, double y, double z, float partialTicks, int destroyStage) {
+        EnumFacing enumfacing = EnumFacing.getFront(te.getBlockMetadata() & 7);
+        this.renderSkull((float) x, (float) y, (float) z, enumfacing, (float) (te.getSkullRotation() * 360) / 16.0F, te.getSkullType(), te.getPlayerProfile(), destroyStage);
+    }
 
-      float var10 = 0.0625F;
-      GlStateManager.enableRescaleNormal();
-      GlStateManager.scale(-1.0F, -1.0F, 1.0F);
-      GlStateManager.enableAlpha();
-      var9.render((Entity)null, 0.0F, 0.0F, 0.0F, var5, 0.0F, var10);
-      GlStateManager.popMatrix();
-      GlStateManager.matrixMode(5890);
-      GlStateManager.popMatrix();
-      GlStateManager.matrixMode(5888);
-   }
+    public void setRendererDispatcher(TileEntityRendererDispatcher rendererDispatcherIn) {
+        super.setRendererDispatcher(rendererDispatcherIn);
+        instance = this;
+    }
+
+    public void renderSkull(float p_180543_1_, float p_180543_2_, float p_180543_3_, EnumFacing p_180543_4_, float p_180543_5_, int p_180543_6_, GameProfile gameProfile, int p_180543_8_) {
+        ModelBase modelbase = this.skeletonHead;
+
+        if (p_180543_8_ >= 0) {
+            this.bindTexture(DESTROY_STAGES[p_180543_8_]);
+            GlStateManager.matrixMode(5890);
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(4.0F, 2.0F, 1.0F);
+            GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
+            GlStateManager.matrixMode(5888);
+        } else {
+            switch (p_180543_6_) {
+                case 0:
+                default:
+                    this.bindTexture(SKELETON_TEXTURES);
+                    break;
+
+                case 1:
+                    this.bindTexture(WITHER_SKELETON_TEXTURES);
+                    break;
+
+                case 2:
+                    this.bindTexture(ZOMBIE_TEXTURES);
+                    modelbase = this.humanoidHead;
+                    break;
+
+                case 3:
+                    modelbase = this.humanoidHead;
+                    ResourceLocation resourceLocation = DefaultPlayerSkin.getDefaultSkinLegacy();
+
+                    if (gameProfile != null) {
+                        Minecraft minecraft = Minecraft.getInstance();
+                        Map<Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(gameProfile);
+
+                        if (map.containsKey(Type.SKIN)) {
+                            resourceLocation = minecraft.getSkinManager().loadSkin(map.get(Type.SKIN), Type.SKIN);
+                        } else {
+                            UUID uuid = EntityPlayer.getUUID(gameProfile);
+                            resourceLocation = DefaultPlayerSkin.getDefaultSkin(uuid);
+                        }
+                    }
+
+                    this.bindTexture(resourceLocation);
+                    break;
+
+                case 4:
+                    this.bindTexture(CREEPER_TEXTURES);
+            }
+        }
+
+        GlStateManager.pushMatrix();
+        GlStateManager.disableCull();
+
+        if (p_180543_4_ != EnumFacing.UP) {
+            switch (p_180543_4_) {
+                case NORTH:
+                    GlStateManager.translate(p_180543_1_ + 0.5F, p_180543_2_ + 0.25F, p_180543_3_ + 0.74F);
+                    break;
+
+                case SOUTH:
+                    GlStateManager.translate(p_180543_1_ + 0.5F, p_180543_2_ + 0.25F, p_180543_3_ + 0.26F);
+                    p_180543_5_ = 180.0F;
+                    break;
+
+                case WEST:
+                    GlStateManager.translate(p_180543_1_ + 0.74F, p_180543_2_ + 0.25F, p_180543_3_ + 0.5F);
+                    p_180543_5_ = 270.0F;
+                    break;
+
+                case EAST:
+                default:
+                    GlStateManager.translate(p_180543_1_ + 0.26F, p_180543_2_ + 0.25F, p_180543_3_ + 0.5F);
+                    p_180543_5_ = 90.0F;
+            }
+        } else {
+            GlStateManager.translate(p_180543_1_ + 0.5F, p_180543_2_, p_180543_3_ + 0.5F);
+        }
+
+        float f = 0.0625F;
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.scale(-1.0F, -1.0F, 1.0F);
+        GlStateManager.enableAlpha();
+        modelbase.render(null, 0.0F, 0.0F, 0.0F, p_180543_5_, 0.0F, f);
+        GlStateManager.popMatrix();
+
+        if (p_180543_8_ >= 0) {
+            GlStateManager.matrixMode(5890);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(5888);
+        }
+    }
+
 }

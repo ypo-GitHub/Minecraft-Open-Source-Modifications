@@ -1,18 +1,14 @@
 package cc.novoline.utils.minecraft;
 
-import cc.novoline.utils.minecraft.FakeWorld;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
+import static net.minecraft.client.resources.DefaultPlayerSkin.TEXTURE_ALEX;
+import static net.minecraft.client.resources.DefaultPlayerSkin.TEXTURE_STEVE;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -21,53 +17,60 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class FakeEntityPlayer extends EntityOtherPlayerMP {
-   private static final List ITEM_STACKS = Arrays.asList(new ItemStack[]{new ItemStack(Items.bow), new ItemStack(Items.iron_sword), new ItemStack(Items.wooden_sword), new ItemStack(Items.stone_pickaxe), new ItemStack(Items.diamond_pickaxe), new ItemStack(Items.iron_ingot), new ItemStack(Blocks.cobblestone), new ItemStack(Blocks.red_flower)});
-   private final ResourceLocation locationSkin;
-   private final JsonParser jsonParser = new JsonParser();
-   private String skinType;
 
-   public FakeEntityPlayer(@NotNull GameProfile var1, @Nullable ResourceLocation var2) {
-      super(new FakeWorld(), var1);
-      FakeEntityPlayer var10000 = this;
+	private static final List<ItemStack> ITEM_STACKS = Arrays.asList( // @off
+            new ItemStack(Items.bow),
+            new ItemStack(Items.iron_sword),
+            new ItemStack(Items.wooden_sword),
+            new ItemStack(Items.stone_pickaxe),
+            new ItemStack(Items.diamond_pickaxe),
+            new ItemStack(Items.iron_ingot),
+            new ItemStack(Blocks.cobblestone),
+            new ItemStack(Blocks.red_flower)
+    ); // @on
 
-      label24: {
-         try {
-            ((Collection)var10000.gameProfile.getProperties().asMap().get("textures")).stream().findFirst().map(this::lambda$new$0).ifPresent(this::lambda$new$1);
-         } catch (Throwable var4) {
-            if(this.skinType == null) {
-               this.skinType = "slim";
-            }
-            break label24;
-         }
+	/* fields */
+	private final ResourceLocation locationSkin;
+	private final JsonParser jsonParser = new JsonParser();
+	private String skinType;
 
-         if(this.skinType == null) {
-            this.skinType = "slim";
-         }
-      }
+	/* constructors */
+	public FakeEntityPlayer(@NotNull GameProfile profile, @Nullable ResourceLocation locationSkin) {
+		super(new FakeWorld(), profile);
 
-      this.locationSkin = var2;
-      this.setCurrentItemOrArmor(0, (ItemStack)ITEM_STACKS.get(ThreadLocalRandom.current().nextInt(ITEM_STACKS.size())));
-   }
+		try {
+            gameProfile.getProperties().asMap().get("textures").stream().findFirst().map(property -> {
+				return jsonParser.parse(new String(Base64.getDecoder().decode(property.getValue()))).getAsJsonObject()
+						.getAsJsonObject("textures").getAsJsonObject("SKIN");
+			}).ifPresent(jsonObject -> {
+				this.skinType = jsonObject.has("metadata") ? jsonObject.getAsJsonObject("metadata").get("model").getAsString() : "default";
+			});
+		} catch(Throwable ignored) {
+		} finally {
+			if(skinType == null) this.skinType = "slim";
+		}
 
-   public String getSkinType() {
-      return this.skinType;
-   }
+		if(locationSkin != null) {
+			this.locationSkin = locationSkin;
+		} else {
+			this.locationSkin = skinType.equals("default") ? TEXTURE_STEVE : TEXTURE_ALEX;
+		}
 
-   @Nullable
-   public ResourceLocation getLocationSkin() {
-      return this.locationSkin;
-   }
+		setCurrentItemOrArmor(0, ITEM_STACKS.get(ThreadLocalRandom.current().nextInt(ITEM_STACKS.size())));
+	}
 
-   private void lambda$new$1(JsonObject var1) {
-      String[] var2 = FakeWorld.b();
-      this.skinType = var1.has("metadata")?var1.getAsJsonObject("metadata").get("model").getAsString():"default";
-   }
+	/* methods */
+	// region Lombok
+	@Override
+	public String getSkinType() {
+		return skinType;
+	}
 
-   private JsonObject lambda$new$0(Property var1) {
-      return this.jsonParser.parse(new String(Base64.getDecoder().decode(var1.getValue()))).getAsJsonObject().getAsJsonObject("textures").getAsJsonObject("SKIN");
-   }
+	@Override
+	@Nullable
+	public ResourceLocation getLocationSkin() {
+		return locationSkin;
+	}
+	//endregion
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
 }

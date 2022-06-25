@@ -2,90 +2,140 @@ package net.minecraft.item;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.stats.StatList;
 import net.minecraft.world.World;
 
 public class ItemFood extends Item {
-   public final int itemUseDuration;
-   private final int healAmount;
-   private final float saturationModifier;
-   private final boolean isWolfsFavoriteMeat;
-   private boolean alwaysEdible;
-   private int potionId;
-   private int potionDuration;
-   private int potionAmplifier;
-   private float potionEffectProbability;
+    /**
+     * Number of ticks to run while 'EnumAction'ing until result.
+     */
+    public final int itemUseDuration;
 
-   public ItemFood(int var1, float var2, boolean var3) {
-      this.itemUseDuration = 32;
-      this.healAmount = var1;
-      this.isWolfsFavoriteMeat = var3;
-      this.saturationModifier = var2;
-      this.setCreativeTab(CreativeTabs.tabFood);
-   }
+    /**
+     * The amount this food item heals the player.
+     */
+    private final int healAmount;
+    private final float saturationModifier;
 
-   public ItemFood(int var1, boolean var2) {
-      this(var1, 0.6F, var2);
-   }
+    /**
+     * Whether wolves like this food (true for raw and cooked porkchop).
+     */
+    private final boolean isWolfsFavoriteMeat;
 
-   public ItemStack onItemUseFinish(ItemStack var1, World var2, EntityPlayer var3) {
-      --var1.stackSize;
-      var3.getFoodStats().addStats(this, var1);
-      var2.playSoundAtEntity(var3, "random.burp", 0.5F, var2.rand.nextFloat() * 0.1F + 0.9F);
-      this.onFoodEaten(var1, var2, var3);
-      var3.triggerAchievement(StatList.objectUseStats[Item.b(this)]);
-      return var1;
-   }
+    /**
+     * If this field is true, the food can be consumed even if the player don't need to eat.
+     */
+    private boolean alwaysEdible;
 
-   protected void onFoodEaten(ItemStack var1, World var2, EntityPlayer var3) {
-      if(!var2.isRemote && this.potionId > 0 && var2.rand.nextFloat() < this.potionEffectProbability) {
-         var3.addPotionEffect(new PotionEffect(this.potionId, this.potionDuration * 20, this.potionAmplifier));
-      }
+    /**
+     * represents the potion effect that will occurr upon eating this food. Set by setPotionEffect
+     */
+    private int potionId;
 
-   }
+    /**
+     * set by setPotionEffect
+     */
+    private int potionDuration;
 
-   public int getMaxItemUseDuration(ItemStack var1) {
-      return 32;
-   }
+    /**
+     * set by setPotionEffect
+     */
+    private int potionAmplifier;
 
-   public EnumAction getItemUseAction(ItemStack var1) {
-      return EnumAction.EAT;
-   }
+    /**
+     * probably of the set potion effect occurring
+     */
+    private float potionEffectProbability;
 
-   public ItemStack onItemRightClick(ItemStack var1, World var2, EntityPlayer var3) {
-      if(var3.canEat(this.alwaysEdible)) {
-         var3.setItemInUse(var1, this.getMaxItemUseDuration(var1));
-      }
+    public ItemFood(int amount, float saturation, boolean isWolfFood) {
+        this.itemUseDuration = 32;
+        this.healAmount = amount;
+        this.isWolfsFavoriteMeat = isWolfFood;
+        this.saturationModifier = saturation;
+        this.setCreativeTab(CreativeTabs.tabFood);
+    }
 
-      return var1;
-   }
+    public ItemFood(int amount, boolean isWolfFood) {
+        this(amount, 0.6F, isWolfFood);
+    }
 
-   public int getHealAmount(ItemStack var1) {
-      return this.healAmount;
-   }
+    /**
+     * Called when the player finishes using this Item (E.g. finishes eating.). Not called when the player stops using
+     * the Item before the action is complete.
+     */
+    public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityPlayer playerIn) {
+        --stack.stackSize;
+        playerIn.getFoodStats().addStats(this, stack);
+        worldIn.playSoundAtEntity(playerIn, "random.burp", 0.5F, worldIn.rand.nextFloat() * 0.1F + 0.9F);
+        this.onFoodEaten(stack, worldIn, playerIn);
+        playerIn.triggerAchievement(StatList.objectUseStats[Item.getIdFromItem(this)]);
+        return stack;
+    }
 
-   public float getSaturationModifier(ItemStack var1) {
-      return this.saturationModifier;
-   }
+    protected void onFoodEaten(ItemStack stack, World worldIn, EntityPlayer player) {
+        if (!worldIn.isRemote && this.potionId > 0 && worldIn.rand.nextFloat() < this.potionEffectProbability) {
+            player.addPotionEffect(new PotionEffect(this.potionId, this.potionDuration * 20, this.potionAmplifier));
+        }
+    }
 
-   public boolean isWolfsFavoriteMeat() {
-      return this.isWolfsFavoriteMeat;
-   }
+    /**
+     * How long it takes to use or consume an item
+     */
+    public int getMaxItemUseDuration(ItemStack stack) {
+        return 32;
+    }
 
-   public ItemFood setPotionEffect(int var1, int var2, int var3, float var4) {
-      this.potionId = var1;
-      this.potionDuration = var2;
-      this.potionAmplifier = var3;
-      this.potionEffectProbability = var4;
-      return this;
-   }
+    /**
+     * returns the action that specifies what animation to play when the items is being used
+     */
+    public EnumAction getItemUseAction(ItemStack stack) {
+        return EnumAction.EAT;
+    }
 
-   public ItemFood setAlwaysEdible() {
-      this.alwaysEdible = true;
-      return this;
-   }
+    /**
+     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
+     */
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn) {
+        if (playerIn.canEat(this.alwaysEdible)) {
+            playerIn.setItemInUse(itemStackIn, this.getMaxItemUseDuration(itemStackIn));
+        }
+
+        return itemStackIn;
+    }
+
+    public int getHealAmount(ItemStack stack) {
+        return this.healAmount;
+    }
+
+    public float getSaturationModifier(ItemStack stack) {
+        return this.saturationModifier;
+    }
+
+    /**
+     * Whether wolves like this food (true for raw and cooked porkchop).
+     */
+    public boolean isWolfsFavoriteMeat() {
+        return this.isWolfsFavoriteMeat;
+    }
+
+    /**
+     * sets a potion effect on the item. Args: int potionId, int duration (will be multiplied by 20), int amplifier,
+     * float probability of effect happening
+     */
+    public ItemFood setPotionEffect(int id, int duration, int amplifier, float probability) {
+        this.potionId = id;
+        this.potionDuration = duration;
+        this.potionAmplifier = amplifier;
+        this.potionEffectProbability = probability;
+        return this;
+    }
+
+    /**
+     * Set the field 'alwaysEdible' to true, and make the food edible even if the player don't need to eat.
+     */
+    public ItemFood setAlwaysEdible() {
+        this.alwaysEdible = true;
+        return this;
+    }
 }

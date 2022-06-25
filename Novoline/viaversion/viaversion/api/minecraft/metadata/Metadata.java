@@ -1,88 +1,71 @@
 package viaversion.viaversion.api.minecraft.metadata;
 
 import java.util.Objects;
-import net.acE;
-import viaversion.viaversion.api.minecraft.metadata.MetaType;
 
 public class Metadata {
-   private int id;
-   private MetaType metaType;
-   private Object value;
-   private static acE[] d;
+    private int id;
+    private MetaType metaType;
+    private Object value;
 
-   public Metadata(int var1, MetaType var2, Object var3) {
-      this.id = var1;
-      this.metaType = var2;
-      this.value = var3;
-   }
+    public Metadata(int id, MetaType metaType, Object value) {
+        this.id = id;
+        this.metaType = metaType;
+        this.value = value;
+    }
 
-   public int getId() {
-      return this.id;
-   }
+    public int getId() {
+        return id;
+    }
 
-   public void setId(int var1) {
-      this.id = var1;
-   }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-   public MetaType getMetaType() {
-      return this.metaType;
-   }
+    public MetaType getMetaType() {
+        return metaType;
+    }
 
-   public void setMetaType(MetaType var1) {
-      this.metaType = var1;
-   }
+    public void setMetaType(MetaType metaType) {
+        this.metaType = metaType;
+    }
 
-   public Object getValue() {
-      return this.value;
-   }
+    public Object getValue() {
+        return value;
+    }
 
-   public Object getCastedValue() {
-      return this.value;
-   }
+    public <T> T getCastedValue() {
+        return (T) value;
+    }
 
-   public void setValue(Object var1) {
-      this.value = var1;
-   }
+    public void setValue(Object value) {
+        this.value = value;
+    }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         Metadata var3 = (Metadata)var1;
-         return this.id != var3.id?false:(!Objects.equals(this.metaType, var3.metaType)?false:Objects.equals(this.value, var3.value));
-      } else {
-         return false;
-      }
-   }
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-   public int hashCode() {
-      b();
-      int var2 = this.id;
-      var2 = 31 * var2 + (this.metaType != null?this.metaType.hashCode():0);
-      var2 = 31 * var2 + (this.value != null?this.value.hashCode():0);
-      return var2;
-   }
+        Metadata metadata = (Metadata) o;
+        if (id != metadata.id) return false;
+        if (!Objects.equals(metaType, metadata.metaType)) return false;
+        return Objects.equals(value, metadata.value);
+    }
 
-   public String toString() {
-      acE[] var1 = b();
-      String var10000 = "Metadata{id=" + this.id + ", metaType=" + this.metaType + ", value=" + this.value + '}';
-      if(acE.b() == null) {
-         b(new acE[5]);
-      }
+    @Override
+    public int hashCode() {
+        int result = id;
+        result = 31 * result + (metaType != null ? metaType.hashCode() : 0);
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
 
-      return var10000;
-   }
-
-   public static void b(acE[] var0) {
-      d = var0;
-   }
-
-   public static acE[] b() {
-      return d;
-   }
-
-   static {
-      b(new acE[4]);
-   }
+    @Override
+    public String toString() {
+        return "Metadata{" +
+                "id=" + id +
+                ", metaType=" + metaType +
+                ", value=" + value +
+                '}';
+    }
 }

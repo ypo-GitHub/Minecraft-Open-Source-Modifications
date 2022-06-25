@@ -1,78 +1,88 @@
 package net.minecraft.nbt;
 
+import net.minecraft.util.MathHelper;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTBase$NBTPrimitive;
-import net.minecraft.nbt.NBTSizeTracker;
-import net.minecraft.util.MathHelper;
 
-public class NBTTagFloat extends NBTBase$NBTPrimitive {
-   private float data;
+public class NBTTagFloat extends NBTBase.NBTPrimitive {
+    /**
+     * The float value for the tag.
+     */
+    private float data;
 
-   NBTTagFloat() {
-   }
+    NBTTagFloat() {
+    }
 
-   public NBTTagFloat(float var1) {
-      this.data = var1;
-   }
+    public NBTTagFloat(float data) {
+        this.data = data;
+    }
 
-   void write(DataOutput var1) throws IOException {
-      var1.writeFloat(this.data);
-   }
+    /**
+     * Write the actual data contents of the tag, implemented in NBT extension classes
+     */
+    void write(DataOutput output) throws IOException {
+        output.writeFloat(this.data);
+    }
 
-   void read(DataInput var1, int var2, NBTSizeTracker var3) throws IOException {
-      var3.read(96L);
-      this.data = var1.readFloat();
-   }
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException {
+        sizeTracker.read(96L);
+        this.data = input.readFloat();
+    }
 
-   public byte getId() {
-      return (byte)5;
-   }
+    /**
+     * Gets the type byte for the tag.
+     */
+    public byte getId() {
+        return (byte) 5;
+    }
 
-   public String toString() {
-      return "" + this.data + "f";
-   }
+    public String toString() {
+        return "" + this.data + "f";
+    }
 
-   public NBTBase copy() {
-      return new NBTTagFloat(this.data);
-   }
+    /**
+     * Creates a clone of the tag.
+     */
+    public NBTBase copy() {
+        return new NBTTagFloat(this.data);
+    }
 
-   public boolean equals(Object var1) {
-      if(super.equals(var1)) {
-         NBTTagFloat var2 = (NBTTagFloat)var1;
-         return this.data == var2.data;
-      } else {
-         return false;
-      }
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (super.equals(p_equals_1_)) {
+            NBTTagFloat nbttagfloat = (NBTTagFloat) p_equals_1_;
+            return this.data == nbttagfloat.data;
+        } else {
+            return false;
+        }
+    }
 
-   public int hashCode() {
-      return super.hashCode() ^ Float.floatToIntBits(this.data);
-   }
+    public int hashCode() {
+        return super.hashCode() ^ Float.floatToIntBits(this.data);
+    }
 
-   public long getLong() {
-      return (long)this.data;
-   }
+    public long getLong() {
+        return (long) this.data;
+    }
 
-   public int getInt() {
-      return MathHelper.floor_float(this.data);
-   }
+    public int getInt() {
+        return MathHelper.floor_float(this.data);
+    }
 
-   public short getShort() {
-      return (short)(MathHelper.floor_float(this.data) & '\uffff');
-   }
+    public short getShort() {
+        return (short) (MathHelper.floor_float(this.data) & 65535);
+    }
 
-   public byte getByte() {
-      return (byte)(MathHelper.floor_float(this.data) & 255);
-   }
+    public byte getByte() {
+        return (byte) (MathHelper.floor_float(this.data) & 255);
+    }
 
-   public double getDouble() {
-      return (double)this.data;
-   }
+    public double getDouble() {
+        return this.data;
+    }
 
-   public float getFloat() {
-      return this.data;
-   }
+    public float getFloat() {
+        return this.data;
+    }
 }

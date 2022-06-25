@@ -1,19 +1,50 @@
 package viaversion.viaversion.api.command;
 
-import java.util.List;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.command.ViaCommandSender;
-import viaversion.viaversion.api.command.ViaSubCommand;
+
+import java.util.List;
 
 public interface ViaVersionCommand {
-   void registerSubCommand(ViaSubCommand var1) throws Exception;
+    /**
+     * Register your own subcommand inside ViaVersion
+     *
+     * @param command Your own SubCommand instance to handle it.
+     * @throws Exception throws an exception when the subcommand already exists or if it's not valid, example: spacee
+     */
+    void registerSubCommand(ViaSubCommand command) throws Exception;
 
-   boolean hasSubCommand(String var1);
+    /**
+     * Check if a subcommand is registered.
+     *
+     * @param name Subcommand name
+     * @return true if it exists
+     */
+    boolean hasSubCommand(String name);
 
-   @Nullable
-   ViaSubCommand getSubCommand(String var1);
+    /**
+     * Get subcommand instance by name
+     *
+     * @param name subcommand name
+     * @return ViaSubCommand instance
+     */
+    @Nullable
+    ViaSubCommand getSubCommand(String name);
 
-   boolean onCommand(ViaCommandSender var1, String[] var2);
+    /**
+     * Executed when the Command sender executes the commands
+     *
+     * @param sender Sender object
+     * @param args   arguments provided
+     * @return was successful
+     */
+    boolean onCommand(ViaCommandSender sender, String[] args);
 
-   List onTabComplete(ViaCommandSender var1, String[] var2);
+    /**
+     * Executed when the Command sender tab-completes
+     *
+     * @param sender Sender object
+     * @param args   arguments provided
+     * @return was successful
+     */
+    List<String> onTabComplete(ViaCommandSender sender, String[] args);
 }

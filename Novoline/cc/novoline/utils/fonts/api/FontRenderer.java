@@ -1,35 +1,37 @@
 package cc.novoline.utils.fonts.api;
 
+
+/**
+ * @author Artyom Popov
+ * @since July 04, 2020
+ */
 public interface FontRenderer {
-   float drawString(CharSequence var1, double var2, double var4, int var6, boolean var7);
 
-   String trimStringToWidth(CharSequence var1, int var2, boolean var3);
+	float drawString(CharSequence text, double x, double y, int color, boolean dropShadow);
+	String trimStringToWidth(CharSequence text, int width, boolean reverse);
+	int stringWidth(CharSequence text);
+	float charWidth(char ch);
 
-   int stringWidth(CharSequence var1);
+	String getName();
+	int getHeight();
+	boolean isAntiAlias();
+	boolean isFractionalMetrics();
 
-   float charWidth(char var1);
+	//region default methods
+	default float drawString(CharSequence text, float x, float y, int color) {
+		return drawString(text, x, y, color, false);
+	}
 
-   String getName();
+	default String trimStringToWidth(CharSequence text, int width) {
+		return trimStringToWidth(text, width, false);
+	}
 
-   int getHeight();
+	default float drawCenteredString(CharSequence text, float x, float y, int color, boolean dropShadow) {
+		return drawString(text, x - stringWidth(text) / 2.0F, y, color, dropShadow);
+	}
 
-   boolean isAntiAlias();
-
-   boolean isFractionalMetrics();
-
-   default float drawString(CharSequence var1, float var2, float var3, int var4) {
-      return this.drawString(var1, (double)var2, (double)var3, var4, false);
-   }
-
-   default String trimStringToWidth(CharSequence var1, int var2) {
-      return this.trimStringToWidth(var1, var2, false);
-   }
-
-   default float drawCenteredString(CharSequence var1, float var2, float var3, int var4, boolean var5) {
-      return this.drawString(var1, (double)(var2 - (float)this.stringWidth(var1) / 2.0F), (double)var3, var4, var5);
-   }
-
-   default float drawCenteredString(CharSequence var1, float var2, float var3, int var4) {
-      return this.drawCenteredString(var1, var2, var3, var4, false);
-   }
+	default float drawCenteredString(CharSequence text, float x, float y, int color) {
+		return drawCenteredString(text, x, y, color, false);
+	}
+	//endregion
 }

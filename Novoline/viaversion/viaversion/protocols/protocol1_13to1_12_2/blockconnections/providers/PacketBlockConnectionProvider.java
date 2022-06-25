@@ -1,37 +1,37 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.providers;
 
-import net.aPh;
-import net.acE;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.storage.BlockConnectionStorage;
 
-public class PacketBlockConnectionProvider extends aPh {
-   public void a(UserConnection var1, int var2, int var3, int var4, int var5) {
-      aPh.b();
-      ((BlockConnectionStorage)var1.b(BlockConnectionStorage.class)).store(var2, var3, var4, var5);
-      if(acE.b() == null) {
-         aPh.b("ShlY4b");
-      }
+public class PacketBlockConnectionProvider extends BlockConnectionProvider {
 
-   }
+    @Override
+    public void storeBlock(UserConnection connection, int x, int y, int z, int blockState) {
+        connection.get(BlockConnectionStorage.class).store(x, y, z, blockState);
+    }
 
-   public void removeBlock(UserConnection var1, int var2, int var3, int var4) {
-      ((BlockConnectionStorage)var1.b(BlockConnectionStorage.class)).remove(var2, var3, var4);
-   }
+    @Override
+    public void removeBlock(UserConnection connection, int x, int y, int z) {
+        connection.get(BlockConnectionStorage.class).remove(x, y, z);
+    }
 
-   public int getBlockData(UserConnection var1, int var2, int var3, int var4) {
-      return ((BlockConnectionStorage)var1.b(BlockConnectionStorage.class)).get(var2, var3, var4);
-   }
+    @Override
+    public int getBlockData(UserConnection connection, int x, int y, int z) {
+        return connection.get(BlockConnectionStorage.class).get(x, y, z);
+    }
 
-   public void clearStorage(UserConnection var1) {
-      ((BlockConnectionStorage)var1.b(BlockConnectionStorage.class)).clear();
-   }
+    @Override
+    public void clearStorage(UserConnection connection) {
+        connection.get(BlockConnectionStorage.class).clear();
+    }
 
-   public void unloadChunk(UserConnection var1, int var2, int var3) {
-      ((BlockConnectionStorage)var1.b(BlockConnectionStorage.class)).unloadChunk(var2, var3);
-   }
+    @Override
+    public void unloadChunk(UserConnection connection, int x, int z) {
+        connection.get(BlockConnectionStorage.class).unloadChunk(x, z);
+    }
 
-   public boolean storesBlocks() {
-      return true;
-   }
+    @Override
+    public boolean storesBlocks() {
+        return true;
+    }
 }

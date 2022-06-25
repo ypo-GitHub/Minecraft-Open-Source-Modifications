@@ -1,12 +1,10 @@
 package net.minecraft.client.renderer.tileentity;
 
-import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiUtilRenderComponents;
 import net.minecraft.client.model.ModelSign;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntitySign;
@@ -16,85 +14,104 @@ import net.optifine.Config;
 import net.optifine.CustomColors;
 import org.lwjgl.opengl.GL11;
 
+import java.util.List;
+
 public class TileEntitySignRenderer extends TileEntitySpecialRenderer {
-   private static final ResourceLocation e = new ResourceLocation("textures/entity/sign.png");
-   private final ModelSign model = new ModelSign();
-   private static final String c = "CL_00000970";
+    private static final ResourceLocation SIGN_TEXTURE = new ResourceLocation("textures/entity/sign.png");
 
-   public void renderTileEntityAt(TileEntitySign var1, double var2, double var4, double var6, float var8, int var9) {
-      Block var10 = var1.getBlockType();
-      GlStateManager.pushMatrix();
-      float var11 = 0.6666667F;
-      if(var10 == Blocks.standing_sign) {
-         GlStateManager.translate((float)var2 + 0.5F, (float)var4 + 0.75F * var11, (float)var6 + 0.5F);
-         float var12 = (float)(var1.getBlockMetadata() * 360) / 16.0F;
-         GlStateManager.rotate(-var12, 0.0F, 1.0F, 0.0F);
-         this.model.signStick.showModel = true;
-      } else {
-         int var19 = var1.getBlockMetadata();
-         float var13 = 0.0F;
-         if(var19 == 2) {
-            var13 = 180.0F;
-         }
+    /**
+     * The ModelSign instance for use in this renderer
+     */
+    private final ModelSign model = new ModelSign();
+    private static final String __OBFID = "CL_00000970";
 
-         if(var19 == 4) {
-            var13 = 90.0F;
-         }
+    public void renderTileEntityAt(TileEntitySign te, double x, double y, double z, float partialTicks, int destroyStage) {
+        Block block = te.getBlockType();
+        GlStateManager.pushMatrix();
+        float f = 0.6666667F;
 
-         if(var19 == 5) {
-            var13 = -90.0F;
-         }
+        if (block == Blocks.standing_sign) {
+            GlStateManager.translate((float) x + 0.5F, (float) y + 0.75F * f, (float) z + 0.5F);
+            float f2 = (float) (te.getBlockMetadata() * 360) / 16.0F;
+            GlStateManager.rotate(-f2, 0.0F, 1.0F, 0.0F);
+            this.model.signStick.showModel = true;
+        } else {
+            int k = te.getBlockMetadata();
+            float f1 = 0.0F;
 
-         GlStateManager.translate((float)var2 + 0.5F, (float)var4 + 0.75F * var11, (float)var6 + 0.5F);
-         GlStateManager.rotate(-var13, 0.0F, 1.0F, 0.0F);
-         GlStateManager.translate(0.0F, -0.3125F, -0.4375F);
-         this.model.signStick.showModel = false;
-      }
-
-      this.bindTexture(DESTROY_STAGES[var9]);
-      GlStateManager.matrixMode(5890);
-      GlStateManager.pushMatrix();
-      GlStateManager.scale(4.0F, 2.0F, 1.0F);
-      GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
-      GlStateManager.matrixMode(5888);
-      GlStateManager.enableRescaleNormal();
-      GlStateManager.pushMatrix();
-      GlStateManager.scale(var11, -var11, -var11);
-      this.model.renderSign();
-      GlStateManager.popMatrix();
-      FontRenderer var20 = this.getFontRenderer();
-      float var21 = 0.015625F * var11;
-      GlStateManager.translate(0.0F, 0.5F * var11, 0.07F * var11);
-      GlStateManager.scale(var21, -var21, var21);
-      GL11.glNormal3f(0.0F, 0.0F, -1.0F * var21);
-      GlStateManager.depthMask(false);
-      int var14 = 0;
-      if(Config.isCustomColors()) {
-         var14 = CustomColors.d(var14);
-      }
-
-      for(int var15 = 0; var15 < var1.signText.length; ++var15) {
-         if(var1.signText[var15] != null) {
-            IChatComponent var16 = var1.signText[var15];
-            List var17 = GuiUtilRenderComponents.func_178908_a(var16, 90, (FontRenderer)var20, false, true);
-            String var18 = !var17.isEmpty()?((IChatComponent)var17.get(0)).getFormattedText():"";
-            if(var15 == var1.lineBeingEdited) {
-               var18 = "> " + var18 + " <";
+            if (k == 2) {
+                f1 = 180.0F;
             }
 
-            var20.drawString(var18, (float)(-var20.d(var18) / 2), (float)(var15 * 10 - var1.signText.length * 5), var14);
-         }
-      }
+            if (k == 4) {
+                f1 = 90.0F;
+            }
 
-      GlStateManager.depthMask(true);
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      GlStateManager.popMatrix();
-      GlStateManager.matrixMode(5890);
-      GlStateManager.popMatrix();
-      GlStateManager.matrixMode(5888);
-   }
+            if (k == 5) {
+                f1 = -90.0F;
+            }
 
-   public void renderTileEntityAt(TileEntity var1, double var2, double var4, double var6, float var8, int var9) {
-      this.renderTileEntityAt((TileEntitySign)var1, var2, var4, var6, var8, var9);
-   }
+            GlStateManager.translate((float) x + 0.5F, (float) y + 0.75F * f, (float) z + 0.5F);
+            GlStateManager.rotate(-f1, 0.0F, 1.0F, 0.0F);
+            GlStateManager.translate(0.0F, -0.3125F, -0.4375F);
+            this.model.signStick.showModel = false;
+        }
+
+        if (destroyStage >= 0) {
+            this.bindTexture(DESTROY_STAGES[destroyStage]);
+            GlStateManager.matrixMode(5890);
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(4.0F, 2.0F, 1.0F);
+            GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
+            GlStateManager.matrixMode(5888);
+        } else {
+            this.bindTexture(SIGN_TEXTURE);
+        }
+
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(f, -f, -f);
+        this.model.renderSign();
+        GlStateManager.popMatrix();
+        FontRenderer fontrenderer = this.getFontRenderer();
+        float f3 = 0.015625F * f;
+        GlStateManager.translate(0.0F, 0.5F * f, 0.07F * f);
+        GlStateManager.scale(f3, -f3, f3);
+        GL11.glNormal3f(0.0F, 0.0F, -1.0F * f3);
+        GlStateManager.depthMask(false);
+        int i = 0;
+
+        if (Config.isCustomColors()) {
+            i = CustomColors.getSignTextColor(i);
+        }
+
+        if (destroyStage < 0) {
+            for (int j = 0; j < te.signText.length; ++j) {
+                if (te.signText[j] != null) {
+                    IChatComponent ichatcomponent = te.signText[j];
+                    List list = GuiUtilRenderComponents.func_178908_a(ichatcomponent, 90, fontrenderer, false, true);
+                    String s = list != null && !list.isEmpty() ? ((IChatComponent) list.get(0)).getFormattedText() : "";
+
+                    if (j == te.lineBeingEdited) {
+                        s = "> " + s + " <";
+                    }
+                    fontrenderer.drawString(s, -fontrenderer.getStringWidth(s) / 2, j * 10 - te.signText.length * 5, i);
+                }
+            }
+        }
+
+        GlStateManager.depthMask(true);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.popMatrix();
+
+        if (destroyStage >= 0) {
+            GlStateManager.matrixMode(5890);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(5888);
+        }
+    }
+
+    public void renderTileEntityAt(TileEntity te, double x, double y, double z, float partialTicks, int destroyStage) {
+        this.renderTileEntityAt((TileEntitySign) te, x, y, z, partialTicks, destroyStage);
+    }
 }

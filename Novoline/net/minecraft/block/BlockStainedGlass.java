@@ -1,12 +1,7 @@
 package net.minecraft.block;
 
-import java.util.List;
-import java.util.Random;
-import net.minecraft.block.BlockBeacon;
-import net.minecraft.block.BlockBreakable;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -18,69 +13,90 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Random;
+
 public class BlockStainedGlass extends BlockBreakable {
-   public static final PropertyEnum COLOR = PropertyEnum.create("color", EnumDyeColor.class);
 
-   public BlockStainedGlass(Material var1) {
-      super(var1, false);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(COLOR, EnumDyeColor.WHITE));
-      this.setCreativeTab(CreativeTabs.tabBlock);
-   }
+    public static final PropertyEnum<EnumDyeColor> COLOR = PropertyEnum.create("color", EnumDyeColor.class);
 
-   public int damageDropped(IBlockState var1) {
-      return ((EnumDyeColor)var1.getValue(COLOR)).getMetadata();
-   }
+    public BlockStainedGlass(Material materialIn) {
+        super(materialIn, false);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(COLOR, EnumDyeColor.WHITE));
+        this.setCreativeTab(CreativeTabs.tabBlock);
+    }
 
-   public void getSubBlocks(Item var1, CreativeTabs var2, List var3) {
-      for(EnumDyeColor var7 : EnumDyeColor.values()) {
-         var3.add(new ItemStack(var1, 1, var7.getMetadata()));
-      }
+    /**
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
+     */
+    public int damageDropped(IBlockState state) {
+        return state.getValue(COLOR).getMetadata();
+    }
 
-   }
+    /**
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
+     */
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list) {
+        for (EnumDyeColor enumdyecolor : EnumDyeColor.values()) {
+            list.add(new ItemStack(itemIn, 1, enumdyecolor.getMetadata()));
+        }
+    }
 
-   public MapColor getMapColor(IBlockState var1) {
-      return ((EnumDyeColor)var1.getValue(COLOR)).getMapColor();
-   }
+    /**
+     * Get the MapColor for this Block and the given BlockState
+     */
+    public MapColor getMapColor(IBlockState state) {
+        return state.getValue(COLOR).getMapColor();
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.TRANSLUCENT;
-   }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.TRANSLUCENT;
+    }
 
-   public int quantityDropped(Random var1) {
-      return 0;
-   }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return 0;
+    }
 
-   protected boolean canSilkHarvest() {
-      return true;
-   }
+    protected boolean canSilkHarvest() {
+        return true;
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(COLOR, EnumDyeColor.byMetadata(var1));
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(COLOR, EnumDyeColor.byMetadata(meta));
+    }
 
-   public void onBlockAdded(World var1, BlockPos var2, IBlockState var3) {
-      if(!var1.isRemote) {
-         BlockBeacon.updateColorAsync(var1, var2);
-      }
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
+        if (!worldIn.isRemote) {
+            BlockBeacon.updateColorAsync(worldIn, pos);
+        }
+    }
 
-   }
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        if (!worldIn.isRemote) {
+            BlockBeacon.updateColorAsync(worldIn, pos);
+        }
+    }
 
-   public void breakBlock(World var1, BlockPos var2, IBlockState var3) {
-      if(!var1.isRemote) {
-         BlockBeacon.updateColorAsync(var1, var2);
-      }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(COLOR).getMetadata();
+    }
 
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, COLOR);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((EnumDyeColor)var1.getValue(COLOR)).getMetadata();
-   }
-
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{COLOR});
-   }
 }

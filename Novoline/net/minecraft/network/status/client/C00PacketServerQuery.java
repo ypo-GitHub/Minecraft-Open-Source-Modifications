@@ -1,18 +1,28 @@
 package net.minecraft.network.status.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.status.INetHandlerStatusServer;
 
-public class C00PacketServerQuery implements Packet {
-   public void readPacketData(PacketBuffer var1) throws IOException {
-   }
+import java.io.IOException;
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-   }
+public class C00PacketServerQuery implements Packet<INetHandlerStatusServer> {
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+    }
 
-   public void processPacket(INetHandlerStatusServer var1) {
-      var1.processServerQuery(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+    }
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerStatusServer handler) {
+        handler.processServerQuery(this);
+    }
 }

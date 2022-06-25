@@ -1,58 +1,76 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.BlockPos;
 
-public class S28PacketEffect implements Packet {
-   private int soundType;
-   private BlockPos soundPos;
-   private int soundData;
-   private boolean serverWide;
+import java.io.IOException;
 
-   public S28PacketEffect() {
-   }
+public class S28PacketEffect implements Packet<INetHandlerPlayClient> {
+    private int soundType;
+    private BlockPos soundPos;
 
-   public S28PacketEffect(int var1, BlockPos var2, int var3, boolean var4) {
-      this.soundType = var1;
-      this.soundPos = var2;
-      this.soundData = var3;
-      this.serverWide = var4;
-   }
+    /**
+     * can be a block/item id or other depending on the soundtype
+     */
+    private int soundData;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.soundType = var1.readInt();
-      this.soundPos = var1.readBlockPos();
-      this.soundData = var1.readInt();
-      this.serverWide = var1.readBoolean();
-   }
+    /**
+     * If true the sound is played across the server
+     */
+    private boolean serverWide;
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeInt(this.soundType);
-      var1.writeBlockPos(this.soundPos);
-      var1.writeInt(this.soundData);
-      var1.writeBoolean(this.serverWide);
-   }
+    public S28PacketEffect() {
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEffect(this);
-   }
+    public S28PacketEffect(int soundTypeIn, BlockPos soundPosIn, int soundDataIn, boolean serverWideIn) {
+        this.soundType = soundTypeIn;
+        this.soundPos = soundPosIn;
+        this.soundData = soundDataIn;
+        this.serverWide = serverWideIn;
+    }
 
-   public boolean isSoundServerwide() {
-      return this.serverWide;
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.soundType = buf.readInt();
+        this.soundPos = buf.readBlockPos();
+        this.soundData = buf.readInt();
+        this.serverWide = buf.readBoolean();
+    }
 
-   public int getSoundType() {
-      return this.soundType;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeInt(this.soundType);
+        buf.writeBlockPos(this.soundPos);
+        buf.writeInt(this.soundData);
+        buf.writeBoolean(this.serverWide);
+    }
 
-   public int getSoundData() {
-      return this.soundData;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEffect(this);
+    }
 
-   public BlockPos getSoundPos() {
-      return this.soundPos;
-   }
+    public boolean isSoundServerwide() {
+        return this.serverWide;
+    }
+
+    public int getSoundType() {
+        return this.soundType;
+    }
+
+    public int getSoundData() {
+        return this.soundData;
+    }
+
+    public BlockPos getSoundPos() {
+        return this.soundPos;
+    }
 }

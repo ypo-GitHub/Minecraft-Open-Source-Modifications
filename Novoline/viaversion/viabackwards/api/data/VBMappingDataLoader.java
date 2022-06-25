@@ -1,131 +1,139 @@
 package viaversion.viabackwards.api.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import java.io.*;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import net.VV;
-import net.ln;
-import viaversion.viabackwards.api.data.BackwardsMappings;
+import viaversion.viabackwards.ViaBackwards;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.MappingDataLoader;
+import viaversion.viaversion.util.GsonUtil;
 
 public class VBMappingDataLoader {
-   public static JsonObject loadFromDataDir(String param0) {
-      // $FF: Couldn't be decompiled
-   }
 
-   public static JsonObject loadData(String param0) {
-      // $FF: Couldn't be decompiled
-   }
+    public static JsonObject loadFromDataDir(String name) {
+        File file = new File(ViaBackwards.getPlatform().getDataFolder(), name);
+        if (!file.exists()) return loadData(name);
 
-   public static void mapIdentifiers(short[] var0, JsonObject var1, JsonObject var2, JsonObject var3) {
-      mapIdentifiers(var0, var1, var2, var3, true);
-   }
+        // Load the file from the platform's directory if present
+        try (FileReader reader = new FileReader(file)) {
+            return GsonUtil.getGson().fromJson(reader, JsonObject.class);
+        } catch (JsonSyntaxException e) {
+            ViaBackwards.getPlatform().getLogger().warning(name + " is badly formatted!");
+            e.printStackTrace();
+            ViaBackwards.getPlatform().getLogger().warning("Falling back to resource's file!");
+            return loadData(name);
+        } catch (IOException | JsonIOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-   public static void mapIdentifiers(short[] var0, JsonObject var1, JsonObject var2, JsonObject var3, boolean var4) {
-      BackwardsMappings.b();
-      Object2IntMap var6 = MappingDataLoader.indexedObjectToMap(var2);
+    public static JsonObject loadData(String name) {
+        InputStream stream = VBMappingDataLoader.class.getClassLoader().getResourceAsStream("assets/viabackwards/data/" + name);
 
-      for(Entry var8 : var1.entrySet()) {
-         String var9 = ((JsonElement)var8.getValue()).getAsString();
-         int var10 = var6.getInt(var9);
-         if(var10 == -1) {
-            if(var3 != null) {
-               JsonPrimitive var11 = var3.getAsJsonPrimitive(var9);
-               String var12 = var11 != null?var11.getAsString():null;
-               int var13;
-               if(var12 == null && (var13 = var9.indexOf(91)) != -1 && (var11 = var3.getAsJsonPrimitive(var9.substring(0, var13))) != null) {
-                  var12 = var11.getAsString();
-                  if(var12.endsWith("[")) {
-                     var12 = var12 + var9.substring(var13 + 1);
-                  }
-               }
+        try(InputStreamReader reader = new InputStreamReader(stream)) {
+            return GsonUtil.getGson().fromJson(reader, JsonObject.class);
+        } catch(IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-               if(var12 != null) {
-                  var10 = var6.getInt(var12);
-               }
+    public static void mapIdentifiers(short[] output, JsonObject oldIdentifiers, JsonObject newIdentifiers, JsonObject diffIdentifiers) {
+        mapIdentifiers(output, oldIdentifiers, newIdentifiers, diffIdentifiers, true);
+    }
+
+    public static void mapIdentifiers(short[] output, JsonObject oldIdentifiers, JsonObject newIdentifiers, JsonObject diffIdentifiers, boolean warnOnMissing) {
+        Object2IntMap newIdentifierMap = MappingDataLoader.indexedObjectToMap(newIdentifiers);
+        for (Map.Entry<String, JsonElement> entry : oldIdentifiers.entrySet()) {
+            String key = entry.getValue().getAsString();
+            int mappedId = newIdentifierMap.getInt(key);
+            if (mappedId == -1) {
+                if (diffIdentifiers != null) {
+                    // Search in diff mappings
+                    JsonPrimitive diffValueJson = diffIdentifiers.getAsJsonPrimitive(key);
+                    String diffValue = diffValueJson != null ? diffValueJson.getAsString() : null;
+
+                    int dataIndex;
+                    if (diffValue == null && (dataIndex = key.indexOf('[')) != -1
+                            && (diffValueJson = diffIdentifiers.getAsJsonPrimitive(key.substring(0, dataIndex))) != null) {
+                        // Check for wildcard mappings
+                        diffValue = diffValueJson.getAsString();
+
+                        // Keep original properties if value ends with [
+                        if (diffValue.endsWith("[")) {
+                            diffValue += key.substring(dataIndex + 1);
+                        }
+                    }
+
+                    if (diffValue != null) {
+                        mappedId = newIdentifierMap.getInt(diffValue);
+                    }
+                }
+
+                if (mappedId == -1) {
+                    // Nothing found :(
+                    if (warnOnMissing && !Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                        ViaBackwards.getPlatform().getLogger().warning("No key for " + entry.getValue() + " :( ");
+                    }
+                    continue;
+                }
             }
 
-            if(var10 == -1) {
-               if((!var4 || Via.getConfig().isSuppressConversionWarnings()) && !Via.getManager().isDebug()) {
-                  continue;
-               }
+            output[Integer.parseInt(entry.getKey())] = (short) mappedId;
+        }
+    }
 
-               VV.d().getLogger().warning("No key for " + var8.getValue() + " :( ");
+    public static Map<String, String> objectToMap(JsonObject object) {
+        Map<String, String> mappings = new HashMap<>();
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            String key = entry.getKey();
+            if (key.indexOf(':') == -1) {
+                key = "minecraft:" + key;
             }
-         }
+            String value = entry.getValue().getAsString();
+            if (value.indexOf(':') == -1) {
+                value = "minecraft:" + value;
+            }
+            mappings.put(key, value);
+        }
+        return mappings;
+    }
 
-         var0[Integer.parseInt((String)var8.getKey())] = (short)var10;
-         break;
-      }
+    public static Int2ObjectMap<MappedItem> loadItemMappings(JsonObject oldMapping, JsonObject newMapping, JsonObject diffMapping) {
+        Int2ObjectMap<MappedItem> itemMapping = new Int2ObjectOpenHashMap<>(diffMapping.size(), 1F);
+        Object2IntMap newIdenfierMap = MappingDataLoader.indexedObjectToMap(newMapping);
+        Object2IntMap oldIdenfierMap = MappingDataLoader.indexedObjectToMap(oldMapping);
 
-   }
+        for (Map.Entry<String, JsonElement> entry : diffMapping.entrySet()) {
+            JsonObject object = entry.getValue().getAsJsonObject();
+            String mappedIdName = object.getAsJsonPrimitive("id").getAsString();
+            int mappedId = newIdenfierMap.getInt(mappedIdName);
 
-   public static Map objectToMap(JsonObject var0) {
-      BackwardsMappings.b();
-      HashMap var2 = new HashMap();
-      Iterator var3 = var0.entrySet().iterator();
-      if(var3.hasNext()) {
-         Entry var4 = (Entry)var3.next();
-         String var5 = (String)var4.getKey();
-         if(var5.indexOf(58) == -1) {
-            var5 = "minecraft:" + var5;
-         }
-
-         String var6 = ((JsonElement)var4.getValue()).getAsString();
-         if(var6.indexOf(58) == -1) {
-            var6 = "minecraft:" + var6;
-         }
-
-         var2.put(var5, var6);
-      }
-
-      return var2;
-   }
-
-   public static Int2ObjectMap loadItemMappings(JsonObject var0, JsonObject var1, JsonObject var2) {
-      Int2ObjectOpenHashMap var4 = new Int2ObjectOpenHashMap(var2.size(), 1.0F);
-      Object2IntMap var5 = MappingDataLoader.indexedObjectToMap(var1);
-      BackwardsMappings.b();
-      Object2IntMap var6 = MappingDataLoader.indexedObjectToMap(var0);
-
-      for(Entry var8 : var2.entrySet()) {
-         JsonObject var9 = ((JsonElement)var8.getValue()).getAsJsonObject();
-         String var10 = var9.getAsJsonPrimitive("id").getAsString();
-         int var11 = var5.getInt(var10);
-         if(var11 == -1) {
-            if(Via.getConfig().isSuppressConversionWarnings() && !Via.getManager().isDebug()) {
-               continue;
+            if (mappedId == -1) {
+                if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                    ViaBackwards.getPlatform().getLogger().warning("No key for " + mappedIdName + " :( ");
+                }
+                continue;
             }
 
-            VV.d().getLogger().warning("No key for " + var10 + " :( ");
-         }
+            int oldId = oldIdenfierMap.getInt(entry.getKey());
 
-         int var12 = var6.getInt(var8.getKey());
-         if(var12 == -1) {
-            if(Via.getConfig().isSuppressConversionWarnings() && !Via.getManager().isDebug()) {
-               continue;
+            if (oldId == -1) {
+                if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                    ViaBackwards.getPlatform().getLogger().warning("No old entry for " + mappedIdName + " :( ");
+                }
+                continue;
             }
 
-            VV.d().getLogger().warning("No old entry for " + var10 + " :( ");
-         }
+            String name = object.getAsJsonPrimitive("name").getAsString();
+            itemMapping.put(oldId, new MappedItem(mappedId, name));
+        }
 
-         String var13 = var9.getAsJsonPrimitive("name").getAsString();
-         var4.put(var12, new ln(var11, var13));
-         break;
-      }
-
-      return var4;
-   }
-
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+        return itemMapping;
+    }
 }

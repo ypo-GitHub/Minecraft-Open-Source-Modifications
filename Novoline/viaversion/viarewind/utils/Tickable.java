@@ -1,5 +1,5 @@
 package viaversion.viarewind.utils;
 
 public interface Tickable {
-   void tick();
+	void tick();
 }

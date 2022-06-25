@@ -1,33 +1,50 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.transformation;
 
 import java.util.Comparator;
-import net.s;
 
-class NodePathComparator implements Comparator {
-   public int compare(Object[] var1, Object[] var2) {
-      s.b();
-      int var4 = 0;
-      if(var4 < Math.min(var1.length, var2.length)) {
-         if(var1[var4] != s.c && var2[var4] != s.c) {
-            if(var1[var4] instanceof Comparable) {
-               int var5 = ((Comparable)var1[var4]).compareTo(var2[var4]);
-               switch(var5) {
-               case 0:
-               default:
-                  return var5;
-               }
+import static ninja.leaping.configurate.transformation.ConfigurationTransformation.WILDCARD_OBJECT;
+
+class NodePathComparator implements Comparator<Object[]> {
+
+    @Override
+    public int compare(Object[] a, Object[] b) {
+        for (int i = 0; i < Math.min(a.length, b.length); ++i) {
+            if (a[i] == WILDCARD_OBJECT || b[i] == WILDCARD_OBJECT) {
+                if (a[i] != WILDCARD_OBJECT || b[i] != WILDCARD_OBJECT) {
+                    return a[i] == WILDCARD_OBJECT ? 1 : -1;
+                }
+
+            } else if (a[i] instanceof Comparable) {
+                @SuppressWarnings("unchecked") final int comp = ((Comparable) a[i]).compareTo(b[i]);
+                switch (comp) {
+                    case 0:
+                        break;
+                    default:
+                        return comp;
+                }
+            } else {
+                return a[i].equals(b[i]) ? 0 : Integer.compare(a[i].hashCode(), b[i].hashCode());
             }
+        }
 
-            return var1[var4].equals(var2[var4])?0:Integer.compare(var1[var4].hashCode(), var2[var4].hashCode());
-         }
+        return Integer.compare(b.length, a.length);
+    }
 
-         if(var1[var4] != s.c || var2[var4] != s.c) {
-            return var1[var4] == s.c?1:-1;
-         }
-
-         ++var4;
-      }
-
-      return Integer.compare(var2.length, var1.length);
-   }
 }

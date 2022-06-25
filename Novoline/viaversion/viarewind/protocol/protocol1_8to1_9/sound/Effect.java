@@ -1,58 +1,51 @@
 package viaversion.viarewind.protocol.protocol1_8to1_9.sound;
 
 import java.util.HashMap;
-import net.acE;
-import viaversion.viarewind.protocol.protocol1_8to1_9.sound.SoundRemapper;
 
 public class Effect {
-   private static final HashMap effects = new HashMap();
+	private static final HashMap<Integer, Integer> effects = new HashMap<>();
 
-   public static int getOldId(int var0) {
-      acE[] var1 = SoundRemapper.b();
-      int var10000 = ((Integer)effects.getOrDefault(Integer.valueOf(var0), Integer.valueOf(var0))).intValue();
-      if(acE.b() == null) {
-         SoundRemapper.b(new acE[5]);
-      }
+	public static int getOldId(int id) {
+		return effects.getOrDefault(id, id);
+	}
 
-      return var10000;
-   }
+	static {
+		effects.put(1003, 1002);
+		effects.put(1005, 1003);
+		effects.put(1006, 1003);
+		effects.put(1007, 1003);
+		effects.put(1008, 1003);
+		effects.put(1009, 1004);
+		effects.put(1010, 1005);
+		effects.put(1011, 1006);
+		effects.put(1012, 1006);
+		effects.put(1013, 1006);
+		effects.put(1014, 1006);
+		effects.put(1015, 1007);
+		effects.put(1016, 1008);
+		effects.put(1017, 1008);
+		effects.put(1018, 1009);
+		effects.put(1019, 1010);
+		effects.put(1020, 1011);
+		effects.put(1021, 1012);
+		effects.put(1022, 1012);
+		effects.put(1023, 1013);
+		effects.put(1024, 1014);
+		effects.put(1025, 1015);
+		effects.put(1026, 1016);
+		effects.put(1027, 1017);
+		effects.put(1028, 1018);
+		effects.put(1029, 1020);
+		effects.put(1030, 1021);
+		effects.put(1031, 1022);
+		effects.put(1032, -1);
+		effects.put(1033, -1);
+		effects.put(1034, -1);
+		effects.put(1035, -1);
+		effects.put(1036, 1003);
+		effects.put(1037, 1006);
 
-   static {
-      effects.put(Integer.valueOf(1003), Integer.valueOf(1002));
-      effects.put(Integer.valueOf(1005), Integer.valueOf(1003));
-      effects.put(Integer.valueOf(1006), Integer.valueOf(1003));
-      effects.put(Integer.valueOf(1007), Integer.valueOf(1003));
-      effects.put(Integer.valueOf(1008), Integer.valueOf(1003));
-      effects.put(Integer.valueOf(1009), Integer.valueOf(1004));
-      effects.put(Integer.valueOf(1010), Integer.valueOf(1005));
-      effects.put(Integer.valueOf(1011), Integer.valueOf(1006));
-      effects.put(Integer.valueOf(1012), Integer.valueOf(1006));
-      effects.put(Integer.valueOf(1013), Integer.valueOf(1006));
-      effects.put(Integer.valueOf(1014), Integer.valueOf(1006));
-      effects.put(Integer.valueOf(1015), Integer.valueOf(1007));
-      effects.put(Integer.valueOf(1016), Integer.valueOf(1008));
-      effects.put(Integer.valueOf(1017), Integer.valueOf(1008));
-      effects.put(Integer.valueOf(1018), Integer.valueOf(1009));
-      effects.put(Integer.valueOf(1019), Integer.valueOf(1010));
-      effects.put(Integer.valueOf(1020), Integer.valueOf(1011));
-      effects.put(Integer.valueOf(1021), Integer.valueOf(1012));
-      effects.put(Integer.valueOf(1022), Integer.valueOf(1012));
-      effects.put(Integer.valueOf(1023), Integer.valueOf(1013));
-      effects.put(Integer.valueOf(1024), Integer.valueOf(1014));
-      effects.put(Integer.valueOf(1025), Integer.valueOf(1015));
-      effects.put(Integer.valueOf(1026), Integer.valueOf(1016));
-      effects.put(Integer.valueOf(1027), Integer.valueOf(1017));
-      effects.put(Integer.valueOf(1028), Integer.valueOf(1018));
-      effects.put(Integer.valueOf(1029), Integer.valueOf(1020));
-      effects.put(Integer.valueOf(1030), Integer.valueOf(1021));
-      effects.put(Integer.valueOf(1031), Integer.valueOf(1022));
-      effects.put(Integer.valueOf(1032), Integer.valueOf(-1));
-      effects.put(Integer.valueOf(1033), Integer.valueOf(-1));
-      effects.put(Integer.valueOf(1034), Integer.valueOf(-1));
-      effects.put(Integer.valueOf(1035), Integer.valueOf(-1));
-      effects.put(Integer.valueOf(1036), Integer.valueOf(1003));
-      effects.put(Integer.valueOf(1037), Integer.valueOf(1006));
-      effects.put(Integer.valueOf(3000), Integer.valueOf(-1));
-      effects.put(Integer.valueOf(3001), Integer.valueOf(-1));
-   }
+		effects.put(3000, -1);
+		effects.put(3001, -1);
+	}
 }

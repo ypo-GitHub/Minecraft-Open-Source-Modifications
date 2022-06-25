@@ -1,74 +1,47 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types;
 
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Predicate;
-import net.acE;
-import net.axZ;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types.MetaType1_7_6_10;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types.MetadataType;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types.Particle;
 import viaversion.viaversion.api.minecraft.metadata.Metadata;
 import viaversion.viaversion.api.type.types.minecraft.MetaListTypeTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MetadataListType extends MetaListTypeTemplate {
-   private MetadataType metadataType = new MetadataType();
+	private MetadataType metadataType = new MetadataType();
 
-   public List read(ByteBuf var1) throws Exception {
-      Particle.b();
-      ArrayList var3 = new ArrayList();
+	@Override
+	public List<Metadata> read(ByteBuf buffer) throws Exception {
+		ArrayList<Metadata> list = new ArrayList();
 
-      while(true) {
-         Metadata var4 = (Metadata)axZ.d.read(var1);
-         var3.add(var4);
-         if(var4 == null) {
-            break;
-         }
-      }
+		Metadata m;
+		do {
+			m = Types1_7_6_10.METADATA.read(buffer);
+			if (m != null) {
+				list.add(m);
+			}
+		} while(m != null);
 
-      if(this.find(2, "Slot", var3) != null && this.find(8, "Slot", var3) != null) {
-         var3.removeIf(MetadataListType::lambda$read$0);
-      }
+		if (find(2, "Slot", list)!=null && find(8, "Slot", list)!=null) {
+			list.removeIf(metadata -> metadata.getId()==2 || metadata.getId()==3);
+		}
 
-      return var3;
-   }
+		return list;
+	}
 
-   private Metadata find(int var1, String var2, List var3) {
-      Particle.b();
-      Iterator var5 = var3.iterator();
-      if(var5.hasNext()) {
-         Metadata var6 = (Metadata)var5.next();
-         if(var6.getId() == var1 && var6.getMetaType().toString().equals(var2)) {
-            return var6;
-         }
-      }
+	private Metadata find(int id, String type, List<Metadata> list) {
+		for (Metadata metadata : list) if (metadata.getId()==id && metadata.getMetaType().toString().equals(type)) return metadata;
+		return null;
+	}
 
-      return null;
-   }
-
-   public void write(ByteBuf var1, List var2) throws Exception {
-      Particle.b();
-      Iterator var4 = var2.iterator();
-      if(var4.hasNext()) {
-         Metadata var5 = (Metadata)var4.next();
-         axZ.d.write(var1, var5);
-      }
-
-      if(var2.isEmpty()) {
-         axZ.d.write(var1, new Metadata(0, MetaType1_7_6_10.Byte, Byte.valueOf((byte)0)));
-      }
-
-      var1.writeByte(127);
-   }
-
-   private static boolean lambda$read$0(Metadata var0) {
-      acE[] var1 = Particle.b();
-      return var0.getId() == 2 || var0.getId() == 3;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+	@Override
+	public void write(ByteBuf buffer, List<Metadata> metadata) throws Exception {
+		for (Metadata meta : metadata) {
+			Types1_7_6_10.METADATA.write(buffer, meta);
+		}
+		if (metadata.isEmpty()) {
+			Types1_7_6_10.METADATA.write(buffer, new Metadata(0, MetaType1_7_6_10.Byte, (byte)0));
+		}
+		buffer.writeByte(127);
+	}
 }

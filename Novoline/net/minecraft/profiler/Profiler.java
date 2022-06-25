@@ -2,160 +2,236 @@ package net.minecraft.profiler;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import net.cj;
+import net.minecraft.client.renderer.GlStateManager;
 import net.optifine.Config;
 import net.optifine.Lagometer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.*;
+
 public class Profiler {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final List sectionList = Lists.newArrayList();
-   private final List timestampList = Lists.newArrayList();
-   public boolean profilingEnabled;
-   private String profilingSection = "";
-   private final Map profilingMap = Maps.newHashMap();
-   public boolean profilerGlobalEnabled = true;
-   private boolean profilerLocalEnabled;
-   private static final String i = "scheduledExecutables";
-   private static final String f = "tick";
-   private static final String e = "preRenderErrors";
-   private static final String p = "render";
-   private static final String q = "display";
-   private static final int HASH_SCHEDULED_EXECUTABLES = "scheduledExecutables".hashCode();
-   private static final int HASH_TICK = "tick".hashCode();
-   private static final int HASH_PRE_RENDER_ERRORS = "preRenderErrors".hashCode();
-   private static final int n = "render".hashCode();
-   private static final int j = "display".hashCode();
 
-   public Profiler() {
-      this.profilerLocalEnabled = this.profilerGlobalEnabled;
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public void clearProfiling() {
-      this.profilingMap.clear();
-      this.profilingSection = "";
-      this.sectionList.clear();
-      this.profilerLocalEnabled = this.profilerGlobalEnabled;
-   }
+    /**
+     * List of parent sections
+     */
+    private final List<String> sectionList = Lists.newArrayList();
 
-   public void startSection(String var1) {
-      if(Lagometer.isActive()) {
-         int var2 = var1.hashCode();
-         if(var2 == HASH_SCHEDULED_EXECUTABLES && var1.equals("scheduledExecutables")) {
-            Lagometer.timerScheduledExecutables.start();
-         } else if(var2 == HASH_TICK && var1.equals("tick") && Config.isMinecraftThread()) {
-            Lagometer.timerScheduledExecutables.end();
-            Lagometer.timerTick.start();
-         } else if(var2 == HASH_PRE_RENDER_ERRORS && var1.equals("preRenderErrors")) {
-            Lagometer.timerTick.end();
-         }
-      }
+    /**
+     * List of timestamps (System.nanoTime)
+     */
+    private final List<Long> timestampList = Lists.newArrayList();
 
-      if(this.profilerLocalEnabled && this.profilingEnabled) {
-         if(!this.profilingSection.isEmpty()) {
-            this.profilingSection = this.profilingSection + ".";
-         }
+    /**
+     * Flag profiling enabled
+     */
+    public boolean profilingEnabled;
 
-         this.profilingSection = this.profilingSection + var1;
-         this.sectionList.add(this.profilingSection);
-         this.timestampList.add(Long.valueOf(System.nanoTime()));
-      }
+    /**
+     * Current profiling section
+     */
+    private String profilingSection = "";
 
-   }
+    /**
+     * Profiling map
+     */
+    private final Map<String, Long> profilingMap = Maps.newHashMap();
+    public boolean profilerGlobalEnabled = true;
+    private boolean profilerLocalEnabled;
+    private static final String SCHEDULED_EXECUTABLES = "scheduledExecutables";
+    private static final String TICK = "tick";
+    private static final String PRE_RENDER_ERRORS = "preRenderErrors";
+    private static final String RENDER = "render";
+    private static final String DISPLAY = "display";
+    private static final int HASH_SCHEDULED_EXECUTABLES = "scheduledExecutables".hashCode();
+    private static final int HASH_TICK = "tick".hashCode();
+    private static final int HASH_PRE_RENDER_ERRORS = "preRenderErrors".hashCode();
+    private static final int HASH_RENDER = "render".hashCode();
+    private static final int HASH_DISPLAY = "display".hashCode();
 
-   public void endSection() {
-      if(this.profilerLocalEnabled && this.profilingEnabled) {
-         long var1 = System.nanoTime();
-         long var3 = ((Long)this.timestampList.remove(this.timestampList.size() - 1)).longValue();
-         this.sectionList.remove(this.sectionList.size() - 1);
-         long var5 = var1 - var3;
-         if(this.profilingMap.containsKey(this.profilingSection)) {
-            this.profilingMap.put(this.profilingSection, Long.valueOf(((Long)this.profilingMap.get(this.profilingSection)).longValue() + var5));
-         } else {
-            this.profilingMap.put(this.profilingSection, Long.valueOf(var5));
-         }
+    public Profiler() {
+        this.profilerLocalEnabled = this.profilerGlobalEnabled;
+    }
 
-         if(var5 > 100000000L) {
-            LOGGER.warn("Something\'s taking too long! \'" + this.profilingSection + "\' took aprox " + (double)var5 / 1000000.0D + " ms");
-         }
+    /**
+     * Clear profiling.
+     */
+    public void clearProfiling() {
+        this.profilingMap.clear();
+        this.profilingSection = "";
+        this.sectionList.clear();
+        this.profilerLocalEnabled = this.profilerGlobalEnabled;
+    }
 
-         this.profilingSection = !this.sectionList.isEmpty()?(String)this.sectionList.get(this.sectionList.size() - 1):"";
-      }
+    /**
+     * Start section
+     */
+    public void startSection(String name) {
+        if (Lagometer.isActive()) {
+            final int i = name.hashCode();
 
-   }
-
-   public List getProfilingData(String var1) {
-      this.profilerLocalEnabled = this.profilerGlobalEnabled;
-      if(!this.profilerLocalEnabled) {
-         return new ArrayList(Collections.singletonList(new cj("root", 0.0D, 0.0D)));
-      } else if(!this.profilingEnabled) {
-         return null;
-      } else {
-         long var2 = ((Long)this.profilingMap.getOrDefault("root", Long.valueOf(0L))).longValue();
-         long var4 = ((Long)this.profilingMap.getOrDefault(var1, Long.valueOf(-1L))).longValue();
-         ArrayList var6 = Lists.newArrayList();
-         if(!var1.isEmpty()) {
-            var1 = var1 + ".";
-         }
-
-         long var7 = 0L;
-
-         for(Object var10 : this.profilingMap.keySet()) {
-            if(((String)var10).length() > var1.length() && ((String)var10).startsWith(var1) && ((String)var10).indexOf(".", var1.length() + 1) < 0) {
-               var7 += ((Long)this.profilingMap.get(var10)).longValue();
+            if (i == HASH_SCHEDULED_EXECUTABLES && name.equals("scheduledExecutables")) {
+                Lagometer.timerScheduledExecutables.start();
+            } else if (i == HASH_TICK && name.equals("tick") && Config.isMinecraftThread()) {
+                Lagometer.timerScheduledExecutables.end();
+                Lagometer.timerTick.start();
+            } else if (i == HASH_PRE_RENDER_ERRORS && name.equals("preRenderErrors")) {
+                Lagometer.timerTick.end();
             }
-         }
+        }
 
-         float var20 = (float)var7;
-         if(var7 < var4) {
-            var7 = var4;
-         }
+        if (Config.isFastRender()) {
+            final int j = name.hashCode();
 
-         if(var2 < var7) {
-            var2 = var7;
-         }
-
-         for(Object var11 : this.profilingMap.keySet()) {
-            String var12 = (String)var11;
-            if(var12.length() > var1.length() && var12.startsWith(var1) && var12.indexOf(".", var1.length() + 1) < 0) {
-               long var13 = ((Long)this.profilingMap.get(var12)).longValue();
-               double var15 = (double)var13 * 100.0D / (double)var7;
-               double var17 = (double)var13 * 100.0D / (double)var2;
-               String var19 = var12.substring(var1.length());
-               var6.add(new cj(var19, var15, var17));
+            if (j == HASH_RENDER && name.equals("render")) {
+                GlStateManager.clearEnabled = false;
+            } else if (j == HASH_DISPLAY && name.equals("display")) {
+                GlStateManager.clearEnabled = true;
             }
-         }
+        }
 
-         this.profilingMap.replaceAll(this::lambda$getProfilingData$0);
-         if((float)var7 > var20) {
-            var6.add(new cj("unspecified", (double)((float)var7 - var20) * 100.0D / (double)var7, (double)((float)var7 - var20) * 100.0D / (double)var2));
-         }
+        if (this.profilerLocalEnabled) {
+            if (this.profilingEnabled) {
+                if (!this.profilingSection.isEmpty()) {
+                    this.profilingSection = this.profilingSection + ".";
+                }
 
-         Collections.sort(var6);
-         var6.add(0, new cj(var1, 100.0D, (double)var7 * 100.0D / (double)var2));
-         return var6;
-      }
-   }
+                this.profilingSection = this.profilingSection + name;
+                this.sectionList.add(this.profilingSection);
+                this.timestampList.add(System.nanoTime());
+            }
+        }
+    }
 
-   public void endStartSection(String var1) {
-      if(this.profilerLocalEnabled) {
-         this.endSection();
-         this.startSection(var1);
-      }
+    /**
+     * End section
+     */
+    public void endSection() {
+        if (this.profilerLocalEnabled) {
+            if (this.profilingEnabled) {
+                final long i = System.nanoTime();
+                final long j = this.timestampList.remove(this.timestampList.size() - 1);
+                this.sectionList.remove(this.sectionList.size() - 1);
+                final long k = i - j;
 
-   }
+                if (this.profilingMap.containsKey(this.profilingSection)) {
+                    this.profilingMap.put(this.profilingSection, this.profilingMap.get(this.profilingSection).longValue() + k);
+                } else {
+                    this.profilingMap.put(this.profilingSection, k);
+                }
 
-   public String getNameOfLastSection() {
-      return this.sectionList.isEmpty()?"[UNKNOWN]":(String)this.sectionList.get(this.sectionList.size() - 1);
-   }
+                if (k > 100000000L) {
+                    LOGGER.warn("Something's taking too long! '" + this.profilingSection + "' took aprox " + (double) k / 1000000.0D + " ms");
+                }
 
-   private Long lambda$getProfilingData$0(String var1, Long var2) {
-      return Long.valueOf(((Long)this.profilingMap.get(var1)).longValue() * 950L / 1000L);
-   }
+                this.profilingSection = !this.sectionList.isEmpty() ? this.sectionList.get(this.sectionList.size() - 1) : "";
+            }
+        }
+    }
+
+    /**
+     * Get profiling data
+     */
+    public List getProfilingData(String p_76321_1_) {
+        this.profilerLocalEnabled = this.profilerGlobalEnabled;
+
+        if (!this.profilerLocalEnabled) {
+            return new ArrayList(Arrays.asList(new Result("root", 0.0D, 0.0D)));
+        } else if (!this.profilingEnabled) {
+            return null;
+        } else {
+            long i = this.profilingMap.containsKey("root") ? this.profilingMap.get("root") : 0L;
+            final long j = this.profilingMap.containsKey(p_76321_1_) ? this.profilingMap.get(p_76321_1_) : -1L;
+            final ArrayList arraylist = Lists.newArrayList();
+
+            if (!p_76321_1_.isEmpty()) {
+                p_76321_1_ = p_76321_1_ + ".";
+            }
+
+            long k = 0L;
+
+            for (Object s : this.profilingMap.keySet()) {
+                if (((String) s).length() > p_76321_1_.length() && ((String) s).startsWith(p_76321_1_) && ((String) s).indexOf(".", p_76321_1_.length() + 1) < 0) {
+                    k += this.profilingMap.get(s);
+                }
+            }
+
+            final float f = (float) k;
+
+            if (k < j) {
+                k = j;
+            }
+
+            if (i < k) {
+                i = k;
+            }
+
+            for (Object s10 : this.profilingMap.keySet()) {
+                final String s1 = (String) s10;
+
+                if (s1.length() > p_76321_1_.length() && s1.startsWith(p_76321_1_) && s1.indexOf(".", p_76321_1_.length() + 1) < 0) {
+                    final long l = this.profilingMap.get(s1);
+                    final double d0 = (double) l * 100.0D / (double) k;
+                    final double d1 = (double) l * 100.0D / (double) i;
+                    final String s2 = s1.substring(p_76321_1_.length());
+                    arraylist.add(new Profiler.Result(s2, d0, d1));
+                }
+            }
+
+            this.profilingMap.replaceAll((k1, v) -> this.profilingMap.get(k1) * 950L / 1000L);
+
+            if ((float) k > f) {
+                arraylist.add(new Profiler.Result("unspecified", (double) ((float) k - f) * 100.0D / (double) k, (double) ((float) k - f) * 100.0D / (double) i));
+            }
+
+            Collections.sort(arraylist);
+
+            arraylist.add(0, new Profiler.Result(p_76321_1_, 100.0D, (double) k * 100.0D / (double) i));
+            return arraylist;
+        }
+    }
+
+    /**
+     * End current section and start a new section
+     */
+    public void endStartSection(String name) {
+        if (this.profilerLocalEnabled) {
+            this.endSection();
+            this.startSection(name);
+        }
+    }
+
+    public String getNameOfLastSection() {
+        return this.sectionList.isEmpty() ? "[UNKNOWN]" : this.sectionList.get(this.sectionList.size() - 1);
+    }
+
+    public static final class Result implements Comparable {
+
+        public double field_76332_a;
+        public double field_76330_b;
+        public String field_76331_c;
+        private static final String __OBFID = "CL_00001498";
+
+        public Result(String p_i1554_1_, double p_i1554_2_, double p_i1554_4_) {
+            this.field_76331_c = p_i1554_1_;
+            this.field_76332_a = p_i1554_2_;
+            this.field_76330_b = p_i1554_4_;
+        }
+
+        public int compareTo(Profiler.Result p_compareTo_1_) {
+            return p_compareTo_1_.field_76332_a < this.field_76332_a ? -1 : p_compareTo_1_.field_76332_a > this.field_76332_a ? 1 : p_compareTo_1_.field_76331_c.compareTo(this.field_76331_c);
+        }
+
+        public int func_76329_a() {
+            return (this.field_76331_c.hashCode() & 11184810) + 4473924;
+        }
+
+        public int compareTo(Object p_compareTo_1_) {
+            return this.compareTo((Profiler.Result) p_compareTo_1_);
+        }
+
+    }
+
 }

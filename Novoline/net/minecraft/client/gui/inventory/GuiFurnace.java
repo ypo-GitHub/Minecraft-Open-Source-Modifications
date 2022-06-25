@@ -1,6 +1,5 @@
 package net.minecraft.client.gui.inventory;
 
-import net.aHz;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ContainerFurnace;
@@ -8,47 +7,62 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.ResourceLocation;
 
-public class GuiFurnace extends aHz {
-   private static final ResourceLocation furnaceGuiTextures = new ResourceLocation("textures/gui/container/furnace.png");
-   private final InventoryPlayer playerInventory;
-   private IInventory tileFurnace;
+public class GuiFurnace extends GuiContainer {
+    private static final ResourceLocation furnaceGuiTextures = new ResourceLocation("textures/gui/container/furnace.png");
 
-   public GuiFurnace(InventoryPlayer var1, IInventory var2) {
-      super(new ContainerFurnace(var1, var2));
-      this.playerInventory = var1;
-      this.tileFurnace = var2;
-   }
+    /**
+     * The player inventory bound to this GUI.
+     */
+    private final InventoryPlayer playerInventory;
+    private IInventory tileFurnace;
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      String var3 = this.tileFurnace.getDisplayName().getUnformattedText();
-      this.fontRendererObj.drawString(var3, (float)(this.y / 2 - this.fontRendererObj.d(var3) / 2), 6.0F, 4210752);
-      this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8.0F, (float)(this.ab - 96 + 2), 4210752);
-   }
+    public GuiFurnace(InventoryPlayer playerInv, IInventory furnaceInv) {
+        super(new ContainerFurnace(playerInv, furnaceInv));
+        this.playerInventory = playerInv;
+        this.tileFurnace = furnaceInv;
+    }
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(furnaceGuiTextures);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.ab);
-      if(TileEntityFurnace.isBurning(this.tileFurnace)) {
-         int var6 = this.getBurnLeftScaled(13);
-         this.drawTexturedModalRect(var4 + 56, var5 + 36 + 12 - var6, 176, 12 - var6, 14, var6 + 1);
-      }
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        String s = this.tileFurnace.getDisplayName().getUnformattedText();
+        this.fontRendererObj.drawString(s, this.xSize / 2 - this.fontRendererObj.getStringWidth(s) / 2, 6, 4210752);
+        this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
+    }
 
-      int var7 = this.getCookProgressScaled(24);
-      this.drawTexturedModalRect(var4 + 79, var5 + 34, 176, 14, var7 + 1, 16);
-   }
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(furnaceGuiTextures);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
 
-   private int getCookProgressScaled(int var1) {
-      int var2 = this.tileFurnace.getField(2);
-      int var3 = this.tileFurnace.getField(3);
-      return var2 * var1 / var3;
-   }
+        if (TileEntityFurnace.isBurning(this.tileFurnace)) {
+            int k = this.getBurnLeftScaled(13);
+            this.drawTexturedModalRect(i + 56, j + 36 + 12 - k, 176, 12 - k, 14, k + 1);
+        }
 
-   private int getBurnLeftScaled(int var1) {
-      int var2 = this.tileFurnace.getField(1);
-      var2 = 200;
-      return this.tileFurnace.getField(0) * var1 / var2;
-   }
+        int l = this.getCookProgressScaled(24);
+        this.drawTexturedModalRect(i + 79, j + 34, 176, 14, l + 1, 16);
+    }
+
+    private int getCookProgressScaled(int pixels) {
+        int i = this.tileFurnace.getField(2);
+        int j = this.tileFurnace.getField(3);
+        return j != 0 && i != 0 ? i * pixels / j : 0;
+    }
+
+    private int getBurnLeftScaled(int pixels) {
+        int i = this.tileFurnace.getField(1);
+
+        if (i == 0) {
+            i = 200;
+        }
+
+        return this.tileFurnace.getField(0) * pixels / i;
+    }
 }

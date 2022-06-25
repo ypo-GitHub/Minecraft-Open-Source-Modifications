@@ -8,84 +8,87 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 
 public class GuiStreamIndicator {
-   private static final ResourceLocation locationStreamIndicator = new ResourceLocation("textures/gui/stream_indicator.png");
-   private final Minecraft mc;
-   private float field_152443_c = 1.0F;
-   private int field_152444_d = 1;
+    private static final ResourceLocation locationStreamIndicator = new ResourceLocation("textures/gui/stream_indicator.png");
+    private final Minecraft mc;
+    private float field_152443_c = 1.0F;
+    private int field_152444_d = 1;
 
-   public GuiStreamIndicator(Minecraft var1) {
-      this.mc = var1;
-   }
+    public GuiStreamIndicator(Minecraft mcIn) {
+        this.mc = mcIn;
+    }
 
-   public void render(int var1, int var2) {
-      if(this.mc.getTwitchStream().isBroadcasting()) {
-         GlStateManager.enableBlend();
-         int var3 = this.mc.getTwitchStream().func_152920_A();
-         String var4 = "" + var3;
-         int var5 = this.mc.fontRendererObj.d(var4);
-         boolean var6 = true;
-         int var7 = var1 - var5 - 1;
-         int var8 = var2 + 20 - 1;
-         int var9 = var2 + 20 + this.mc.fontRendererObj.getHeight() - 1;
-         GlStateManager.disableTexture2D();
-         Tessellator var10 = Tessellator.getInstance();
-         WorldRenderer var11 = var10.getWorldRenderer();
-         GlStateManager.color(0.0F, 0.0F, 0.0F, (0.65F + 0.35000002F * this.field_152443_c) / 2.0F);
-         var11.begin(7, DefaultVertexFormats.POSITION);
-         var11.pos((double)var7, (double)var9, 0.0D).endVertex();
-         var11.pos((double)var1, (double)var9, 0.0D).endVertex();
-         var11.pos((double)var1, (double)var8, 0.0D).endVertex();
-         var11.pos((double)var7, (double)var8, 0.0D).endVertex();
-         var10.draw();
-         GlStateManager.enableTexture2D();
-         this.mc.fontRendererObj.drawString(var4, (float)(var1 - var5), (float)(var2 + 20), 16777215);
-         this.render(var1, var2, this.func_152440_b(), 0);
-         this.render(var1, var2, this.func_152438_c(), 17);
-      }
+    public void render(int p_152437_1_, int p_152437_2_) {
+        if (this.mc.getTwitchStream().isBroadcasting()) {
+            GlStateManager.enableBlend();
+            int i = this.mc.getTwitchStream().func_152920_A();
 
-   }
+            if (i > 0) {
+                String s = "" + i;
+                int j = this.mc.fontRendererObj.getStringWidth(s);
+                int k = 20;
+                int l = p_152437_1_ - j - 1;
+                int i1 = p_152437_2_ + 20 - 1;
+                int j1 = p_152437_2_ + 20 + this.mc.fontRendererObj.getHeight() - 1;
+                GlStateManager.disableTexture2D();
+                Tessellator tessellator = Tessellator.getInstance();
+                WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+                GlStateManager.color(0.0F, 0.0F, 0.0F, (0.65F + 0.35000002F * this.field_152443_c) / 2.0F);
+                worldrenderer.begin(7, DefaultVertexFormats.POSITION);
+                worldrenderer.pos(l, j1, 0.0D).endVertex();
+                worldrenderer.pos(p_152437_1_, j1, 0.0D).endVertex();
+                worldrenderer.pos(p_152437_1_, i1, 0.0D).endVertex();
+                worldrenderer.pos(l, i1, 0.0D).endVertex();
+                tessellator.draw();
+                GlStateManager.enableTexture2D();
+                this.mc.fontRendererObj.drawString(s, p_152437_1_ - j, p_152437_2_ + 20, 16777215);
+            }
 
-   private void render(int var1, int var2, int var3, int var4) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 0.65F + 0.35000002F * this.field_152443_c);
-      this.mc.getTextureManager().bindTexture(locationStreamIndicator);
-      float var5 = 150.0F;
-      float var6 = 0.0F;
-      float var7 = (float)var3 * 0.015625F;
-      float var8 = 1.0F;
-      float var9 = (float)(var3 + 16) * 0.015625F;
-      Tessellator var10 = Tessellator.getInstance();
-      WorldRenderer var11 = var10.getWorldRenderer();
-      var11.begin(7, DefaultVertexFormats.POSITION_TEX);
-      var11.pos((double)(var1 - 16 - var4), (double)(var2 + 16), (double)var5).tex((double)var6, (double)var9).endVertex();
-      var11.pos((double)(var1 - var4), (double)(var2 + 16), (double)var5).tex((double)var8, (double)var9).endVertex();
-      var11.pos((double)(var1 - var4), (double)(var2 + 0), (double)var5).tex((double)var8, (double)var7).endVertex();
-      var11.pos((double)(var1 - 16 - var4), (double)(var2 + 0), (double)var5).tex((double)var6, (double)var7).endVertex();
-      var10.draw();
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-   }
+            this.render(p_152437_1_, p_152437_2_, this.func_152440_b(), 0);
+            this.render(p_152437_1_, p_152437_2_, this.func_152438_c(), 17);
+        }
+    }
 
-   private int func_152440_b() {
-      return this.mc.getTwitchStream().isPaused()?16:0;
-   }
+    private void render(int p_152436_1_, int p_152436_2_, int p_152436_3_, int p_152436_4_) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 0.65F + 0.35000002F * this.field_152443_c);
+        this.mc.getTextureManager().bindTexture(locationStreamIndicator);
+        float f = 150.0F;
+        float f1 = 0.0F;
+        float f2 = (float) p_152436_3_ * 0.015625F;
+        float f3 = 1.0F;
+        float f4 = (float) (p_152436_3_ + 16) * 0.015625F;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos(p_152436_1_ - 16 - p_152436_4_, p_152436_2_ + 16, f).tex(f1, f4).endVertex();
+        worldrenderer.pos(p_152436_1_ - p_152436_4_, p_152436_2_ + 16, f).tex(f3, f4).endVertex();
+        worldrenderer.pos(p_152436_1_ - p_152436_4_, p_152436_2_ + 0, f).tex(f3, f2).endVertex();
+        worldrenderer.pos(p_152436_1_ - 16 - p_152436_4_, p_152436_2_ + 0, f).tex(f1, f2).endVertex();
+        tessellator.draw();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
 
-   private int func_152438_c() {
-      return this.mc.getTwitchStream().func_152929_G()?48:32;
-   }
+    private int func_152440_b() {
+        return this.mc.getTwitchStream().isPaused() ? 16 : 0;
+    }
 
-   public void func_152439_a() {
-      if(this.mc.getTwitchStream().isBroadcasting()) {
-         this.field_152443_c += 0.025F * (float)this.field_152444_d;
-         if(this.field_152443_c < 0.0F) {
-            this.field_152444_d *= -1;
-            this.field_152443_c = 0.0F;
-         } else if(this.field_152443_c > 1.0F) {
-            this.field_152444_d *= -1;
+    private int func_152438_c() {
+        return this.mc.getTwitchStream().func_152929_G() ? 48 : 32;
+    }
+
+    public void func_152439_a() {
+        if (this.mc.getTwitchStream().isBroadcasting()) {
+            this.field_152443_c += 0.025F * (float) this.field_152444_d;
+
+            if (this.field_152443_c < 0.0F) {
+                this.field_152444_d *= -1;
+                this.field_152443_c = 0.0F;
+            } else if (this.field_152443_c > 1.0F) {
+                this.field_152444_d *= -1;
+                this.field_152443_c = 1.0F;
+            }
+        } else {
             this.field_152443_c = 1.0F;
-         }
-      } else {
-         this.field_152443_c = 1.0F;
-         this.field_152444_d = 1;
-      }
-
-   }
+            this.field_152444_d = 1;
+        }
+    }
 }

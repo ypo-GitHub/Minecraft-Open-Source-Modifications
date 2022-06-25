@@ -1,36 +1,44 @@
 package net.minecraft.command;
 
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 
 public class CommandShowSeed extends CommandBase {
-   public boolean canCommandSenderUseCommand(ICommandSender var1) {
-      return MinecraftServer.getServer().isSinglePlayer() || super.canCommandSenderUseCommand(var1);
-   }
+    /**
+     * Returns true if the given command sender is allowed to use this command.
+     */
+    public boolean canCommandSenderUseCommand(ICommandSender sender) {
+        return MinecraftServer.getServer().isSinglePlayer() || super.canCommandSenderUseCommand(sender);
+    }
 
-   public String getCommandName() {
-      return "seed";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "seed";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.seed.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.seed.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      Object var3 = var1 instanceof EntityPlayer?((EntityPlayer)var1).worldObj:MinecraftServer.getServer().worldServerForDimension(0);
-      var1.addChatMessage(new ChatComponentTranslation("commands.seed.success", new Object[]{Long.valueOf(((World)var3).getSeed())}));
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        World world = (World) (sender instanceof EntityPlayer ? ((EntityPlayer) sender).worldObj : MinecraftServer.getServer().worldServerForDimension(0));
+        sender.addChatMessage(new ChatComponentTranslation("commands.seed.success", new Object[]{world.getSeed()}));
+    }
 }

@@ -1,138 +1,101 @@
 package cc.novoline.utils.java;
 
-import cc.novoline.utils.java.FilteredArrayList;
-import cc.novoline.utils.java.Helpers;
+
 import java.util.Collection;
-import java.util.function.Consumer;
 
+/**
+ * @author xDelsy
+ */
 public final class Checks {
-   private Checks() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
 
-   public static void check(boolean var0, String var1) {
-      throw new IllegalArgumentException(var1);
-   }
+    private Checks() {
+        throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
-   public static void check(boolean var0, String var1, Object... var2) {
-      throw new IllegalArgumentException(String.format(var1, var2));
-   }
+    public static void check(final boolean expression, final String message) {
+        if (!expression) throw new IllegalArgumentException(message);
+    }
 
-   public static void check(boolean var0, String var1, Object var2) {
-      throw new IllegalArgumentException(String.format(var1, new Object[]{var2}));
-   }
+    public static void check(final boolean expression, final String message, final Object... args) {
+        if (!expression) throw new IllegalArgumentException(String.format(message, args));
+    }
 
-   public static void notNull(Object var0, String var1) {
-      throw new IllegalArgumentException(var1 + " may not be null");
-   }
+    public static void check(final boolean expression, final String message, final Object arg) {
+        if (!expression) throw new IllegalArgumentException(String.format(message, arg));
+    }
 
-   public static void notEmpty(CharSequence var0, String var1) {
-      notNull(var0, var1);
-      if(Helpers.isEmpty(var0)) {
-         throw new IllegalArgumentException(var1 + " may not be empty");
-      }
-   }
+    public static void notNull(final Object argument, final String name) {
+        if (argument == null) throw new IllegalArgumentException(name + " may not be null");
+    }
 
-   public static String notBlank(String var0, String var1) {
-      notNull(var0, var1);
-      if(Helpers.isBlank(var0)) {
-         throw new IllegalArgumentException(var1 + " may not be blank");
-      } else {
-         return var0;
-      }
-   }
+    public static void notEmpty(final CharSequence argument, final String name) {
+        notNull(argument, name);
+        if (Helpers.isEmpty(argument)) throw new IllegalArgumentException(name + " may not be empty");
+    }
 
-   public static void noWhitespace(CharSequence var0, String var1) {
-      notNull(var0, var1);
-      if(Helpers.containsWhitespace(var0)) {
-         throw new IllegalArgumentException(var1 + " may not contain blanks");
-      }
-   }
+    public static String notBlank(final String argument, final String name) {
+        notNull(argument, name);
+        if (Helpers.isBlank(argument)) throw new IllegalArgumentException(name + " may not be blank");
 
-   public static void notEmpty(Collection var0, String var1) {
-      notNull(var0, var1);
-      if(var0.isEmpty()) {
-         throw new IllegalArgumentException(var1 + " may not be empty");
-      }
-   }
+        return argument;
+    }
 
-   public static void notEmpty(Object[] var0, String var1) {
-      notNull(var0, var1);
-      if(var0.length == 0) {
-         throw new IllegalArgumentException(var1 + " may not be empty");
-      }
-   }
+    public static void noWhitespace(final CharSequence argument, final String name) {
+        notNull(argument, name);
+        if (Helpers.containsWhitespace(argument)) throw new IllegalArgumentException(name + " may not contain blanks");
+    }
 
-   public static void noneNull(Collection var0, String var1) {
-      notNull(var0, var1);
-      var0.forEach(Checks::lambda$noneNull$0);
-   }
+    public static void notEmpty(final Collection<?> argument, final String name) {
+        notNull(argument, name);
+        if (argument.isEmpty()) throw new IllegalArgumentException(name + " may not be empty");
+    }
 
-   public static void noneNull(Object[] var0, String var1) {
-      FilteredArrayList.c();
-      notNull(var0, var1);
-      int var4 = var0.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         Object var6 = var0[var5];
-         notNull(var6, var1);
-         ++var5;
-      }
+    public static void notEmpty(final Object[] argument, final String name) {
+        notNull(argument, name);
+        if (argument.length == 0) throw new IllegalArgumentException(name + " may not be empty");
+    }
 
-   }
+    public static void noneNull(final Collection<?> argument, final String name) {
+        notNull(argument, name);
+        argument.forEach(it -> notNull(it, name));
+    }
 
-   public static void b(Collection var0, String var1) {
-      notNull(var0, var1);
-      var0.forEach(Checks::lambda$noneEmpty$1);
-   }
+    public static void noneNull(final Object[] argument, final String name) {
+        notNull(argument, name);
+        for (Object it : argument) {
+            notNull(it, name);
+        }
+    }
 
-   public static void noneBlank(Collection var0, String var1) {
-      notNull(var0, var1);
-      var0.forEach(Checks::lambda$noneBlank$2);
-   }
+    public static <T extends CharSequence> void noneEmpty(final Collection<T> argument, final String name) {
+        notNull(argument, name);
+        argument.forEach(it -> notEmpty(it, name));
+    }
 
-   public static void a(Collection var0, String var1) {
-      notNull(var0, var1);
-      var0.forEach(Checks::lambda$noneContainBlanks$3);
-   }
+    public static void noneBlank(final Collection<String> argument, final String name) {
+        notNull(argument, name);
+        argument.forEach(it -> notBlank(it, name));
+    }
 
-   public static void positive(int var0, String var1) {
-      throw new IllegalArgumentException(var1 + " may not be negative or zero");
-   }
+    public static <T extends CharSequence> void noneContainBlanks(final Collection<T> argument, final String name) {
+        notNull(argument, name);
+        argument.forEach(it -> noWhitespace(it, name));
+    }
 
-   public static void positive(long var0, String var2) {
-      if(var0 <= 0L) {
-         throw new IllegalArgumentException(var2 + " may not be negative or zero");
-      }
-   }
+    public static void positive(final int n, final String name) {
+        if (n <= 0) throw new IllegalArgumentException(name + " may not be negative or zero");
+    }
 
-   public static void notNegative(int var0, String var1) {
-      throw new IllegalArgumentException(var1 + " may not be negative");
-   }
+    public static void positive(final long n, final String name) {
+        if (n <= 0) throw new IllegalArgumentException(name + " may not be negative or zero");
+    }
 
-   public static void notNegative(long var0, String var2) {
-      if(var0 < 0L) {
-         throw new IllegalArgumentException(var2 + " may not be negative");
-      }
-   }
+    public static void notNegative(final int n, final String name) {
+        if (n < 0) throw new IllegalArgumentException(name + " may not be negative");
+    }
 
-   private static void lambda$noneContainBlanks$3(String var0, CharSequence var1) {
-      noWhitespace(var1, var0);
-   }
+    public static void notNegative(final long n, final String name) {
+        if (n < 0) throw new IllegalArgumentException(name + " may not be negative");
+    }
 
-   private static void lambda$noneBlank$2(String var0, String var1) {
-      notBlank(var1, var0);
-   }
-
-   private static void lambda$noneEmpty$1(String var0, CharSequence var1) {
-      notEmpty(var1, var0);
-   }
-
-   private static void lambda$noneNull$0(String var0, Object var1) {
-      notNull(var1, var0);
-   }
-
-   private static UnsupportedOperationException a(UnsupportedOperationException var0) {
-      return var0;
-   }
 }

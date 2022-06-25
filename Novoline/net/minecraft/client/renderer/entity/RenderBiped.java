@@ -2,35 +2,36 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
 import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderBiped extends RenderLiving {
-   private static final ResourceLocation DEFAULT_RES_LOC = new ResourceLocation("textures/entity/steve.png");
-   protected ModelBiped modelBipedMain;
-   protected float field_77070_b;
+public class RenderBiped<T extends EntityLiving> extends RenderLiving<T> {
+    private static final ResourceLocation DEFAULT_RES_LOC = new ResourceLocation("textures/entity/steve.png");
+    protected ModelBiped modelBipedMain;
+    protected float field_77070_b;
 
-   public RenderBiped(RenderManager var1, ModelBiped var2, float var3) {
-      this(var1, var2, var3, 1.0F);
-      this.addLayer(new LayerHeldItem(this));
-   }
+    public RenderBiped(RenderManager renderManagerIn, ModelBiped modelBipedIn, float shadowSize) {
+        this(renderManagerIn, modelBipedIn, shadowSize, 1.0F);
+        this.addLayer(new LayerHeldItem(this));
+    }
 
-   public RenderBiped(RenderManager var1, ModelBiped var2, float var3, float var4) {
-      super(var1, var2, var3);
-      this.modelBipedMain = var2;
-      this.field_77070_b = var4;
-      this.addLayer(new LayerCustomHead(var2.bipedHead));
-   }
+    public RenderBiped(RenderManager renderManagerIn, ModelBiped modelBipedIn, float shadowSize, float p_i46169_4_) {
+        super(renderManagerIn, modelBipedIn, shadowSize);
+        this.modelBipedMain = modelBipedIn;
+        this.field_77070_b = p_i46169_4_;
+        this.addLayer(new LayerCustomHead(modelBipedIn.bipedHead));
+    }
 
-   protected ResourceLocation getEntityTexture(EntityLiving var1) {
-      return DEFAULT_RES_LOC;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(T entity) {
+        return DEFAULT_RES_LOC;
+    }
 
-   public void transformHeldFull3DItemLayer() {
-      GlStateManager.translate(0.0F, 0.1875F, 0.0F);
-   }
+    public void transformHeldFull3DItemLayer() {
+        GlStateManager.translate(0.0F, 0.1875F, 0.0F);
+    }
 }

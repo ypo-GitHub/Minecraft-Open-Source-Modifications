@@ -1,18 +1,23 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.particle.EntityRainFX;
 import net.minecraft.world.World;
 
 public class EntitySplashFX extends EntityRainFX {
-   protected EntitySplashFX(World var1, double var2, double var4, double var6, double var8, double var10, double var12) {
-      super(var1, var2, var4, var6);
-      this.particleGravity = 0.04F;
-      this.nextTextureIndexX();
-      if(var10 == 0.0D && (var8 != 0.0D || var12 != 0.0D)) {
-         this.motionX = var8;
-         this.motionY = var10 + 0.1D;
-         this.motionZ = var12;
-      }
+    protected EntitySplashFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn) {
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn);
+        this.particleGravity = 0.04F;
+        this.nextTextureIndexX();
 
-   }
+        if (ySpeedIn == 0.0D && (xSpeedIn != 0.0D || zSpeedIn != 0.0D)) {
+            this.motionX = xSpeedIn;
+            this.motionY = ySpeedIn + 0.1D;
+            this.motionZ = zSpeedIn;
+        }
+    }
+
+    public static class Factory implements IParticleFactory {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_) {
+            return new EntitySplashFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        }
+    }
 }

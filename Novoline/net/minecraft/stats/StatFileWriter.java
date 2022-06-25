@@ -1,67 +1,85 @@
 package net.minecraft.stats;
 
 import com.google.common.collect.Maps;
-import java.util.Map;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.stats.Achievement;
-import net.minecraft.stats.StatBase;
 import net.minecraft.util.IJsonSerializable;
 import net.minecraft.util.TupleIntJsonSerializable;
 
+import java.util.Map;
+
 public class StatFileWriter {
-   protected final Map statsData = Maps.newConcurrentMap();
+    protected final Map<StatBase, TupleIntJsonSerializable> statsData = Maps.<StatBase, TupleIntJsonSerializable>newConcurrentMap();
 
-   public boolean hasAchievementUnlocked(Achievement var1) {
-      return this.readStat(var1) > 0;
-   }
+    /**
+     * Returns true if the achievement has been unlocked.
+     */
+    public boolean hasAchievementUnlocked(Achievement achievementIn) {
+        return this.readStat(achievementIn) > 0;
+    }
 
-   public boolean canUnlockAchievement(Achievement var1) {
-      return var1.parentAchievement == null || this.hasAchievementUnlocked(var1.parentAchievement);
-   }
+    /**
+     * Returns true if the parent has been unlocked, or there is no parent
+     */
+    public boolean canUnlockAchievement(Achievement achievementIn) {
+        return achievementIn.parentAchievement == null || this.hasAchievementUnlocked(achievementIn.parentAchievement);
+    }
 
-   public int func_150874_c(Achievement var1) {
-      if(this.hasAchievementUnlocked(var1)) {
-         return 0;
-      } else {
-         int var2 = 0;
+    public int func_150874_c(Achievement p_150874_1_) {
+        if (this.hasAchievementUnlocked(p_150874_1_)) {
+            return 0;
+        } else {
+            int i = 0;
 
-         for(Achievement var3 = var1.parentAchievement; !this.hasAchievementUnlocked(var3); ++var2) {
-            var3 = var3.parentAchievement;
-         }
+            for (Achievement achievement = p_150874_1_.parentAchievement; achievement != null && !this.hasAchievementUnlocked(achievement); ++i) {
+                achievement = achievement.parentAchievement;
+            }
 
-         return var2;
-      }
-   }
+            return i;
+        }
+    }
 
-   public void increaseStat(EntityPlayer var1, StatBase var2, int var3) {
-      if(!var2.isAchievement() || this.canUnlockAchievement((Achievement)var2)) {
-         this.unlockAchievement(var1, var2, this.readStat(var2) + var3);
-      }
+    public void increaseStat(EntityPlayer player, StatBase stat, int amount) {
+        if (!stat.isAchievement() || this.canUnlockAchievement((Achievement) stat)) {
+            this.unlockAchievement(player, stat, this.readStat(stat) + amount);
+        }
+    }
 
-   }
+    /**
+     * Triggers the logging of an achievement and attempts to announce to server
+     */
+    public void unlockAchievement(EntityPlayer playerIn, StatBase statIn, int p_150873_3_) {
+        TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(statIn);
 
-   public void unlockAchievement(EntityPlayer var1, StatBase var2, int var3) {
-      TupleIntJsonSerializable var4 = (TupleIntJsonSerializable)this.statsData.get(var2);
-      var4 = new TupleIntJsonSerializable();
-      this.statsData.put(var2, var4);
-      var4.setIntegerValue(var3);
-   }
+        if (tupleintjsonserializable == null) {
+            tupleintjsonserializable = new TupleIntJsonSerializable();
+            this.statsData.put(statIn, tupleintjsonserializable);
+        }
 
-   public int readStat(StatBase var1) {
-      TupleIntJsonSerializable var2 = (TupleIntJsonSerializable)this.statsData.get(var1);
-      return 0;
-   }
+        tupleintjsonserializable.setIntegerValue(p_150873_3_);
+    }
 
-   public IJsonSerializable func_150870_b(StatBase var1) {
-      TupleIntJsonSerializable var2 = (TupleIntJsonSerializable)this.statsData.get(var1);
-      return var2.getJsonSerializableValue();
-   }
+    /**
+     * Reads the given stat and returns its value as an int.
+     */
+    public int readStat(StatBase stat) {
+        TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(stat);
+        return tupleintjsonserializable == null ? 0 : tupleintjsonserializable.getIntegerValue();
+    }
 
-   public IJsonSerializable func_150872_a(StatBase var1, IJsonSerializable var2) {
-      TupleIntJsonSerializable var3 = (TupleIntJsonSerializable)this.statsData.get(var1);
-      var3 = new TupleIntJsonSerializable();
-      this.statsData.put(var1, var3);
-      var3.setJsonSerializableValue(var2);
-      return var2;
-   }
+    public <T extends IJsonSerializable> T func_150870_b(StatBase p_150870_1_) {
+        TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(p_150870_1_);
+        return (T) (tupleintjsonserializable != null ? tupleintjsonserializable.getJsonSerializableValue() : null);
+    }
+
+    public <T extends IJsonSerializable> T func_150872_a(StatBase p_150872_1_, T p_150872_2_) {
+        TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(p_150872_1_);
+
+        if (tupleintjsonserializable == null) {
+            tupleintjsonserializable = new TupleIntJsonSerializable();
+            this.statsData.put(p_150872_1_, tupleintjsonserializable);
+        }
+
+        tupleintjsonserializable.setJsonSerializableValue(p_150872_2_);
+        return (T) p_150872_2_;
+    }
 }

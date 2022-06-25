@@ -1,7 +1,5 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.List;
-import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
@@ -10,60 +8,70 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.List;
+import java.util.Random;
 
 public class WorldGeneratorBonusChest extends WorldGenerator {
-   private final List chestItems;
-   private final int itemsToGenerateInBonusChest;
+    private final List<WeightedRandomChestContent> chestItems;
 
-   public WorldGeneratorBonusChest(List var1, int var2) {
-      this.chestItems = var1;
-      this.itemsToGenerateInBonusChest = var2;
-   }
+    /**
+     * Value of this int will determine how much items gonna generate in Bonus Chest.
+     */
+    private final int itemsToGenerateInBonusChest;
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      Block var4;
-      while(((var4 = var1.getBlockState(var3).getBlock()).getMaterial() == Material.air || var4.getMaterial() == Material.leaves) && var3.getY() > 1) {
-         var3 = var3.down();
-      }
+    public WorldGeneratorBonusChest(List<WeightedRandomChestContent> p_i45634_1_, int p_i45634_2_) {
+        this.chestItems = p_i45634_1_;
+        this.itemsToGenerateInBonusChest = p_i45634_2_;
+    }
 
-      if(var3.getY() >= 1) {
-         var3 = var3.up();
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        Block block;
 
-         for(int var5 = 0; var5 < 4; ++var5) {
-            BlockPos var6 = var3.a(var2.nextInt(4) - var2.nextInt(4), var2.nextInt(3) - var2.nextInt(3), var2.nextInt(4) - var2.nextInt(4));
-            if(var1.isAirBlock(var6) && World.doesBlockHaveSolidTopSurface(var1, var6.down())) {
-               var1.setBlockState(var6, Blocks.chest.getDefaultState(), 2);
-               TileEntity var7 = var1.getTileEntity(var6);
-               if(var7 instanceof TileEntityChest) {
-                  WeightedRandomChestContent.generateChestContents(var2, this.chestItems, (TileEntityChest)var7, this.itemsToGenerateInBonusChest);
-               }
+        while (((block = worldIn.getBlockState(position).getBlock()).getMaterial() == Material.air || block.getMaterial() == Material.leaves) && position.getY() > 1) {
+            position = position.down();
+        }
 
-               BlockPos var8 = var6.east();
-               BlockPos var9 = var6.west();
-               BlockPos var10 = var6.north();
-               BlockPos var11 = var6.south();
-               if(var1.isAirBlock(var9) && World.doesBlockHaveSolidTopSurface(var1, var9.down())) {
-                  var1.setBlockState(var9, Blocks.torch.getDefaultState(), 2);
-               }
+        if (position.getY() >= 1) {
+            position = position.up();
 
-               if(var1.isAirBlock(var8) && World.doesBlockHaveSolidTopSurface(var1, var8.down())) {
-                  var1.setBlockState(var8, Blocks.torch.getDefaultState(), 2);
-               }
+            for (int i = 0; i < 4; ++i) {
+                BlockPos blockpos = position.add(rand.nextInt(4) - rand.nextInt(4), rand.nextInt(3) - rand.nextInt(3), rand.nextInt(4) - rand.nextInt(4));
 
-               if(var1.isAirBlock(var10) && World.doesBlockHaveSolidTopSurface(var1, var10.down())) {
-                  var1.setBlockState(var10, Blocks.torch.getDefaultState(), 2);
-               }
+                if (worldIn.isAirBlock(blockpos) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos.down())) {
+                    worldIn.setBlockState(blockpos, Blocks.chest.getDefaultState(), 2);
+                    TileEntity tileentity = worldIn.getTileEntity(blockpos);
 
-               if(var1.isAirBlock(var11) && World.doesBlockHaveSolidTopSurface(var1, var11.down())) {
-                  var1.setBlockState(var11, Blocks.torch.getDefaultState(), 2);
-               }
+                    if (tileentity instanceof TileEntityChest) {
+                        WeightedRandomChestContent.generateChestContents(rand, this.chestItems, (TileEntityChest) tileentity, this.itemsToGenerateInBonusChest);
+                    }
 
-               return true;
+                    BlockPos blockpos1 = blockpos.east();
+                    BlockPos blockpos2 = blockpos.west();
+                    BlockPos blockpos3 = blockpos.north();
+                    BlockPos blockpos4 = blockpos.south();
+
+                    if (worldIn.isAirBlock(blockpos2) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos2.down())) {
+                        worldIn.setBlockState(blockpos2, Blocks.torch.getDefaultState(), 2);
+                    }
+
+                    if (worldIn.isAirBlock(blockpos1) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos1.down())) {
+                        worldIn.setBlockState(blockpos1, Blocks.torch.getDefaultState(), 2);
+                    }
+
+                    if (worldIn.isAirBlock(blockpos3) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos3.down())) {
+                        worldIn.setBlockState(blockpos3, Blocks.torch.getDefaultState(), 2);
+                    }
+
+                    if (worldIn.isAirBlock(blockpos4) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos4.down())) {
+                        worldIn.setBlockState(blockpos4, Blocks.torch.getDefaultState(), 2);
+                    }
+
+                    return true;
+                }
             }
-         }
-      }
 
-      return false;
-   }
+        }
+        return false;
+    }
 }

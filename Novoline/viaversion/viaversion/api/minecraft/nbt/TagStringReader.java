@@ -1,3 +1,26 @@
+/*
+ * This file is part of adventure, licensed under the MIT License.
+ *
+ * Copyright (c) 2017-2020 KyoriPowered
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package viaversion.viaversion.api.minecraft.nbt;
 
 import com.github.steveice10.opennbt.tag.builtin.ByteArrayTag;
@@ -13,297 +36,295 @@ import com.github.steveice10.opennbt.tag.builtin.LongTag;
 import com.github.steveice10.opennbt.tag.builtin.ShortTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.IntStream.Builder;
-import net.aPX;
-import net.af_;
-import viaversion.viaversion.api.minecraft.nbt.CharBuffer;
-import viaversion.viaversion.api.minecraft.nbt.StringTagParseException;
-import viaversion.viaversion.api.minecraft.nbt.Tokens;
 
-final class TagStringReader {
-   private static final Field NAME_FIELD = getNameField();
-   private final CharBuffer buffer;
+/**
+ * See https://github.com/KyoriPowered/adventure.
+ */
+/* package */ final class TagStringReader {
+    private static final Field NAME_FIELD = getNameField();
+    private final CharBuffer buffer;
 
-   private static Field getNameField() {
-      Class var10000 = Tag.class;
-      String var10001 = "name";
+    private static Field getNameField() {
+        try {
+            return Tag.class.getDeclaredField("name");
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e);
+        }
+    }
 
-      try {
-         return af_.c(var10000, var10001);
-      } catch (NoSuchFieldException var1) {
-         var1.printStackTrace();
-         throw new IllegalArgumentException(var1);
-      }
-   }
+    public TagStringReader(final CharBuffer buffer) {
+        this.buffer = buffer;
+    }
 
-   public TagStringReader(CharBuffer var1) {
-      this.buffer = var1;
-   }
+    public CompoundTag compound() throws StringTagParseException {
+        this.buffer.expect(Tokens.COMPOUND_BEGIN);
+        final CompoundTag compoundTag = new CompoundTag("");
+        if (this.buffer.peek() == Tokens.COMPOUND_END) {
+            this.buffer.take();
+            return compoundTag;
+        }
 
-   public CompoundTag compound() throws StringTagParseException {
-      aPX.b();
-      this.buffer.expect('{');
-      CompoundTag var2 = new CompoundTag("");
-      if(this.buffer.peek() == 125) {
-         this.buffer.take();
-         return var2;
-      } else {
-         if(this.buffer.hasMore()) {
-            String var3 = this.key();
-            Tag var4 = this.tag();
-
+        while (this.buffer.hasMore()) {
+            final String key = this.key();
+            final Tag tag = this.tag();
+            // Doesn't get around this with the steveice lib :/
             try {
-               if(!NAME_FIELD.isAccessible()) {
-                  NAME_FIELD.setAccessible(true);
-               }
-
-               NAME_FIELD.set(var4, var3);
-            } catch (IllegalAccessException var6) {
-               throw new IllegalArgumentException(var6);
+                if (!NAME_FIELD.isAccessible()) {
+                    NAME_FIELD.setAccessible(true);
+                }
+                NAME_FIELD.set(tag, key);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException(e);
             }
 
-            var2.put(var4);
-            if(this.separatorOrCompleteWith('}')) {
-               return var2;
+            compoundTag.put(tag);
+            if (this.separatorOrCompleteWith(Tokens.COMPOUND_END)) {
+                return compoundTag;
             }
-         }
+        }
+        throw this.buffer.makeError("Unterminated compound tag!");
+    }
 
-         throw this.buffer.makeError("Unterminated compound tag!");
-      }
-   }
-
-   public ListTag list() throws StringTagParseException {
-      aPX.b();
-      ListTag var2 = new ListTag("");
-      this.buffer.expect('[');
-      boolean var3 = this.buffer.peek() == 48 && this.buffer.peek(1) == 58;
-      if(this.buffer.hasMore()) {
-         if(this.buffer.peek() == 93) {
-            this.buffer.advance();
-            return var2;
-         }
-
-         if(var3) {
-            this.buffer.takeUntil(':');
-         }
-
-         Tag var4 = this.tag();
-         var2.add(var4);
-         if(this.separatorOrCompleteWith(']')) {
-            return var2;
-         }
-      }
-
-      throw this.buffer.makeError("Reached end of file without end of list tag!");
-   }
-
-   public Tag array(char var1) throws StringTagParseException {
-      aPX.b();
-      this.buffer.expect('[').expect(var1).expect(';');
-      if(var1 == 66) {
-         return new ByteArrayTag("", this.byteArray());
-      } else if(var1 == 73) {
-         return new IntArrayTag("", this.intArray());
-      } else if(var1 == 76) {
-         return new LongArrayTag("", this.longArray());
-      } else {
-         throw this.buffer.makeError("Type " + var1 + " is not a valid element type in an array!");
-      }
-   }
-
-   private byte[] byteArray() throws StringTagParseException {
-      aPX.b();
-      ArrayList var2 = new ArrayList();
-      if(this.buffer.hasMore()) {
-         CharSequence var3 = this.buffer.skipWhitespace().takeUntil('B');
-         ArrayList var10000 = var2;
-         CharSequence var10001 = var3;
-
-         try {
-            var10000.add(Byte.valueOf(var10001.toString()));
-         } catch (NumberFormatException var6) {
-            throw this.buffer.makeError("All elements of a byte array must be bytes!");
-         }
-
-         if(this.separatorOrCompleteWith(']')) {
-            byte[] var4 = new byte[var2.size()];
-            int var5 = 0;
-            if(var5 < var2.size()) {
-               var4[var5] = ((Byte)var2.get(var5)).byteValue();
-               ++var5;
+    public ListTag list() throws StringTagParseException {
+        final ListTag listTag = new ListTag("");
+        this.buffer.expect(Tokens.ARRAY_BEGIN);
+        final boolean prefixedIndex = this.buffer.peek() == '0' && this.buffer.peek(1) == ':';
+        while (this.buffer.hasMore()) {
+            if (this.buffer.peek() == Tokens.ARRAY_END) {
+                this.buffer.advance();
+                return listTag;
             }
 
-            return var4;
-         }
-      }
-
-      throw this.buffer.makeError("Reached end of document without array close");
-   }
-
-   private int[] intArray() throws StringTagParseException {
-      aPX.b();
-      Builder var2 = IntStream.builder();
-      if(this.buffer.hasMore()) {
-         Tag var3 = this.tag();
-         if(!(var3 instanceof IntTag)) {
-            throw this.buffer.makeError("All elements of an int array must be ints!");
-         }
-
-         var2.add(((IntTag)var3).getValue().intValue());
-         if(this.separatorOrCompleteWith(']')) {
-            return var2.build().toArray();
-         }
-      }
-
-      throw this.buffer.makeError("Reached end of document without array close");
-   }
-
-   private long[] longArray() throws StringTagParseException {
-      aPX.b();
-      ArrayList var2 = new ArrayList();
-      if(this.buffer.hasMore()) {
-         CharSequence var3 = this.buffer.skipWhitespace().takeUntil('L');
-         ArrayList var10000 = var2;
-         CharSequence var10001 = var3;
-
-         try {
-            var10000.add(Long.valueOf(var10001.toString()));
-         } catch (NumberFormatException var6) {
-            throw this.buffer.makeError("All elements of a long array must be longs!");
-         }
-
-         if(this.separatorOrCompleteWith(']')) {
-            long[] var4 = new long[var2.size()];
-            int var5 = 0;
-            if(var5 < var2.size()) {
-               var4[var5] = ((Long)var2.get(var5)).longValue();
-               ++var5;
+            if (prefixedIndex) {
+                this.buffer.takeUntil(':');
             }
 
-            return var4;
-         }
-      }
+            final Tag next = this.tag();
+            // TODO: validate type
+            listTag.add(next);
+            if (this.separatorOrCompleteWith(Tokens.ARRAY_END)) {
+                return listTag;
+            }
+        }
+        throw this.buffer.makeError("Reached end of file without end of list tag!");
+    }
 
-      throw this.buffer.makeError("Reached end of document without array close");
-   }
+    /**
+     * Similar to a list tag in syntax, but returning a single array tag rather than a list of tags.
+     *
+     * @return array-typed tag
+     */
+    public Tag array(final char elementType) throws StringTagParseException {
+        this.buffer.expect(Tokens.ARRAY_BEGIN)
+                .expect(elementType)
+                .expect(Tokens.ARRAY_SIGNATURE_SEPARATOR);
 
-   public String key() throws StringTagParseException {
-      // $FF: Couldn't be decompiled
-   }
+        if (elementType == Tokens.TYPE_BYTE) {
+            return new ByteArrayTag("", this.byteArray());
+        } else if (elementType == Tokens.TYPE_INT) {
+            return new IntArrayTag("", this.intArray());
+        } else if (elementType == Tokens.TYPE_LONG) {
+            return new LongArrayTag("", this.longArray());
+        } else {
+            throw this.buffer.makeError("Type " + elementType + " is not a valid element type in an array!");
+        }
+    }
 
-   public Tag tag() throws StringTagParseException {
-      aPX.b();
-      char var2 = this.buffer.skipWhitespace().peek();
-      switch(var2) {
-      case '\"':
-      case '\'':
-         this.buffer.advance();
-         return new StringTag("", unescape(this.buffer.takeUntil(var2).toString()));
-      case '[':
-         if(this.buffer.peek(2) == 59) {
-            return this.array(this.buffer.peek(1));
-         }
-
-         return this.list();
-      case '{':
-         return this.compound();
-      default:
-         return this.scalar();
-      }
-   }
-
-   private Tag scalar() {
-      StringBuilder var2 = new StringBuilder();
-      aPX.b();
-      boolean var3 = true;
-      if(this.buffer.hasMore()) {
-         char var4 = this.buffer.peek();
-         if(var3 && !Tokens.numeric(var4) && var2.length() != 0) {
-            Object var5 = null;
-
+    private byte[] byteArray() throws StringTagParseException {
+        final List<Byte> bytes = new ArrayList<>();
+        while (this.buffer.hasMore()) {
+            final CharSequence value = this.buffer.skipWhitespace().takeUntil(Tokens.TYPE_BYTE);
             try {
-               switch(Character.toUpperCase(var4)) {
-               case 'B':
-                  var5 = new ByteTag("", Byte.parseByte(var2.toString()));
-                  break;
-               case 'D':
-                  var5 = new DoubleTag("", Double.parseDouble(var2.toString()));
-                  break;
-               case 'F':
-                  var5 = new FloatTag("", Float.parseFloat(var2.toString()));
-                  break;
-               case 'L':
-                  var5 = new LongTag("", Long.parseLong(var2.toString()));
-                  break;
-               case 'S':
-                  var5 = new ShortTag("", Short.parseShort(var2.toString()));
-               }
-            } catch (NumberFormatException var8) {
-               var3 = false;
+                bytes.add(Byte.valueOf(value.toString()));
+            } catch (final NumberFormatException ex) {
+                throw this.buffer.makeError("All elements of a byte array must be bytes!");
             }
 
-            if(var5 != null) {
-               this.buffer.take();
-               return (Tag)var5;
+            if (this.separatorOrCompleteWith(Tokens.ARRAY_END)) {
+                final byte[] result = new byte[bytes.size()];
+                for (int i = 0; i < bytes.size(); ++i) { // todo yikes, let's do less boxing
+                    result[i] = bytes.get(i);
+                }
+                return result;
             }
-         }
+        }
+        throw this.buffer.makeError("Reached end of document without array close");
+    }
 
-         if(var4 == 92) {
-            this.buffer.advance();
-            var2.append(this.buffer.take());
-         }
-
-         if(Tokens.id(var4)) {
-            var2.append(this.buffer.take());
-         }
-      }
-
-      String var10 = var2.toString();
-
-      try {
-         return new IntTag("", Integer.parseInt(var10));
-      } catch (NumberFormatException var7) {
-         return new StringTag("", var10);
-      }
-   }
-
-   private boolean separatorOrCompleteWith(char var1) throws StringTagParseException {
-      String var2 = aPX.b();
-      if(this.buffer.skipWhitespace().peek() == var1) {
-         this.buffer.take();
-         return true;
-      } else {
-         this.buffer.expect(',');
-         return false;
-      }
-   }
-
-   private static String unescape(String var0) {
-      aPX.b();
-      int var2 = var0.indexOf(92);
-      if(var2 == -1) {
-         return var0;
-      } else {
-         int var3 = 0;
-         StringBuilder var4 = new StringBuilder(var0.length());
-
-         while(true) {
-            var4.append(var0, var3, var2);
-            var3 = var2 + 1;
-            if((var2 = var0.indexOf(92, var3 + 1)) == -1) {
-               break;
+    private int[] intArray() throws StringTagParseException {
+        final IntStream.Builder builder = IntStream.builder();
+        while (this.buffer.hasMore()) {
+            final Tag value = this.tag();
+            if (!(value instanceof IntTag)) {
+                throw this.buffer.makeError("All elements of an int array must be ints!");
             }
-         }
+            builder.add(((IntTag) value).getValue());
+            if (this.separatorOrCompleteWith(Tokens.ARRAY_END)) {
+                return builder.build().toArray();
+            }
+        }
+        throw this.buffer.makeError("Reached end of document without array close");
+    }
 
-         var4.append(var0.substring(var3));
-         return var4.toString();
-      }
-   }
+    private long[] longArray() throws StringTagParseException {
+        final List<Long> longs = new ArrayList<>();
+        while (this.buffer.hasMore()) {
+            final CharSequence value = this.buffer.skipWhitespace().takeUntil(Tokens.TYPE_LONG);
+            try {
+                longs.add(Long.valueOf(value.toString()));
+            } catch (final NumberFormatException ex) {
+                throw this.buffer.makeError("All elements of a long array must be longs!");
+            }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+            if (this.separatorOrCompleteWith(Tokens.ARRAY_END)) {
+                final long[] result = new long[longs.size()];
+                for (int i = 0; i < longs.size(); ++i) { // todo yikes
+                    result[i] = longs.get(i);
+                }
+                return result;
+            }
+        }
+        throw this.buffer.makeError("Reached end of document without array close");
+    }
+
+    public String key() throws StringTagParseException {
+        this.buffer.skipWhitespace();
+        final char starChar = this.buffer.peek();
+        try {
+            if (starChar == Tokens.SINGLE_QUOTE || starChar == Tokens.DOUBLE_QUOTE) {
+                return unescape(this.buffer.takeUntil(this.buffer.take()).toString());
+            }
+
+            final StringBuilder builder = new StringBuilder();
+            while (this.buffer.peek() != ':') { // DO NOT CHECK FOR CHARACTER VALIDITY; LEGACY NBT ALLOWS ANY CHARACTER, EVEN WHEN UNQUOTED
+                builder.append(this.buffer.take());
+            }
+            return builder.toString();
+        } finally {
+            this.buffer.expect(Tokens.COMPOUND_KEY_TERMINATOR);
+        }
+    }
+
+    public Tag tag() throws StringTagParseException {
+        final char startToken = this.buffer.skipWhitespace().peek();
+        switch (startToken) {
+            case Tokens.COMPOUND_BEGIN:
+                return this.compound();
+            case Tokens.ARRAY_BEGIN:
+                if (this.buffer.peek(2) == ';') { // we know we're an array tag
+                    return this.array(this.buffer.peek(1));
+                } else {
+                    return this.list();
+                }
+            case Tokens.SINGLE_QUOTE:
+            case Tokens.DOUBLE_QUOTE:
+                // definitely a string tag
+                this.buffer.advance();
+                return new StringTag("", unescape(this.buffer.takeUntil(startToken).toString()));
+            default: // scalar
+                return this.scalar();
+        }
+    }
+
+    /**
+     * A tag that is definitely some sort of scalar
+     *
+     * <p>Does not detect quoted strings, so </p>
+     *
+     * @return a parsed tag
+     */
+    private Tag scalar() {
+        final StringBuilder builder = new StringBuilder();
+        boolean possiblyNumeric = true;
+        while (this.buffer.hasMore()) {
+            final char current = this.buffer.peek();
+            if (possiblyNumeric && !Tokens.numeric(current)) {
+                if (builder.length() != 0) {
+                    Tag result = null;
+                    try {
+                        switch (Character.toUpperCase(current)) { // try to read and return as a number
+                            // case Tokens.TYPE_INTEGER: // handled below, ints are ~special~
+                            case Tokens.TYPE_BYTE:
+                                result = new ByteTag("", Byte.parseByte(builder.toString()));
+                                break;
+                            case Tokens.TYPE_SHORT:
+                                result = new ShortTag("", (Short.parseShort(builder.toString())));
+                                break;
+                            case Tokens.TYPE_LONG:
+                                result = new LongTag("", (Long.parseLong(builder.toString())));
+                                break;
+                            case Tokens.TYPE_FLOAT:
+                                result = new FloatTag("", (Float.parseFloat(builder.toString())));
+                                break;
+                            case Tokens.TYPE_DOUBLE:
+                                result = new DoubleTag("", (Double.parseDouble(builder.toString())));
+                                break;
+                        }
+                    } catch (final NumberFormatException ex) {
+                        possiblyNumeric = false; // fallback to treating as a String
+                    }
+                    if (result != null) {
+                        this.buffer.take();
+                        return result;
+                    }
+                }
+            }
+            if (current == '\\') { // escape -- we are significantly more lenient than original format at the moment
+                this.buffer.advance();
+                builder.append(this.buffer.take());
+            } else if (Tokens.id(current)) {
+                builder.append(this.buffer.take());
+            } else { // end of value
+                break;
+            }
+        }
+        // if we run out of content without an explicit value separator, then we're either an integer or string tag -- all others have a character at the end
+        final String built = builder.toString();
+        if (possiblyNumeric) {
+            try {
+                return new IntTag("", Integer.parseInt(built));
+            } catch (final NumberFormatException ex) {
+                // ignore
+            }
+        }
+        return new StringTag("", built);
+
+    }
+
+    private boolean separatorOrCompleteWith(final char endCharacter) throws StringTagParseException {
+        if (this.buffer.skipWhitespace().peek() == endCharacter) {
+            this.buffer.take();
+            return true;
+        }
+        this.buffer.expect(Tokens.VALUE_SEPARATOR);
+        return false;
+    }
+
+
+    /**
+     * Remove simple escape sequences from a string
+     *
+     * @param withEscapes input string with escapes
+     * @return string with escapes processed
+     */
+    private static String unescape(final String withEscapes) {
+        int escapeIdx = withEscapes.indexOf(Tokens.ESCAPE_MARKER);
+        if (escapeIdx == -1) { // nothing to unescape
+            return withEscapes;
+        }
+        int lastEscape = 0;
+        final StringBuilder output = new StringBuilder(withEscapes.length());
+        do {
+            output.append(withEscapes, lastEscape, escapeIdx);
+            lastEscape = escapeIdx + 1;
+        } while ((escapeIdx = withEscapes.indexOf(Tokens.ESCAPE_MARKER, lastEscape + 1)) != -1); // add one extra character to make sure we don't include escaped backslashes
+        output.append(withEscapes.substring(lastEscape));
+        return output.toString();
+    }
 }

@@ -7,153 +7,261 @@ import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.LongTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
-import net.C4;
-import net.Mo;
-import net.aSG;
-import net.aTf;
-import net.aVp;
-import net.aVr;
-import net.aVv;
-import net.aVw;
-import net.acE;
-import net.adT;
-import net.axs;
-import net.sM;
-import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
+import viaversion.viaversion.api.entities.Entity1_16Types;
 import viaversion.viaversion.api.remapper.PacketHandler;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.api.type.types.version.Types1_14;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.ClientboundPackets1_15;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.ClientboundPackets1_16;
 import viaversion.viaversion.protocols.protocol1_16to1_15_2.Protocol1_16To1_15_2;
-import viaversion.viaversion.protocols.protocol1_16to1_15_2.packets.EntityPackets$1;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.ServerboundPackets1_16;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.metadata.MetadataRewriter1_16To1_15_2;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.storage.EntityTracker1_16;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.storage.InventoryTracker1_16;
+
+import java.util.UUID;
 
 public class EntityPackets {
-   private static final PacketHandler DIMENSION_HANDLER = EntityPackets::lambda$static$0;
-   public static final CompoundTag DIMENSIONS_TAG = new CompoundTag("");
-   private static final String[] WORLD_NAMES = new String[]{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"};
 
-   private static CompoundTag createOverworldEntry() {
-      CompoundTag var0 = new CompoundTag("");
-      var0.put(new StringTag("name", "minecraft:overworld"));
-      var0.put(new ByteTag("has_ceiling", (byte)0));
-      addSharedOverwaldEntries(var0);
-      return var0;
-   }
+    private static final PacketHandler DIMENSION_HANDLER = wrapper -> {
+        int dimension = wrapper.read(Type.INT);
+        String dimensionName;
+        switch (dimension) {
+            case -1:
+                dimensionName = "minecraft:the_nether";
+                break;
+            case 0:
+                dimensionName = "minecraft:overworld";
+                break;
+            case 1:
+                dimensionName = "minecraft:the_end";
+                break;
+            default:
+                Via.getPlatform().getLogger().warning("Invalid dimension id: " + dimension);
+                dimensionName = "minecraft:overworld";
+        }
 
-   private static CompoundTag createOverworldCavesEntry() {
-      CompoundTag var0 = new CompoundTag("");
-      var0.put(new StringTag("name", "minecraft:overworld_caves"));
-      var0.put(new ByteTag("has_ceiling", (byte)1));
-      addSharedOverwaldEntries(var0);
-      return var0;
-   }
+        wrapper.write(Type.STRING, dimensionName); // dimension type
+        wrapper.write(Type.STRING, dimensionName); // dimension
+    };
+    public static final CompoundTag DIMENSIONS_TAG = new CompoundTag("");
+    private static final String[] WORLD_NAMES = {"minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"};
 
-   private static void addSharedOverwaldEntries(CompoundTag var0) {
-      var0.put(new ByteTag("piglin_safe", (byte)0));
-      var0.put(new ByteTag("natural", (byte)1));
-      var0.put(new FloatTag("ambient_light", 0.0F));
-      var0.put(new StringTag("infiniburn", "minecraft:infiniburn_overworld"));
-      var0.put(new ByteTag("respawn_anchor_works", (byte)0));
-      var0.put(new ByteTag("has_skylight", (byte)1));
-      var0.put(new ByteTag("bed_works", (byte)1));
-      var0.put(new ByteTag("has_raids", (byte)1));
-      var0.put(new IntTag("logical_height", 256));
-      var0.put(new ByteTag("shrunk", (byte)0));
-      var0.put(new ByteTag("ultrawarm", (byte)0));
-   }
+    static {
+        ListTag list = new ListTag("dimension", CompoundTag.class);
+        list.add(createOverworldEntry());
+        list.add(createOverworldCavesEntry());
+        list.add(createNetherEntry());
+        list.add(createEndEntry());
+        DIMENSIONS_TAG.put(list);
+    }
 
-   private static CompoundTag createNetherEntry() {
-      CompoundTag var0 = new CompoundTag("");
-      var0.put(new ByteTag("piglin_safe", (byte)1));
-      var0.put(new ByteTag("natural", (byte)0));
-      var0.put(new FloatTag("ambient_light", 0.1F));
-      var0.put(new StringTag("infiniburn", "minecraft:infiniburn_nether"));
-      var0.put(new ByteTag("respawn_anchor_works", (byte)1));
-      var0.put(new ByteTag("has_skylight", (byte)0));
-      var0.put(new ByteTag("bed_works", (byte)0));
-      var0.put(new LongTag("fixed_time", 18000L));
-      var0.put(new ByteTag("has_raids", (byte)0));
-      var0.put(new StringTag("name", "minecraft:the_nether"));
-      var0.put(new IntTag("logical_height", 128));
-      var0.put(new ByteTag("shrunk", (byte)1));
-      var0.put(new ByteTag("ultrawarm", (byte)1));
-      var0.put(new ByteTag("has_ceiling", (byte)1));
-      return var0;
-   }
+    private static CompoundTag createOverworldEntry() {
+        CompoundTag tag = new CompoundTag("");
+        tag.put(new StringTag("name", "minecraft:overworld"));
+        tag.put(new ByteTag("has_ceiling", (byte) 0));
+        addSharedOverwaldEntries(tag);
+        return tag;
+    }
 
-   private static CompoundTag createEndEntry() {
-      CompoundTag var0 = new CompoundTag("");
-      var0.put(new ByteTag("piglin_safe", (byte)0));
-      var0.put(new ByteTag("natural", (byte)0));
-      var0.put(new FloatTag("ambient_light", 0.0F));
-      var0.put(new StringTag("infiniburn", "minecraft:infiniburn_end"));
-      var0.put(new ByteTag("respawn_anchor_works", (byte)0));
-      var0.put(new ByteTag("has_skylight", (byte)0));
-      var0.put(new ByteTag("bed_works", (byte)0));
-      var0.put(new LongTag("fixed_time", 6000L));
-      var0.put(new ByteTag("has_raids", (byte)1));
-      var0.put(new StringTag("name", "minecraft:the_end"));
-      var0.put(new IntTag("logical_height", 256));
-      var0.put(new ByteTag("shrunk", (byte)0));
-      var0.put(new ByteTag("ultrawarm", (byte)0));
-      var0.put(new ByteTag("has_ceiling", (byte)0));
-      return var0;
-   }
+    private static CompoundTag createOverworldCavesEntry() {
+        CompoundTag tag = new CompoundTag("");
+        tag.put(new StringTag("name", "minecraft:overworld_caves"));
+        tag.put(new ByteTag("has_ceiling", (byte) 1));
+        addSharedOverwaldEntries(tag);
+        return tag;
+    }
 
-   public static void register(Protocol1_16To1_15_2 var0) {
-      aTf var2 = (aTf)var0.get(aTf.class);
-      var0.a(Mo.SPAWN_GLOBAL_ENTITY, C4.SPAWN_ENTITY, new EntityPackets$1());
-      var2.registerSpawnTrackerWithData(Mo.SPAWN_ENTITY, axs.FALLING_BLOCK);
-      var2.registerTracker(Mo.SPAWN_MOB);
-      var2.registerTracker(Mo.SPAWN_PLAYER, axs.PLAYER);
-      var2.registerMetadataRewriter(Mo.ENTITY_METADATA, aSG.c);
-      adT.b();
-      var2.registerEntityDestroy(Mo.DESTROY_ENTITIES);
-      var0.a(Mo.RESPAWN, new aVv());
-      var0.a(Mo.JOIN_GAME, new aVr());
-      var0.a(Mo.ENTITY_PROPERTIES, new aVp(var0));
-      var0.a(sM.ANIMATION, new aVw());
-      if(acE.b() == null) {
-         adT.b(new acE[4]);
-      }
+    private static void addSharedOverwaldEntries(CompoundTag tag) {
+        tag.put(new ByteTag("piglin_safe", (byte) 0));
+        tag.put(new ByteTag("natural", (byte) 1));
+        tag.put(new FloatTag("ambient_light", 0));
+        tag.put(new StringTag("infiniburn", "minecraft:infiniburn_overworld"));
+        tag.put(new ByteTag("respawn_anchor_works", (byte) 0));
+        tag.put(new ByteTag("has_skylight", (byte) 1));
+        tag.put(new ByteTag("bed_works", (byte) 1));
+        tag.put(new ByteTag("has_raids", (byte) 1));
+        tag.put(new IntTag("logical_height", 256));
+        tag.put(new ByteTag("shrunk", (byte) 0));
+        tag.put(new ByteTag("ultrawarm", (byte) 0));
+    }
 
-   }
+    private static CompoundTag createNetherEntry() {
+        CompoundTag tag = new CompoundTag("");
+        tag.put(new ByteTag("piglin_safe", (byte) 1));
+        tag.put(new ByteTag("natural", (byte) 0));
+        tag.put(new FloatTag("ambient_light", 0.1F));
+        tag.put(new StringTag("infiniburn", "minecraft:infiniburn_nether"));
+        tag.put(new ByteTag("respawn_anchor_works", (byte) 1));
+        tag.put(new ByteTag("has_skylight", (byte) 0));
+        tag.put(new ByteTag("bed_works", (byte) 0));
+        tag.put(new LongTag("fixed_time", 18000));
+        tag.put(new ByteTag("has_raids", (byte) 0));
+        tag.put(new StringTag("name", "minecraft:the_nether"));
+        tag.put(new IntTag("logical_height", 128));
+        tag.put(new ByteTag("shrunk", (byte) 1));
+        tag.put(new ByteTag("ultrawarm", (byte) 1));
+        tag.put(new ByteTag("has_ceiling", (byte) 1));
+        return tag;
+    }
 
-   private static void lambda$static$0(PacketWrapper var0) throws Exception {
-      adT.b();
-      int var2 = ((Integer)var0.read(Type.INT)).intValue();
-      switch(var2) {
-      case -1:
-         String var3 = "minecraft:the_nether";
-      case 0:
-         String var4 = "minecraft:overworld";
-      case 1:
-         String var5 = "minecraft:the_end";
-      default:
-         Via.getPlatform().getLogger().warning("Invalid dimension id: " + var2);
-         String var6 = "minecraft:overworld";
-         var0.write(Type.STRING, var6);
-         var0.write(Type.STRING, var6);
-      }
-   }
+    private static CompoundTag createEndEntry() {
+        CompoundTag tag = new CompoundTag("");
+        tag.put(new ByteTag("piglin_safe", (byte) 0));
+        tag.put(new ByteTag("natural", (byte) 0));
+        tag.put(new FloatTag("ambient_light", 0));
+        tag.put(new StringTag("infiniburn", "minecraft:infiniburn_end"));
+        tag.put(new ByteTag("respawn_anchor_works", (byte) 0));
+        tag.put(new ByteTag("has_skylight", (byte) 0));
+        tag.put(new ByteTag("bed_works", (byte) 0));
+        tag.put(new LongTag("fixed_time", 6000));
+        tag.put(new ByteTag("has_raids", (byte) 1));
+        tag.put(new StringTag("name", "minecraft:the_end"));
+        tag.put(new IntTag("logical_height", 256));
+        tag.put(new ByteTag("shrunk", (byte) 0));
+        tag.put(new ByteTag("ultrawarm", (byte) 0));
+        tag.put(new ByteTag("has_ceiling", (byte) 0));
+        return tag;
+    }
 
-   static PacketHandler access$000() {
-      return DIMENSION_HANDLER;
-   }
+    public static void register(Protocol1_16To1_15_2 protocol) {
+        MetadataRewriter1_16To1_15_2 metadataRewriter = protocol.get(MetadataRewriter1_16To1_15_2.class);
 
-   static String[] access$100() {
-      return WORLD_NAMES;
-   }
+        // Spawn lightning -> Spawn entity
+        protocol.registerOutgoing(ClientboundPackets1_15.SPAWN_GLOBAL_ENTITY, ClientboundPackets1_16.SPAWN_ENTITY, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    int entityId = wrapper.passthrough(Type.VAR_INT);
+                    wrapper.user().get(EntityTracker1_16.class).addEntity(entityId, Entity1_16Types.EntityType.LIGHTNING_BOLT);
 
-   static {
-      ListTag var7 = new ListTag("dimension", CompoundTag.class);
-      var7.add(createOverworldEntry());
-      var7.add(createOverworldCavesEntry());
-      var7.add(createNetherEntry());
-      var7.add(createEndEntry());
-      DIMENSIONS_TAG.put(var7);
-   }
+                    wrapper.write(Type.UUID, UUID.randomUUID()); // uuid
+                    wrapper.write(Type.VAR_INT, Entity1_16Types.EntityType.LIGHTNING_BOLT.getId()); // entity type
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+                    wrapper.read(Type.BYTE); // remove type
+
+                    wrapper.passthrough(Type.DOUBLE); // x
+                    wrapper.passthrough(Type.DOUBLE); // y
+                    wrapper.passthrough(Type.DOUBLE); // z
+                    wrapper.write(Type.BYTE, (byte) 0); // yaw
+                    wrapper.write(Type.BYTE, (byte) 0); // pitch
+                    wrapper.write(Type.INT, 0); // data
+                    wrapper.write(Type.SHORT, (short) 0); // velocity
+                    wrapper.write(Type.SHORT, (short) 0); // velocity
+                    wrapper.write(Type.SHORT, (short) 0); // velocity
+                });
+            }
+        });
+
+        metadataRewriter.registerSpawnTrackerWithData(ClientboundPackets1_15.SPAWN_ENTITY, Entity1_16Types.EntityType.FALLING_BLOCK);
+        metadataRewriter.registerTracker(ClientboundPackets1_15.SPAWN_MOB);
+        metadataRewriter.registerTracker(ClientboundPackets1_15.SPAWN_PLAYER, Entity1_16Types.EntityType.PLAYER);
+        metadataRewriter.registerMetadataRewriter(ClientboundPackets1_15.ENTITY_METADATA, Types1_14.METADATA_LIST);
+        metadataRewriter.registerEntityDestroy(ClientboundPackets1_15.DESTROY_ENTITIES);
+
+        protocol.registerOutgoing(ClientboundPackets1_15.RESPAWN, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(DIMENSION_HANDLER);
+                map(Type.LONG); // Seed
+                map(Type.UNSIGNED_BYTE); // Gamemode
+                handler(wrapper -> {
+                    wrapper.write(Type.BYTE, (byte) -1); // Previous gamemode, set to none
+
+                    String levelType = wrapper.read(Type.STRING);
+                    wrapper.write(Type.BOOLEAN, false); // debug
+                    wrapper.write(Type.BOOLEAN, levelType.equals("flat"));
+                    wrapper.write(Type.BOOLEAN, true); // keep all playerdata
+                });
+            }
+        });
+
+        protocol.registerOutgoing(ClientboundPackets1_15.JOIN_GAME, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.INT); // Entity ID
+                map(Type.UNSIGNED_BYTE); //  Gamemode
+                handler(wrapper -> {
+                    wrapper.write(Type.BYTE, (byte) -1); // Previous gamemode, set to none
+                    wrapper.write(Type.STRING_ARRAY, WORLD_NAMES); // World list - only used for command completion
+                    wrapper.write(Type.NBT, DIMENSIONS_TAG); // Dimension registry
+                });
+                handler(DIMENSION_HANDLER); // Dimension
+                map(Type.LONG); // Seed
+                map(Type.UNSIGNED_BYTE); // Max players
+                handler(wrapper -> {
+                    wrapper.user().get(EntityTracker1_16.class).addEntity(wrapper.get(Type.INT, 0), Entity1_16Types.EntityType.PLAYER);
+
+                    final String type = wrapper.read(Type.STRING);// level type
+                    wrapper.passthrough(Type.VAR_INT); // View distance
+                    wrapper.passthrough(Type.BOOLEAN); // Reduced debug info
+                    wrapper.passthrough(Type.BOOLEAN); // Show death screen
+
+                    wrapper.write(Type.BOOLEAN, false); // Debug
+                    wrapper.write(Type.BOOLEAN, type.equals("flat"));
+                });
+            }
+        });
+
+        protocol.registerOutgoing(ClientboundPackets1_15.ENTITY_PROPERTIES, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    wrapper.passthrough(Type.VAR_INT);
+                    int size = wrapper.passthrough(Type.INT);
+                    int actualSize = size;
+                    for (int i = 0; i < size; i++) {
+                        // Attributes have been renamed and are now namespaced identifiers
+                        String key = wrapper.read(Type.STRING);
+                        String attributeIdentifier = protocol.getMappingData().getAttributeMappings().get(key);
+                        if (attributeIdentifier == null) {
+                            attributeIdentifier = "minecraft:" + key;
+                            if (!viaversion.viaversion.protocols.protocol1_13to1_12_2.data.MappingData.isValid1_13Channel(attributeIdentifier)) {
+                                if (!Via.getConfig().isSuppressConversionWarnings()) {
+                                    Via.getPlatform().getLogger().warning("Invalid attribute: " + key);
+                                }
+                                actualSize--;
+                                wrapper.read(Type.DOUBLE);
+                                int modifierSize = wrapper.read(Type.VAR_INT);
+                                for (int j = 0; j < modifierSize; j++) {
+                                    wrapper.read(Type.UUID);
+                                    wrapper.read(Type.DOUBLE);
+                                    wrapper.read(Type.BYTE);
+                                }
+                                continue;
+                            }
+                        }
+
+                        wrapper.write(Type.STRING, attributeIdentifier);
+
+                        wrapper.passthrough(Type.DOUBLE);
+                        int modifierSize = wrapper.passthrough(Type.VAR_INT);
+                        for (int j = 0; j < modifierSize; j++) {
+                            wrapper.passthrough(Type.UUID);
+                            wrapper.passthrough(Type.DOUBLE);
+                            wrapper.passthrough(Type.BYTE);
+                        }
+                    }
+                    if (size != actualSize) {
+                        wrapper.set(Type.INT, 0, actualSize);
+                    }
+                });
+            }
+        });
+
+        protocol.registerIncoming(ServerboundPackets1_16.ANIMATION, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    InventoryTracker1_16 inventoryTracker = wrapper.user().get(InventoryTracker1_16.class);
+                    // Don't send an arm swing if the player is switching between inventories.
+                    if (inventoryTracker.getInventory() != -1) {
+                        wrapper.cancel();
+                    }
+                });
+            }
+        });
+    }
 }

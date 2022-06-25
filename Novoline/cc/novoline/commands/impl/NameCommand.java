@@ -2,128 +2,216 @@ package cc.novoline.commands.impl;
 
 import cc.novoline.Novoline;
 import cc.novoline.commands.NovoCommand;
-import cc.novoline.commands.impl.NameCommand$1;
-import cc.novoline.commands.impl.NameCommand$Name;
-import cc.novoline.commands.impl.NameCommand$Player;
 import cc.novoline.utils.java.Checks;
 import cc.novoline.utils.java.HttpUtils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import net.a_E;
-import net.minecraft.util.EnumChatFormatting;
+
+import static cc.novoline.utils.java.HttpUtils.createConnection;
+import static cc.novoline.utils.java.HttpUtils.parseConnectionInput;
+import static net.minecraft.util.EnumChatFormatting.*;
 
 public final class NameCommand extends NovoCommand {
-   private final Cache cache = CacheBuilder.newBuilder().expireAfterAccess(5L, TimeUnit.MINUTES).build();
-   private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yyyy");
 
-   public NameCommand(Novoline var1) {
-      super(var1, "name", "names");
-   }
+    /* fields */
+    private final Cache<String, Player> cache = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.MINUTES).build();
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yyyy");
 
-   public void process(String[] var1) {
-      int[] var2 = a_E.b();
-      if(var1.length < 1) {
-         this.notifyError("Use .name (name)");
-      } else {
-         String var3 = var1[0];
-         this.print(var3, 0);
-      }
-   }
+    /* constructors */
+    public NameCommand(@NonNull Novoline novoline) {
+        super(novoline, "name", "names");
+    }
 
-   public void print(String var1, int var2) {
-      ForkJoinPool.commonPool().execute(this::lambda$print$0);
-   }
+    /* methods */
+    @Override
+    public void process(String[] args) {
+        if (args.length < 1) {
+            notifyError("Use .name (name)");
+            return;
+        }
 
-   public NameCommand$Player getPlayer(String var1) throws ExecutionException {
-      Checks.notBlank(var1, "name");
-      return (NameCommand$Player)this.cache.get(var1.toLowerCase(), this::lambda$getPlayer$3);
-   }
+        final String name = args[0];
 
-   private String namesToFormattedString(NameCommand$Player var1) {
-      a_E.b();
-      List var3 = var1.getNames();
-      if(var3.isEmpty()) {
-         throw new RuntimeException();
-      } else if(var3.size() == 1) {
-         return "\n  " + EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + ((NameCommand$Name)var3.get(0)).getName() + "\n";
-      } else {
-         NameCommand$Name var4 = (NameCommand$Name)var3.get(0);
-         String var5 = "\n  " + EnumChatFormatting.GOLD.toString() + EnumChatFormatting.BOLD + var4.getName() + EnumChatFormatting.GOLD + " (Original name)\n";
-         StringBuilder var6 = new StringBuilder(var5);
-         int var7 = 1;
-         if(var7 < var3.size() - 1) {
-            var4 = (NameCommand$Name)var3.get(var7++);
-            var6.append("  ").append(EnumChatFormatting.GOLD).append(" - ").append(var4.getName()).append(" (").append(this.formatTimestamp(var4.getTimestamp())).append(")\n");
-         }
+        print(name, 0);
+    }
 
-         var4 = (NameCommand$Name)var3.get(var7);
-         var6.append("  ").append(EnumChatFormatting.GOLD).append(" - ").append(var4.getName()).append(" (").append(this.formatTimestamp(var4.getTimestamp())).append(")");
-         return var6.toString();
-      }
-   }
+    public void print(String name, int retry) {
+        ForkJoinPool.commonPool().execute(() -> {
+            try {
+                final Player player = getPlayer(name);
+                if (player == null) return;
 
-   private String formatTimestamp(long var1) {
-      return this.dateFormatter.format(new Date(var1));
-   }
+                try {
+                    send(namesToFormattedString(player));
+                } catch (Throwable ignored) {
+                    if (retry < 1) {
+                        print(name, retry + 1);
+                    } else {
+                        send(RED + "Could not find name " + name + "!");
+                    }
+                }
+            } catch (Throwable t) {
+                getLogger().warn("An error occurred while trying to reach Mojang API!", t);
+            }
+        });
+    }
 
-   private NameCommand$Player lambda$getPlayer$3(String var1) throws Exception {
-      HttpURLConnection var3 = HttpUtils.createConnection("https://api.mojang.com/users/profiles/minecraft/" + var1);
-      a_E.b();
-      JsonElement var4 = HttpUtils.parseConnectionInput(var3, this::lambda$null$1, JsonElement.class);
-      if(var4 == null) {
-         return null;
-      } else {
-         var4 = var4.getAsJsonObject().get("id");
-         if(var4 != null && var4.isJsonPrimitive()) {
-            String var5 = var4.getAsString();
-            var3 = HttpUtils.createConnection("https://api.mojang.com/user/profiles/" + var5 + "/names");
-            JsonArray var6 = (JsonArray)HttpUtils.parseConnectionInput(var3, this::lambda$null$2, JsonArray.class);
-            return new NameCommand$Player((List)HttpUtils.getGson().fromJson(var6, (new NameCommand$1(this)).getType()), (NameCommand$1)null);
-         } else {
-            throw new RuntimeException("Mojang API schema has been changed!");
-         }
-      }
-   }
+    public NameCommand.Player getPlayer(@NonNull String name) throws ExecutionException {
+        Checks.notBlank(name, "name");
 
-   private void lambda$null$2(HttpURLConnection var1) {
-      this.send(EnumChatFormatting.RED + "Mojang API schema has been changed. Let the developers know!");
-   }
+        return this.cache.get(name.toLowerCase(), () -> {
+            HttpURLConnection connection = createConnection("https://api.mojang.com/users/profiles/minecraft/" + name);
+            JsonElement element = parseConnectionInput(connection, con -> {
+                try {
+                    send(RED + "Could not find name " + name + "! (" + con.getResponseCode() + ")");
+                } catch (IOException e) {
+                    send(RED + "Could not find name " + name + "!");
+                    getLogger().warn("An I/O error occurred while trying to get response code!", e);
+                }
+            }, JsonElement.class);
+            if (element == null) return null;
 
-   private void lambda$null$1(String var1, HttpURLConnection var2) {
-      try {
-         this.send(EnumChatFormatting.RED + "Could not find name " + var1 + "! (" + var2.getResponseCode() + ")");
-      } catch (IOException var4) {
-         this.send(EnumChatFormatting.RED + "Could not find name " + var1 + "!");
-         this.getLogger().warn("An I/O error occurred while trying to get response code!", var4);
-      }
+            element = element.getAsJsonObject().get("id");
 
-   }
+            if (element == null || !element.isJsonPrimitive()) {
+                throw new RuntimeException("Mojang API schema has been changed!");
+            }
 
-   private void lambda$print$0(String var1, int var2) {
-      int[] var3 = a_E.b();
-      NameCommand var10000 = this;
-      String var10001 = var1;
+            final String undashedUuid = element.getAsString();
 
-      try {
-         NameCommand$Player var4 = var10000.getPlayer(var10001);
-      } catch (Throwable var5) {
-         this.getLogger().warn("An error occurred while trying to reach Mojang API!", var5);
-      }
-   }
+            connection = createConnection("https://api.mojang.com/user/profiles/" + undashedUuid + "/names");
+            final JsonArray array = parseConnectionInput(connection,
+                    httpURLConnection -> send(RED + "Mojang API schema has been changed. Let the developers know!"),
+                    JsonArray.class);
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+            // noinspection ConstantConditions
+            return new Player(HttpUtils.getGson().fromJson(array, new TypeToken<List<Name>>() {
+            }.getType()));
+        });
+    }
+
+    @NonNull
+    private String namesToFormattedString(@NonNull final Player player) {
+        final List<Name> names = player.getNames();
+
+        if (names.isEmpty()) {
+            throw new RuntimeException();
+        } else if (names.size() == 1) {
+            return "\n  " + GOLD + BOLD + names.get(0).getName() + "\n";
+        }
+
+        Name entry = names.get(0);
+        final String first = "\n  " + GOLD.toString() + BOLD + entry.getName() + GOLD + " (Original name)\n";
+        final StringBuilder builder = new StringBuilder(first);
+
+        int i = 1;
+
+        while (i < names.size() - 1) {
+            entry = names.get(i++);
+            builder.append("  ").append(GOLD).append(" - ").append(entry.getName()).append(" (")
+                    .append(formatTimestamp(entry.getTimestamp())).append(")\n");
+        }
+
+        entry = names.get(i);
+        builder.append("  ").append(GOLD).append(" - ").append(entry.getName()).append(" (")
+                .append(formatTimestamp(entry.getTimestamp())).append(")");
+
+        return builder.toString();
+    }
+
+    @NonNull
+    private String formatTimestamp(final long timestamp) {
+        return this.dateFormatter.format(new Date(timestamp));
+    }
+
+    private static class Player {
+
+        private final List<Name> names;
+
+        private Player(@NonNull List<Name> names) {
+            Checks.notEmpty(names, "names");
+            this.names = names;
+        }
+
+        @NonNull
+        private static Player withNames(@NonNull List<Name> names) {
+            return new Player(names);
+        }
+
+        public Name getCurrentName() {
+            return this.names.get(this.names.size() - 1);
+        }
+
+        public List<Name> getNames() {
+            return this.names;
+        }
+
+        //region Lombok-alternative
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Player)) return false;
+            final Player player = (Player) o;
+            return Objects.equals(this.names, player.names);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.names);
+        }
+
+        @Override
+        public String toString() {
+            return "Player{" + "names=" + this.names + '}';
+        }
+        //endregion
+
+    }
+
+    private static class Name {
+
+        @Expose
+        @SerializedName("name")
+        private final String name;
+        @Expose
+        @SerializedName("changedToAt")
+        private final long timestamp;
+
+        public Name(String name, long timestamp) {
+            this.name = name;
+            this.timestamp = timestamp;
+        }
+
+        public boolean isFirst() {
+            return this.timestamp == 0;
+        }
+
+        //region Lombok-alternative
+        public String getName() {
+            return this.name;
+        }
+
+        public long getTimestamp() {
+            return this.timestamp;
+        }
+        //endregion
+
+    }
+
 }

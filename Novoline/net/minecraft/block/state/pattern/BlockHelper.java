@@ -5,19 +5,21 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 
-public class BlockHelper implements Predicate {
-   private static Minecraft mc;
-   private final Block block;
+public class BlockHelper implements Predicate<IBlockState> {
 
-   private BlockHelper(Block var1) {
-      this.block = var1;
-   }
+    private static Minecraft mc;
+    private final Block block;
 
-   public static BlockHelper forBlock(Block var0) {
-      return new BlockHelper(var0);
-   }
+    private BlockHelper(Block blockType) {
+        this.block = blockType;
+    }
 
-   public boolean apply(IBlockState var1) {
-      return var1.getBlock() == this.block;
-   }
+    public static BlockHelper forBlock(Block blockType) {
+        return new BlockHelper(blockType);
+    }
+
+    public boolean apply(IBlockState p_apply_1_) {
+        return p_apply_1_ != null && p_apply_1_.getBlock() == this.block;
+    }
+
 }

@@ -1,43 +1,39 @@
 package net.shadersmod.client;
 
-import net.shadersmod.client.ShaderOption;
 import org.lwjgl.opengl.ARBShaderObjects;
 
 public abstract class ShaderUniformBase {
-   private String name;
-   private int program = -1;
-   private int location = -1;
+    private String name;
+    private int program = -1;
+    private int location = -1;
 
-   public ShaderUniformBase(String var1) {
-      this.name = var1;
-   }
+    public ShaderUniformBase(String name) {
+        this.name = name;
+    }
 
-   public void setProgram(int var1) {
-      String[] var2 = ShaderOption.p();
-      if(this.program != var1) {
-         this.program = var1;
-         this.location = ARBShaderObjects.glGetUniformLocationARB(var1, this.name);
-         this.onProgramChanged();
-      }
+    public void setProgram(int program) {
+        if (this.program != program) {
+            this.program = program;
+            this.location = ARBShaderObjects.glGetUniformLocationARB(program, (CharSequence) this.name);
+            this.onProgramChanged();
+        }
+    }
 
-   }
+    protected abstract void onProgramChanged();
 
-   protected abstract void onProgramChanged();
+    public String getName() {
+        return this.name;
+    }
 
-   public String getName() {
-      return this.name;
-   }
+    public int getProgram() {
+        return this.program;
+    }
 
-   public int getProgram() {
-      return this.program;
-   }
+    public int getLocation() {
+        return this.location;
+    }
 
-   public int getLocation() {
-      return this.location;
-   }
-
-   public boolean d() {
-      String[] var1 = ShaderOption.p();
-      return this.location >= 0;
-   }
+    public boolean isDefined() {
+        return this.location >= 0;
+    }
 }

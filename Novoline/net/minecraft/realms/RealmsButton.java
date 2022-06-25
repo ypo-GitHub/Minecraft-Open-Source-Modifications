@@ -6,67 +6,67 @@ import net.minecraft.client.gui.GuiButtonRealmsProxy;
 import net.minecraft.util.ResourceLocation;
 
 public class RealmsButton {
-   protected static final ResourceLocation WIDGETS_LOCATION = new ResourceLocation("textures/gui/widgets.png");
-   private GuiButtonRealmsProxy proxy;
+    protected static final ResourceLocation WIDGETS_LOCATION = new ResourceLocation("textures/gui/widgets.png");
+    private GuiButtonRealmsProxy proxy;
 
-   public RealmsButton(int var1, int var2, int var3, String var4) {
-      this.proxy = new GuiButtonRealmsProxy(this, var1, var2, var3, var4);
-   }
+    public RealmsButton(int p_i1177_1_, int p_i1177_2_, int p_i1177_3_, String p_i1177_4_) {
+        this.proxy = new GuiButtonRealmsProxy(this, p_i1177_1_, p_i1177_2_, p_i1177_3_, p_i1177_4_);
+    }
 
-   public RealmsButton(int var1, int var2, int var3, int var4, int var5, String var6) {
-      this.proxy = new GuiButtonRealmsProxy(this, var1, var2, var3, var6, var4, var5);
-   }
+    public RealmsButton(int p_i1178_1_, int p_i1178_2_, int p_i1178_3_, int p_i1178_4_, int p_i1178_5_, String p_i1178_6_) {
+        this.proxy = new GuiButtonRealmsProxy(this, p_i1178_1_, p_i1178_2_, p_i1178_3_, p_i1178_6_, p_i1178_4_, p_i1178_5_);
+    }
 
-   public GuiButton getProxy() {
-      return this.proxy;
-   }
+    public GuiButton getProxy() {
+        return this.proxy;
+    }
 
-   public int id() {
-      return this.proxy.getId();
-   }
+    public int id() {
+        return this.proxy.getId();
+    }
 
-   public boolean active() {
-      return this.proxy.getEnabled();
-   }
+    public boolean active() {
+        return this.proxy.getEnabled();
+    }
 
-   public void active(boolean var1) {
-      this.proxy.setEnabled(var1);
-   }
+    public void active(boolean p_active_1_) {
+        this.proxy.setEnabled(p_active_1_);
+    }
 
-   public void msg(String var1) {
-      this.proxy.setText(var1);
-   }
+    public void msg(String p_msg_1_) {
+        this.proxy.setText(p_msg_1_);
+    }
 
-   public int getWidth() {
-      return this.proxy.getButtonWidth();
-   }
+    public int getWidth() {
+        return this.proxy.getButtonWidth();
+    }
 
-   public int getHeight() {
-      return this.proxy.func_175232_g();
-   }
+    public int getHeight() {
+        return this.proxy.func_175232_g();
+    }
 
-   public int y() {
-      return this.proxy.getPositionY();
-   }
+    public int y() {
+        return this.proxy.getPositionY();
+    }
 
-   public void render(int var1, int var2) {
-      this.proxy.drawButton(Minecraft.getInstance(), var1, var2);
-   }
+    public void render(int p_render_1_, int p_render_2_) {
+        this.proxy.drawButton(Minecraft.getInstance(), p_render_1_, p_render_2_);
+    }
 
-   public void clicked(int var1, int var2) {
-   }
+    public void clicked(int p_clicked_1_, int p_clicked_2_) {
+    }
 
-   public void released(int var1, int var2) {
-   }
+    public void released(int p_released_1_, int p_released_2_) {
+    }
 
-   public void blit(int var1, int var2, int var3, int var4, int var5, int var6) {
-      this.proxy.drawTexturedModalRect(var1, var2, var3, var4, var5, var6);
-   }
+    public void blit(int p_blit_1_, int p_blit_2_, int p_blit_3_, int p_blit_4_, int p_blit_5_, int p_blit_6_) {
+        this.proxy.drawTexturedModalRect(p_blit_1_, p_blit_2_, p_blit_3_, p_blit_4_, p_blit_5_, p_blit_6_);
+    }
 
-   public void renderBg(int var1, int var2) {
-   }
+    public void renderBg(int p_renderBg_1_, int p_renderBg_2_) {
+    }
 
-   public int getYImage(boolean var1) {
-      return this.proxy.func_154312_c(var1);
-   }
+    public int getYImage(boolean p_getYImage_1_) {
+        return this.proxy.func_154312_c(p_getYImage_1_);
+    }
 }

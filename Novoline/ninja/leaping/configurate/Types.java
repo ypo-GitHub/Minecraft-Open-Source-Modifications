@@ -1,147 +1,323 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate;
 
-import net.acE;
-import ninja.leaping.configurate.ValueType;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * Contains functions useful for performing configuration type conversions.
+ *
+ * <p>The naming scheme is as follows:</p>
+ * <p>
+ * <ul>
+ *     <li><code>as</code> methods attempt to convert the data passed to the appropriate type</li>
+ *     <li><code>strictAs</code> methods will only return values if the input value is already of an appropriate type</li>
+ * </ul>
+ */
 public final class Types {
-   public static String asString(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:var0.toString();
-   }
 
-   public static String strictAsString(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 instanceof String?(String)var0:null;
-   }
+    private Types() {
+    }
 
-   public static Float asFloat(Object var0) {
-      acE[] var1 = ValueType.b();
-      if(var0 == null) {
-         return null;
-      } else if(var0 instanceof Float) {
-         return (Float)var0;
-      } else if(var0 instanceof Integer) {
-         return Float.valueOf(((Number)var0).floatValue());
-      } else {
-         Object var10000 = var0;
+    /**
+     * Attempts to convert <code>value</code> to a {@link String}.
+     *
+     * <p>Returns null if <code>value</code> is null, and the {@link Object#toString()}
+     * representation of <code>value</code> otherwise.</p>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link String}, or null
+     * @see Object#toString()
+     */
+    @Nullable
+    public static String asString(@Nullable Object value) {
+        return value == null ? null : value.toString();
+    }
 
-         try {
-            return Float.valueOf(Float.parseFloat(var10000.toString()));
-         } catch (IllegalArgumentException var3) {
+    /**
+     * Returns <code>value</code> if it is a {@link String}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link String}, or null
+     */
+    @Nullable
+    public static String strictAsString(@Nullable Object value) {
+        return value instanceof String ? (String) value : null;
+    }
+
+    /**
+     * Attempts to convert <code>value</code> to a {@link Float}.
+     *
+     * <p>Returns null if <code>value</code> is null.</p>
+     *
+     * <p>This method will attempt to cast <code>value</code> to {@link Float}, or
+     * {@link Float#parseFloat(String) parse} the <code>value</code> if it is a {@link String}.</p>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Float}, or null
+     */
+    @Nullable
+    public static Float asFloat(@Nullable Object value) {
+        if (value == null) {
             return null;
-         }
-      }
-   }
+        }
 
-   public static Float strictAsFloat(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:(!(var0 instanceof Float) && !(var0 instanceof Integer)?null:Float.valueOf(((Number)var0).floatValue()));
-   }
+        if (value instanceof Float) {
+            return (Float) value;
+        } else if (value instanceof Integer) {
+            return ((Number) value).floatValue();
+        }
 
-   public static Double asDouble(Object var0) {
-      acE[] var1 = ValueType.b();
-      if(var0 == null) {
-         return null;
-      } else if(var0 instanceof Double) {
-         return (Double)var0;
-      } else if(!(var0 instanceof Integer) && !(var0 instanceof Long) && !(var0 instanceof Float)) {
-         Object var10000 = var0;
-
-         try {
-            return Double.valueOf(Double.parseDouble(var10000.toString()));
-         } catch (IllegalArgumentException var3) {
+        try {
+            return Float.parseFloat(value.toString());
+        } catch (IllegalArgumentException ex) {
             return null;
-         }
-      } else {
-         return Double.valueOf(((Number)var0).doubleValue());
-      }
-   }
+        }
+    }
 
-   public static Double strictAsDouble(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:(!(var0 instanceof Double) && !(var0 instanceof Float) && !(var0 instanceof Integer) && !(var0 instanceof Long)?null:Double.valueOf(((Number)var0).doubleValue()));
-   }
+    /**
+     * Returns <code>value</code> if it is a {@link Float}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Float}, or null
+     */
+    @Nullable
+    public static Float strictAsFloat(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
 
-   public static Integer asInt(Object var0) {
-      acE[] var1 = ValueType.b();
-      if(var0 == null) {
-         return null;
-      } else if(var0 instanceof Integer) {
-         return (Integer)var0;
-      } else {
-         if(var0 instanceof Float || var0 instanceof Double) {
-            double var2 = ((Number)var0).doubleValue();
-            if(var2 == Math.floor(var2)) {
-               return Integer.valueOf((int)var2);
+        if (value instanceof Float || value instanceof Integer) {
+            return ((Number) value).floatValue();
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to convert <code>value</code> to a {@link Double}.
+     *
+     * <p>Returns null if <code>value</code> is null.</p>
+     *
+     * <p>This method will attempt to cast <code>value</code> to {@link Double}, or
+     * {@link Double#parseDouble(String) parse} the <code>value</code> if it is a {@link String}.</p>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Float}, or null
+     */
+    @Nullable
+    public static Double asDouble(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Double) {
+            return (Double) value;
+        } else if (value instanceof Integer || value instanceof Long || value instanceof Float) {
+            return ((Number) value).doubleValue();
+        }
+
+        try {
+            return Double.parseDouble(value.toString());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns <code>value</code> if it is a {@link Double}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Double}, or null
+     */
+    @Nullable
+    public static Double strictAsDouble(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Double || value instanceof Float || value instanceof Integer || value instanceof Long) {
+            return ((Number) value).doubleValue();
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to convert <code>value</code> to a {@link Integer}.
+     *
+     * <p>Returns null if <code>value</code> is null.</p>
+     *
+     * <p>This method will attempt to cast <code>value</code> to {@link Integer}, or
+     * {@link Integer#parseInt(String) parse} the <code>value</code> if it is a {@link String}.</p>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Float}, or null
+     */
+    @Nullable
+    public static Integer asInt(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+
+        if (value instanceof Float || value instanceof Double) {
+            double val = ((Number) value).doubleValue();
+            if (val == Math.floor(val)) {
+                return (int) val;
             }
-         }
+        }
 
-         Object var10000 = var0;
-
-         try {
-            return Integer.valueOf(Integer.parseInt(var10000.toString()));
-         } catch (IllegalArgumentException var4) {
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (IllegalArgumentException ex) {
             return null;
-         }
-      }
-   }
+        }
+    }
 
-   public static Integer strictAsInt(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:(var0 instanceof Integer?(Integer)var0:null);
-   }
+    /**
+     * Returns <code>value</code> if it is a {@link Integer}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Integer}, or null
+     */
+    @Nullable
+    public static Integer strictAsInt(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
 
-   public static Long asLong(Object var0) {
-      acE[] var1 = ValueType.b();
-      if(var0 == null) {
-         return null;
-      } else if(var0 instanceof Long) {
-         return (Long)var0;
-      } else if(var0 instanceof Integer) {
-         return Long.valueOf(((Number)var0).longValue());
-      } else {
-         if(var0 instanceof Float || var0 instanceof Double) {
-            double var2 = ((Number)var0).doubleValue();
-            if(var2 == Math.floor(var2)) {
-               return Long.valueOf((long)var2);
+        return value instanceof Integer ? (Integer) value : null;
+    }
+
+    /**
+     * Attempts to convert <code>value</code> to a {@link Long}.
+     *
+     * <p>Returns null if <code>value</code> is null.</p>
+     *
+     * <p>This method will attempt to cast <code>value</code> to {@link Long}, or
+     * {@link Long#parseLong(String) parse} the <code>value</code> if it is a {@link String}.</p>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Float}, or null
+     */
+    @Nullable
+    public static Long asLong(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Long) {
+            return (Long) value;
+        } else if (value instanceof Integer) {
+            return ((Number) value).longValue();
+        }
+
+        if (value instanceof Float || value instanceof Double) {
+            double val = ((Number) value).doubleValue();
+            if (val == Math.floor(val)) {
+                return (long) val;
             }
-         }
+        }
 
-         Object var10000 = var0;
-
-         try {
-            return Long.valueOf(Long.parseLong(var10000.toString()));
-         } catch (IllegalArgumentException var4) {
+        try {
+            return Long.parseLong(value.toString());
+        } catch (IllegalArgumentException ex) {
             return null;
-         }
-      }
-   }
+        }
+    }
 
-   public static Long strictAsLong(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:(var0 instanceof Long?(Long)var0:(var0 instanceof Integer?Long.valueOf(((Number)var0).longValue()):null));
-   }
+    /**
+     * Returns <code>value</code> if it is a {@link Long}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Long}, or null
+     */
+    @Nullable
+    public static Long strictAsLong(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
 
-   public static Boolean asBoolean(Object var0) {
-      acE[] var1 = ValueType.b();
-      if(var0 == null) {
-         return null;
-      } else if(var0 instanceof Boolean) {
-         return (Boolean)var0;
-      } else if(var0 instanceof Number) {
-         return Boolean.valueOf(!var0.equals(Integer.valueOf(0)));
-      } else {
-         String var2 = var0.toString();
-         return !var2.equals("true") && !var2.equals("t") && !var2.equals("yes") && !var2.equals("y") && !var2.equals("1")?(!var2.equals("false") && !var2.equals("f") && !var2.equals("no") && !var2.equals("n") && !var2.equals("0")?null:Boolean.valueOf(false)):Boolean.valueOf(true);
-      }
-   }
+        if (value instanceof Long) {
+            return (Long) value;
+        } else if (value instanceof Integer) {
+            return ((Number) value).longValue();
+        }
 
-   public static Boolean f(Object var0) {
-      acE[] var1 = ValueType.b();
-      return var0 == null?null:(var0 instanceof Boolean?(Boolean)var0:null);
-   }
+        return null;
+    }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+    /**
+     * Attempts to convert <code>value</code> to a {@link Boolean}.
+     *
+     * <p>
+     * <ul>
+     *     <li>If <code>value</code> is a {@link Boolean}, casts and returns</li>
+     *     <li>If <code>value</code> is a {@link Number}, returns true if value is not 0</li>
+     *     <li>If <code>value.toString()</code> returns true, t, yes, y, or 1, returns true</li>
+     *     <li>If <code>value.toString()</code> returns false, f, no, n, or 0, returns false</li>
+     *     <li>Otherwise returns null</li>
+     * </ul>
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Boolean}, or null
+     */
+    @Nullable
+    public static Boolean asBoolean(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        if (value instanceof Number) {
+            return !value.equals(0);
+        }
+
+        final String potential = value.toString();
+        if (potential.equals("true") || potential.equals("t") || potential.equals("yes") || potential.equals("y") || potential.equals("1")) {
+            return true;
+        } else if (potential.equals("false") || potential.equals("f") || potential.equals("no") || potential.equals("n") || potential.equals("0")) {
+            return false;
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns <code>value</code> if it is a {@link Boolean}.
+     *
+     * @param value The value
+     * @return <code>value</code> as a {@link Boolean}, or null
+     */
+    @Nullable
+    public static Boolean strictAsBoolean(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        return value instanceof Boolean ? (Boolean) value : null;
+    }
+
 }

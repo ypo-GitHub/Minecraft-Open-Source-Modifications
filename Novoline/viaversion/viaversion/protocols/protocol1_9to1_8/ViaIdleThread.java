@@ -1,7 +1,5 @@
 package viaversion.viaversion.protocols.protocol1_9to1_8;
 
-import net.Cw;
-import net.aRY;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.protocols.base.ProtocolInfo;
@@ -9,22 +7,20 @@ import viaversion.viaversion.protocols.protocol1_9to1_8.providers.MovementTransm
 import viaversion.viaversion.protocols.protocol1_9to1_8.storage.MovementTracker;
 
 public class ViaIdleThread implements Runnable {
-   public void run() {
-      Cw.a();
 
-      for(UserConnection var3 : Via.getManager().getConnections()) {
-         ProtocolInfo var4 = var3.getProtocolInfo();
-         if(var4 != null && var4.getPipeline().contains(aRY.class)) {
-            MovementTracker var5 = (MovementTracker)var3.b(MovementTracker.class);
-            if(var5 != null) {
-               long var6 = var5.getNextIdlePacket();
-               if(var6 <= System.currentTimeMillis() && var3.getChannel().isOpen()) {
-                  ((MovementTransmitterProvider)Via.getManager().f().b(MovementTransmitterProvider.class)).sendPlayer(var3);
-               }
-               break;
+    @Override
+    public void run() {
+        for (UserConnection info : Via.getManager().getConnections()) {
+            ProtocolInfo protocolInfo = info.getProtocolInfo();
+            if (protocolInfo == null || !protocolInfo.getPipeline().contains(Protocol1_9To1_8.class)) continue;
+
+            MovementTracker movementTracker = info.get(MovementTracker.class);
+            if (movementTracker == null) continue;
+
+            long nextIdleUpdate = movementTracker.getNextIdlePacket();
+            if (nextIdleUpdate <= System.currentTimeMillis() && info.getChannel().isOpen()) {
+                Via.getManager().getProviders().get(MovementTransmitterProvider.class).sendPlayer(info);
             }
-         }
-      }
-
-   }
+        }
+    }
 }

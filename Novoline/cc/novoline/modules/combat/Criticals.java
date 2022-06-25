@@ -1,139 +1,157 @@
 package cc.novoline.modules.combat;
 
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.EventState;
-import cc.novoline.events.events.MotionUpdateEvent;
 import cc.novoline.events.events.PacketEvent;
 import cc.novoline.events.events.TickUpdateEvent;
-import cc.novoline.gui.screen.setting.Manager;
-import cc.novoline.gui.screen.setting.Setting;
-import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.combat.KillAura;
-import cc.novoline.modules.configurations.annotation.Property;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.configurations.property.object.StringProperty;
 import cc.novoline.modules.exploits.Blink;
 import cc.novoline.modules.move.Speed;
 import cc.novoline.utils.ServerUtils;
-import java.util.Iterator;
+import cc.novoline.utils.Timer;
+import net.minecraft.network.play.client.C03PacketPlayer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.concurrent.ThreadLocalRandom;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.play.client.C03PacketPlayer$C04PacketPlayerPosition;
-import net.minecraft.network.play.client.C0APacketAnimation;
+
+import static cc.novoline.modules.EnumModuleType.COMBAT;
 
 public final class Criticals extends AbstractModule {
-   @Property("mode")
-   private StringProperty x = PropertyFactory.createString("Edit").acceptableValues(new String[]{"Edit", "Packet"});
-   private float z;
-   private float y;
-   private double A;
 
-   public Criticals(ModuleManager var1) {
-      super(var1, "Criticals", EnumModuleType.COMBAT, "");
-      Manager.put(new Setting("CRITICALS_MODE", "Mode", SettingType.COMBOBOX, this, this.x));
-   }
+    private Timer timer = new Timer();
+    private boolean rotating;
 
-   public boolean shouldCrit(KillAura var1) {
-      int[] var2 = KillAura.Q();
-      return this.isEnabled() && var1.shouldAttack() && var1.isValidEntity(var1.getTarget()) && !this.mc.at.f() && this.mc.player.onGround && !this.mc.player.N() && !this.mc.player.isInLiquid() && !this.mc.player.isInsideBlock() && !this.mc.player.movementInput().jump() && !((Blink)this.getModule(Blink.class)).isEnabled() && (!this.isEnabled(Speed.class) || !this.mc.player.isMoving());
-   }
+    /* constructors @on */
+    public Criticals(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "Criticals", COMBAT, "");
+    }
 
-   private boolean a(Entity var1) {
-      int[] var2 = KillAura.Q();
-      return ((KillAura)this.getModule(KillAura.class)).p() <= 6L || var1.hurtResistantTime >= 18;
-   }
+    public boolean shouldCrit(KillAura killAura) {
+        return isEnabled() && killAura.shouldAttack() && killAura.isValidEntity(killAura.getTarget())
+                && !this.mc.playerController.isBreakingBlock() && this.mc.player.onGround
+                && !this.mc.player.isInLiquid() && !this.mc.player.isInsideBlock() && !mc.player.movementInput().jump();
+    }
 
-   @EventTarget
-   public void a(MotionUpdateEvent var1) {
-      int[] var2 = KillAura.Q();
-      if(var1.getState().equals(EventState.PRE) && this.x.equals("Edit") && this.isEnabled(KillAura.class)) {
-         KillAura var3 = (KillAura)this.getModule(KillAura.class);
-         if(this.shouldCrit(var3)) {
-            Iterator var4 = var3.getTargetsFromRange().iterator();
-            if(var4.hasNext()) {
-               Entity var5 = (Entity)var4.next();
-               int var6 = var5.hurtResistantTime;
-               if(ServerUtils.isHypixel()) {
-                  switch(var6) {
-                  case 19:
-                     var1.setOnGround(false);
-                     var1.setY(var1.getY() + 0.0145D + ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D));
-                  case 18:
-                     var1.setOnGround(false);
-                     var1.setY(var1.getY() + 0.0105D + ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D));
-                  case 17:
-                     var1.setOnGround(false);
-                     var1.setY(var1.getY() + ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D));
-                  }
-               }
+    private boolean neededHurtTime(KillAura killAura) {
+        double aps = killAura.getAps().get();
+        int hurtTime = killAura.getTarget().hurtResistantTime;
 
-               switch(var6) {
-               case 17:
-                  var1.setOnGround(false);
-                  var1.setY(var1.getY() + ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D));
-               case 18:
-                  var1.setOnGround(false);
-                  var1.setY(var1.getY() + 0.0722435151D);
-               case 19:
-                  var1.setOnGround(false);
-                  var1.setY(var1.getY() + ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D));
-               case 20:
-                  var1.setOnGround(false);
-                  var1.setY(var1.getY() + 0.0722435151D);
-               }
+        return aps < 7.0 && hurtTime >= 14 || aps < 3.0 && hurtTime >= 10 || aps == 1.0 || hurtTime >= 18;
+    }
+
+/*    @EventTarget
+    public void onMotion(MotionUpdateEvent event) {
+        if (event.getState().equals(MotionUpdateEvent.State.PRE)) {
+            if (getModule(Blink.class).isEnabled() || isEnabled(Speed.class) && mc.player.isMoving()) {
+                return;
             }
-         }
-      }
 
-   }
+            if (isEnabled(KillAura.class)) {
+                KillAura killAura = getModule(KillAura.class);
 
-   @EventTarget
-   public void b(PacketEvent var1) {
-      int[] var2 = KillAura.Q();
-      if(this.x.equals("Packet") && var1.getPacket() instanceof C0APacketAnimation && this.isEnabled(KillAura.class)) {
-         KillAura var3 = (KillAura)this.getModule(KillAura.class);
-         if(this.shouldCrit(var3)) {
-            Iterator var4 = var3.getTargetsFromRange().iterator();
-            if(var4.hasNext()) {
-               Entity var5 = (Entity)var4.next();
-               if(this.a(var5)) {
-                  if(ServerUtils.isHypixel() && !this.mc.isSingleplayer()) {
-                     boolean var19 = true;
-                  } else {
-                     boolean var10000 = false;
-                  }
+                if (shouldCrit(killAura)) {
+                    int hurt = killAura.getTarget().hurtResistantTime;
 
-                  double var7 = this.mc.player.posX;
-                  double var9 = this.mc.player.posY;
-                  double var11 = this.mc.player.posZ;
-                  double var13 = 0.01125D;
-                  double var15 = ThreadLocalRandom.current().nextDouble(0.001D, 0.0011D);
-                  int var17 = 0;
-                  if(var17 < 1) {
-                     this.sendPacket(new C03PacketPlayer$C04PacketPlayerPosition(var7, var9 + var13 + var15, var11, false));
-                     this.sendPacket(new C03PacketPlayer$C04PacketPlayerPosition(var7, var9 + var15, var11, false));
-                     ++var17;
-                  }
-               }
+                    switch (hurt) {
+                        case 17:
+                            event.setOnGround(false);
+                            event.setY(event.getY() + 0.00163166800276);
+                            break;
+                        case 18:
+                            event.setOnGround(false);
+                            event.setY(event.getY() + 0.11921599284565);
+                            break;
+                        case 19:
+                            event.setOnGround(false);
+                            event.setY(event.getY() + 0.15919999545217);
+                            break;
+                        case 20:
+                            event.setOnGround(false);
+                            event.setY(event.getY() + 0.11999999731779);
+                    }
+
+                    print(event.isOnGround(), event.getY());
+                }
             }
-         }
-      }
+        }
+    }*/
 
-   }
+    public void onCrit(PacketEvent event) {
+        if (event.getState().equals(PacketEvent.State.OUTGOING)) {
+            if (getModule(Blink.class).isEnabled() || isEnabled(Speed.class) && mc.player.isMoving()) {
+                return;
+            }
 
-   @EventTarget
-   public void a(TickUpdateEvent var1) {
-      this.setSuffix((String)this.x.get());
-   }
+            if (event.getPacket() instanceof C03PacketPlayer) {
+                C03PacketPlayer packet = (C03PacketPlayer) event.getPacket();
 
-   public void onEnable() {
-      this.setSuffix((String)this.x.get());
-   }
+                if (isEnabled(KillAura.class)) {
+                    KillAura killAura = getModule(KillAura.class);
 
-   public StringProperty a() {
-      return this.x;
-   }
+                    if (shouldCrit(killAura)) {
+                        if (mc.player.ticksExisted % 5 != 0) {
+                            packet.setOnGround(false);
+                            packet.setY(packet.getY() + ThreadLocalRandom.current().nextDouble(secretShit));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @EventTarget
+    public void onMotion(PacketEvent event) {
+        if (ServerUtils.isHypixel()) {
+            if (event.getState().equals(PacketEvent.State.OUTGOING)) {
+                if (getModule(Blink.class).isEnabled() || isEnabled(Speed.class) && mc.player.isMoving()) {
+                    return;
+                }
+
+                if (isEnabled(KillAura.class)) {
+                    KillAura killAura = getModule(KillAura.class);
+
+                    if (shouldCrit(killAura)) {
+                        if (event.getPacket() instanceof C03PacketPlayer) {
+                            C03PacketPlayer packet = (C03PacketPlayer) event.getPacket();
+
+                            if (packet.isMoving()) {
+                                int resistantTime = killAura.getTarget().hurtResistantTime;
+
+                                switch (resistantTime) {
+                                    case 17:
+                                        packet.setOnGround(false);
+                                        packet.setY(packet.getY() + ThreadLocalRandom.current().nextDouble(min17, max17));
+                                        break;
+                                    case 18:
+                                        packet.setOnGround(false);
+                                        packet.setY(packet.getY() + ThreadLocalRandom.current().nextDouble(min18, max18));
+                                        break;
+                                    case 19:
+                                        packet.setOnGround(false);
+                                        packet.setY(packet.getY() + ThreadLocalRandom.current().nextDouble(min19, max19));
+                                        break;
+                                    case 20:
+                                        packet.setOnGround(false);
+                                        packet.setY(packet.getY() + ThreadLocalRandom.current().nextDouble(min20, max20));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            onCrit(event);
+        }
+    }
+
+    @EventTarget
+    public void onTick(TickUpdateEvent event) {
+        setSuffix("Watchdog");
+    }
+
+    @Override
+    public void onEnable() {
+        setSuffix("Watchdog");
+    }
 }

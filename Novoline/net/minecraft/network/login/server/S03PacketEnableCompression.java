@@ -1,33 +1,43 @@
 package net.minecraft.network.login.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.login.INetHandlerLoginClient;
 
-public class S03PacketEnableCompression implements Packet {
-   private int compressionTreshold;
+import java.io.IOException;
 
-   public S03PacketEnableCompression() {
-   }
+public class S03PacketEnableCompression implements Packet<INetHandlerLoginClient> {
+    private int compressionTreshold;
 
-   public S03PacketEnableCompression(int var1) {
-      this.compressionTreshold = var1;
-   }
+    public S03PacketEnableCompression() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.compressionTreshold = var1.readVarIntFromBuffer();
-   }
+    public S03PacketEnableCompression(int compressionTresholdIn) {
+        this.compressionTreshold = compressionTresholdIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.compressionTreshold);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.compressionTreshold = buf.readVarIntFromBuffer();
+    }
 
-   public void processPacket(INetHandlerLoginClient var1) {
-      var1.handleEnableCompression(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.compressionTreshold);
+    }
 
-   public int getCompressionTreshold() {
-      return this.compressionTreshold;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerLoginClient handler) {
+        handler.handleEnableCompression(this);
+    }
+
+    public int getCompressionTreshold() {
+        return this.compressionTreshold;
+    }
 }

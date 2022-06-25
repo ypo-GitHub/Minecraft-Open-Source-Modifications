@@ -1,38 +1,37 @@
 package net.shadersmod.client;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.ViewFrustum;
+import net.minecraft.client.renderer.chunk.RenderChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
-import net.shadersmod.client.IteratorRenderChunks;
-import net.shadersmod.client.ShaderOption;
-import net.shadersmod.client.Shaders;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 public class ShadowUtils {
-   public static Iterator makeShadowChunkIterator(WorldClient var0, double var1, Entity var3, int var4, ViewFrustum var5) {
-      ShaderOption.p();
-      float var7 = Shaders.ak();
-      if(var7 > 0.0F && var7 < (float)((var4 - 1) * 16)) {
-         int var19 = MathHelper.ceiling_float_int(var7 / 16.0F) + 1;
-         float var20 = var0.getCelestialAngleRadians((float)var1);
-         float var10 = Shaders.sunPathRotation * 0.017453292F;
-         float var11 = var20 > 1.5707964F && var20 < 4.712389F?var20 + 3.1415927F:var20;
-         float var12 = -MathHelper.sin(var11);
-         float var13 = MathHelper.cos(var11) * MathHelper.cos(var10);
-         float var14 = -MathHelper.cos(var11) * MathHelper.sin(var10);
-         BlockPos var15 = new BlockPos(MathHelper.floor_double(var3.posX) >> 4, MathHelper.floor_double(var3.posY) >> 4, MathHelper.floor_double(var3.posZ) >> 4);
-         BlockPos var16 = var15.add((double)(-var12 * (float)var19), (double)(-var13 * (float)var19), (double)(-var14 * (float)var19));
-         BlockPos var17 = var15.add((double)(var12 * (float)var4), (double)(var13 * (float)var4), (double)(var14 * (float)var4));
-         IteratorRenderChunks var18 = new IteratorRenderChunks(var5, var16, var17, var19, var19);
-         return var18;
-      } else {
-         List var8 = Arrays.asList(var5.renderChunks);
-         Iterator var9 = var8.iterator();
-         return var9;
-      }
-   }
+    public static Iterator<RenderChunk> makeShadowChunkIterator(WorldClient world, double partialTicks, Entity viewEntity, int renderDistanceChunks, ViewFrustum viewFrustum) {
+        float f = Shaders.getShadowRenderDistance();
+
+        if (f > 0.0F && f < (float) ((renderDistanceChunks - 1) * 16)) {
+            int i = MathHelper.ceiling_float_int(f / 16.0F) + 1;
+            float f6 = world.getCelestialAngleRadians((float) partialTicks);
+            float f1 = Shaders.sunPathRotation * 0.017453292F;
+            float f2 = f6 > (float) Math.PI / 2F && f6 < (float) Math.PI * 3F / 2F ? f6 + (float) Math.PI : f6;
+            float f3 = -MathHelper.sin(f2);
+            float f4 = MathHelper.cos(f2) * MathHelper.cos(f1);
+            float f5 = -MathHelper.cos(f2) * MathHelper.sin(f1);
+            BlockPos blockpos = new BlockPos(MathHelper.floor_double(viewEntity.posX) >> 4, MathHelper.floor_double(viewEntity.posY) >> 4, MathHelper.floor_double(viewEntity.posZ) >> 4);
+            BlockPos blockpos1 = blockpos.add((double) (-f3 * (float) i), (double) (-f4 * (float) i), (double) (-f5 * (float) i));
+            BlockPos blockpos2 = blockpos.add((double) (f3 * (float) renderDistanceChunks), (double) (f4 * (float) renderDistanceChunks), (double) (f5 * (float) renderDistanceChunks));
+            IteratorRenderChunks iteratorrenderchunks = new IteratorRenderChunks(viewFrustum, blockpos1, blockpos2, i, i);
+            return iteratorrenderchunks;
+        } else {
+            List<RenderChunk> list = Arrays.<RenderChunk>asList(viewFrustum.renderChunks);
+            Iterator<RenderChunk> iterator = list.iterator();
+            return iterator;
+        }
+    }
 }

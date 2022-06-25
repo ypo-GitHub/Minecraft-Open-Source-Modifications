@@ -1,43 +1,48 @@
 package net.optifine;
 
-import net.acE;
-import net.optifine.MatchBlock;
-import net.optifine.ReflectorClass;
-import net.optifine.ReflectorField;
+public class ReflectorFields
+{
+    private ReflectorClass reflectorClass;
+    private Class fieldType;
+    private int fieldCount;
+    private ReflectorField[] reflectorFields;
 
-public class ReflectorFields {
-   private ReflectorClass reflectorClass;
-   private Class fieldType;
-   private int fieldCount;
-   private ReflectorField[] reflectorFields;
+    public ReflectorFields(ReflectorClass p_i90_1_, Class p_i90_2_, int p_i90_3_)
+    {
+        this.reflectorClass = p_i90_1_;
+        this.fieldType = p_i90_2_;
 
-   public ReflectorFields(ReflectorClass var1, Class var2, int var3) {
-      this.reflectorClass = var1;
-      this.fieldType = var2;
-      if(var1.exists()) {
-         this.reflectorFields = new ReflectorField[var3];
+        if (p_i90_1_.exists())
+        {
+            if (p_i90_2_ != null)
+            {
+                this.reflectorFields = new ReflectorField[p_i90_3_];
 
-         for(int var4 = 0; var4 < this.reflectorFields.length; ++var4) {
-            this.reflectorFields[var4] = new ReflectorField(var1, var2, var4);
-         }
-      }
+                for (int i = 0; i < this.reflectorFields.length; ++i)
+                {
+                    this.reflectorFields[i] = new ReflectorField(p_i90_1_, p_i90_2_, i);
+                }
+            }
+        }
+    }
 
-   }
+    public ReflectorClass getReflectorClass()
+    {
+        return this.reflectorClass;
+    }
 
-   public ReflectorClass getReflectorClass() {
-      return this.reflectorClass;
-   }
+    public Class getFieldType()
+    {
+        return this.fieldType;
+    }
 
-   public Class getFieldType() {
-      return this.fieldType;
-   }
+    public int getFieldCount()
+    {
+        return this.fieldCount;
+    }
 
-   public int getFieldCount() {
-      return this.fieldCount;
-   }
-
-   public ReflectorField a(int var1) {
-      acE[] var2 = MatchBlock.b();
-      return var1 >= 0 && var1 < this.reflectorFields.length?this.reflectorFields[var1]:null;
-   }
+    public ReflectorField getReflectorField(int p_getReflectorField_1_)
+    {
+        return p_getReflectorField_1_ >= 0 && p_getReflectorField_1_ < this.reflectorFields.length ? this.reflectorFields[p_getReflectorField_1_] : null;
+    }
 }

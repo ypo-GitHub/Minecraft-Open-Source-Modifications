@@ -1,22 +1,27 @@
 package cc.novoline.modules.configurations.property.exception;
 
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
-import cc.novoline.modules.configurations.property.exception.NumberException;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
+/**
+ * @author xDelsy
+ */
 public final class NumberLimitsException extends NumberException {
-   public NumberLimitsException(AbstractNumberProperty var1) {
-      super(var1);
-   }
 
-   public NumberLimitsException(String var1, AbstractNumberProperty var2) {
-      super(var1, var2);
-   }
+    public NumberLimitsException(@NonNull AbstractNumberProperty<?, ?> property) {
+        super(property);
+    }
 
-   public NumberLimitsException(String var1, Throwable var2, AbstractNumberProperty var3) {
-      super(var1, var2, var3);
-   }
+    public NumberLimitsException(String message, @NonNull AbstractNumberProperty<?, ?> property) {
+        super(message, property);
+    }
 
-   public NumberLimitsException(Throwable var1, AbstractNumberProperty var2) {
-      super(var1, var2);
-   }
+    public NumberLimitsException(String message, Throwable cause, @NonNull AbstractNumberProperty<?, ?> property) {
+        super(message, cause, property);
+    }
+
+    public NumberLimitsException(Throwable cause, @NonNull AbstractNumberProperty<?, ?> property) {
+        super(cause, property);
+    }
+
 }

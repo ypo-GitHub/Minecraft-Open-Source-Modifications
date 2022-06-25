@@ -9,91 +9,123 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.Item;
-import net.minecraft.item.Item$ToolMaterial;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class ItemSword extends Item {
-   private float attackDamage;
-   private final Item$ToolMaterial material;
+    private float attackDamage;
+    private final Item.ToolMaterial material;
 
-   public ItemSword(Item$ToolMaterial var1) {
-      this.material = var1;
-      this.maxStackSize = 1;
-      this.setMaxDamage(var1.getMaxUses());
-      this.setCreativeTab(CreativeTabs.tabCombat);
-      this.attackDamage = 4.0F + var1.getDamageVsEntity();
-   }
+    public ItemSword(Item.ToolMaterial material) {
+        this.material = material;
+        this.maxStackSize = 1;
+        this.setMaxDamage(material.getMaxUses());
+        this.setCreativeTab(CreativeTabs.tabCombat);
+        this.attackDamage = 4.0F + material.getDamageVsEntity();
+    }
 
-   public float getAttackDamage() {
-      return this.attackDamage;
-   }
+    public float getAttackDamage() {
 
-   public float getDamageVsEntity() {
-      return this.material.getDamageVsEntity();
-   }
+        return this.attackDamage;
 
-   public float getStrVsBlock(ItemStack var1, Block var2) {
-      if(var2 == Blocks.web) {
-         return 15.0F;
-      } else {
-         Material var3 = var2.getMaterial();
-         return var3 != Material.plants && var3 != Material.vine && var3 != Material.coral && var3 != Material.leaves && var3 != Material.gourd?1.0F:1.5F;
-      }
-   }
+    }
 
-   public boolean hitEntity(ItemStack var1, EntityLivingBase var2, EntityLivingBase var3) {
-      var1.damageItem(1, var3);
-      return true;
-   }
+    /**
+     * Returns the amount of damage this item will deal. One heart of damage is equal to 2 damage points.
+     */
+    public float getDamageVsEntity() {
+        return this.material.getDamageVsEntity();
+    }
 
-   public boolean onBlockDestroyed(ItemStack var1, World var2, Block var3, BlockPos var4, EntityLivingBase var5) {
-      if((double)var3.getBlockHardness(var2, var4) != 0.0D) {
-         var1.damageItem(2, var5);
-      }
+    public float getStrVsBlock(ItemStack stack, Block block) {
+        if (block == Blocks.web) {
+            return 15.0F;
+        } else {
+            Material material = block.getMaterial();
+            return material != Material.plants && material != Material.vine && material != Material.coral && material != Material.leaves && material != Material.gourd ? 1.0F : 1.5F;
+        }
+    }
 
-      return true;
-   }
+    /**
+     * Current implementations of this method in child classes do not use the entry argument beside ev. They just raise
+     * the damage on the stack.
+     */
+    public boolean hitEntity(ItemStack stack, EntityLivingBase target, EntityLivingBase attacker) {
+        stack.damageItem(1, attacker);
+        return true;
+    }
 
-   public boolean isFull3D() {
-      return true;
-   }
+    /**
+     * Called when a Block is destroyed using this Item. Return true to trigger the "Use Item" statistic.
+     */
+    public boolean onBlockDestroyed(ItemStack stack, World worldIn, Block blockIn, BlockPos pos, EntityLivingBase playerIn) {
+        if ((double) blockIn.getBlockHardness(worldIn, pos) != 0.0D) {
+            stack.damageItem(2, playerIn);
+        }
 
-   public EnumAction getItemUseAction(ItemStack var1) {
-      return EnumAction.BLOCK;
-   }
+        return true;
+    }
 
-   public int getMaxItemUseDuration(ItemStack var1) {
-      return 72000;
-   }
+    /**
+     * Returns True is the item is renderer in full 3D when hold.
+     */
+    public boolean isFull3D() {
+        return true;
+    }
 
-   public ItemStack onItemRightClick(ItemStack var1, World var2, EntityPlayer var3) {
-      var3.setItemInUse(var1, this.getMaxItemUseDuration(var1));
-      return var1;
-   }
+    /**
+     * returns the action that specifies what animation to play when the items is being used
+     */
+    public EnumAction getItemUseAction(ItemStack stack) {
+        return EnumAction.BLOCK;
+    }
 
-   public boolean canHarvestBlock(Block var1) {
-      return var1 == Blocks.web;
-   }
+    /**
+     * How long it takes to use or consume an item
+     */
+    public int getMaxItemUseDuration(ItemStack stack) {
+        return 72000;
+    }
 
-   public int getItemEnchantability() {
-      return this.material.getEnchantability();
-   }
+    /**
+     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
+     */
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn) {
+        playerIn.setItemInUse(itemStackIn, this.getMaxItemUseDuration(itemStackIn));
+        return itemStackIn;
+    }
 
-   public String getToolMaterialName() {
-      return this.material.toString();
-   }
+    /**
+     * Check whether this Item can harvest the given Block
+     */
+    public boolean canHarvestBlock(Block blockIn) {
+        return blockIn == Blocks.web;
+    }
 
-   public boolean getIsRepairable(ItemStack var1, ItemStack var2) {
-      return this.material.getRepairItem() == var2.getItem() || super.getIsRepairable(var1, var2);
-   }
+    /**
+     * Return the enchantability factor of the item, most of the time is based on material.
+     */
+    public int getItemEnchantability() {
+        return this.material.getEnchantability();
+    }
 
-   public Multimap getItemAttributeModifiers() {
-      Multimap var1 = super.getItemAttributeModifiers();
-      var1.put(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(), new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)this.attackDamage, 0));
-      return var1;
-   }
+    /**
+     * Return the name for this tool's material.
+     */
+    public String getToolMaterialName() {
+        return this.material.toString();
+    }
+
+    /**
+     * Return whether this item is repairable in an anvil.
+     */
+    public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
+        return this.material.getRepairItem() == repair.getItem() || super.getIsRepairable(toRepair, repair);
+    }
+
+    public Multimap<String, AttributeModifier> getItemAttributeModifiers() {
+        Multimap<String, AttributeModifier> multimap = super.getItemAttributeModifiers();
+        multimap.put(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(), new AttributeModifier(itemModifierUUID, "Weapon modifier", this.attackDamage, 0));
+        return multimap;
+    }
 }

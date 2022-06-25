@@ -1,267 +1,520 @@
 package cc.novoline.utils.fonts.impl;
 
+import cc.novoline.Novoline;
+import cc.novoline.modules.misc.Streamer;
 import cc.novoline.utils.fonts.api.FontRenderer;
-import cc.novoline.utils.fonts.impl.SimpleFontManager;
-import cc.novoline.utils.fonts.impl.SimpleFontRenderer$CharData;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import net.acE;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+
+/**z
+ * @author gast
+ * @since 2017/07/14
+ */
+@SuppressWarnings("MagicNumber")
 final class SimpleFontRenderer implements FontRenderer {
-   private static final int[] m = setupMinecraftColorCodes();
-   private static final String a = "0123456789abcdefklmnor";
-   private static final char COLOR_PREFIX = '§';
-   private static final short CHARS = 256;
-   private static final float IMG_SIZE = 512.0F;
-   private static final float CHAR_OFFSET = 0.0F;
-   private final SimpleFontRenderer$CharData[] charData = new SimpleFontRenderer$CharData[256];
-   private final SimpleFontRenderer$CharData[] h = new SimpleFontRenderer$CharData[256];
-   private final SimpleFontRenderer$CharData[] f = new SimpleFontRenderer$CharData[256];
-   private final SimpleFontRenderer$CharData[] k = new SimpleFontRenderer$CharData[256];
-   private final Font awtFont;
-   private final boolean antiAlias;
-   private final boolean fractionalMetrics;
-   private DynamicTexture l;
-   private DynamicTexture e;
-   private DynamicTexture d;
-   private DynamicTexture c;
-   private int fontHeight = -1;
 
-   private SimpleFontRenderer(Font var1, boolean var2, boolean var3) {
-      this.awtFont = var1;
-      this.antiAlias = var2;
-      this.fractionalMetrics = var3;
-      this.setupBoldItalicFonts();
-   }
+    private static final int[] COLOR_CODES = setupMinecraftColorCodes();
+    private static final String COLORS = "0123456789abcdefklmnor";
+    private static final char COLOR_PREFIX = '\u00a7';
 
-   static FontRenderer create(Font var0, boolean var1, boolean var2) {
-      return new SimpleFontRenderer(var0, var1, var2);
-   }
+    private static final short CHARS = 256;
+    private static final float IMG_SIZE = 512;
+    private static final float CHAR_OFFSET = 0f;
 
-   public static FontRenderer create(Font var0) {
-      return create(var0, true, true);
-   }
+    private final CharData[] charData = new CharData[CHARS];
+    private final CharData[] boldChars = new CharData[CHARS];
+    private final CharData[] italicChars = new CharData[CHARS];
+    private final CharData[] boldItalicChars = new CharData[CHARS];
 
-   private DynamicTexture setupTexture(Font var1, boolean var2, boolean var3, SimpleFontRenderer$CharData[] var4) {
-      return new DynamicTexture(this.generateFontImage(var1, var2, var3, var4));
-   }
+    private final Font awtFont;
+    private final boolean antiAlias;
+    private final boolean fractionalMetrics;
 
-   private BufferedImage generateFontImage(Font var1, boolean var2, boolean var3, SimpleFontRenderer$CharData[] var4) {
-      boolean var6 = true;
-      SimpleFontManager.b();
-      BufferedImage var7 = new BufferedImage(512, 512, 2);
-      Graphics2D var8 = (Graphics2D)var7.getGraphics();
-      var8.setFont(var1);
-      var8.setColor(new Color(255, 255, 255, 0));
-      var8.fillRect(0, 0, 512, 512);
-      var8.setColor(Color.WHITE);
-      var8.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      var8.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      var8.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-      if(this.fractionalMetrics) {
-         var8.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-      }
+    private DynamicTexture texturePlain;
+    private DynamicTexture textureBold;
+    private DynamicTexture textureItalic;
+    private DynamicTexture textureItalicBold;
+    private int fontHeight = -1;
 
-      var8.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
-      FontMetrics var9 = var8.getFontMetrics();
-      int var10 = 0;
-      byte var11 = 0;
-      int var12 = 1;
-      int var13 = 0;
-      if(var13 < var4.length) {
-         char var14 = (char)var13;
-         SimpleFontRenderer$CharData var15 = new SimpleFontRenderer$CharData();
-         Rectangle2D var16 = var9.getStringBounds(String.valueOf(var14), var8);
-         SimpleFontRenderer$CharData.access$102(var15, var16.getBounds().width + 8);
-         SimpleFontRenderer$CharData.access$202(var15, var16.getBounds().height);
-         if(var11 + SimpleFontRenderer$CharData.access$100(var15) >= 512) {
-            var11 = 0;
-            var12 += var10;
-            var10 = 0;
-         }
+    //region instantiating
+    private SimpleFontRenderer(Font awtFont, boolean antiAlias, boolean fractionalMetrics) {
+        this.awtFont = awtFont;
+        this.antiAlias = antiAlias;
+        this.fractionalMetrics = fractionalMetrics;
+        setupBoldItalicFonts();
+    }
 
-         if(SimpleFontRenderer$CharData.access$200(var15) > var10) {
-            var10 = SimpleFontRenderer$CharData.access$200(var15);
-         }
+    static FontRenderer create(Font font, boolean antiAlias, boolean fractionalMetrics) {
+        return new SimpleFontRenderer(font, antiAlias, fractionalMetrics);
+    }
 
-         SimpleFontRenderer$CharData.access$302(var15, var11);
-         SimpleFontRenderer$CharData.access$402(var15, var12);
-         if(SimpleFontRenderer$CharData.access$200(var15) > this.fontHeight) {
-            this.fontHeight = SimpleFontRenderer$CharData.access$200(var15);
-         }
+    public static FontRenderer create(Font font) {
+        return create(font, true, true);
+    }
 
-         var4[var13] = var15;
-         var8.drawString(String.valueOf(var14), var11 + 2, var12 + var9.getAscent());
-         int var10000 = var11 + SimpleFontRenderer$CharData.access$100(var15);
-         ++var13;
-      }
+    private DynamicTexture setupTexture(Font font, boolean antiAlias, boolean fractionalMetrics, CharData[] chars) {
+        return new DynamicTexture(generateFontImage(font, antiAlias, fractionalMetrics, chars));
+    }
 
-      return var7;
-   }
+    private BufferedImage generateFontImage(Font font, boolean antiAlias, boolean fractionalMetrics, CharData[] chars) {
+        final int imgSize = (int) IMG_SIZE;
+        BufferedImage bufferedImage = new BufferedImage(imgSize, imgSize, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = (Graphics2D) bufferedImage.getGraphics();
 
-   private void setupBoldItalicFonts() {
-      this.l = this.setupTexture(this.awtFont, this.antiAlias, this.fractionalMetrics, this.charData);
-      this.e = this.setupTexture(this.awtFont.deriveFont(1), this.antiAlias, this.fractionalMetrics, this.h);
-      this.d = this.setupTexture(this.awtFont.deriveFont(2), this.antiAlias, this.fractionalMetrics, this.f);
-      this.c = this.setupTexture(this.awtFont.deriveFont(3), this.antiAlias, this.fractionalMetrics, this.k);
-   }
+        graphics.setFont(font);
+        graphics.setColor(new Color(255, 255, 255, 0));
+        graphics.fillRect(0, 0, imgSize, imgSize);
+        graphics.setColor(Color.WHITE);
 
-   public float drawString(CharSequence var1, double var2, double var4, int var6, boolean var7) {
-      float var8 = this.b(var1, var2 + 0.5D, var4 + 0.5D, var6, true);
-      return Math.max(var8, this.b(var1, var2, var4, var6, false));
-   }
+        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-   private float b(CharSequence var1, double var2, double var4, int var6, boolean var7) {
-      SimpleFontManager.b();
-      --var2;
-      return 0.0F;
-   }
+        if (this.fractionalMetrics) {
+            graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        } else {
+            graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+        }
 
-   public String trimStringToWidth(CharSequence var1, int var2, boolean var3) {
-      StringBuilder var5 = new StringBuilder();
-      SimpleFontManager.b();
-      float var6 = 0.0F;
-      int var7 = var3?var1.length() - 1:0;
-      int var8 = var3?-1:1;
-      boolean var9 = false;
-      boolean var10 = false;
-      if(var7 < var1.length() && var6 < (float)var2) {
-         char var12;
-         label90: {
-            var12 = var1.charAt(var7);
-            float var13 = (float)this.stringWidth(String.valueOf(var12));
-            if(var9) {
-               var9 = false;
-               if(var12 != 108 && var12 != 76) {
-                  if(var12 != 114 && var12 != 82) {
-                     break label90;
-                  }
+        FontMetrics fontMetrics = graphics.getFontMetrics();
+        int charHeight = 0, positionX = 0, positionY = 1;
 
-                  var10 = false;
-               }
+        for (int i = 0; i < chars.length; i++) {
+            char ch = (char) i;
+            CharData charData = new CharData();
+            Rectangle2D dimensions = fontMetrics.getStringBounds(String.valueOf(ch), graphics);
 
-               var10 = true;
+            charData.width = dimensions.getBounds().width + 8;
+            charData.height = dimensions.getBounds().height;
+
+            if (positionX + charData.width >= imgSize) {
+                positionX = 0;
+                positionY += charHeight;
+                charHeight = 0;
             }
 
-            if(var13 < 0.0F) {
-               var9 = true;
+            if (charData.height > charHeight) {
+                charHeight = charData.height;
             }
 
-            var6 += var13;
-            if(var10) {
-               ++var6;
-            }
-         }
+            charData.storedX = positionX;
+            charData.storedY = positionY;
 
-         if(var6 <= (float)var2) {
-            if(var3) {
-               var5.insert(0, var12);
+            if (charData.height > fontHeight) {
+                this.fontHeight = charData.height;
             }
 
-            var5.append(var12);
-            int var11 = var7 + var8;
-         }
-      }
+            chars[i] = charData;
 
-      return var5.toString();
-   }
+            graphics.drawString(String.valueOf(ch), positionX + 2, positionY + fontMetrics.getAscent());
+            positionX += charData.width;
+        }
 
-   public int stringWidth(CharSequence var1) {
-      int[] var2 = SimpleFontManager.b();
-      return 0;
-   }
+        return bufferedImage;
+    }
 
-   public float charWidth(char var1) {
-      int[] var2 = SimpleFontManager.b();
-      float var10000 = (float)((SimpleFontRenderer$CharData.access$100(this.charData[var1]) - 8) / 2);
-      if(acE.b() == null) {
-         SimpleFontManager.b(new int[5]);
-      }
+    private void setupBoldItalicFonts() {
+        this.texturePlain = setupTexture(awtFont, antiAlias, fractionalMetrics, charData);
+        this.textureBold = setupTexture(awtFont.deriveFont(Font.BOLD), antiAlias, fractionalMetrics, boldChars);
+        this.textureItalic = setupTexture(awtFont.deriveFont(Font.ITALIC), antiAlias, fractionalMetrics, italicChars);
+        this.textureItalicBold = setupTexture(awtFont.deriveFont(Font.BOLD | Font.ITALIC), antiAlias, fractionalMetrics, boldItalicChars);
+    }
+    //endregion
 
-      return var10000;
-   }
+    @Override
+    public float drawString(CharSequence text, double x, double y, int color, boolean dropShadow) {
+        if (dropShadow) {
+            float shadowWidth = drawStringInternal(text, x + 0.5, y + 0.5, color, true);
+            return Math.max(shadowWidth, drawStringInternal(text, x, y, color, false));
+        } else {
+            return drawStringInternal(text, x, y, color, false);
+        }
+    }
 
-   public SimpleFontRenderer$CharData[] getCharData() {
-      return this.charData;
-   }
+    @SuppressWarnings("OverlyComplexMethod")
+    private float drawStringInternal(CharSequence text, double x, double y, int color, boolean shadow) {
+        x -= 1;
 
-   private static int[] setupMinecraftColorCodes() {
-      int[] var0 = new int[32];
+        if (text == null) return 0.0F;
 
-      for(int var1 = 0; var1 < 32; ++var1) {
-         int var2 = (var1 >> 3 & 1) * 85;
-         int var3 = (var1 >> 2 & 1) * 170 + var2;
-         int var4 = (var1 >> 1 & 1) * 170 + var2;
-         int var5 = (var1 & 1) * 170 + var2;
-         if(var1 == 6) {
-            var3 += 85;
-         }
+        Minecraft mc = Minecraft.getInstance();
+        Novoline novoline = Novoline.getInstance();
 
-         if(var1 >= 16) {
-            var3 >>= 2;
-            var4 >>= 2;
-            var5 >>= 2;
-         }
+        if (mc.world != null) {
+            if (novoline.getModuleManager().getModule(Streamer.class).isEnabled()) {
+                Streamer streamer = novoline.getModuleManager().getModule(Streamer.class);
 
-         var0[var1] = (var3 & 255) << 16 | (var4 & 255) << 8 | var5 & 255;
-      }
+                for (String name : streamer.name_data) {
+                    if (!name.isEmpty()) {
+                        if (text.toString().contains(name)) {
+                            if (name.equalsIgnoreCase(mc.player.getName())) {
+                                if (streamer.isChangeYourName().get()) {
+                                    text = text.toString().replace(name, streamer.getYourName().get().replace("&", "\u00A7"));
+                                }
 
-      return var0;
-   }
+                            } else if (streamer.isHideOthers().get()) {
+                                text = text.toString().replace(name, "Player");
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-   private static void drawChar(SimpleFontRenderer$CharData[] var0, char var1, float var2, float var3) {
-      drawQuad(var2, var3, (float)SimpleFontRenderer$CharData.access$100(var0[var1]), (float)SimpleFontRenderer$CharData.access$200(var0[var1]), (float)SimpleFontRenderer$CharData.access$300(var0[var1]), (float)SimpleFontRenderer$CharData.access$400(var0[var1]), (float)SimpleFontRenderer$CharData.access$100(var0[var1]), (float)SimpleFontRenderer$CharData.access$200(var0[var1]));
-   }
+        if (color == 0x20FFFFFF) color = 0xFFFFFF;
+        if ((color & 0xFC000000) == 0) color |= 0xFF000000;
+        //endregion
 
-   private static void drawQuad(float var0, float var1, float var2, float var3, float var4, float var5, float var6, float var7) {
-      float var8 = var4 / 512.0F;
-      float var9 = var5 / 512.0F;
-      float var10 = var6 / 512.0F;
-      float var11 = var7 / 512.0F;
-      GL11.glTexCoord2f(var8 + var10, var9);
-      GL11.glVertex2d((double)(var0 + var2), (double)var1);
-      GL11.glTexCoord2f(var8, var9);
-      GL11.glVertex2d((double)var0, (double)var1);
-      GL11.glTexCoord2f(var8, var9 + var11);
-      GL11.glVertex2d((double)var0, (double)(var1 + var3));
-      GL11.glTexCoord2f(var8, var9 + var11);
-      GL11.glVertex2d((double)var0, (double)(var1 + var3));
-      GL11.glTexCoord2f(var8 + var10, var9 + var11);
-      GL11.glVertex2d((double)(var0 + var2), (double)(var1 + var3));
-      GL11.glTexCoord2f(var8 + var10, var9);
-      GL11.glVertex2d((double)(var0 + var2), (double)var1);
-   }
+        if (shadow) {
+            color = (color & 0xFCFCFC) >> 2 | color & 0xFF000000;
+        }
 
-   private static void drawLine(double var0, double var2, double var4, double var6, float var8) {
-      GL11.glDisable(3553);
-      GL11.glLineWidth(var8);
-      GL11.glBegin(1);
-      GL11.glVertex2d(var0, var2);
-      GL11.glVertex2d(var4, var6);
-      GL11.glEnd();
-      GL11.glEnable(3553);
-   }
+        CharData[] charData = this.charData;
+        float alpha = (color >> 24 & 0xFF) / 255.0F;
+        final boolean randomCase = false;
 
-   public String getName() {
-      return this.awtFont.getFamily();
-   }
+        x *= 2.0D;
+        y = (y - 3.0D) * 2.0D;
 
-   public int getHeight() {
-      return (this.fontHeight - 8) / 2;
-   }
+        //region rendering
+        GL11.glPushMatrix();
+        GlStateManager.scale(0.5D, 0.5D, 0.5D);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(770, 771);
+        GL11.glColor4f((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F, alpha);
+        GlStateManager.color((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F, alpha);
+        GlStateManager.enableTexture2D();
+        GlStateManager.bindTexture(texturePlain.getGlTextureId());
 
-   public boolean isAntiAlias() {
-      return this.antiAlias;
-   }
+        GL11.glBindTexture(GL_TEXTURE_2D, texturePlain.getGlTextureId());
+        GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-   public boolean isFractionalMetrics() {
-      return this.fractionalMetrics;
-   }
+        boolean underline = false;
+        boolean strikethrough = false;
+        boolean italic = false;
+        boolean bold = false;
+
+        for (int i = 0, size = text.length(); i < size; i++) {
+            char character = text.charAt(i);
+
+            if (character == COLOR_PREFIX && i + 1 < size) {
+                // TODO: Проверить, будет ли рисовать § без отдельного символа
+                int colorIndex = COLORS.indexOf(text.charAt(i + 1));
+
+                if (colorIndex < 16) {
+                    bold = false;
+                    italic = false;
+                    underline = false;
+                    strikethrough = false;
+                    GlStateManager.bindTexture(texturePlain.getGlTextureId());
+                    charData = this.charData;
+
+                    if (colorIndex < 0) colorIndex = 15;
+                    if (shadow) colorIndex += 16;
+
+                    int colorCode = COLOR_CODES[colorIndex];
+                    GlStateManager.color(
+                            (colorCode >> 16 & 0xFF) / 255.0F,
+                            (colorCode >> 8 & 0xFF) / 255.0F,
+                            (colorCode & 0xFF) / 255.0F,
+                            255);
+                } else if (colorIndex == 17) {
+                    bold = true;
+
+                    if (italic) {
+                        GlStateManager.bindTexture(textureItalicBold.getGlTextureId());
+                        charData = boldItalicChars;
+                    } else {
+                        GlStateManager.bindTexture(textureBold.getGlTextureId());
+                        charData = boldChars;
+                    }
+                } else if (colorIndex == 18) {
+                    strikethrough = true;
+                } else if (colorIndex == 19) {
+                    underline = true;
+                } else if (colorIndex == 20) {
+                    italic = true;
+
+                    if (bold) {
+                        GlStateManager.bindTexture(textureItalicBold.getGlTextureId());
+                        charData = boldItalicChars;
+                    } else {
+                        GlStateManager.bindTexture(textureItalic.getGlTextureId());
+                        charData = italicChars;
+                    }
+                } else if (colorIndex == 21) {
+                    bold = false;
+                    italic = false;
+                    underline = false;
+                    strikethrough = false;
+
+                    GlStateManager.color(
+                            (color >> 16 & 0xFF) / 255.0F,
+                            (color >> 8 & 0xFF) / 255.0F,
+                            (color & 0xFF) / 255.0F,
+                            255);
+                    GlStateManager.bindTexture(texturePlain.getGlTextureId());
+
+                    charData = this.charData;
+                }
+
+                //noinspection AssignmentToForLoopParameter
+                i++;
+            } else if (character < charData.length) {
+                GL11.glBegin(GL11.GL_TRIANGLES);
+                drawChar(charData, character, (float) x, (float) y);
+                GL11.glEnd();
+
+                if (strikethrough) {
+                    drawLine(x,
+                            y + charData[character].height / 2.0F,
+                            x + charData[character].width - 8.0D,
+                            y + charData[character].height / 2.0F,
+                            1.0F);
+                }
+
+                if (underline) {
+                    drawLine(x,
+                            y + charData[character].height - 2.0D,
+                            x + charData[character].width - 8.0D,
+                            y + charData[character].height - 2.0D,
+                            1.0F);
+                }
+
+                x += charData[character].width - (character == ' ' ? 8 : 9);
+            }
+        }
+
+        GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_DONT_CARE);
+        GL11.glPopMatrix();
+        //endregion
+
+        return (float) x / 2.0F;
+    }
+
+
+
+    @Override
+    public String trimStringToWidth(CharSequence text, int width, boolean reverse) {
+        StringBuilder builder = new StringBuilder();
+
+        float f = 0.0F;
+        int i = reverse ? text.length() - 1 : 0;
+        int j = reverse ? -1 : 1;
+        boolean flag = false;
+        boolean flag1 = false;
+
+        for (int k = i; k >= 0 && k < text.length() && f < width; k += j) {
+            char c0 = text.charAt(k);
+            float f1 = stringWidth(String.valueOf(c0));
+
+            if (flag) {
+                flag = false;
+
+                if (c0 != 'l' && c0 != 'L') {
+                    if (c0 == 'r' || c0 == 'R') {
+                        flag1 = false;
+                    }
+                } else {
+                    flag1 = true;
+                }
+            } else if (f1 < 0.0F) {
+                flag = true;
+            } else {
+                f += f1;
+                if (flag1) ++f;
+            }
+
+            if (f > width) break;
+
+            if (reverse) {
+                builder.insert(0, c0);
+            } else {
+                builder.append(c0);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public int stringWidth(CharSequence text) {
+        if (text == null) return 0;
+
+        Minecraft mc = Minecraft.getInstance();
+        Novoline novoline = Novoline.getInstance();
+
+        if (mc.world != null) {
+            if (novoline.getModuleManager().getModule(Streamer.class).isEnabled()) {
+                Streamer streamer = novoline.getModuleManager().getModule(Streamer.class);
+
+                for (String name : streamer.name_data) {
+                    if (!name.isEmpty()) {
+                        if (text.toString().contains(name)) {
+                            if (name.equalsIgnoreCase(mc.player.getName())) {
+                                if (streamer.isChangeYourName().get()) {
+                                    text = text.toString().replace(name, streamer.getYourName().get().replace("&", "\u00A7"));
+                                }
+
+                            } else if (streamer.isHideOthers().get()) {
+                                text = text.toString().replace(name, "Player");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        int width = 0;
+        CharData[] currentData = charData;
+        boolean bold = false;
+        boolean italic = false;
+
+        for (int i = 0, size = text.length(); i < size; i++) {
+            char character = text.charAt(i);
+
+            if (character == COLOR_PREFIX && i + 1 < size) {
+                int colorIndex = COLORS.indexOf(text.charAt(i + 1));
+
+                if (colorIndex < 16) { // color
+                    bold = false;
+                    italic = false;
+                } else if (colorIndex == 17) { // bold
+                    bold = true;
+                    if (italic) currentData = boldItalicChars;
+                    else currentData = boldChars;
+                } else if (colorIndex == 20) { // italic
+                    italic = true;
+                    if (bold) currentData = boldItalicChars;
+                    else currentData = italicChars;
+                } else if (colorIndex == 21) { // reset
+                    bold = false;
+                    italic = false;
+                    currentData = charData;
+                }
+
+                //noinspection AssignmentToForLoopParameter
+                i++;
+            } else if (character < currentData.length) {
+                width += currentData[character].width - (character == ' ' ? 8 : 9);
+            }
+        }
+
+        return width / 2;
+    }
+
+    @Override
+    public float charWidth(char s){
+        return (charData[s].width - 8) / 2;
+    }
+
+    public CharData[] getCharData() {
+        return charData;
+    }
+
+    //region shit
+    private static int[] setupMinecraftColorCodes() {
+        int[] colorCodes = new int[32];
+
+        for (int i = 0; i < 32; i++) {
+            int noClue = (i >> 3 & 0x1) * 85;
+            int red = (i >> 2 & 0x1) * 170 + noClue;
+            int green = (i >> 1 & 0x1) * 170 + noClue;
+            int blue = (i & 0x1) * 170 + noClue;
+
+            if (i == 6) {
+                red += 85;
+            }
+
+            if (i >= 16) {
+                red >>= 2; // divide by 4
+                green >>= 2;
+                blue >>= 2;
+            }
+
+            colorCodes[i] = (red & 0xFF) << 16 | (green & 0xFF) << 8 | blue & 0xFF;
+        }
+
+        return colorCodes;
+    }
+
+    private static class CharData {
+
+        private int width;
+        private int height;
+        private int storedX;
+        private int storedY;
+
+        private CharData() {
+        }
+    }
+
+    //endregion
+    //region rendering
+    private static void drawChar(CharData[] chars, char c, float x, float y) {
+        drawQuad(x, y, chars[c].width, chars[c].height, chars[c].storedX, chars[c].storedY, chars[c].width, chars[c].height);
+    }
+
+    private static void drawQuad(float x, float y, float width, float height, float srcX, float srcY, float srcWidth, float srcHeight) {
+        float renderSRCX = srcX / IMG_SIZE;
+        float renderSRCY = srcY / IMG_SIZE;
+        float renderSRCWidth = srcWidth / IMG_SIZE;
+        float renderSRCHeight = srcHeight / IMG_SIZE;
+
+
+        GL11.glTexCoord2f(renderSRCX + renderSRCWidth, renderSRCY);
+        GL11.glVertex2d(x + width, y);
+        GL11.glTexCoord2f(renderSRCX, renderSRCY);
+        GL11.glVertex2d(x, y);
+        GL11.glTexCoord2f(renderSRCX, renderSRCY + renderSRCHeight);
+        GL11.glVertex2d(x, y + height);
+        GL11.glTexCoord2f(renderSRCX, renderSRCY + renderSRCHeight);
+        GL11.glVertex2d(x, y + height);
+        GL11.glTexCoord2f(renderSRCX + renderSRCWidth, renderSRCY + renderSRCHeight);
+        GL11.glVertex2d(x + width, y + height);
+        GL11.glTexCoord2f(renderSRCX + renderSRCWidth, renderSRCY);
+        GL11.glVertex2d(x + width, y);
+    }
+
+    private static void drawLine(double x, double y, double x1, double y1, float width) {
+        GL11.glDisable(GL_TEXTURE_2D);
+        GL11.glLineWidth(width);
+        GL11.glBegin(1);
+        GL11.glVertex2d(x, y);
+        GL11.glVertex2d(x1, y1);
+        GL11.glEnd();
+        GL11.glEnable(GL_TEXTURE_2D);
+    }
+
+    //endregion
+    //region lombok
+    @Override
+    public String getName() {
+        return awtFont.getFamily();
+    }
+
+    @Override
+    public int getHeight() {
+        return (fontHeight - 8) / 2;
+    }
+
+    @Override
+    public boolean isAntiAlias() {
+        return antiAlias;
+    }
+
+    @Override
+    public boolean isFractionalMetrics() {
+        return fractionalMetrics;
+    }
+    //endregion
 }

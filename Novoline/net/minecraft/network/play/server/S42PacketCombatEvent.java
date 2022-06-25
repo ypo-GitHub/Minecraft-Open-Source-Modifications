@@ -1,71 +1,83 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
-import net.minecraft.network.play.server.S42PacketCombatEvent$1;
-import net.minecraft.network.play.server.S42PacketCombatEvent$Event;
 import net.minecraft.util.CombatTracker;
 
-public class S42PacketCombatEvent implements Packet {
-   public S42PacketCombatEvent$Event eventType;
-   public int field_179774_b;
-   public int field_179775_c;
-   public int field_179772_d;
-   public String deathMessage;
+import java.io.IOException;
 
-   public S42PacketCombatEvent() {
-   }
+public class S42PacketCombatEvent implements Packet<INetHandlerPlayClient> {
+    public S42PacketCombatEvent.Event eventType;
+    public int field_179774_b;
+    public int field_179775_c;
+    public int field_179772_d;
+    public String deathMessage;
 
-   public S42PacketCombatEvent(CombatTracker var1, S42PacketCombatEvent$Event var2) {
-      this.eventType = var2;
-      EntityLivingBase var3 = var1.func_94550_c();
-      switch(S42PacketCombatEvent$1.$SwitchMap$net$minecraft$network$play$server$S42PacketCombatEvent$Event[var2.ordinal()]) {
-      case 1:
-         this.field_179772_d = var1.func_180134_f();
-         this.field_179775_c = -1;
-         break;
-      case 2:
-         this.field_179774_b = var1.getFighter().getEntityID();
-         this.field_179775_c = -1;
-         this.deathMessage = var1.getDeathMessage().getUnformattedText();
-      }
+    public S42PacketCombatEvent() {
+    }
 
-   }
+    @SuppressWarnings("incomplete-switch")
+    public S42PacketCombatEvent(CombatTracker combatTrackerIn, S42PacketCombatEvent.Event combatEventType) {
+        this.eventType = combatEventType;
+        EntityLivingBase entitylivingbase = combatTrackerIn.func_94550_c();
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.eventType = (S42PacketCombatEvent$Event)var1.readEnumValue(S42PacketCombatEvent$Event.class);
-      if(this.eventType == S42PacketCombatEvent$Event.END_COMBAT) {
-         this.field_179772_d = var1.readVarIntFromBuffer();
-         this.field_179775_c = var1.readInt();
-      } else if(this.eventType == S42PacketCombatEvent$Event.ENTITY_DIED) {
-         this.field_179774_b = var1.readVarIntFromBuffer();
-         this.field_179775_c = var1.readInt();
-         this.deathMessage = var1.a(32767);
-      }
+        switch (combatEventType) {
+            case END_COMBAT:
+                this.field_179772_d = combatTrackerIn.func_180134_f();
+                this.field_179775_c = entitylivingbase == null ? -1 : entitylivingbase.getEntityID();
+                break;
 
-   }
+            case ENTITY_DIED:
+                this.field_179774_b = combatTrackerIn.getFighter().getEntityID();
+                this.field_179775_c = entitylivingbase == null ? -1 : entitylivingbase.getEntityID();
+                this.deathMessage = combatTrackerIn.getDeathMessage().getUnformattedText();
+        }
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeEnumValue(this.eventType);
-      if(this.eventType == S42PacketCombatEvent$Event.END_COMBAT) {
-         var1.writeVarIntToBuffer(this.field_179772_d);
-         var1.writeInt(this.field_179775_c);
-      } else if(this.eventType == S42PacketCombatEvent$Event.ENTITY_DIED) {
-         var1.writeVarIntToBuffer(this.field_179774_b);
-         var1.writeInt(this.field_179775_c);
-         var1.writeString(this.deathMessage);
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.eventType = (S42PacketCombatEvent.Event) buf.readEnumValue(S42PacketCombatEvent.Event.class);
 
-   }
+        if (this.eventType == S42PacketCombatEvent.Event.END_COMBAT) {
+            this.field_179772_d = buf.readVarIntFromBuffer();
+            this.field_179775_c = buf.readInt();
+        } else if (this.eventType == S42PacketCombatEvent.Event.ENTITY_DIED) {
+            this.field_179774_b = buf.readVarIntFromBuffer();
+            this.field_179775_c = buf.readInt();
+            this.deathMessage = buf.readStringFromBuffer(32767);
+        }
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleCombatEvent(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeEnumValue(this.eventType);
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        if (this.eventType == S42PacketCombatEvent.Event.END_COMBAT) {
+            buf.writeVarIntToBuffer(this.field_179772_d);
+            buf.writeInt(this.field_179775_c);
+        } else if (this.eventType == S42PacketCombatEvent.Event.ENTITY_DIED) {
+            buf.writeVarIntToBuffer(this.field_179774_b);
+            buf.writeInt(this.field_179775_c);
+            buf.writeString(this.deathMessage);
+        }
+    }
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleCombatEvent(this);
+    }
+
+    public enum Event {
+        ENTER_COMBAT,
+        END_COMBAT,
+        ENTITY_DIED
+    }
 }

@@ -1,49 +1,59 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S31PacketWindowProperty implements Packet {
-   private int windowId;
-   private int varIndex;
-   private int varValue;
+import java.io.IOException;
 
-   public S31PacketWindowProperty() {
-   }
+public class S31PacketWindowProperty implements Packet<INetHandlerPlayClient> {
+    private int windowId;
+    private int varIndex;
+    private int varValue;
 
-   public S31PacketWindowProperty(int var1, int var2, int var3) {
-      this.windowId = var1;
-      this.varIndex = var2;
-      this.varValue = var3;
-   }
+    public S31PacketWindowProperty() {
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleWindowProperty(this);
-   }
+    public S31PacketWindowProperty(int windowIdIn, int varIndexIn, int varValueIn) {
+        this.windowId = windowIdIn;
+        this.varIndex = varIndexIn;
+        this.varValue = varValueIn;
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readUnsignedByte();
-      this.varIndex = var1.readShort();
-      this.varValue = var1.readShort();
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleWindowProperty(this);
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-      var1.writeShort(this.varIndex);
-      var1.writeShort(this.varValue);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readUnsignedByte();
+        this.varIndex = buf.readShort();
+        this.varValue = buf.readShort();
+    }
 
-   public int getWindowId() {
-      return this.windowId;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+        buf.writeShort(this.varIndex);
+        buf.writeShort(this.varValue);
+    }
 
-   public int getVarIndex() {
-      return this.varIndex;
-   }
+    public int getWindowId() {
+        return this.windowId;
+    }
 
-   public int getVarValue() {
-      return this.varValue;
-   }
+    public int getVarIndex() {
+        return this.varIndex;
+    }
+
+    public int getVarValue() {
+        return this.varValue;
+    }
 }

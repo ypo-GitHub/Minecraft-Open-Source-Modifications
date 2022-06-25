@@ -1,34 +1,49 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
-import net.minecraft.network.play.client.C16PacketClientStatus$EnumState;
 
-public class C16PacketClientStatus implements Packet {
-   private C16PacketClientStatus$EnumState status;
+import java.io.IOException;
 
-   public C16PacketClientStatus() {
-   }
+public class C16PacketClientStatus implements Packet<INetHandlerPlayServer> {
+    private C16PacketClientStatus.EnumState status;
 
-   public C16PacketClientStatus(C16PacketClientStatus$EnumState var1) {
-      this.status = var1;
-   }
+    public C16PacketClientStatus() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.status = (C16PacketClientStatus$EnumState)var1.readEnumValue(C16PacketClientStatus$EnumState.class);
-   }
+    public C16PacketClientStatus(C16PacketClientStatus.EnumState statusIn) {
+        this.status = statusIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeEnumValue(this.status);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.status = buf.readEnumValue(EnumState.class);
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processClientStatus(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeEnumValue(this.status);
+    }
 
-   public C16PacketClientStatus$EnumState getStatus() {
-      return this.status;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processClientStatus(this);
+    }
+
+    public C16PacketClientStatus.EnumState getStatus() {
+        return this.status;
+    }
+
+    public enum EnumState {
+        PERFORM_RESPAWN,
+        REQUEST_STATS,
+        OPEN_INVENTORY_ACHIEVEMENT
+    }
 }

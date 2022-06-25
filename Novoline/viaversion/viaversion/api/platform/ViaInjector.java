@@ -3,15 +3,46 @@ package viaversion.viaversion.api.platform;
 import com.google.gson.JsonObject;
 
 public interface ViaInjector {
-   void inject() throws Exception;
+    /**
+     * Inject into the current Platform
+     *
+     * @throws Exception If there is an error with injecting
+     */
+    void inject() throws Exception;
 
-   void uninject() throws Exception;
+    /**
+     * Uninject into the current Platform
+     *
+     * @throws Exception If there is an error with uninjecting
+     */
+    void uninject() throws Exception;
 
-   int getServerProtocolVersion() throws Exception;
+    /**
+     * Get the server protocol version
+     *
+     * @return The server protocol integer
+     * @throws Exception If there is an error with getting this info, eg. not binded.
+     */
+    int getServerProtocolVersion() throws Exception;
 
-   String getEncoderName();
+    /**
+     * Get the name of the encoder for then netty pipeline for this platform.
+     *
+     * @return The name
+     */
+    String getEncoderName();
 
-   String getDecoderName();
+    /**
+     * Get the name of the decoder for then netty pipeline for this platform.
+     *
+     * @return The name
+     */
+    String getDecoderName();
 
-   JsonObject getDump();
+    /**
+     * Get any relevant data for debugging injection issues.
+     *
+     * @return JSONObject containing the data
+     */
+    JsonObject getDump();
 }

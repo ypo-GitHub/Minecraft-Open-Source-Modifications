@@ -1,10 +1,6 @@
 package net.minecraft.block;
 
-import com.google.common.base.Predicate;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockLadder$1;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -13,111 +9,133 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Axis;
-import net.minecraft.util.EnumFacing$Plane;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockLadder extends Block {
-   public static final PropertyDirection FACING = PropertyDirection.create("facing", (Predicate)EnumFacing$Plane.HORIZONTAL);
 
-   protected BlockLadder() {
-      super(Material.circuits);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      this.setBlockBoundsBasedOnState(var1, var2);
-      return super.getCollisionBoundingBox(var1, var2, var3);
-   }
+    protected BlockLadder() {
+        super(Material.circuits);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-   public AxisAlignedBB getSelectedBoundingBox(World var1, BlockPos var2) {
-      this.setBlockBoundsBasedOnState(var1, var2);
-      return super.getSelectedBoundingBox(var1, var2);
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getCollisionBoundingBox(worldIn, pos, state);
+    }
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2);
-      if(var3.getBlock() == this) {
-         float var4 = 0.125F;
-         switch(BlockLadder$1.$SwitchMap$net$minecraft$util$EnumFacing[((EnumFacing)var3.getValue(FACING)).ordinal()]) {
-         case 1:
-            this.setBlockBounds(0.0F, 0.0F, 0.875F, 1.0F, 1.0F, 1.0F);
-            break;
-         case 2:
-            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.125F);
-            break;
-         case 3:
-            this.setBlockBounds(0.875F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            break;
-         case 4:
-         default:
-            this.setBlockBounds(0.0F, 0.0F, 0.0F, 0.125F, 1.0F, 1.0F);
-         }
-      }
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos) {
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getSelectedBoundingBox(worldIn, pos);
+    }
 
-   }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+        if (iblockstate.getBlock() == this) {
+            final float f = 0.125F;
 
-   public boolean isFullCube() {
-      return false;
-   }
+            switch (iblockstate.getValue(FACING)) {
+                case NORTH:
+                    this.setBlockBounds(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+                    break;
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      return var1.getBlockState(var2.west()).getBlock().isNormalCube() || var1.getBlockState(var2.east()).getBlock().isNormalCube() || var1.getBlockState(var2.north()).getBlock().isNormalCube() || var1.getBlockState(var2.south()).getBlock().isNormalCube();
-   }
+                case SOUTH:
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+                    break;
 
-   public IBlockState onBlockPlaced(World var1, BlockPos var2, EnumFacing var3, float var4, float var5, float var6, int var7, EntityLivingBase var8) {
-      if(var3.getAxis().isHorizontal() && this.canBlockStay(var1, var2, var3)) {
-         return this.getDefaultState().withProperty(FACING, var3);
-      } else {
-         for(Object var10 : EnumFacing$Plane.HORIZONTAL) {
-            if(this.canBlockStay(var1, var2, (EnumFacing)var10)) {
-               return this.getDefaultState().withProperty(FACING, (EnumFacing)var10);
+                case WEST:
+                    this.setBlockBounds(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+                    break;
+
+                case EAST:
+                default:
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
             }
-         }
+        }
+    }
 
-         return this.getDefaultState();
-      }
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      EnumFacing var5 = (EnumFacing)var3.getValue(FACING);
-      if(!this.canBlockStay(var1, var2, var5)) {
-         this.dropBlockAsItem(var1, var2, var3, 0);
-         var1.setBlockToAir(var2);
-      }
+    public boolean isFullCube() {
+        return false;
+    }
 
-      super.onNeighborBlockChange(var1, var2, var3, var4);
-   }
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        return worldIn.getBlockState(pos.west()).getBlock().isNormalCube() || worldIn.getBlockState(pos.east()).getBlock().isNormalCube() || worldIn.getBlockState(pos.north()).getBlock().isNormalCube() || worldIn.getBlockState(pos.south()).getBlock().isNormalCube();
+    }
 
-   protected boolean canBlockStay(World var1, BlockPos var2, EnumFacing var3) {
-      return var1.getBlockState(var2.offset(var3.getOpposite())).getBlock().isNormalCube();
-   }
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+        if (facing.getAxis().isHorizontal() && this.canBlockStay(worldIn, pos, facing)) {
+            return this.getDefaultState().withProperty(FACING, facing);
+        } else {
+            for (Object enumfacing : EnumFacing.Plane.HORIZONTAL) {
+                if (this.canBlockStay(worldIn, pos, (EnumFacing) enumfacing)) {
+                    return this.getDefaultState().withProperty(FACING, (EnumFacing) enumfacing);
+                }
+            }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+            return this.getDefaultState();
+        }
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      EnumFacing var2 = EnumFacing.getFront(var1);
-      if(var2.getAxis() == EnumFacing$Axis.Y) {
-         var2 = EnumFacing.NORTH;
-      }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        final EnumFacing enumfacing = state.getValue(FACING);
 
-      return this.getDefaultState().withProperty(FACING, var2);
-   }
+        if (!this.canBlockStay(worldIn, pos, enumfacing)) {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
+        }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((EnumFacing)var1.getValue(FACING)).getIndex();
-   }
+        super.onNeighborBlockChange(worldIn, pos, state, neighborBlock);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{FACING});
-   }
+    protected boolean canBlockStay(World worldIn, BlockPos pos, EnumFacing facing) {
+        return worldIn.getBlockState(pos.offset(facing.getOpposite())).getBlock().isNormalCube();
+    }
+
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
+
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y) {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(FACING).getIndex();
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, FACING);
+    }
+
 }

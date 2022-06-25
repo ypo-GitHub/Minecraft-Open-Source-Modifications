@@ -2,19 +2,24 @@ package cc.novoline.modules.exceptions;
 
 import java.io.IOException;
 
+/**
+ * @author xDelsy
+ */
 public final class ReadConfigException extends IOException {
-   public ReadConfigException() {
-   }
 
-   public ReadConfigException(String var1) {
-      super(var1);
-   }
+    public ReadConfigException() {
+    }
 
-   public ReadConfigException(String var1, Throwable var2) {
-      super(var1, var2);
-   }
+    public ReadConfigException(String message) {
+        super(message);
+    }
 
-   public ReadConfigException(Throwable var1) {
-      super(var1);
-   }
+    public ReadConfigException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ReadConfigException(Throwable cause) {
+        super(cause);
+    }
+
 }

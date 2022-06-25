@@ -2,45 +2,64 @@ package net.minecraft.pathfinding;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.pathfinding.PathEntity;
-import net.minecraft.pathfinding.PathNavigateGround;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class PathNavigateClimber extends PathNavigateGround {
-   private BlockPos targetPosition;
+    /**
+     * Current path navigation target
+     */
+    private BlockPos targetPosition;
 
-   public PathNavigateClimber(EntityLiving var1, World var2) {
-      super(var1, var2);
-   }
+    public PathNavigateClimber(EntityLiving entityLivingIn, World worldIn) {
+        super(entityLivingIn, worldIn);
+    }
 
-   public PathEntity getPathToPos(BlockPos var1) {
-      this.targetPosition = var1;
-      return super.getPathToPos(var1);
-   }
+    /**
+     * Returns path to given BlockPos
+     */
+    public PathEntity getPathToPos(BlockPos pos) {
+        this.targetPosition = pos;
+        return super.getPathToPos(pos);
+    }
 
-   public PathEntity getPathToEntityLiving(Entity var1) {
-      this.targetPosition = new BlockPos(var1);
-      return super.getPathToEntityLiving(var1);
-   }
+    /**
+     * Returns the path to the given EntityLiving. Args : entity
+     */
+    public PathEntity getPathToEntityLiving(Entity entityIn) {
+        this.targetPosition = new BlockPos(entityIn);
+        return super.getPathToEntityLiving(entityIn);
+    }
 
-   public boolean tryMoveToEntityLiving(Entity var1, double var2) {
-      PathEntity var4 = this.getPathToEntityLiving(var1);
-      return this.a(var4, var2);
-   }
+    /**
+     * Try to find and set a path to EntityLiving. Returns true if successful. Args : entity, speed
+     */
+    public boolean tryMoveToEntityLiving(Entity entityIn, double speedIn) {
+        PathEntity pathentity = this.getPathToEntityLiving(entityIn);
 
-   public void onUpdateNavigation() {
-      if(!this.noPath()) {
-         super.onUpdateNavigation();
-      } else if(this.targetPosition != null) {
-         double var1 = (double)(this.theEntity.width * this.theEntity.width);
-         if(this.theEntity.getDistanceSqToCenter(this.targetPosition) < var1 || this.theEntity.posY > (double)this.targetPosition.getY() && this.theEntity.getDistanceSqToCenter(new BlockPos(this.targetPosition.getX(), MathHelper.floor_double(this.theEntity.posY), this.targetPosition.getZ())) < var1) {
-            this.targetPosition = null;
-         } else {
-            this.theEntity.getMoveHelper().setMoveTo((double)this.targetPosition.getX(), (double)this.targetPosition.getY(), (double)this.targetPosition.getZ(), this.speed);
-         }
-      }
+        if (pathentity != null) {
+            return this.setPath(pathentity, speedIn);
+        } else {
+            this.targetPosition = new BlockPos(entityIn);
+            this.speed = speedIn;
+            return true;
+        }
+    }
 
-   }
+    public void onUpdateNavigation() {
+        if (!this.noPath()) {
+            super.onUpdateNavigation();
+        } else {
+            if (this.targetPosition != null) {
+                double d0 = (double) (this.theEntity.width * this.theEntity.width);
+
+                if (this.theEntity.getDistanceSqToCenter(this.targetPosition) >= d0 && (this.theEntity.posY <= (double) this.targetPosition.getY() || this.theEntity.getDistanceSqToCenter(new BlockPos(this.targetPosition.getX(), MathHelper.floor_double(this.theEntity.posY), this.targetPosition.getZ())) >= d0)) {
+                    this.theEntity.getMoveHelper().setMoveTo((double) this.targetPosition.getX(), (double) this.targetPosition.getY(), (double) this.targetPosition.getZ(), this.speed);
+                } else {
+                    this.targetPosition = null;
+                }
+            }
+        }
+    }
 }

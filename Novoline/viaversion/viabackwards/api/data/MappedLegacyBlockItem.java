@@ -1,54 +1,61 @@
 package viaversion.viabackwards.api.data;
 
-import net.dr;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import net.md_5.bungee.api.ChatColor;
+import viaversion.viabackwards.utils.Block;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viabackwards.api.data.MappedLegacyBlockItem$BlockEntityHandler;
 
 public class MappedLegacyBlockItem {
-   private final int id;
-   private final short data;
-   private final String name;
-   private final dr e;
-   private MappedLegacyBlockItem$BlockEntityHandler blockEntityHandler;
 
-   public MappedLegacyBlockItem(int var1, short var2, @Nullable String var3, boolean var4) {
-      this.id = var1;
-      this.data = var2;
-      this.name = ChatColor.RESET + var3;
-      this.e = new dr(var1, var2);
-   }
+    private final int id;
+    private final short data;
+    private final String name;
+    private final Block block;
+    private BlockEntityHandler blockEntityHandler;
 
-   public int getId() {
-      return this.id;
-   }
+    public MappedLegacyBlockItem(int id, short data, @Nullable String name, boolean block) {
+        this.id = id;
+        this.data = data;
+        this.name = name != null ? ChatColor.RESET + name : null;
+        this.block = block ? new Block(id, data) : null;
+    }
 
-   public short getData() {
-      return this.data;
-   }
+    public int getId() {
+        return id;
+    }
 
-   public String getName() {
-      return this.name;
-   }
+    public short getData() {
+        return data;
+    }
 
-   public boolean isBlock() {
-      return this.e != null;
-   }
+    public String getName() {
+        return name;
+    }
 
-   public dr g() {
-      return this.e;
-   }
+    public boolean isBlock() {
+        return block != null;
+    }
 
-   public boolean hasBlockEntityHandler() {
-      return this.blockEntityHandler != null;
-   }
+    public Block getBlock() {
+        return block;
+    }
 
-   @Nullable
-   public MappedLegacyBlockItem$BlockEntityHandler getBlockEntityHandler() {
-      return this.blockEntityHandler;
-   }
+    public boolean hasBlockEntityHandler() {
+        return blockEntityHandler != null;
+    }
 
-   public void setBlockEntityHandler(@Nullable MappedLegacyBlockItem$BlockEntityHandler var1) {
-      this.blockEntityHandler = var1;
-   }
+    @Nullable
+    public BlockEntityHandler getBlockEntityHandler() {
+        return blockEntityHandler;
+    }
+
+    public void setBlockEntityHandler(@Nullable BlockEntityHandler blockEntityHandler) {
+        this.blockEntityHandler = blockEntityHandler;
+    }
+
+    @FunctionalInterface
+    public interface BlockEntityHandler {
+
+        CompoundTag handleOrNewCompoundTag(int block, CompoundTag tag);
+    }
 }

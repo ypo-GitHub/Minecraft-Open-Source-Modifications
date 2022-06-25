@@ -1,70 +1,74 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.providers.blockentities;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import net.aYj;
 import viaversion.viaversion.api.Pair;
 import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.providers.BlockEntityProvider$BlockEntityHandler;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.providers.BlockEntityProvider;
 
-public class FlowerPotHandler implements BlockEntityProvider$BlockEntityHandler {
-   private static final Map flowers = new ConcurrentHashMap();
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-   public static void register(String var0, byte var1, byte var2, int var3) {
-      flowers.put(new Pair(var0, Byte.valueOf(var2)), Integer.valueOf(var3));
-      flowers.put(new Pair(Byte.valueOf(var1), Byte.valueOf(var2)), Integer.valueOf(var3));
-   }
+public class FlowerPotHandler implements BlockEntityProvider.BlockEntityHandler {
+    // Object -> string (id without namespace) or byte (numeric id)
+    private static final Map<Pair<?, Byte>, Integer> flowers = new ConcurrentHashMap<>();
 
-   public int transform(UserConnection var1, CompoundTag var2) {
-      boolean var3 = aYj.b();
-      Byte var4 = (Byte)(var2.contains("Item")?var2.get("Item").getValue():null);
-      Byte var5 = (Byte)(var2.contains("Data")?var2.get("Data").getValue():null);
-      if(var4 instanceof String) {
-         var4 = ((String)var4).replace("minecraft:", "");
-      }
+    static {
+        register("air", (byte) 0, (byte) 0, 5265);
+        register("sapling", (byte) 6, (byte) 0, 5266);
+        register("sapling", (byte) 6, (byte) 1, 5267);
+        register("sapling", (byte) 6, (byte) 2, 5268);
+        register("sapling", (byte) 6, (byte) 3, 5269);
+        register("sapling", (byte) 6, (byte) 4, 5270);
+        register("sapling", (byte) 6, (byte) 5, 5271);
+        register("tallgrass", (byte) 31, (byte) 2, 5272);
+        register("yellow_flower", (byte) 37, (byte) 0, 5273);
+        register("red_flower", (byte) 38, (byte) 0, 5274);
+        register("red_flower", (byte) 38, (byte) 1, 5275);
+        register("red_flower", (byte) 38, (byte) 2, 5276);
+        register("red_flower", (byte) 38, (byte) 3, 5277);
+        register("red_flower", (byte) 38, (byte) 4, 5278);
+        register("red_flower", (byte) 38, (byte) 5, 5279);
+        register("red_flower", (byte) 38, (byte) 6, 5280);
+        register("red_flower", (byte) 38, (byte) 7, 5281);
+        register("red_flower", (byte) 38, (byte) 8, 5282);
+        register("red_mushroom", (byte) 40, (byte) 0, 5283);
+        register("brown_mushroom", (byte) 39, (byte) 0, 5284);
+        register("deadbush", (byte) 32, (byte) 0, 5285);
+        register("cactus", (byte) 81, (byte) 0, 5286);
 
-      if(var4 instanceof Number) {
-         var4 = Byte.valueOf(((Number)var4).byteValue());
-      }
+    }
 
-      var4 = Byte.valueOf((byte)0);
-      if(var5 instanceof Number) {
-         var5 = Byte.valueOf(((Number)var5).byteValue());
-      }
+    public static void register(String identifier, byte numbericBlockId, byte blockData, int newId) {
+        flowers.put(new Pair<>(identifier, blockData), newId);
+        flowers.put(new Pair<>(numbericBlockId, blockData), newId);
+    }
 
-      var5 = Byte.valueOf((byte)0);
-      Integer var6 = (Integer)flowers.get(new Pair(var4, Byte.valueOf(((Byte)var5).byteValue())));
-      if(var6 != null) {
-         return var6.intValue();
-      } else {
-         var6 = (Integer)flowers.get(new Pair(var4, Byte.valueOf((byte)0)));
-         return var6 != null?var6.intValue():5265;
-      }
-   }
+    @Override
+    public int transform(UserConnection user, CompoundTag tag) {
+        Object item = tag.contains("Item") ? tag.get("Item").getValue() : null;
+        Object data = tag.contains("Data") ? tag.get("Data").getValue() : null;
 
-   static {
-      register("air", (byte)0, (byte)0, 5265);
-      register("sapling", (byte)6, (byte)0, 5266);
-      register("sapling", (byte)6, (byte)1, 5267);
-      register("sapling", (byte)6, (byte)2, 5268);
-      register("sapling", (byte)6, (byte)3, 5269);
-      register("sapling", (byte)6, (byte)4, 5270);
-      register("sapling", (byte)6, (byte)5, 5271);
-      register("tallgrass", (byte)31, (byte)2, 5272);
-      register("yellow_flower", (byte)37, (byte)0, 5273);
-      register("red_flower", (byte)38, (byte)0, 5274);
-      register("red_flower", (byte)38, (byte)1, 5275);
-      register("red_flower", (byte)38, (byte)2, 5276);
-      register("red_flower", (byte)38, (byte)3, 5277);
-      register("red_flower", (byte)38, (byte)4, 5278);
-      register("red_flower", (byte)38, (byte)5, 5279);
-      register("red_flower", (byte)38, (byte)6, 5280);
-      register("red_flower", (byte)38, (byte)7, 5281);
-      register("red_flower", (byte)38, (byte)8, 5282);
-      register("red_mushroom", (byte)40, (byte)0, 5283);
-      register("brown_mushroom", (byte)39, (byte)0, 5284);
-      register("deadbush", (byte)32, (byte)0, 5285);
-      register("cactus", (byte)81, (byte)0, 5286);
-   }
+        // Convert item to String without namespace or to Byte
+        if (item instanceof String) {
+            item = ((String) item).replace("minecraft:", "");
+        } else if (item instanceof Number) {
+            item = ((Number) item).byteValue();
+        } else {
+            item = (byte) 0;
+        }
+
+        // Convert data to Byte
+        if (data instanceof Number) {
+            data = ((Number) data).byteValue();
+        } else {
+            data = (byte) 0;
+        }
+
+        Integer flower = flowers.get(new Pair<>(item, (byte) data));
+        if (flower != null) return flower;
+        flower = flowers.get(new Pair<>(item, (byte) 0));
+        if (flower != null) return flower;
+
+        return 5265; // Fallback to empty pot
+    }
 }

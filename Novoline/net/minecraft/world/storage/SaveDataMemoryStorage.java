@@ -1,26 +1,37 @@
 package net.minecraft.world.storage;
 
 import net.minecraft.world.WorldSavedData;
-import net.minecraft.world.storage.ISaveHandler;
-import net.minecraft.world.storage.MapStorage;
 
 public class SaveDataMemoryStorage extends MapStorage {
-   public SaveDataMemoryStorage() {
-      super((ISaveHandler)null);
-   }
+    public SaveDataMemoryStorage() {
+        super((ISaveHandler) null);
+    }
 
-   public WorldSavedData loadData(Class var1, String var2) {
-      return (WorldSavedData)this.loadedDataMap.get(var2);
-   }
+    /**
+     * Loads an existing MapDataBase corresponding to the given String id from disk, instantiating the given Class, or
+     * returns null if none such file exists. args: Class to instantiate, String dataid
+     */
+    public WorldSavedData loadData(Class<? extends WorldSavedData> clazz, String dataIdentifier) {
+        return (WorldSavedData) this.loadedDataMap.get(dataIdentifier);
+    }
 
-   public void setData(String var1, WorldSavedData var2) {
-      this.loadedDataMap.put(var1, var2);
-   }
+    /**
+     * Assigns the given String id to the given MapDataBase, removing any existing ones of the same id.
+     */
+    public void setData(String dataIdentifier, WorldSavedData data) {
+        this.loadedDataMap.put(dataIdentifier, data);
+    }
 
-   public void saveAllData() {
-   }
+    /**
+     * Saves all dirty loaded MapDataBases to disk.
+     */
+    public void saveAllData() {
+    }
 
-   public int getUniqueDataId(String var1) {
-      return 0;
-   }
+    /**
+     * Returns an unique new data id for the given prefix and saves the idCounts map to the 'idcounts' file.
+     */
+    public int getUniqueDataId(String key) {
+        return 0;
+    }
 }

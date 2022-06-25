@@ -1,91 +1,74 @@
 package net.optifine;
 
-import net.acE;
 import net.minecraft.block.state.BlockStateBase;
-import net.optifine.Config;
-import net.optifine.Matches;
 
-public class MatchBlock {
-   private int blockId;
-   private int[] metadatas;
-   private static acE[] b;
+public class MatchBlock
+{
+    private int blockId = -1;
+    private int[] metadatas = null;
 
-   public MatchBlock(int var1) {
-      this.blockId = -1;
-      this.metadatas = null;
-      this.blockId = var1;
-   }
+    public MatchBlock(int p_i63_1_)
+    {
+        this.blockId = p_i63_1_;
+    }
 
-   public MatchBlock(int var1, int var2) {
-      b();
-      super();
-      this.blockId = -1;
-      this.metadatas = null;
-      this.blockId = var1;
-      if(var2 >= 0 && var2 <= 15) {
-         this.metadatas = new int[]{var2};
-      }
+    public MatchBlock(int p_i64_1_, int p_i64_2_)
+    {
+        this.blockId = p_i64_1_;
 
-   }
+        if (p_i64_2_ >= 0 && p_i64_2_ <= 15)
+        {
+            this.metadatas = new int[] {p_i64_2_};
+        }
+    }
 
-   public MatchBlock(int var1, int[] var2) {
-      this.blockId = -1;
-      this.metadatas = null;
-      this.blockId = var1;
-      this.metadatas = var2;
-   }
+    public MatchBlock(int p_i65_1_, int[] p_i65_2_)
+    {
+        this.blockId = p_i65_1_;
+        this.metadatas = p_i65_2_;
+    }
 
-   public int getBlockId() {
-      return this.blockId;
-   }
+    public int getBlockId()
+    {
+        return this.blockId;
+    }
 
-   public int[] getMetadatas() {
-      return this.metadatas;
-   }
+    public int[] getMetadatas()
+    {
+        return this.metadatas;
+    }
 
-   public boolean a(BlockStateBase var1) {
-      acE[] var2 = b();
-      return var1.getBlockId() != this.blockId?false:Matches.a(var1.getMetadata(), this.metadatas);
-   }
+    public boolean matches(BlockStateBase p_matches_1_)
+    {
+        return p_matches_1_.getBlockId() != this.blockId ? false : Matches.metadata(p_matches_1_.getMetadata(), this.metadatas);
+    }
 
-   public boolean matches(int var1, int var2) {
-      acE[] var3 = b();
-      return var1 != this.blockId?false:Matches.a(var2, this.metadatas);
-   }
+    public boolean matches(int p_matches_1_, int p_matches_2_)
+    {
+        return p_matches_1_ != this.blockId ? false : Matches.metadata(p_matches_2_, this.metadatas);
+    }
 
-   public void addMetadata(int var1) {
-      acE[] var2 = b();
-      if(this.metadatas != null && var1 >= 0 && var1 <= 15) {
-         int var3 = 0;
-         if(var3 < this.metadatas.length) {
-            if(this.metadatas[var3] == var1) {
-               return;
+    public void addMetadata(int p_addMetadata_1_)
+    {
+        if (this.metadatas != null)
+        {
+            if (p_addMetadata_1_ >= 0 && p_addMetadata_1_ <= 15)
+            {
+                for (int i = 0; i < this.metadatas.length; ++i)
+                {
+                    if (this.metadatas[i] == p_addMetadata_1_)
+                    {
+                        return;
+                    }
+                }
+
+                this.metadatas = Config.addIntToArray(this.metadatas, p_addMetadata_1_);
             }
+        }
+    }
 
-            ++var3;
-         }
-
-         this.metadatas = Config.addIntToArray(this.metadatas, var1);
-      }
-
-   }
-
-   public String toString() {
-      return "" + this.blockId + ":" + Config.a(this.metadatas);
-   }
-
-   public static void b(acE[] var0) {
-      b = var0;
-   }
-
-   public static acE[] b() {
-      return b;
-   }
-
-   static {
-      if(b() != null) {
-         b(new acE[1]);
-      }
-
-   }
+    public String toString()
+    {
+        return "" + this.blockId + ":" + Config.arrayToString(this.metadatas);
+    }
 }

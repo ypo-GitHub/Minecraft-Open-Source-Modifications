@@ -1,37 +1,49 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import net.Gh;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.TypeConverter;
 
-public class ShortType extends Type implements TypeConverter {
-   public ShortType() {
-      super("Short", Short.class);
-   }
+public class ShortType extends Type<Short> implements TypeConverter<Short> {
 
-   public short readPrimitive(ByteBuf var1) {
-      return var1.readShort();
-   }
+    public ShortType() {
+        super("Short", Short.class);
+    }
 
-   public void writePrimitive(ByteBuf var1, short var2) {
-      var1.writeShort(var2);
-   }
+    public short readPrimitive(ByteBuf buffer) {
+        return buffer.readShort();
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public Short read(ByteBuf var1) {
-      return Short.valueOf(var1.readShort());
-   }
+    public void writePrimitive(ByteBuf buffer, short object) {
+        buffer.writeShort(object);
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public void write(ByteBuf var1, Short var2) {
-      var1.writeShort(var2.shortValue());
-   }
+    /**
+     * @deprecated use {@link #readPrimitive(ByteBuf)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public Short read(ByteBuf buffer) {
+        return buffer.readShort();
+    }
 
-   public Short from(Object var1) {
-      String var2 = Gh.b();
-      return var1 instanceof Number?Short.valueOf(((Number)var1).shortValue()):(var1 instanceof Boolean?Short.valueOf((short)(((Boolean)var1).booleanValue()?1:0)):(Short)var1);
-   }
+    /**
+     * @deprecated use {@link #writePrimitive(ByteBuf, short)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public void write(ByteBuf buffer, Short object) {
+        buffer.writeShort(object);
+    }
+
+    @Override
+    public Short from(Object o) {
+        if (o instanceof Number) {
+            return ((Number) o).shortValue();
+        }
+        if (o instanceof Boolean) {
+            return ((Boolean) o) ? (short) 1 : 0;
+        }
+        return (Short) o;
+    }
 }

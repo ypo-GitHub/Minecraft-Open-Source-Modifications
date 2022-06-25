@@ -1,72 +1,76 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
-import java.util.List;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S30PacketWindowItems implements Packet {
-   private int windowId;
-   private ItemStack[] itemStacks;
+import java.io.IOException;
+import java.util.List;
 
-   public S30PacketWindowItems() {
-   }
+public class S30PacketWindowItems implements Packet<INetHandlerPlayClient> {
 
-   public S30PacketWindowItems(int var1, List var2) {
-      this.windowId = var1;
-      this.itemStacks = new ItemStack[var2.size()];
+    private int windowId;
+    private ItemStack[] itemStacks;
 
-      for(int var3 = 0; var3 < this.itemStacks.length; ++var3) {
-         ItemStack var4 = (ItemStack)var2.get(var3);
-         this.itemStacks[var3] = null;
-      }
+    public S30PacketWindowItems() {
+    }
 
-   }
+    public S30PacketWindowItems(int windowIdIn, List<ItemStack> p_i45186_2_) {
+        this.windowId = windowIdIn;
+        this.itemStacks = new ItemStack[p_i45186_2_.size()];
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readUnsignedByte();
-      short var2 = var1.readShort();
-      this.itemStacks = new ItemStack[var2];
+        for (int i = 0; i < this.itemStacks.length; ++i) {
+            ItemStack itemstack = p_i45186_2_.get(i);
+            this.itemStacks[i] = itemstack == null ? null : itemstack.copy();
+        }
+    }
 
-      for(int var3 = 0; var3 < var2; ++var3) {
-         this.itemStacks[var3] = var1.readItemStackFromBuffer();
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readUnsignedByte();
+        int i = buf.readShort();
+        this.itemStacks = new ItemStack[i];
 
-   }
+        for (int j = 0; j < i; ++j) {
+            this.itemStacks[j] = buf.readItemStackFromBuffer();
+        }
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-      var1.writeShort(this.itemStacks.length);
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+        buf.writeShort(this.itemStacks.length);
 
-      for(ItemStack var5 : this.itemStacks) {
-         var1.a(var5);
-      }
+        for (ItemStack itemstack : this.itemStacks) {
+            buf.writeItemStackToBuffer(itemstack);
+        }
+    }
 
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleWindowItems(this);
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleWindowItems(this);
-   }
+    public int getWindowID() {
+        return this.windowId;
+    }
 
-   public int getWindowID() {
-      return this.windowId;
-   }
+    public ItemStack[] getItemStacks() {
+        return this.itemStacks;
+    }
 
-   public ItemStack[] getItemStacks() {
-      return this.itemStacks;
-   }
+    public void setWindowId(int windowId) {
+        this.windowId = windowId;
+    }
 
-   public void setWindowId(int var1) {
-      this.windowId = var1;
-   }
-
-   public void setItemStacks(ItemStack[] var1) {
-      this.itemStacks = var1;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public void setItemStacks(ItemStack[] itemStacks) {
+        this.itemStacks = itemStacks;
+    }
 }

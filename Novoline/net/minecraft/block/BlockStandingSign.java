@@ -1,39 +1,47 @@
 package net.minecraft.block;
 
-import net.iV;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockSign;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BlockStandingSign extends BlockSign {
-   public static final iV P = iV.a("rotation", 0, 15);
 
-   public BlockStandingSign() {
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(0)));
-   }
+    public static final PropertyInteger ROTATION = PropertyInteger.create("rotation", 0, 15);
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      if(!var1.getBlockState(var2.down()).getBlock().getMaterial().isSolid()) {
-         this.dropBlockAsItem(var1, var2, var3, 0);
-         var1.setBlockToAir(var2);
-      }
+    public BlockStandingSign() {
+        this.setDefaultState(this.blockState.getBaseState().withProperty(ROTATION, 0));
+    }
 
-      super.onNeighborBlockChange(var1, var2, var3, var4);
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        if (!worldIn.getBlockState(pos.down()).getBlock().getMaterial().isSolid()) {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
+        }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf(var1));
-   }
+        super.onNeighborBlockChange(worldIn, pos, state, neighborBlock);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue();
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(ROTATION, meta);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(ROTATION);
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, ROTATION);
+    }
+
 }

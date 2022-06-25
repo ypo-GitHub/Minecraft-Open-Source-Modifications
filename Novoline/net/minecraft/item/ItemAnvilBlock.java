@@ -1,14 +1,17 @@
 package net.minecraft.item;
 
 import net.minecraft.block.Block;
-import net.minecraft.item.ItemMultiTexture;
 
 public class ItemAnvilBlock extends ItemMultiTexture {
-   public ItemAnvilBlock(Block var1) {
-      super(var1, var1, new String[]{"intact", "slightlyDamaged", "veryDamaged"});
-   }
+    public ItemAnvilBlock(Block block) {
+        super(block, block, new String[]{"intact", "slightlyDamaged", "veryDamaged"});
+    }
 
-   public int getMetadata(int var1) {
-      return var1 << 2;
-   }
+    /**
+     * Converts the given ItemStack damage value into a metadata value to be placed in the world when this Item is
+     * placed as a Block (mostly used with ItemBlocks).
+     */
+    public int getMetadata(int damage) {
+        return damage << 2;
+    }
 }

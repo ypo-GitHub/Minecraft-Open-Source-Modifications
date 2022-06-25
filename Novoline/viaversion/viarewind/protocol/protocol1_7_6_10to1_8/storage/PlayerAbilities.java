@@ -1,129 +1,84 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
-import java.util.Objects;
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.EntityTracker;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 
-public class PlayerAbilities extends cA {
-   private boolean sprinting;
-   private boolean allowFly;
-   private boolean flying;
-   private boolean invincible;
-   private boolean creative;
-   private float flySpeed;
-   private float walkSpeed;
+import java.util.Objects;
 
-   public PlayerAbilities(UserConnection var1) {
-      super(var1);
-   }
+public class PlayerAbilities extends StoredObject {
 
-   public PlayerAbilities(UserConnection var1, boolean var2, boolean var3, boolean var4, boolean var5, boolean var6, float var7, float var8) {
-      super(var1);
-      this.sprinting = var2;
-      this.allowFly = var3;
-      this.flying = var4;
-      this.invincible = var5;
-      this.creative = var6;
-      this.flySpeed = var7;
-      this.walkSpeed = var8;
-   }
+	private boolean sprinting, allowFly, flying, invincible, creative;
+	private float flySpeed, walkSpeed;
 
-   public byte getFlags() {
-      EntityTracker.b();
-      byte var2 = 0;
-      if(this.invincible) {
-         var2 = (byte)(var2 | 8);
-      }
+	public PlayerAbilities(UserConnection user) {
+		super(user);
+	}
+	public PlayerAbilities(UserConnection user, boolean sprinting, boolean allowFly, boolean flying, boolean invincible, boolean creative,
+						   float flySpeed, float walkSpeed) {
+		super(user);
+		this.sprinting = sprinting;
+		this.allowFly = allowFly;
+		this.flying = flying;
+		this.invincible = invincible;
+		this.creative = creative;
+		this.flySpeed = flySpeed;
+		this.walkSpeed = walkSpeed;
+	}
+	public byte getFlags() {
+		byte flags = 0;
+		if(invincible) flags |= 8;
+		if(allowFly) flags |= 4;
+		if(flying) flags |= 2;
+		if(creative) flags |= 1;
+		return flags;
+	}
 
-      if(this.allowFly) {
-         var2 = (byte)(var2 | 4);
-      }
+	public boolean isSprinting() { return sprinting; }
+	public void setSprinting(boolean sprinting) {
+		this.sprinting = sprinting;
+	}
+	public boolean isAllowFly() { return allowFly; }
+	public void setAllowFly(boolean allowFly) {
+		this.allowFly = allowFly;
+	}
+	public boolean isFlying() { return flying; }
+	public void setFlying(boolean flying) {
+		this.flying = flying;
+	}
+	public boolean isInvincible() { return invincible; }
+	public void setInvincible(boolean invincible) {
+		this.invincible = invincible;
+	}
+	public boolean isCreative() { return creative; }
+	public void setCreative(boolean creative) {
+		this.creative = creative;
+	}
+	public float getFlySpeed() { return flySpeed; }
+	public void setFlySpeed(float flySpeed) {
+		this.flySpeed = flySpeed;
+	}
+	public float getWalkSpeed() { return walkSpeed; }
+	public void setWalkSpeed(float walkSpeed) {
+		this.walkSpeed = walkSpeed;
+	}
 
-      if(this.flying) {
-         var2 = (byte)(var2 | 2);
-      }
+	@Override
+	public boolean equals(Object o) {
+		if(this == o) return true;
+		if(!(o instanceof PlayerAbilities)) return false;
 
-      if(this.creative) {
-         var2 = (byte)(var2 | 1);
-      }
+		PlayerAbilities other = (PlayerAbilities) o;
+		return sprinting == other.sprinting && allowFly == other.allowFly && flying == other.flying && invincible == other.invincible && creative == other.creative && Float
+				.compare(other.flySpeed, flySpeed) == 0 && Float.compare(other.walkSpeed, walkSpeed) == 0;
+	}
 
-      return var2;
-   }
+	@Override
+	public int hashCode() {
+		return Objects.hash(sprinting, allowFly, flying, invincible, creative, flySpeed, walkSpeed);
+	}
 
-   public boolean isSprinting() {
-      return this.sprinting;
-   }
-
-   public void setSprinting(boolean var1) {
-      this.sprinting = var1;
-   }
-
-   public boolean isAllowFly() {
-      return this.allowFly;
-   }
-
-   public void setAllowFly(boolean var1) {
-      this.allowFly = var1;
-   }
-
-   public boolean isFlying() {
-      return this.flying;
-   }
-
-   public void setFlying(boolean var1) {
-      this.flying = var1;
-   }
-
-   public boolean isInvincible() {
-      return this.invincible;
-   }
-
-   public void setInvincible(boolean var1) {
-      this.invincible = var1;
-   }
-
-   public boolean isCreative() {
-      return this.creative;
-   }
-
-   public void setCreative(boolean var1) {
-      this.creative = var1;
-   }
-
-   public float getFlySpeed() {
-      return this.flySpeed;
-   }
-
-   public void setFlySpeed(float var1) {
-      this.flySpeed = var1;
-   }
-
-   public float getWalkSpeed() {
-      return this.walkSpeed;
-   }
-
-   public void setWalkSpeed(float var1) {
-      this.walkSpeed = var1;
-   }
-
-   public boolean equals(Object var1) {
-      String var2 = EntityTracker.b();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof PlayerAbilities)) {
-         return false;
-      } else {
-         PlayerAbilities var3 = (PlayerAbilities)var1;
-         return this.sprinting == var3.sprinting && this.allowFly == var3.allowFly && this.flying == var3.flying && this.invincible == var3.invincible && this.creative == var3.creative && Float.compare(var3.flySpeed, this.flySpeed) == 0 && Float.compare(var3.walkSpeed, this.walkSpeed) == 0;
-      }
-   }
-
-   public int hashCode() {
-      return Objects.hash(new Object[]{Boolean.valueOf(this.sprinting), Boolean.valueOf(this.allowFly), Boolean.valueOf(this.flying), Boolean.valueOf(this.invincible), Boolean.valueOf(this.creative), Float.valueOf(this.flySpeed), Float.valueOf(this.walkSpeed)});
-   }
-
-   public String toString() {
-      return "PlayerAbilities{sprinting=" + this.sprinting + ", allowFly=" + this.allowFly + ", flying=" + this.flying + ", invincible=" + this.invincible + ", creative=" + this.creative + ", flySpeed=" + this.flySpeed + ", walkSpeed=" + this.walkSpeed + '}';
-   }
+	@Override
+	public String toString() {
+		return "PlayerAbilities{" + "sprinting=" + sprinting + ", allowFly=" + allowFly + ", flying=" + flying + ", invincible=" + invincible + ", creative=" + creative + ", flySpeed=" + flySpeed + ", walkSpeed=" + walkSpeed + '}';
+	}
 }

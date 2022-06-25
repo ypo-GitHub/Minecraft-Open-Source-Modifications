@@ -1,33 +1,43 @@
 package viaversion.viaversion.exception;
 
 import io.netty.handler.codec.DecoderException;
-import net.aAu;
 import viaversion.viaversion.api.Via;
-import viaversion.viaversion.exception.CancelDecoderException$1;
 
-public class CancelDecoderException extends DecoderException implements aAu {
-   public static final CancelDecoderException CACHED = new CancelDecoderException$1("This packet is supposed to be cancelled; If you have debug enabled, you can ignore these");
+/**
+ * Thrown during packet decoding when an incoming packet should be cancelled.
+ * Specifically extends {@link DecoderException} to prevent netty from wrapping the exception.
+ */
+public class CancelDecoderException extends DecoderException implements CancelCodecException {
+    public static final CancelDecoderException CACHED = new CancelDecoderException("This packet is supposed to be cancelled; If you have debug enabled, you can ignore these") {
+        @Override
+        public Throwable fillInStackTrace() {
+            return this;
+        }
+    };
 
-   public CancelDecoderException() {
-   }
+    public CancelDecoderException() {
+        super();
+    }
 
-   public CancelDecoderException(String var1, Throwable var2) {
-      super(var1, var2);
-   }
+    public CancelDecoderException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-   public CancelDecoderException(String var1) {
-      super(var1);
-   }
+    public CancelDecoderException(String message) {
+        super(message);
+    }
 
-   public CancelDecoderException(Throwable var1) {
-      super(var1);
-   }
+    public CancelDecoderException(Throwable cause) {
+        super(cause);
+    }
 
-   public static CancelDecoderException generate(Throwable var0) {
-      return Via.getManager().isDebug()?new CancelDecoderException(var0):CACHED;
-   }
-
-   private static CancelDecoderException a(CancelDecoderException var0) {
-      return var0;
-   }
+    /**
+     * Returns a cached CancelDecoderException or a new instance when {@link viaversion.viaversion.ViaManager#isDebug()} is true.
+     *
+     * @param cause cause for being used when a new instance is creeated
+     * @return a CancelDecoderException instance
+     */
+    public static CancelDecoderException generate(Throwable cause) {
+        return Via.getManager().isDebug() ? new CancelDecoderException(cause) : CACHED;
+    }
 }

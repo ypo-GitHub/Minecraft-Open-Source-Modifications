@@ -1,13 +1,16 @@
 package viaversion.viaversion.protocols.protocol1_9to1_8.providers;
 
-import java.util.UUID;
-import net.aqQ;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.platform.providers.Provider;
 
-public class BossBarProvider implements aqQ {
-   public void handleAdd(UserConnection var1, UUID var2) {
-   }
+import java.util.UUID;
 
-   public void handleRemove(UserConnection var1, UUID var2) {
-   }
+public class BossBarProvider implements Provider {
+    public void handleAdd(UserConnection user, UUID barUUID) {
+
+    }
+
+    public void handleRemove(UserConnection user, UUID barUUID) {
+
+    }
 }

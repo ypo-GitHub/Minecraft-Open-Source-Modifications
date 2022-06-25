@@ -1,6 +1,5 @@
 package cc.novoline.gui.screen.alt.repository.hypixel;
 
-import cc.novoline.gui.screen.alt.repository.hypixel.HypixelBan;
 import cc.novoline.utils.java.Checks;
 import java.util.Date;
 import net.minecraft.nbt.NBTBase;
@@ -9,257 +8,159 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public class HypixelProfile {
-   private static final HypixelProfile EMPTY = of("Default", 1, (String)null, (Integer)null, (Integer)null, (Integer)null, (Long)null, (Long)null, Long.valueOf(System.currentTimeMillis()));
-   private final String rank;
-   private final int level;
-   private final String guild;
-   private final int achievementPoints;
-   private final int quests;
-   private final int friends;
-   private final Date firstLoginDate;
-   private final Date lastLoginDate;
-   private final Date cachedDate;
-   private HypixelBan ban;
-   private static String h;
 
-   public HypixelProfile(@Nullable String var1, int var2, @Nullable String var3, int var4, int var5, int var6, @Nullable Date var7, @Nullable Date var8, @Nullable Date var9) {
-      this.rank = var1;
-      this.level = var2;
-      this.guild = var3;
-      this.achievementPoints = var4;
-      this.quests = var5;
-      this.friends = var6;
-      this.firstLoginDate = var7;
-      this.lastLoginDate = var8;
-      this.cachedDate = var9;
-   }
+    private static final HypixelProfile EMPTY = of("Default", 1, null, null, null, null, null, null, System.currentTimeMillis());
 
-   @NotNull
-   static HypixelProfile of(@Nullable String var0, int var1, @Nullable String var2, @Nullable Integer var3, @Nullable Integer var4, @Nullable Integer var5, @Nullable Long var6, @Nullable Long var7, @Nullable Long var8) {
-      Checks.notNegative(var3.intValue(), "achievement points");
-      Checks.notNegative(var4.intValue(), "quests");
-      Checks.notNegative(var5.intValue(), "friends");
-      Checks.notNegative(var6.longValue(), "first login timestamp");
-      Checks.notNegative(var7.longValue(), "last login timestamp");
-      Checks.notNegative(var8.longValue(), "cached timestamp");
-      var0 = mapRank(var0.trim());
-      var1 = Math.max(1, var1);
-      var2 = var2.trim();
-      var3 = Integer.valueOf(0);
-      var4 = Integer.valueOf(0);
-      var5 = Integer.valueOf(0);
-      Date var9 = new Date(var6.longValue());
-      Date var10 = new Date(var7.longValue());
-      Date var11 = new Date(var8.longValue());
-      return new HypixelProfile(var0, var1, var2, var3.intValue(), var4.intValue(), var5.intValue(), var9, var10, var11);
-   }
+    /* fields */
+    private final String rank;
+    private final int level;
+    private final String guild;
+    private final int achievementPoints;
+    private final int quests;
+    private final int friends;
+    private final Date firstLoginDate;
+    private final Date lastLoginDate;
+    private final Date cachedDate;
 
-   public static HypixelProfile empty() {
-      return EMPTY;
-   }
+    private HypixelBan ban;
 
-   public void ban(@NotNull String var1, long var2) {
-      String var4 = i();
-      if(this.ban != null) {
-         throw new IllegalStateException("alt is already marked as banned!");
-      } else {
-         this.ban = HypixelBan.of(var1, var2);
-      }
-   }
+    /* constructors */
+    //region Af long constructor
+    public HypixelProfile(@Nullable String rank, int level, @Nullable String guild, int achievementPoints, int quests,
+                          int friends, @Nullable Date firstLogin, @Nullable Date lastLogin, @Nullable Date cached) {
+        this.rank = rank;
+        this.level = level;
+        this.guild = guild;
+        this.achievementPoints = achievementPoints;
+        this.quests = quests;
+        this.friends = friends;
+        this.firstLoginDate = firstLogin;
+        this.lastLoginDate = lastLogin;
+        this.cachedDate = cached;
+    }
+    //endregion
 
-   public boolean isDefaultRank() {
-      String var1 = i();
-      return StringUtils.isEmpty(this.rank) || this.rank.equalsIgnoreCase("default");
-   }
+    static @NotNull HypixelProfile of(@Nullable String rank, int level, @Nullable String guild,
+                             @Nullable Integer achievementPoints, @Nullable Integer quests, @Nullable Integer friends,
+                             @Nullable Long firstLogin, @Nullable Long lastLogin, @Nullable Long cached) {
+        if (achievementPoints != null) Checks.notNegative(achievementPoints, "achievement points");
+        if (quests != null) Checks.notNegative(quests, "quests");
+        if (friends != null) Checks.notNegative(friends, "friends");
+        if (firstLogin != null) Checks.notNegative(firstLogin, "first login timestamp");
+        if (lastLogin != null) Checks.notNegative(lastLogin, "last login timestamp");
+        if (cached != null) Checks.notNegative(cached, "cached timestamp");
 
-   public int getLevel() {
-      return this.level;
-   }
+        rank = rank != null ? mapRank(rank.trim()) : "Default";
+        level = Math.max(1, level);
+        guild = guild != null ? guild.trim() : null;
+        achievementPoints = achievementPoints == null ? 0 : achievementPoints;
+        quests = quests == null ? 0 : quests;
+        friends = friends == null ? 0 : friends;
 
-   @Nullable
-   public String getRank() {
-      return this.rank;
-   }
+        Date firstLoginDate = firstLogin != null ? new Date(firstLogin) : null, // @off
+                lastLoginDate = lastLogin != null ? new Date(lastLogin) : null,
+                cachedDate = cached != null ? new Date(cached) : null; // @on
 
-   public int getFriends() {
-      return this.friends;
-   }
+        return new HypixelProfile(rank, level, guild, achievementPoints, quests, friends, firstLoginDate, lastLoginDate,
+                cachedDate);
+    }
 
-   public int getAchievementPoints() {
-      return this.achievementPoints;
-   }
+    public static HypixelProfile empty() {
+        return EMPTY;
+    }
 
-   @Nullable
-   public Date getFirstLoginDate() {
-      return this.firstLoginDate;
-   }
+    /* methods */
+    public void ban(@NotNull String reason, long date) {
+        if (ban != null) throw new IllegalStateException("alt is already marked as banned!");
+        this.ban = HypixelBan.of(reason, date);
+    }
 
-   @Nullable
-   public Date getLastLoginDate() {
-      return this.lastLoginDate;
-   }
+    public boolean isDefaultRank() {
+        return StringUtils.isEmpty(rank) || rank.equalsIgnoreCase("default");
+    }
 
-   @NotNull
-   private static String mapRank(@NotNull String var0) {
-      Checks.notBlank(var0, "rank");
-      String var1 = var0.toLowerCase();
-      byte var2 = -1;
-      switch(var1.hashCode()) {
-      case -2004703995:
-         if(var1.equals("moderator")) {
-            var2 = 9;
-         }
-         break;
-      case -1220931666:
-         if(var1.equals("helper")) {
-            var2 = 8;
-         }
-         break;
-      case -991745245:
-         if(var1.equals("youtube")) {
-            var2 = 7;
-         }
-         break;
-      case 96426:
-         if(var1.equals("adm")) {
-            var2 = 12;
-         }
-         break;
-      case 108290:
-         if(var1.equals("mod")) {
-            var2 = 10;
-         }
-         break;
-      case 108519:
-         if(var1.equals("mvp")) {
-            var2 = 4;
-         }
-         break;
-      case 116765:
-         if(var1.equals("vip")) {
-            var2 = 1;
-         }
-         break;
-      case 3364132:
-         if(var1.equals("mvp+")) {
-            var2 = 5;
-         }
-         break;
-      case 3619758:
-         if(var1.equals("vip+")) {
-            var2 = 2;
-         }
-         break;
-      case 92668751:
-         if(var1.equals("admin")) {
-            var2 = 11;
-         }
-         break;
-      case 230944667:
-         if(var1.equals("builder")) {
-            var2 = 13;
-         }
-         break;
-      case 1489438844:
-         if(var1.equals("vip_plus")) {
-            var2 = 3;
-         }
-         break;
-      case 1544803905:
-         if(var1.equals("default")) {
-            var2 = 0;
-         }
-         break;
-      case 1636660978:
-         if(var1.equals("mvp_plus")) {
-            var2 = 6;
-         }
-      }
+    //region Lombok
+    public int getLevel() {
+        return level;
+    }
 
-      switch(var2) {
-      case 0:
-         return "Default";
-      case 1:
-         return "VIP";
-      case 2:
-      case 3:
-         return "VIP+";
-      case 4:
-         return "MVP";
-      case 5:
-      case 6:
-         return "MVP+";
-      case 7:
-         return "YouTube";
-      case 8:
-         return "Helper";
-      case 9:
-      case 10:
-         return "Moderator";
-      case 11:
-      case 12:
-         return "Admin";
-      case 13:
-         return "Builder";
-      default:
-         return var0;
-      }
-   }
+    @Nullable
+    public String getRank() {
+        return rank;
+    }
 
-   @NotNull
-   public NBTBase asNBTCompound() {
-      i();
-      NBTTagCompound var2 = new NBTTagCompound();
-      if(this.rank != null && !this.rank.equalsIgnoreCase("default")) {
-         var2.setString("rank", this.rank);
-      }
+    public int getFriends() {
+        return friends;
+    }
 
-      var2.setInteger("level", this.level);
-      if(this.guild != null) {
-         var2.setString("guild", this.guild);
-      }
+    public int getAchievementPoints() {
+        return achievementPoints;
+    }
 
-      if(this.achievementPoints > 0) {
-         var2.setInteger("achievement_points", this.achievementPoints);
-      }
+    @Nullable
+    public Date getFirstLoginDate() {
+        return firstLoginDate;
+    }
 
-      if(this.quests > 0) {
-         var2.setInteger("quests", this.quests);
-      }
+    @Nullable
+    public Date getLastLoginDate() {
+        return lastLoginDate;
+    }
+    //endregion
 
-      if(this.friends > 0) {
-         var2.setInteger("friends", this.friends);
-      }
+    //region Unimportant shit
+    @NotNull
+    private static String mapRank(@NotNull String rank) {
+        Checks.notBlank(rank, "rank");
 
-      if(this.firstLoginDate != null) {
-         var2.setLong("first_login", this.firstLoginDate.getTime());
-      }
+        switch (rank.toLowerCase()) { // @off
+            case "default":
+                return "Default";
+            case "vip":
+                return "VIP";
+            case "vip+":
+            case "vip_plus":
+                return "VIP+";
+            case "mvp":
+                return "MVP";
+            case "mvp+":
+            case "mvp_plus":
+                return "MVP+";
+            case "youtube":
+                return "YouTube";
+            case "helper":
+                return "Helper";
+            case "moderator":
+            case "mod":
+                return "Moderator";
+            case "admin":
+            case "adm":
+                return "Admin";
+            case "builder":
+                return "Builder";
+        } // @on
 
-      if(this.lastLoginDate != null) {
-         var2.setLong("last_login", this.lastLoginDate.getTime());
-      }
+        return rank;
+    }
 
-      if(this.cachedDate != null) {
-         var2.setLong("cached", this.cachedDate.getTime());
-      }
+    public @NotNull NBTBase asNBTCompound() {
+        NBTTagCompound compound = new NBTTagCompound();
 
-      return var2;
-   }
+        if (rank != null && !rank.equalsIgnoreCase("default")) compound.setString("rank", rank);
+        compound.setInteger("level", level);
+        if (guild != null) compound.setString("guild", guild);
+        if (achievementPoints > 0) compound.setInteger("achievement_points", achievementPoints);
+        if (quests > 0) compound.setInteger("quests", quests);
+        if (friends > 0) compound.setInteger("friends", friends);
+        if (firstLoginDate != null) compound.setLong("first_login", firstLoginDate.getTime());
+        if (lastLoginDate != null) compound.setLong("last_login", lastLoginDate.getTime());
+        if (cachedDate != null) compound.setLong("cached", cachedDate.getTime());
 
-   static {
-      b("oUM8cb");
-   }
+        return compound;
+    }
 
-   public static void b(String var0) {
-      h = var0;
-   }
-
-   public static String i() {
-      return h;
-   }
-
-   private static IllegalStateException a(IllegalStateException var0) {
-      return var0;
-   }
 }

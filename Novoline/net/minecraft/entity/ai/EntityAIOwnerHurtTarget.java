@@ -1,33 +1,49 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.ai.EntityAITarget;
 import net.minecraft.entity.passive.EntityTameable;
 
 public class EntityAIOwnerHurtTarget extends EntityAITarget {
-   EntityTameable theEntityTameable;
-   EntityLivingBase h;
-   private int j;
+    EntityTameable theEntityTameable;
+    EntityLivingBase theTarget;
+    private int field_142050_e;
 
-   public EntityAIOwnerHurtTarget(EntityTameable var1) {
-      super(var1, false);
-      this.theEntityTameable = var1;
-      this.setMutexBits(1);
-   }
+    public EntityAIOwnerHurtTarget(EntityTameable theEntityTameableIn) {
+        super(theEntityTameableIn, false);
+        this.theEntityTameable = theEntityTameableIn;
+        this.setMutexBits(1);
+    }
 
-   public boolean shouldExecute() {
-      if(!this.theEntityTameable.isTamed()) {
-         return false;
-      } else {
-         EntityLivingBase var1 = this.theEntityTameable.a();
-         return false;
-      }
-   }
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (!this.theEntityTameable.isTamed()) {
+            return false;
+        } else {
+            EntityLivingBase entitylivingbase = this.theEntityTameable.getOwner();
 
-   public void startExecuting() {
-      this.taskOwner.setAttackTarget(this.h);
-      EntityLivingBase var1 = this.theEntityTameable.a();
-      this.j = var1.getLastAttackerTime();
-      super.startExecuting();
-   }
+            if (entitylivingbase == null) {
+                return false;
+            } else {
+                this.theTarget = entitylivingbase.getLastAttacker();
+                int i = entitylivingbase.getLastAttackerTime();
+                return i != this.field_142050_e && this.isSuitableTarget(this.theTarget, false) && this.theEntityTameable.shouldAttackEntity(this.theTarget, entitylivingbase);
+            }
+        }
+    }
+
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.taskOwner.setAttackTarget(this.theTarget);
+        EntityLivingBase entitylivingbase = this.theEntityTameable.getOwner();
+
+        if (entitylivingbase != null) {
+            this.field_142050_e = entitylivingbase.getLastAttackerTime();
+        }
+
+        super.startExecuting();
+    }
 }

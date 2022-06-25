@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import net.acE;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.GlStateManager;
@@ -32,626 +32,923 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.ResourceLocation;
-import net.optifine.Blender;
-import net.optifine.Config;
-import net.optifine.CustomItemProperties;
-import net.optifine.CustomItems$1;
-import net.optifine.CustomItemsComparator;
-import net.optifine.MatchBlock;
-import net.optifine.NbtTagValue;
-import net.optifine.ResUtils;
-import net.optifine.StrUtils;
 import net.shadersmod.client.Shaders;
 import net.shadersmod.client.ShadersRender;
 
-public class CustomItems {
-   private static CustomItemProperties[][] itemProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-   private static CustomItemProperties[][] enchantmentProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-   private static Map mapPotionIds = null;
-   private static ItemModelGenerator itemModelGenerator = new ItemModelGenerator();
-   private static boolean useGlint = true;
-   public static final int MASK_POTION_SPLASH = 16384;
-   public static final int MASK_POTION_NAME = 63;
-   public static final String c = "texture.potion_overlay";
-   public static final String d = "texture.potion_bottle_splash";
-   public static final String j = "texture.potion_bottle_drinkable";
-   public static final String b = "items/potion_overlay";
-   public static final String n = "items/potion_bottle_splash";
-   public static final String o = "items/potion_bottle_drinkable";
-   private static final int[] EMPTY_INT_ARRAY = new int[0];
-   private static final int[][] EMPTY_INT2_ARRAY = new int[0][];
+public class CustomItems
+{
+    private static CustomItemProperties[][] itemProperties = (CustomItemProperties[][])null;
+    private static CustomItemProperties[][] enchantmentProperties = (CustomItemProperties[][])null;
+    private static Map mapPotionIds = null;
+    private static ItemModelGenerator itemModelGenerator = new ItemModelGenerator();
+    private static boolean useGlint = true;
+    public static final int MASK_POTION_SPLASH = 16384;
+    public static final int MASK_POTION_NAME = 63;
+    public static final String KEY_TEXTURE_OVERLAY = "texture.potion_overlay";
+    public static final String KEY_TEXTURE_SPLASH = "texture.potion_bottle_splash";
+    public static final String KEY_TEXTURE_DRINKABLE = "texture.potion_bottle_drinkable";
+    public static final String DEFAULT_TEXTURE_OVERLAY = "items/potion_overlay";
+    public static final String DEFAULT_TEXTURE_SPLASH = "items/potion_bottle_splash";
+    public static final String DEFAULT_TEXTURE_DRINKABLE = "items/potion_bottle_drinkable";
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+    private static final int[][] EMPTY_INT2_ARRAY = new int[0][];
 
-   public static void updateIcons(TextureMap var0) {
-      itemProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-      MatchBlock.b();
-      enchantmentProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-      useGlint = true;
-      if(Config.isCustomItems()) {
-         a("mcpatcher/cit.properties");
-         IResourcePack[] var2 = Config.getResourcePacks();
-         int var3 = var2.length - 1;
-         IResourcePack var4 = var2[var3];
-         updateIcons(var0, var4);
-         --var3;
-         updateIcons(var0, Config.getDefaultResourcePack());
-         if(itemProperties.length <= 0) {
-            itemProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-         }
+    public static void updateIcons(TextureMap p_updateIcons_0_)
+    {
+        itemProperties = (CustomItemProperties[][])null;
+        enchantmentProperties = (CustomItemProperties[][])null;
+        useGlint = true;
 
-         if(enchantmentProperties.length <= 0) {
-            enchantmentProperties = (CustomItemProperties[][])((CustomItemProperties[][])null);
-         }
-      }
+        if (Config.isCustomItems())
+        {
+            readCitProperties("mcpatcher/cit.properties");
+            IResourcePack[] airesourcepack = Config.getResourcePacks();
 
-   }
-
-   private static void a(String var0) {
-      acE[] var1 = MatchBlock.b();
-
-      try {
-         ResourceLocation var2 = new ResourceLocation(var0);
-         InputStream var3 = Config.getResourceStream(var2);
-      } catch (FileNotFoundException var4) {
-         ;
-      } catch (IOException var5) {
-         var5.printStackTrace();
-      }
-   }
-
-   private static void updateIcons(TextureMap param0, IResourcePack param1) {
-      // $FF: Couldn't be decompiled
-   }
-
-   private static Comparator getPropertiesComparator() {
-      CustomItems$1 var0 = new CustomItems$1();
-      return var0;
-   }
-
-   public static void updateModels() {
-      acE[] var0 = MatchBlock.b();
-      if(itemProperties != null) {
-         int var1 = 0;
-         if(var1 < itemProperties.length) {
-            CustomItemProperties[] var2 = itemProperties[var1];
-            int var3 = 0;
-            if(var3 < var2.length) {
-               CustomItemProperties var4 = var2[var3];
-               if(var4.type == 1) {
-                  TextureMap var5 = Minecraft.getInstance().getTextureMapBlocks();
-                  var4.updateModel(var5, itemModelGenerator);
-               }
-
-               ++var3;
+            for (int i = airesourcepack.length - 1; i >= 0; --i)
+            {
+                IResourcePack iresourcepack = airesourcepack[i];
+                updateIcons(p_updateIcons_0_, iresourcepack);
             }
 
-            ++var1;
-         }
-      }
+            updateIcons(p_updateIcons_0_, Config.getDefaultResourcePack());
 
-   }
-
-   private static Map makeAutoImageProperties(IResourcePack var0) {
-      HashMap var1 = new HashMap();
-      var1.putAll(makePotionImageProperties(var0, false));
-      var1.putAll(makePotionImageProperties(var0, true));
-      return var1;
-   }
-
-   private static Map makePotionImageProperties(IResourcePack var0, boolean var1) {
-      MatchBlock.b();
-      HashMap var3 = new HashMap();
-      String var4 = "splash/";
-      String[] var5 = new String[]{"mcpatcher/cit/potion/" + var4, "mcpatcher/cit/Potion/" + var4};
-      String[] var6 = new String[]{".png"};
-      String[] var7 = ResUtils.collectFiles(var0, var5, var6);
-      int var8 = 0;
-      if(var8 < var7.length) {
-         String var9 = var7[var8];
-         String var10 = StrUtils.removePrefixSuffix(var9, var5, var6);
-         Properties var11 = makePotionProperties(var10, var1, var9);
-         String var12 = StrUtils.removeSuffix(var9, var6) + ".properties";
-         CustomItemProperties var13 = new CustomItemProperties(var11, var12);
-         var3.put(var12, var13);
-         ++var8;
-      }
-
-      return var3;
-   }
-
-   private static Properties makePotionProperties(String var0, boolean var1, String var2) {
-      acE[] var3 = MatchBlock.b();
-      if(StrUtils.c(var0, new String[]{"_n", "_s"})) {
-         return null;
-      } else if(var0.equals("empty") && !var1) {
-         int var6 = Item.b(Items.glass_bottle);
-         Properties var7 = new Properties();
-         var7.put("type", "item");
-         var7.put("items", "" + var6);
-         return var7;
-      } else {
-         int var4 = Item.b(Items.potionitem);
-         int[] var5 = (int[])((int[])((int[])getMapPotionIds().get(var0)));
-         Config.warn("Potion not found for image: " + var2);
-         return null;
-      }
-   }
-
-   private static Map getMapPotionIds() {
-      acE[] var0 = MatchBlock.b();
-      if(mapPotionIds == null) {
-         mapPotionIds = new LinkedHashMap();
-         mapPotionIds.put("water", new int[]{0});
-         mapPotionIds.put("awkward", new int[]{16});
-         mapPotionIds.put("thick", new int[]{32});
-         mapPotionIds.put("potent", new int[]{48});
-         mapPotionIds.put("regeneration", getPotionIds(1));
-         mapPotionIds.put("moveSpeed", getPotionIds(2));
-         mapPotionIds.put("fireResistance", getPotionIds(3));
-         mapPotionIds.put("poison", getPotionIds(4));
-         mapPotionIds.put("heal", getPotionIds(5));
-         mapPotionIds.put("nightVision", getPotionIds(6));
-         mapPotionIds.put("clear", getPotionIds(7));
-         mapPotionIds.put("bungling", getPotionIds(23));
-         mapPotionIds.put("charming", getPotionIds(39));
-         mapPotionIds.put("rank", getPotionIds(55));
-         mapPotionIds.put("weakness", getPotionIds(8));
-         mapPotionIds.put("damageBoost", getPotionIds(9));
-         mapPotionIds.put("moveSlowdown", getPotionIds(10));
-         mapPotionIds.put("diffuse", getPotionIds(11));
-         mapPotionIds.put("smooth", getPotionIds(27));
-         mapPotionIds.put("refined", getPotionIds(43));
-         mapPotionIds.put("acrid", getPotionIds(59));
-         mapPotionIds.put("harm", getPotionIds(12));
-         mapPotionIds.put("waterBreathing", getPotionIds(13));
-         mapPotionIds.put("invisibility", getPotionIds(14));
-         mapPotionIds.put("thin", getPotionIds(15));
-         mapPotionIds.put("debonair", getPotionIds(31));
-         mapPotionIds.put("sparkling", getPotionIds(47));
-         mapPotionIds.put("stinky", getPotionIds(63));
-      }
-
-      return mapPotionIds;
-   }
-
-   private static int[] getPotionIds(int var0) {
-      return new int[]{var0, var0 + 16, var0 + 32, var0 + 48};
-   }
-
-   private static int getPotionNameDamage(String var0) {
-      MatchBlock.b();
-      String var2 = "potion." + var0;
-      Potion[] var3 = Potion.potionTypes;
-      int var4 = 0;
-      if(var4 < var3.length) {
-         Potion var5 = var3[var4];
-         String var6 = var5.getName();
-         if(var2.equals(var6)) {
-            return var5.getId();
-         }
-
-         ++var4;
-      }
-
-      return -1;
-   }
-
-   private static List makePropertyList(CustomItemProperties[][] var0) {
-      MatchBlock.b();
-      ArrayList var2 = new ArrayList();
-      int var3 = 0;
-      if(var3 < var0.length) {
-         CustomItemProperties[] var4 = var0[var3];
-         ArrayList var5 = null;
-         var5 = new ArrayList(Arrays.asList(var4));
-         var2.add(var5);
-         ++var3;
-      }
-
-      return var2;
-   }
-
-   private static CustomItemProperties[][] propertyListToArray(List var0) {
-      MatchBlock.b();
-      CustomItemProperties[][] var2 = new CustomItemProperties[var0.size()][];
-      int var3 = 0;
-      if(var3 < var0.size()) {
-         List var4 = (List)var0.get(var3);
-         CustomItemProperties[] var5 = (CustomItemProperties[])((CustomItemProperties[])((CustomItemProperties[])var4.toArray(new CustomItemProperties[var4.size()])));
-         Arrays.sort(var5, new CustomItemsComparator());
-         var2[var3] = var5;
-         ++var3;
-      }
-
-      return var2;
-   }
-
-   private static void addToItemList(CustomItemProperties var0, List var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0.items != null) {
-         int var3 = 0;
-         if(var3 < var0.items.length) {
-            int var4 = var0.items[var3];
-            Config.warn("Invalid item ID: " + var4);
-            addToList(var0, var1, var4);
-            ++var3;
-         }
-      }
-
-   }
-
-   private static void addToEnchantmentList(CustomItemProperties var0, List var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0.type == 2 && var0.enchantmentIds != null) {
-         int var3 = 0;
-         if(var3 < 256) {
-            if(var0.enchantmentIds.isInRange(var3)) {
-               addToList(var0, var1, var3);
+            if (itemProperties.length <= 0)
+            {
+                itemProperties = (CustomItemProperties[][])null;
             }
 
-            ++var3;
-         }
-      }
+            if (enchantmentProperties.length <= 0)
+            {
+                enchantmentProperties = (CustomItemProperties[][])null;
+            }
+        }
+    }
 
-   }
+    private static void readCitProperties(String p_readCitProperties_0_)
+    {
+        try
+        {
+            ResourceLocation resourcelocation = new ResourceLocation(p_readCitProperties_0_);
+            InputStream inputstream = Config.getResourceStream(resourcelocation);
 
-   private static void addToList(CustomItemProperties var0, List var1, int var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var2 >= var1.size()) {
-         var1.add((Object)null);
-      }
+            if (inputstream == null)
+            {
+                return;
+            }
 
-      Object var4 = (List)var1.get(var2);
-      if(var4 == null) {
-         var4 = new ArrayList();
-         var1.set(var2, var4);
-      }
+            Config.dbg("CustomItems: Loading " + p_readCitProperties_0_);
+            Properties properties = new Properties();
+            properties.load(inputstream);
+            inputstream.close();
+            useGlint = Config.parseBoolean(properties.getProperty("useGlint"), true);
+        }
+        catch (FileNotFoundException var4)
+        {
+            return;
+        }
+        catch (IOException ioexception)
+        {
+            ioexception.printStackTrace();
+        }
+    }
 
-      ((List)var4).add(var0);
-   }
+    private static void updateIcons(TextureMap p_updateIcons_0_, IResourcePack p_updateIcons_1_)
+    {
+        String[] astring = ResUtils.collectFiles(p_updateIcons_1_, (String)"mcpatcher/cit/", (String)".properties", (String[])null);
+        Map map = makeAutoImageProperties(p_updateIcons_1_);
 
-   public static IBakedModel getCustomItemModel(ItemStack var0, IBakedModel var1, ModelResourceLocation var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var1.isGui3d()) {
-         return var1;
-      } else if(itemProperties == null) {
-         return var1;
-      } else {
-         CustomItemProperties var4 = getCustomItemProperties(var0, 1);
-         return var4 == null?var1:var4.getModel(var2);
-      }
-   }
+        if (map.size() > 0)
+        {
+            Set set = map.keySet();
+            String[] astring1 = (String[])((String[])set.toArray(new String[set.size()]));
+            astring = (String[])((String[])Config.addObjectsToArray(astring, astring1));
+        }
 
-   public static boolean bindCustomArmorTexture(ItemStack var0, int var1, String var2) {
-      acE[] var3 = MatchBlock.b();
-      if(itemProperties == null) {
-         return false;
-      } else {
-         ResourceLocation var4 = getCustomArmorLocation(var0, var1, var2);
-         return false;
-      }
-   }
+        Arrays.sort((Object[])astring);
+        List list = makePropertyList(itemProperties);
+        List list1 = makePropertyList(enchantmentProperties);
 
-   private static ResourceLocation getCustomArmorLocation(ItemStack var0, int var1, String var2) {
-      MatchBlock.b();
-      CustomItemProperties var4 = getCustomItemProperties(var0, 3);
-      if(var4 == null) {
-         return null;
-      } else if(var4.mapTextureLocations == null) {
-         return null;
-      } else {
-         Item var5 = var0.getItem();
-         if(!(var5 instanceof ItemArmor)) {
+        for (int i = 0; i < astring.length; ++i)
+        {
+            String s = astring[i];
+            Config.dbg("CustomItems: " + s);
+
+            try
+            {
+                CustomItemProperties customitemproperties = null;
+
+                if (map.containsKey(s))
+                {
+                    customitemproperties = (CustomItemProperties)map.get(s);
+                }
+
+                if (customitemproperties == null)
+                {
+                    ResourceLocation resourcelocation = new ResourceLocation(s);
+                    InputStream inputstream = p_updateIcons_1_.getInputStream(resourcelocation);
+
+                    if (inputstream == null)
+                    {
+                        Config.warn("CustomItems file not found: " + s);
+                        continue;
+                    }
+
+                    Properties properties = new Properties();
+                    properties.load(inputstream);
+                    customitemproperties = new CustomItemProperties(properties, s);
+                }
+
+                if (customitemproperties.isValid(s))
+                {
+                    customitemproperties.updateIcons(p_updateIcons_0_);
+                    addToItemList(customitemproperties, list);
+                    addToEnchantmentList(customitemproperties, list1);
+                }
+            }
+            catch (FileNotFoundException var12)
+            {
+                Config.warn("CustomItems file not found: " + s);
+            }
+            catch (Exception exception)
+            {
+                exception.printStackTrace();
+            }
+        }
+
+        itemProperties = propertyListToArray(list);
+        enchantmentProperties = propertyListToArray(list1);
+        Comparator comparator = getPropertiesComparator();
+
+        for (int j = 0; j < itemProperties.length; ++j)
+        {
+            CustomItemProperties[] acustomitemproperties = itemProperties[j];
+
+            if (acustomitemproperties != null)
+            {
+                Arrays.sort(acustomitemproperties, comparator);
+            }
+        }
+
+        for (int k = 0; k < enchantmentProperties.length; ++k)
+        {
+            CustomItemProperties[] acustomitemproperties1 = enchantmentProperties[k];
+
+            if (acustomitemproperties1 != null)
+            {
+                Arrays.sort(acustomitemproperties1, comparator);
+            }
+        }
+    }
+
+    private static Comparator getPropertiesComparator()
+    {
+        Comparator comparator = new Comparator()
+        {
+            public int compare(Object p_compare_1_, Object p_compare_2_)
+            {
+                CustomItemProperties customitemproperties = (CustomItemProperties)p_compare_1_;
+                CustomItemProperties customitemproperties1 = (CustomItemProperties)p_compare_2_;
+                return customitemproperties.layer != customitemproperties1.layer ? customitemproperties.layer - customitemproperties1.layer : (customitemproperties.weight != customitemproperties1.weight ? customitemproperties1.weight - customitemproperties.weight : (!customitemproperties.basePath.equals(customitemproperties1.basePath) ? customitemproperties.basePath.compareTo(customitemproperties1.basePath) : customitemproperties.name.compareTo(customitemproperties1.name)));
+            }
+        };
+        return comparator;
+    }
+
+    public static void updateModels()
+    {
+        if (itemProperties != null)
+        {
+            for (int i = 0; i < itemProperties.length; ++i)
+            {
+                CustomItemProperties[] acustomitemproperties = itemProperties[i];
+
+                if (acustomitemproperties != null)
+                {
+                    for (int j = 0; j < acustomitemproperties.length; ++j)
+                    {
+                        CustomItemProperties customitemproperties = acustomitemproperties[j];
+
+                        if (customitemproperties != null && customitemproperties.type == 1)
+                        {
+                            TextureMap texturemap = Minecraft.getInstance().getTextureMapBlocks();
+                            customitemproperties.updateModel(texturemap, itemModelGenerator);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static Map makeAutoImageProperties(IResourcePack p_makeAutoImageProperties_0_)
+    {
+        Map map = new HashMap();
+        map.putAll(makePotionImageProperties(p_makeAutoImageProperties_0_, false));
+        map.putAll(makePotionImageProperties(p_makeAutoImageProperties_0_, true));
+        return map;
+    }
+
+    private static Map makePotionImageProperties(IResourcePack p_makePotionImageProperties_0_, boolean p_makePotionImageProperties_1_)
+    {
+        Map map = new HashMap();
+        String s = p_makePotionImageProperties_1_ ? "splash/" : "normal/";
+        String[] astring = new String[] {"mcpatcher/cit/potion/" + s, "mcpatcher/cit/Potion/" + s};
+        String[] astring1 = new String[] {".png"};
+        String[] astring2 = ResUtils.collectFiles(p_makePotionImageProperties_0_, astring, astring1);
+
+        for (int i = 0; i < astring2.length; ++i)
+        {
+            String s1 = astring2[i];
+            String name = StrUtils.removePrefixSuffix(s1, astring, astring1);
+            Properties properties = makePotionProperties(name, p_makePotionImageProperties_1_, s1);
+
+            if (properties != null)
+            {
+                String s3 = StrUtils.removeSuffix(s1, astring1) + ".properties";
+                CustomItemProperties customitemproperties = new CustomItemProperties(properties, s3);
+                map.put(s3, customitemproperties);
+            }
+        }
+
+        return map;
+    }
+
+    private static Properties makePotionProperties(String p_makePotionProperties_0_, boolean p_makePotionProperties_1_, String p_makePotionProperties_2_)
+    {
+        if (StrUtils.endsWith(p_makePotionProperties_0_, new String[] {"_n", "_s"}))
+        {
             return null;
-         } else {
-            ItemArmor var6 = (ItemArmor)var5;
-            String var7 = var6.getArmorMaterial().getName();
-            StringBuffer var8 = new StringBuffer();
-            var8.append("texture.");
-            var8.append(var7);
-            var8.append("_layer_");
-            var8.append(var1);
-            if(var2 != null) {
-               var8.append("_");
-               var8.append(var2);
+        }
+        else if (p_makePotionProperties_0_.equals("empty") && !p_makePotionProperties_1_)
+        {
+            int l = Item.getIdFromItem(Items.glass_bottle);
+            Properties properties = new Properties();
+            properties.put("type", "item");
+            properties.put("items", "" + l);
+            return properties;
+        }
+        else
+        {
+            int i = Item.getIdFromItem(Items.potionitem);
+            int[] aint = (int[])((int[])getMapPotionIds().get(p_makePotionProperties_0_));
+
+            if (aint == null)
+            {
+                Config.warn("Potion not found for image: " + p_makePotionProperties_2_);
+                return null;
             }
+            else
+            {
+                StringBuffer stringbuffer = new StringBuffer();
 
-            String var9 = var8.toString();
-            ResourceLocation var10 = (ResourceLocation)var4.mapTextureLocations.get(var9);
-            return var10;
-         }
-      }
-   }
+                for (int j = 0; j < aint.length; ++j)
+                {
+                    int k = aint[j];
 
-   private static CustomItemProperties getCustomItemProperties(ItemStack var0, int var1) {
-      acE[] var2 = MatchBlock.b();
-      if(itemProperties == null) {
-         return null;
-      } else if(var0 == null) {
-         return null;
-      } else {
-         Item var3 = var0.getItem();
-         int var4 = Item.b(var3);
-         if(var4 >= 0 && var4 < itemProperties.length) {
-            CustomItemProperties[] var5 = itemProperties[var4];
-            int var6 = 0;
-            if(var6 < var5.length) {
-               CustomItemProperties var7 = var5[var6];
-               if(var7.type == var1 && matchesProperties(var7, var0, (int[][])((int[][])null))) {
-                  return var7;
-               }
+                    if (p_makePotionProperties_1_)
+                    {
+                        k |= 16384;
+                    }
 
-               ++var6;
+                    if (j > 0)
+                    {
+                        stringbuffer.append(" ");
+                    }
+
+                    stringbuffer.append(k);
+                }
+
+                int i1 = 16447;
+                Properties properties1 = new Properties();
+                properties1.put("type", "item");
+                properties1.put("items", "" + i);
+                properties1.put("damage", "" + stringbuffer.toString());
+                properties1.put("damageMask", "" + i1);
+
+                if (p_makePotionProperties_1_)
+                {
+                    properties1.put("texture.potion_bottle_splash", p_makePotionProperties_0_);
+                }
+                else
+                {
+                    properties1.put("texture.potion_bottle_drinkable", p_makePotionProperties_0_);
+                }
+
+                return properties1;
             }
-         }
+        }
+    }
 
-         return null;
-      }
-   }
+    private static Map getMapPotionIds()
+    {
+        if (mapPotionIds == null)
+        {
+            mapPotionIds = new LinkedHashMap();
+            mapPotionIds.put("water", new int[] {0});
+            mapPotionIds.put("awkward", new int[] {16});
+            mapPotionIds.put("thick", new int[] {32});
+            mapPotionIds.put("potent", new int[] {48});
+            mapPotionIds.put("regeneration", getPotionIds(1));
+            mapPotionIds.put("moveSpeed", getPotionIds(2));
+            mapPotionIds.put("fireResistance", getPotionIds(3));
+            mapPotionIds.put("poison", getPotionIds(4));
+            mapPotionIds.put("heal", getPotionIds(5));
+            mapPotionIds.put("nightVision", getPotionIds(6));
+            mapPotionIds.put("clear", getPotionIds(7));
+            mapPotionIds.put("bungling", getPotionIds(23));
+            mapPotionIds.put("charming", getPotionIds(39));
+            mapPotionIds.put("rank", getPotionIds(55));
+            mapPotionIds.put("weakness", getPotionIds(8));
+            mapPotionIds.put("damageBoost", getPotionIds(9));
+            mapPotionIds.put("moveSlowdown", getPotionIds(10));
+            mapPotionIds.put("diffuse", getPotionIds(11));
+            mapPotionIds.put("smooth", getPotionIds(27));
+            mapPotionIds.put("refined", getPotionIds(43));
+            mapPotionIds.put("acrid", getPotionIds(59));
+            mapPotionIds.put("harm", getPotionIds(12));
+            mapPotionIds.put("waterBreathing", getPotionIds(13));
+            mapPotionIds.put("invisibility", getPotionIds(14));
+            mapPotionIds.put("thin", getPotionIds(15));
+            mapPotionIds.put("debonair", getPotionIds(31));
+            mapPotionIds.put("sparkling", getPotionIds(47));
+            mapPotionIds.put("stinky", getPotionIds(63));
+        }
 
-   private static boolean matchesProperties(CustomItemProperties var0, ItemStack var1, int[][] var2) {
-      MatchBlock.b();
-      Item var4 = var1.getItem();
-      if(var0.damage != null) {
-         int var5 = var1.getItemDamage();
-         if(var0.damageMask != 0) {
-            var5 &= var0.damageMask;
-         }
+        return mapPotionIds;
+    }
 
-         if(var0.damagePercent) {
-            int var6 = var4.getMaxDamage();
-            var5 = (int)((double)(var5 * 100) / (double)var6);
-         }
+    private static int[] getPotionIds(int p_getPotionIds_0_)
+    {
+        return new int[] {p_getPotionIds_0_, p_getPotionIds_0_ + 16, p_getPotionIds_0_ + 32, p_getPotionIds_0_ + 48};
+    }
 
-         if(!var0.damage.isInRange(var5)) {
+    private static int getPotionNameDamage(String p_getPotionNameDamage_0_)
+    {
+        String s = "potion." + p_getPotionNameDamage_0_;
+        Potion[] apotion = Potion.potionTypes;
+
+        for (int i = 0; i < apotion.length; ++i)
+        {
+            Potion potion = apotion[i];
+
+            if (potion != null)
+            {
+                String s1 = potion.getName();
+
+                if (s.equals(s1))
+                {
+                    return potion.getId();
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    private static List makePropertyList(CustomItemProperties[][] p_makePropertyList_0_)
+    {
+        List list = new ArrayList();
+
+        if (p_makePropertyList_0_ != null)
+        {
+            for (int i = 0; i < p_makePropertyList_0_.length; ++i)
+            {
+                CustomItemProperties[] acustomitemproperties = p_makePropertyList_0_[i];
+                List list1 = null;
+
+                if (acustomitemproperties != null)
+                {
+                    list1 = new ArrayList(Arrays.asList(acustomitemproperties));
+                }
+
+                list.add(list1);
+            }
+        }
+
+        return list;
+    }
+
+    private static CustomItemProperties[][] propertyListToArray(List p_propertyListToArray_0_)
+    {
+        CustomItemProperties[][] acustomitemproperties = new CustomItemProperties[p_propertyListToArray_0_.size()][];
+
+        for (int i = 0; i < p_propertyListToArray_0_.size(); ++i)
+        {
+            List list = (List)p_propertyListToArray_0_.get(i);
+
+            if (list != null)
+            {
+                CustomItemProperties[] acustomitemproperties1 = (CustomItemProperties[])((CustomItemProperties[])list.toArray(new CustomItemProperties[list.size()]));
+                Arrays.sort(acustomitemproperties1, new CustomItemsComparator());
+                acustomitemproperties[i] = acustomitemproperties1;
+            }
+        }
+
+        return acustomitemproperties;
+    }
+
+    private static void addToItemList(CustomItemProperties p_addToItemList_0_, List p_addToItemList_1_)
+    {
+        if (p_addToItemList_0_.items != null)
+        {
+            for (int i = 0; i < p_addToItemList_0_.items.length; ++i)
+            {
+                int j = p_addToItemList_0_.items[i];
+
+                if (j <= 0)
+                {
+                    Config.warn("Invalid item ID: " + j);
+                }
+                else
+                {
+                    addToList(p_addToItemList_0_, p_addToItemList_1_, j);
+                }
+            }
+        }
+    }
+
+    private static void addToEnchantmentList(CustomItemProperties p_addToEnchantmentList_0_, List p_addToEnchantmentList_1_)
+    {
+        if (p_addToEnchantmentList_0_.type == 2)
+        {
+            if (p_addToEnchantmentList_0_.enchantmentIds != null)
+            {
+                for (int i = 0; i < 256; ++i)
+                {
+                    if (p_addToEnchantmentList_0_.enchantmentIds.isInRange(i))
+                    {
+                        addToList(p_addToEnchantmentList_0_, p_addToEnchantmentList_1_, i);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void addToList(CustomItemProperties p_addToList_0_, List p_addToList_1_, int p_addToList_2_)
+    {
+        while (p_addToList_2_ >= p_addToList_1_.size())
+        {
+            p_addToList_1_.add(null);
+        }
+
+        List list = (List)p_addToList_1_.get(p_addToList_2_);
+
+        if (list == null)
+        {
+            list = new ArrayList();
+            p_addToList_1_.set(p_addToList_2_, list);
+        }
+
+        list.add(p_addToList_0_);
+    }
+
+    public static IBakedModel getCustomItemModel(ItemStack p_getCustomItemModel_0_, IBakedModel p_getCustomItemModel_1_, ModelResourceLocation p_getCustomItemModel_2_)
+    {
+        if (p_getCustomItemModel_1_.isGui3d())
+        {
+            return p_getCustomItemModel_1_;
+        }
+        else if (itemProperties == null)
+        {
+            return p_getCustomItemModel_1_;
+        }
+        else
+        {
+            CustomItemProperties customitemproperties = getCustomItemProperties(p_getCustomItemModel_0_, 1);
+            return customitemproperties == null ? p_getCustomItemModel_1_ : customitemproperties.getModel(p_getCustomItemModel_2_);
+        }
+    }
+
+    public static boolean bindCustomArmorTexture(ItemStack p_bindCustomArmorTexture_0_, int p_bindCustomArmorTexture_1_, String p_bindCustomArmorTexture_2_)
+    {
+        if (itemProperties == null)
+        {
             return false;
-         }
-      }
+        }
+        else
+        {
+            ResourceLocation resourcelocation = getCustomArmorLocation(p_bindCustomArmorTexture_0_, p_bindCustomArmorTexture_1_, p_bindCustomArmorTexture_2_);
 
-      if(var0.stackSize != null && !var0.stackSize.isInRange(var1.stackSize)) {
-         return false;
-      } else {
-         int[][] var9 = var2;
-         if(var0.enchantmentIds != null) {
-            if(var2 == null) {
-               var9 = getEnchantmentIdLevels(var1);
+            if (resourcelocation == null)
+            {
+                return false;
             }
-
-            boolean var10 = false;
-            int var7 = 0;
-            if(var7 < var9.length) {
-               int var8 = var9[var7][0];
-               if(var0.enchantmentIds.isInRange(var8)) {
-                  var10 = true;
-               }
-
-               ++var7;
+            else
+            {
+                Config.getTextureManager().bindTexture(resourcelocation);
+                return true;
             }
+        }
+    }
 
-            if(!var10) {
-               return false;
+    private static ResourceLocation getCustomArmorLocation(ItemStack p_getCustomArmorLocation_0_, int p_getCustomArmorLocation_1_, String p_getCustomArmorLocation_2_)
+    {
+        CustomItemProperties customitemproperties = getCustomItemProperties(p_getCustomArmorLocation_0_, 3);
+
+        if (customitemproperties == null)
+        {
+            return null;
+        }
+        else if (customitemproperties.mapTextureLocations == null)
+        {
+            return null;
+        }
+        else
+        {
+            Item item = p_getCustomArmorLocation_0_.getItem();
+
+            if (!(item instanceof ItemArmor))
+            {
+                return null;
             }
-         }
+            else
+            {
+                ItemArmor itemarmor = (ItemArmor)item;
+                String s = itemarmor.getArmorMaterial().getName();
+                StringBuffer stringbuffer = new StringBuffer();
+                stringbuffer.append("texture.");
+                stringbuffer.append(s);
+                stringbuffer.append("_layer_");
+                stringbuffer.append(p_getCustomArmorLocation_1_);
 
-         if(var0.enchantmentLevels != null) {
-            if(var9 == null) {
-               var9 = getEnchantmentIdLevels(var1);
+                if (p_getCustomArmorLocation_2_ != null)
+                {
+                    stringbuffer.append("_");
+                    stringbuffer.append(p_getCustomArmorLocation_2_);
+                }
+
+                String s1 = stringbuffer.toString();
+                ResourceLocation resourcelocation = (ResourceLocation)customitemproperties.mapTextureLocations.get(s1);
+                return resourcelocation;
             }
+        }
+    }
 
-            boolean var11 = false;
-            int var14 = 0;
-            if(var14 < var9.length) {
-               int var18 = var9[var14][1];
-               if(var0.enchantmentLevels.isInRange(var18)) {
-                  var11 = true;
-               }
+    private static CustomItemProperties getCustomItemProperties(ItemStack p_getCustomItemProperties_0_, int p_getCustomItemProperties_1_)
+    {
+        if (itemProperties == null)
+        {
+            return null;
+        }
+        else if (p_getCustomItemProperties_0_ == null)
+        {
+            return null;
+        }
+        else
+        {
+            Item item = p_getCustomItemProperties_0_.getItem();
+            int i = Item.getIdFromItem(item);
 
-               ++var14;
-            }
+            if (i >= 0 && i < itemProperties.length)
+            {
+                CustomItemProperties[] acustomitemproperties = itemProperties[i];
 
-            if(!var11) {
-               return false;
-            }
-         }
+                if (acustomitemproperties != null)
+                {
+                    for (int j = 0; j < acustomitemproperties.length; ++j)
+                    {
+                        CustomItemProperties customitemproperties = acustomitemproperties[j];
 
-         if(var0.nbtTagValues != null) {
-            NBTTagCompound var12 = var1.getTagCompound();
-            int var16 = 0;
-            if(var16 < var0.nbtTagValues.length) {
-               NbtTagValue var19 = var0.nbtTagValues[var16];
-               if(!var19.matches(var12)) {
-                  return false;
-               }
-
-               ++var16;
-            }
-         }
-
-         return true;
-      }
-   }
-
-   private static int[][] getEnchantmentIdLevels(ItemStack var0) {
-      MatchBlock.b();
-      Item var2 = var0.getItem();
-      NBTTagList var3 = var2 == Items.enchanted_book?Items.enchanted_book.getEnchantments(var0):var0.getEnchantmentTagList();
-      if(var3 != null && var3.tagCount() > 0) {
-         int[][] var4 = new int[var3.tagCount()][2];
-         int var5 = 0;
-         if(var5 < var3.tagCount()) {
-            NBTTagCompound var6 = var3.getCompoundTagAt(var5);
-            short var7 = var6.getShort("id");
-            short var8 = var6.getShort("lvl");
-            var4[var5][0] = var7;
-            var4[var5][1] = var8;
-            ++var5;
-         }
-
-         return var4;
-      } else {
-         return EMPTY_INT2_ARRAY;
-      }
-   }
-
-   public static boolean renderCustomEffect(RenderItem var0, ItemStack var1, IBakedModel var2) {
-      acE[] var3 = MatchBlock.b();
-      if(enchantmentProperties == null) {
-         return false;
-      } else if(var1 == null) {
-         return false;
-      } else {
-         int[][] var4 = getEnchantmentIdLevels(var1);
-         if(var4.length <= 0) {
-            return false;
-         } else {
-            HashSet var5 = null;
-            boolean var6 = false;
-            TextureManager var7 = Config.getTextureManager();
-            int var8 = 0;
-            if(var8 < var4.length) {
-               int var9 = var4[var8][0];
-               if(var9 >= 0 && var9 < enchantmentProperties.length) {
-                  CustomItemProperties[] var10 = enchantmentProperties[var9];
-                  int var11 = 0;
-                  if(var11 < var10.length) {
-                     CustomItemProperties var12 = var10[var11];
-                     if(var5 == null) {
-                        var5 = new HashSet();
-                     }
-
-                     if(var5.add(Integer.valueOf(var9)) && matchesProperties(var12, var1, var4) && var12.textureLocation != null) {
-                        var7.bindTexture(var12.textureLocation);
-                        float var13 = var12.getTextureWidth(var7);
-                        if(!var6) {
-                           var6 = true;
-                           GlStateManager.depthMask(false);
-                           GlStateManager.depthFunc(514);
-                           GlStateManager.disableLighting();
-                           GlStateManager.matrixMode(5890);
+                        if (customitemproperties.type == p_getCustomItemProperties_1_ && matchesProperties(customitemproperties, p_getCustomItemProperties_0_, (int[][])null))
+                        {
+                            return customitemproperties;
                         }
-
-                        Blender.setupBlend(var12.blend, 1.0F);
-                        GlStateManager.pushMatrix();
-                        GlStateManager.scale(var13 / 2.0F, var13 / 2.0F, var13 / 2.0F);
-                        float var14 = var12.speed * (float)(Minecraft.getSystemTime() % 3000L) / 3000.0F / 8.0F;
-                        GlStateManager.translate(var14, 0.0F, 0.0F);
-                        GlStateManager.rotate(var12.rotation, 0.0F, 0.0F, 1.0F);
-                        var0.renderModel(var2, -1);
-                        GlStateManager.popMatrix();
-                     }
-
-                     ++var11;
-                  }
-               }
-
-               ++var8;
+                    }
+                }
             }
 
-            if(var6) {
-               GlStateManager.enableAlpha();
-               GlStateManager.enableBlend();
-               GlStateManager.blendFunc(770, 771);
-               GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-               GlStateManager.matrixMode(5888);
-               GlStateManager.enableLighting();
-               GlStateManager.depthFunc(515);
-               GlStateManager.depthMask(true);
-               var7.bindTexture(TextureMap.locationBlocksTexture);
+            return null;
+        }
+    }
+
+    private static boolean matchesProperties(CustomItemProperties p_matchesProperties_0_, ItemStack p_matchesProperties_1_, int[][] p_matchesProperties_2_)
+    {
+        Item item = p_matchesProperties_1_.getItem();
+
+        if (p_matchesProperties_0_.damage != null)
+        {
+            int i = p_matchesProperties_1_.getItemDamage();
+
+            if (p_matchesProperties_0_.damageMask != 0)
+            {
+                i &= p_matchesProperties_0_.damageMask;
             }
 
-            return var6;
-         }
-      }
-   }
+            if (p_matchesProperties_0_.damagePercent)
+            {
+                int j = item.getMaxDamage();
+                i = (int)((double)(i * 100) / (double)j);
+            }
 
-   public static boolean renderCustomArmorEffect(EntityLivingBase var0, ItemStack var1, ModelBase var2, float var3, float var4, float var5, float var6, float var7, float var8, float var9) {
-      acE[] var10 = MatchBlock.b();
-      if(enchantmentProperties == null) {
-         return false;
-      } else if(Config.isShaders() && Shaders.isShadowPass) {
-         return false;
-      } else if(var1 == null) {
-         return false;
-      } else {
-         int[][] var11 = getEnchantmentIdLevels(var1);
-         if(var11.length <= 0) {
+            if (!p_matchesProperties_0_.damage.isInRange(i))
+            {
+                return false;
+            }
+        }
+
+        if (p_matchesProperties_0_.stackSize != null && !p_matchesProperties_0_.stackSize.isInRange(p_matchesProperties_1_.stackSize))
+        {
             return false;
-         } else {
-            HashSet var12 = null;
-            boolean var13 = false;
-            TextureManager var14 = Config.getTextureManager();
-            int var15 = 0;
-            if(var15 < var11.length) {
-               int var16 = var11[var15][0];
-               if(var16 >= 0 && var16 < enchantmentProperties.length) {
-                  CustomItemProperties[] var17 = enchantmentProperties[var16];
-                  int var18 = 0;
-                  if(var18 < var17.length) {
-                     CustomItemProperties var19 = var17[var18];
-                     if(var12 == null) {
-                        var12 = new HashSet();
-                     }
+        }
+        else
+        {
+            int[][] aint = p_matchesProperties_2_;
 
-                     if(var12.add(Integer.valueOf(var16)) && matchesProperties(var19, var1, var11) && var19.textureLocation != null) {
-                        var14.bindTexture(var19.textureLocation);
-                        float var20 = var19.getTextureWidth(var14);
-                        if(!var13) {
-                           var13 = true;
-                           if(Config.isShaders()) {
-                              ShadersRender.renderEnchantedGlintBegin();
-                           }
+            if (p_matchesProperties_0_.enchantmentIds != null)
+            {
+                if (p_matchesProperties_2_ == null)
+                {
+                    aint = getEnchantmentIdLevels(p_matchesProperties_1_);
+                }
 
-                           GlStateManager.enableBlend();
-                           GlStateManager.depthFunc(514);
-                           GlStateManager.depthMask(false);
+                boolean flag = false;
+
+                for (int k = 0; k < aint.length; ++k)
+                {
+                    int l = aint[k][0];
+
+                    if (p_matchesProperties_0_.enchantmentIds.isInRange(l))
+                    {
+                        flag = true;
+                        break;
+                    }
+                }
+
+                if (!flag)
+                {
+                    return false;
+                }
+            }
+
+            if (p_matchesProperties_0_.enchantmentLevels != null)
+            {
+                if (aint == null)
+                {
+                    aint = getEnchantmentIdLevels(p_matchesProperties_1_);
+                }
+
+                boolean flag1 = false;
+
+                for (int i1 = 0; i1 < aint.length; ++i1)
+                {
+                    int k1 = aint[i1][1];
+
+                    if (p_matchesProperties_0_.enchantmentLevels.isInRange(k1))
+                    {
+                        flag1 = true;
+                        break;
+                    }
+                }
+
+                if (!flag1)
+                {
+                    return false;
+                }
+            }
+
+            if (p_matchesProperties_0_.nbtTagValues != null)
+            {
+                NBTTagCompound nbttagcompound = p_matchesProperties_1_.getTagCompound();
+
+                for (int j1 = 0; j1 < p_matchesProperties_0_.nbtTagValues.length; ++j1)
+                {
+                    NbtTagValue nbttagvalue = p_matchesProperties_0_.nbtTagValues[j1];
+
+                    if (!nbttagvalue.matches(nbttagcompound))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
+    private static int[][] getEnchantmentIdLevels(ItemStack p_getEnchantmentIdLevels_0_)
+    {
+        Item item = p_getEnchantmentIdLevels_0_.getItem();
+        NBTTagList nbttaglist = item == Items.enchanted_book ? Items.enchanted_book.getEnchantments(p_getEnchantmentIdLevels_0_) : p_getEnchantmentIdLevels_0_.getEnchantmentTagList();
+
+        if (nbttaglist != null && nbttaglist.tagCount() > 0)
+        {
+            int[][] aint = new int[nbttaglist.tagCount()][2];
+
+            for (int i = 0; i < nbttaglist.tagCount(); ++i)
+            {
+                NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+                int j = nbttagcompound.getShort("id");
+                int k = nbttagcompound.getShort("lvl");
+                aint[i][0] = j;
+                aint[i][1] = k;
+            }
+
+            return aint;
+        }
+        else
+        {
+            return EMPTY_INT2_ARRAY;
+        }
+    }
+
+    public static boolean renderCustomEffect(RenderItem p_renderCustomEffect_0_, ItemStack p_renderCustomEffect_1_, IBakedModel p_renderCustomEffect_2_)
+    {
+        if (enchantmentProperties == null)
+        {
+            return false;
+        }
+        else if (p_renderCustomEffect_1_ == null)
+        {
+            return false;
+        }
+        else
+        {
+            int[][] aint = getEnchantmentIdLevels(p_renderCustomEffect_1_);
+
+            if (aint.length <= 0)
+            {
+                return false;
+            }
+            else
+            {
+                Set set = null;
+                boolean flag = false;
+                TextureManager texturemanager = Config.getTextureManager();
+
+                for (int i = 0; i < aint.length; ++i)
+                {
+                    int j = aint[i][0];
+
+                    if (j >= 0 && j < enchantmentProperties.length)
+                    {
+                        CustomItemProperties[] acustomitemproperties = enchantmentProperties[j];
+
+                        if (acustomitemproperties != null)
+                        {
+                            for (int k = 0; k < acustomitemproperties.length; ++k)
+                            {
+                                CustomItemProperties customitemproperties = acustomitemproperties[k];
+
+                                if (set == null)
+                                {
+                                    set = new HashSet();
+                                }
+
+                                if (set.add(Integer.valueOf(j)) && matchesProperties(customitemproperties, p_renderCustomEffect_1_, aint) && customitemproperties.textureLocation != null)
+                                {
+                                    texturemanager.bindTexture(customitemproperties.textureLocation);
+                                    float f = customitemproperties.getTextureWidth(texturemanager);
+
+                                    if (!flag)
+                                    {
+                                        flag = true;
+                                        GlStateManager.depthMask(false);
+                                        GlStateManager.depthFunc(514);
+                                        GlStateManager.disableLighting();
+                                        GlStateManager.matrixMode(5890);
+                                    }
+
+                                    Blender.setupBlend(customitemproperties.blend, 1.0F);
+                                    GlStateManager.pushMatrix();
+                                    GlStateManager.scale(f / 2.0F, f / 2.0F, f / 2.0F);
+                                    float f1 = customitemproperties.speed * (float)(Minecraft.getSystemTime() % 3000L) / 3000.0F / 8.0F;
+                                    GlStateManager.translate(f1, 0.0F, 0.0F);
+                                    GlStateManager.rotate(customitemproperties.rotation, 0.0F, 0.0F, 1.0F);
+                                    p_renderCustomEffect_0_.renderModel(p_renderCustomEffect_2_, -1);
+                                    GlStateManager.popMatrix();
+                                }
+                            }
                         }
+                    }
+                }
 
-                        Blender.setupBlend(var19.blend, 1.0F);
-                        GlStateManager.disableLighting();
-                        GlStateManager.matrixMode(5890);
-                        GlStateManager.loadIdentity();
-                        GlStateManager.rotate(var19.rotation, 0.0F, 0.0F, 1.0F);
-                        float var21 = var20 / 8.0F;
-                        GlStateManager.scale(var21, var21 / 2.0F, var21);
-                        float var22 = var19.speed * (float)(Minecraft.getSystemTime() % 3000L) / 3000.0F / 8.0F;
-                        GlStateManager.translate(0.0F, var22, 0.0F);
-                        GlStateManager.matrixMode(5888);
-                        var2.render(var0, var3, var4, var6, var7, var8, var9);
-                     }
+                if (flag)
+                {
+                    GlStateManager.enableAlpha();
+                    GlStateManager.enableBlend();
+                    GlStateManager.blendFunc(770, 771);
+                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                    GlStateManager.matrixMode(5888);
+                    GlStateManager.enableLighting();
+                    GlStateManager.depthFunc(515);
+                    GlStateManager.depthMask(true);
+                    texturemanager.bindTexture(TextureMap.locationBlocksTexture);
+                }
 
-                     ++var18;
-                  }
-               }
-
-               ++var15;
+                return flag;
             }
+        }
+    }
 
-            if(var13) {
-               GlStateManager.enableAlpha();
-               GlStateManager.enableBlend();
-               GlStateManager.blendFunc(770, 771);
-               GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-               GlStateManager.matrixMode(5890);
-               GlStateManager.loadIdentity();
-               GlStateManager.matrixMode(5888);
-               GlStateManager.enableLighting();
-               GlStateManager.depthMask(true);
-               GlStateManager.depthFunc(515);
-               GlStateManager.disableBlend();
-               if(Config.isShaders()) {
-                  ShadersRender.renderEnchantedGlintEnd();
-               }
+    public static boolean renderCustomArmorEffect(EntityLivingBase p_renderCustomArmorEffect_0_, ItemStack p_renderCustomArmorEffect_1_, ModelBase p_renderCustomArmorEffect_2_, float p_renderCustomArmorEffect_3_, float p_renderCustomArmorEffect_4_, float p_renderCustomArmorEffect_5_, float p_renderCustomArmorEffect_6_, float p_renderCustomArmorEffect_7_, float p_renderCustomArmorEffect_8_, float p_renderCustomArmorEffect_9_)
+    {
+        if (enchantmentProperties == null)
+        {
+            return false;
+        }
+        else if (Config.isShaders() && Shaders.isShadowPass)
+        {
+            return false;
+        }
+        else if (p_renderCustomArmorEffect_1_ == null)
+        {
+            return false;
+        }
+        else
+        {
+            int[][] aint = getEnchantmentIdLevels(p_renderCustomArmorEffect_1_);
+
+            if (aint.length <= 0)
+            {
+                return false;
             }
+            else
+            {
+                Set set = null;
+                boolean flag = false;
+                TextureManager texturemanager = Config.getTextureManager();
 
-            return var13;
-         }
-      }
-   }
+                for (int i = 0; i < aint.length; ++i)
+                {
+                    int j = aint[i][0];
 
-   public static boolean isUseGlint() {
-      return useGlint;
-   }
+                    if (j >= 0 && j < enchantmentProperties.length)
+                    {
+                        CustomItemProperties[] acustomitemproperties = enchantmentProperties[j];
 
-   private static FileNotFoundException a(FileNotFoundException var0) {
-      return var0;
-   }
+                        if (acustomitemproperties != null)
+                        {
+                            for (int k = 0; k < acustomitemproperties.length; ++k)
+                            {
+                                CustomItemProperties customitemproperties = acustomitemproperties[k];
+
+                                if (set == null)
+                                {
+                                    set = new HashSet();
+                                }
+
+                                if (set.add(Integer.valueOf(j)) && matchesProperties(customitemproperties, p_renderCustomArmorEffect_1_, aint) && customitemproperties.textureLocation != null)
+                                {
+                                    texturemanager.bindTexture(customitemproperties.textureLocation);
+                                    float f = customitemproperties.getTextureWidth(texturemanager);
+
+                                    if (!flag)
+                                    {
+                                        flag = true;
+
+                                        if (Config.isShaders())
+                                        {
+                                            ShadersRender.renderEnchantedGlintBegin();
+                                        }
+
+                                        GlStateManager.enableBlend();
+                                        GlStateManager.depthFunc(514);
+                                        GlStateManager.depthMask(false);
+                                    }
+
+                                    Blender.setupBlend(customitemproperties.blend, 1.0F);
+                                    GlStateManager.disableLighting();
+                                    GlStateManager.matrixMode(5890);
+                                    GlStateManager.loadIdentity();
+                                    GlStateManager.rotate(customitemproperties.rotation, 0.0F, 0.0F, 1.0F);
+                                    float f1 = f / 8.0F;
+                                    GlStateManager.scale(f1, f1 / 2.0F, f1);
+                                    float f2 = customitemproperties.speed * (float)(Minecraft.getSystemTime() % 3000L) / 3000.0F / 8.0F;
+                                    GlStateManager.translate(0.0F, f2, 0.0F);
+                                    GlStateManager.matrixMode(5888);
+                                    p_renderCustomArmorEffect_2_.render(p_renderCustomArmorEffect_0_, p_renderCustomArmorEffect_3_, p_renderCustomArmorEffect_4_, p_renderCustomArmorEffect_6_, p_renderCustomArmorEffect_7_, p_renderCustomArmorEffect_8_, p_renderCustomArmorEffect_9_);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (flag)
+                {
+                    GlStateManager.enableAlpha();
+                    GlStateManager.enableBlend();
+                    GlStateManager.blendFunc(770, 771);
+                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                    GlStateManager.matrixMode(5890);
+                    GlStateManager.loadIdentity();
+                    GlStateManager.matrixMode(5888);
+                    GlStateManager.enableLighting();
+                    GlStateManager.depthMask(true);
+                    GlStateManager.depthFunc(515);
+                    GlStateManager.disableBlend();
+
+                    if (Config.isShaders())
+                    {
+                        ShadersRender.renderEnchantedGlintEnd();
+                    }
+                }
+
+                return flag;
+            }
+        }
+    }
+
+    public static boolean isUseGlint()
+    {
+        return useGlint;
+    }
 }

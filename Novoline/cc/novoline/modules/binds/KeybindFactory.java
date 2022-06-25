@@ -1,21 +1,21 @@
 package cc.novoline.modules.binds;
 
-import cc.novoline.modules.binds.KeyboardKeybind;
-import cc.novoline.modules.binds.MouseKeybind;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author xDelsy
+ */
 public final class KeybindFactory {
-   @NotNull
-   public static MouseKeybind mouse(int var0) {
-      return MouseKeybind.of(var0);
-   }
 
-   @NotNull
-   public static KeyboardKeybind keyboard(int var0) {
-      return KeyboardKeybind.of(var0);
-   }
+	public static @NotNull MouseKeybind mouse(int key) {
+		return MouseKeybind.of(key);
+	}
 
-   private KeybindFactory() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
+	public static @NotNull KeyboardKeybind keyboard(int key) {
+		return KeyboardKeybind.of(key);
+	}
+
+	private KeybindFactory() {
+		throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+	}
 }

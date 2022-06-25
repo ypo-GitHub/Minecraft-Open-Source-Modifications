@@ -3,46 +3,48 @@ package net.minecraft.client.audio;
 import net.minecraft.util.ResourceLocation;
 
 public class SoundPoolEntry {
-   private final ResourceLocation location;
-   private final boolean streamingSound;
-   private double pitch;
-   private double volume;
 
-   public SoundPoolEntry(ResourceLocation var1, double var2, double var4, boolean var6) {
-      this.location = var1;
-      this.pitch = var2;
-      this.volume = var4;
-      this.streamingSound = var6;
-   }
+    private final ResourceLocation location;
+    private final boolean streamingSound;
+    private double pitch;
+    private double volume;
 
-   public SoundPoolEntry(SoundPoolEntry var1) {
-      this.location = var1.location;
-      this.pitch = var1.pitch;
-      this.volume = var1.volume;
-      this.streamingSound = var1.streamingSound;
-   }
+    public SoundPoolEntry(ResourceLocation locationIn, double pitchIn, double volumeIn, boolean streamingSoundIn) {
+        this.location = locationIn;
+        this.pitch = pitchIn;
+        this.volume = volumeIn;
+        this.streamingSound = streamingSoundIn;
+    }
 
-   public ResourceLocation getSoundPoolEntryLocation() {
-      return this.location;
-   }
+    public SoundPoolEntry(SoundPoolEntry locationIn) {
+        this.location = locationIn.location;
+        this.pitch = locationIn.pitch;
+        this.volume = locationIn.volume;
+        this.streamingSound = locationIn.streamingSound;
+    }
 
-   public double getPitch() {
-      return this.pitch;
-   }
+    public ResourceLocation getSoundPoolEntryLocation() {
+        return this.location;
+    }
 
-   public void setPitch(double var1) {
-      this.pitch = var1;
-   }
+    public double getPitch() {
+        return this.pitch;
+    }
 
-   public double getVolume() {
-      return this.volume;
-   }
+    public void setPitch(double pitchIn) {
+        this.pitch = pitchIn;
+    }
 
-   public void setVolume(double var1) {
-      this.volume = var1;
-   }
+    public double getVolume() {
+        return this.volume;
+    }
 
-   public boolean isStreamingSound() {
-      return this.streamingSound;
-   }
+    public void setVolume(double volumeIn) {
+        this.volume = volumeIn;
+    }
+
+    public boolean isStreamingSound() {
+        return this.streamingSound;
+    }
+
 }

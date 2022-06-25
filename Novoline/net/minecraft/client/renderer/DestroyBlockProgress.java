@@ -3,37 +3,59 @@ package net.minecraft.client.renderer;
 import net.minecraft.util.BlockPos;
 
 public class DestroyBlockProgress {
-   private final int miningPlayerEntId;
-   private final BlockPos position;
-   private int partialBlockProgress;
-   private int createdAtCloudUpdateTick;
+    /**
+     * entity ID of the player associated with this partially destroyed Block. Used to identify the Blocks in the client
+     * Renderer, max 1 per player on a server
+     */
+    private final int miningPlayerEntId;
+    private final BlockPos position;
 
-   public DestroyBlockProgress(int var1, BlockPos var2) {
-      this.miningPlayerEntId = var1;
-      this.position = var2;
-   }
+    /**
+     * damage ranges from 1 to 10. -1 causes the client to delete the partial block renderer.
+     */
+    private int partialBlockProgress;
 
-   public BlockPos getPosition() {
-      return this.position;
-   }
+    /**
+     * keeps track of how many ticks this PartiallyDestroyedBlock already exists
+     */
+    private int createdAtCloudUpdateTick;
 
-   public void setPartialBlockDamage(int var1) {
-      if(var1 > 10) {
-         var1 = 10;
-      }
+    public DestroyBlockProgress(int miningPlayerEntIdIn, BlockPos positionIn) {
+        this.miningPlayerEntId = miningPlayerEntIdIn;
+        this.position = positionIn;
+    }
 
-      this.partialBlockProgress = var1;
-   }
+    public BlockPos getPosition() {
+        return this.position;
+    }
 
-   public int getPartialBlockDamage() {
-      return this.partialBlockProgress;
-   }
+    /**
+     * inserts damage value into this partially destroyed Block. -1 causes client renderer to delete it, otherwise
+     * ranges from 1 to 10
+     */
+    public void setPartialBlockDamage(int damage) {
+        if (damage > 10) {
+            damage = 10;
+        }
 
-   public void setCloudUpdateTick(int var1) {
-      this.createdAtCloudUpdateTick = var1;
-   }
+        this.partialBlockProgress = damage;
+    }
 
-   public int getCreationCloudUpdateTick() {
-      return this.createdAtCloudUpdateTick;
-   }
+    public int getPartialBlockDamage() {
+        return this.partialBlockProgress;
+    }
+
+    /**
+     * saves the current Cloud update tick into the PartiallyDestroyedBlock
+     */
+    public void setCloudUpdateTick(int createdAtCloudUpdateTickIn) {
+        this.createdAtCloudUpdateTick = createdAtCloudUpdateTickIn;
+    }
+
+    /**
+     * retrieves the 'date' at which the PartiallyDestroyedBlock was created
+     */
+    public int getCreationCloudUpdateTick() {
+        return this.createdAtCloudUpdateTick;
+    }
 }

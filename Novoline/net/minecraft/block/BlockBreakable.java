@@ -1,6 +1,5 @@
 package net.minecraft.block;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -10,34 +9,40 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.IBlockAccess;
 
 public class BlockBreakable extends Block {
-   private final boolean ignoreSimilarity;
 
-   protected BlockBreakable(Material var1, boolean var2) {
-      this(var1, var2, var1.getMaterialMapColor());
-   }
+    private final boolean ignoreSimilarity;
 
-   protected BlockBreakable(Material var1, boolean var2, MapColor var3) {
-      super(var1, var3);
-      this.ignoreSimilarity = var2;
-   }
+    protected BlockBreakable(Material materialIn, boolean ignoreSimilarityIn) {
+        this(materialIn, ignoreSimilarityIn, materialIn.getMaterialMapColor());
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    protected BlockBreakable(Material p_i46393_1_, boolean p_i46393_2_, MapColor p_i46393_3_) {
+        super(p_i46393_1_, p_i46393_3_);
+        this.ignoreSimilarity = p_i46393_2_;
+    }
 
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      IBlockState var4 = var1.getBlockState(var2);
-      Block var5 = var4.getBlock();
-      if(this == Blocks.glass || this == Blocks.stained_glass) {
-         if(var1.getBlockState(var2.offset(var3.getOpposite())) != var4) {
-            return true;
-         }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-         if(var5 == this) {
-            return false;
-         }
-      }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
+        final Block block = iblockstate.getBlock();
 
-      return (this.ignoreSimilarity || var5 != this) && super.shouldSideBeRendered(var1, var2, var3);
-   }
+        if (this == Blocks.glass || this == Blocks.stained_glass) {
+            if (worldIn.getBlockState(pos.offset(side.getOpposite())) != iblockstate) {
+                return true;
+            }
+
+            if (block == this) {
+                return false;
+            }
+        }
+
+        return (this.ignoreSimilarity || block != this) && super.shouldSideBeRendered(worldIn, pos, side);
+    }
+
 }

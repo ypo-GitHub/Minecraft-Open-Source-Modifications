@@ -1,10 +1,15 @@
 package cc.novoline.gui.group2;
 
-import cc.novoline.gui.group2.Group;
 import cc.novoline.gui.label.Label;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public interface GroupWithTitle extends Group {
-   Label getTitle();
 
-   void setTitle(Label var1);
+    @Nullable Label getTitle();
+
+    void setTitle(@Nullable Label title);
+
 }

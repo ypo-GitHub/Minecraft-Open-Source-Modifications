@@ -6,130 +6,178 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
-import net.acE;
-import net.optifine.Config;
-import net.optifine.HttpPipelineConnection;
-import net.optifine.HttpPipelineRequest;
-import net.optifine.HttpResponse;
-import net.optifine.MatchBlock;
+import java.util.Map;
 
-public class HttpPipelineReceiver extends Thread {
-   private HttpPipelineConnection httpPipelineConnection = null;
-   private static final Charset ASCII = Charset.forName("ASCII");
-   private static final String a = "Content-Length";
-   private static final char CR = '\r';
-   private static final char LF = '\n';
+public class HttpPipelineReceiver extends Thread
+{
+    private HttpPipelineConnection httpPipelineConnection = null;
+    private static final Charset ASCII = Charset.forName("ASCII");
+    private static final String HEADER_CONTENT_LENGTH = "Content-Length";
+    private static final char CR = '\r';
+    private static final char LF = '\n';
 
-   public HttpPipelineReceiver(HttpPipelineConnection var1) {
-      super("HttpPipelineReceiver");
-      this.httpPipelineConnection = var1;
-   }
+    public HttpPipelineReceiver(HttpPipelineConnection p_i57_1_)
+    {
+        super("HttpPipelineReceiver");
+        this.httpPipelineConnection = p_i57_1_;
+    }
 
-   public void run() {
-      acE[] var1 = MatchBlock.b();
-      if(!Thread.interrupted()) {
-         HttpPipelineRequest var2 = null;
+    public void run()
+    {
+        while (!Thread.interrupted())
+        {
+            HttpPipelineRequest httppipelinerequest = null;
 
-         try {
-            var2 = this.httpPipelineConnection.getNextRequestReceive();
-            InputStream var3 = this.httpPipelineConnection.getInputStream();
-            HttpResponse var4 = this.readResponse(var3);
-            this.httpPipelineConnection.onResponseReceived(var2, var4);
-         } catch (InterruptedException var5) {
-            return;
-         } catch (Exception var6) {
-            this.httpPipelineConnection.onExceptionReceive(var2, var6);
-         }
-      }
+            try
+            {
+                httppipelinerequest = this.httpPipelineConnection.getNextRequestReceive();
+                InputStream inputstream = this.httpPipelineConnection.getInputStream();
+                HttpResponse httpresponse = this.readResponse(inputstream);
+                this.httpPipelineConnection.onResponseReceived(httppipelinerequest, httpresponse);
+            }
+            catch (InterruptedException var4)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                this.httpPipelineConnection.onExceptionReceive(httppipelinerequest, exception);
+            }
+        }
+    }
 
-   }
+    private HttpResponse readResponse(InputStream p_readResponse_1_) throws IOException
+    {
+        String s = this.readLine(p_readResponse_1_);
+        String[] astring = Config.tokenize(s, " ");
 
-   private HttpResponse readResponse(InputStream var1) throws IOException {
-      MatchBlock.b();
-      String var3 = this.readLine(var1);
-      String[] var4 = Config.tokenize(var3, " ");
-      if(var4.length < 3) {
-         throw new IOException("Invalid status line: " + var3);
-      } else {
-         String var5 = var4[0];
-         int var6 = Config.parseInt(var4[1], 0);
-         String var7 = var4[2];
-         LinkedHashMap var8 = new LinkedHashMap();
+        if (astring.length < 3)
+        {
+            throw new IOException("Invalid status line: " + s);
+        }
+        else
+        {
+            String s1 = astring[0];
+            int i = Config.parseInt(astring[1], 0);
+            String s2 = astring[2];
+            Map<String, String> map = new LinkedHashMap();
 
-         while(true) {
-            String var9 = this.readLine(var1);
-            if(var9.length() <= 0) {
-               byte[] var13 = null;
-               String var14 = (String)var8.get("Content-Length");
-               if(var14 != null) {
-                  int var15 = Config.parseInt(var14, -1);
-                  if(var15 > 0) {
-                     var13 = new byte[var15];
-                     this.readFull(var13, var1);
-                  }
-               } else {
-                  String var16 = (String)var8.get("Transfer-Encoding");
-                  if(Config.equals(var16, "chunked")) {
-                     var13 = this.readContentChunked(var1);
-                  }
-               }
+            while (true)
+            {
+                String s3 = this.readLine(p_readResponse_1_);
 
-               return new HttpResponse(var6, var3, var8, var13);
+                if (s3.length() <= 0)
+                {
+                    byte[] abyte = null;
+                    String s6 = (String)map.get("Content-Length");
+
+                    if (s6 != null)
+                    {
+                        int k = Config.parseInt(s6, -1);
+
+                        if (k > 0)
+                        {
+                            abyte = new byte[k];
+                            this.readFull(abyte, p_readResponse_1_);
+                        }
+                    }
+                    else
+                    {
+                        String s7 = (String)map.get("Transfer-Encoding");
+
+                        if (Config.equals(s7, "chunked"))
+                        {
+                            abyte = this.readContentChunked(p_readResponse_1_);
+                        }
+                    }
+
+                    return new HttpResponse(i, s, map, abyte);
+                }
+
+                int j = s3.indexOf(":");
+
+                if (j > 0)
+                {
+                    String s4 = s3.substring(0, j).trim();
+                    String s5 = s3.substring(j + 1).trim();
+                    map.put(s4, s5);
+                }
+            }
+        }
+    }
+
+    private byte[] readContentChunked(InputStream p_readContentChunked_1_) throws IOException
+    {
+        ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
+
+        while (true)
+        {
+            String s = this.readLine(p_readContentChunked_1_);
+            String[] astring = Config.tokenize(s, "; ");
+            int i = Integer.parseInt(astring[0], 16);
+            byte[] abyte = new byte[i];
+            this.readFull(abyte, p_readContentChunked_1_);
+            bytearrayoutputstream.write(abyte);
+            this.readLine(p_readContentChunked_1_);
+
+            if (i == 0)
+            {
+                break;
+            }
+        }
+
+        return bytearrayoutputstream.toByteArray();
+    }
+
+    private void readFull(byte[] p_readFull_1_, InputStream p_readFull_2_) throws IOException
+    {
+        int j;
+
+        for (int i = 0; i < p_readFull_1_.length; i += j)
+        {
+            j = p_readFull_2_.read(p_readFull_1_, i, p_readFull_1_.length - i);
+
+            if (j < 0)
+            {
+                throw new EOFException();
+            }
+        }
+    }
+
+    private String readLine(InputStream p_readLine_1_) throws IOException
+    {
+        ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
+        int i = -1;
+        boolean flag = false;
+
+        while (true)
+        {
+            int j = p_readLine_1_.read();
+
+            if (j < 0)
+            {
+                break;
             }
 
-            int var10 = var9.indexOf(":");
-            String var11 = var9.substring(0, var10).trim();
-            String var12 = var9.substring(var10 + 1).trim();
-            var8.put(var11, var12);
-         }
-      }
-   }
+            bytearrayoutputstream.write(j);
 
-   private byte[] readContentChunked(InputStream var1) throws IOException {
-      MatchBlock.b();
-      ByteArrayOutputStream var3 = new ByteArrayOutputStream();
-      String var4 = this.readLine(var1);
-      String[] var5 = Config.tokenize(var4, "; ");
-      int var6 = Integer.parseInt(var5[0], 16);
-      byte[] var7 = new byte[var6];
-      this.readFull(var7, var1);
-      var3.write(var7);
-      this.readLine(var1);
-      return var3.toByteArray();
-   }
+            if (i == 13 && j == 10)
+            {
+                flag = true;
+                break;
+            }
 
-   private void readFull(byte[] var1, InputStream var2) throws IOException {
-      MatchBlock.b();
-      byte var5 = 0;
-      if(var5 < var1.length) {
-         int var4 = var2.read(var1, var5, var1.length - var5);
-         if(var4 < 0) {
-            throw new EOFException();
-         }
+            i = j;
+        }
 
-         int var10000 = var5 + var4;
-      }
+        byte[] abyte = bytearrayoutputstream.toByteArray();
+        String s = new String(abyte, ASCII);
 
-   }
+        if (flag)
+        {
+            s = s.substring(0, s.length() - 2);
+        }
 
-   private String readLine(InputStream var1) throws IOException {
-      ByteArrayOutputStream var3 = new ByteArrayOutputStream();
-      MatchBlock.b();
-      byte var4 = -1;
-      boolean var5 = false;
-      int var6 = var1.read();
-      var3.write(var6);
-      if(var4 == 13 && var6 == 10) {
-         var5 = true;
-      }
-
-      byte[] var9 = var3.toByteArray();
-      String var7 = new String(var9, ASCII);
-      var7 = var7.substring(0, var7.length() - 2);
-      return var7;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        return s;
+    }
 }

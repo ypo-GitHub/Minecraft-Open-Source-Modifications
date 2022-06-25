@@ -2,55 +2,62 @@ package net.minecraft.item;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
-import net.minecraft.block.BlockBed$EnumPartType;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class ItemBed extends Item {
-   public ItemBed() {
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
+    public ItemBed() {
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var3.isRemote) {
-         return true;
-      } else if(var5 != EnumFacing.UP) {
-         return false;
-      } else {
-         IBlockState var9 = var3.getBlockState(var4);
-         Block var10 = var9.getBlock();
-         boolean var11 = var10.isReplaceable(var3, var4);
-         var4 = var4.up();
-         int var12 = MathHelper.floor_double((double)(var2.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-         EnumFacing var13 = EnumFacing.getHorizontal(var12);
-         BlockPos var14 = var4.offset(var13);
-         if(var2.a(var4, var5, var1) && var2.a(var14, var5, var1)) {
-            boolean var15 = var3.getBlockState(var14).getBlock().isReplaceable(var3, var14);
-            boolean var16 = var3.isAirBlock(var4);
-            boolean var17 = var3.isAirBlock(var14);
-            if(World.doesBlockHaveSolidTopSurface(var3, var4.down()) && World.doesBlockHaveSolidTopSurface(var3, var14.down())) {
-               IBlockState var18 = Blocks.bed.getDefaultState().withProperty(BlockBed.OCCUPIED, Boolean.FALSE).withProperty(BlockBed.FACING, var13).withProperty(BlockBed.PART, BlockBed$EnumPartType.FOOT);
-               if(var3.setBlockState(var4, var18, 3)) {
-                  IBlockState var19 = var18.withProperty(BlockBed.PART, BlockBed$EnumPartType.HEAD);
-                  var3.setBlockState(var14, var19, 3);
-               }
-
-               --var1.stackSize;
-               return true;
-            } else {
-               return false;
-            }
-         } else {
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (worldIn.isRemote) {
+            return true;
+        } else if (side != EnumFacing.UP) {
             return false;
-         }
-      }
-   }
+        } else {
+            IBlockState iblockstate = worldIn.getBlockState(pos);
+            Block block = iblockstate.getBlock();
+            boolean flag = block.isReplaceable(worldIn, pos);
+
+            if (!flag) {
+                pos = pos.up();
+            }
+
+            int i = MathHelper.floor_double((double) (playerIn.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
+            EnumFacing enumfacing = EnumFacing.getHorizontal(i);
+            BlockPos blockpos = pos.offset(enumfacing);
+
+            if (playerIn.canPlayerEdit(pos, side, stack) && playerIn.canPlayerEdit(blockpos, side, stack)) {
+                boolean flag1 = worldIn.getBlockState(blockpos).getBlock().isReplaceable(worldIn, blockpos);
+                boolean flag2 = flag || worldIn.isAirBlock(pos);
+                boolean flag3 = flag1 || worldIn.isAirBlock(blockpos);
+
+                if (flag2 && flag3 && World.doesBlockHaveSolidTopSurface(worldIn, pos.down()) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos.down())) {
+                    IBlockState iblockstate1 = Blocks.bed.getDefaultState().withProperty(BlockBed.OCCUPIED, Boolean.FALSE).withProperty(BlockBed.FACING, enumfacing).withProperty(BlockBed.PART, BlockBed.EnumPartType.FOOT);
+
+                    if (worldIn.setBlockState(pos, iblockstate1, 3)) {
+                        IBlockState iblockstate2 = iblockstate1.withProperty(BlockBed.PART, BlockBed.EnumPartType.HEAD);
+                        worldIn.setBlockState(blockpos, iblockstate2, 3);
+                    }
+
+                    --stack.stackSize;
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
 }

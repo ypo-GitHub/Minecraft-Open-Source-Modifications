@@ -1,45 +1,55 @@
 package net.minecraft.network.login.client;
 
-import java.io.IOException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import javax.crypto.SecretKey;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.login.INetHandlerLoginServer;
 import net.minecraft.util.CryptManager;
 
-public class C01PacketEncryptionResponse implements Packet {
-   private byte[] secretKeyEncrypted = new byte[0];
-   private byte[] verifyTokenEncrypted = new byte[0];
+import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
-   public C01PacketEncryptionResponse() {
-   }
+public class C01PacketEncryptionResponse implements Packet<INetHandlerLoginServer> {
+    private byte[] secretKeyEncrypted = new byte[0];
+    private byte[] verifyTokenEncrypted = new byte[0];
 
-   public C01PacketEncryptionResponse(SecretKey var1, PublicKey var2, byte[] var3) {
-      this.secretKeyEncrypted = CryptManager.encryptData(var2, var1.getEncoded());
-      this.verifyTokenEncrypted = CryptManager.encryptData(var2, var3);
-   }
+    public C01PacketEncryptionResponse() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.secretKeyEncrypted = var1.readByteArray();
-      this.verifyTokenEncrypted = var1.readByteArray();
-   }
+    public C01PacketEncryptionResponse(SecretKey secretKey, PublicKey publicKey, byte[] verifyToken) {
+        this.secretKeyEncrypted = CryptManager.encryptData(publicKey, secretKey.getEncoded());
+        this.verifyTokenEncrypted = CryptManager.encryptData(publicKey, verifyToken);
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByteArray(this.secretKeyEncrypted);
-      var1.writeByteArray(this.verifyTokenEncrypted);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.secretKeyEncrypted = buf.readByteArray();
+        this.verifyTokenEncrypted = buf.readByteArray();
+    }
 
-   public void processPacket(INetHandlerLoginServer var1) {
-      var1.processEncryptionResponse(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByteArray(this.secretKeyEncrypted);
+        buf.writeByteArray(this.verifyTokenEncrypted);
+    }
 
-   public SecretKey getSecretKey(PrivateKey var1) {
-      return CryptManager.decryptSharedKey(var1, this.secretKeyEncrypted);
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerLoginServer handler) {
+        handler.processEncryptionResponse(this);
+    }
 
-   public byte[] a(PrivateKey var1) {
-      return this.verifyTokenEncrypted;
-   }
+    public SecretKey getSecretKey(PrivateKey key) {
+        return CryptManager.decryptSharedKey(key, this.secretKeyEncrypted);
+    }
+
+    public byte[] getVerifyToken(PrivateKey key) {
+        return key == null ? this.verifyTokenEncrypted : CryptManager.decryptData(key, this.verifyTokenEncrypted);
+    }
 }

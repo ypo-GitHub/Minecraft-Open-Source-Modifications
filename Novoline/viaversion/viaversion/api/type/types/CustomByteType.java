@@ -1,30 +1,26 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import net.Gh;
 import viaversion.viaversion.api.type.PartialType;
 
-public class CustomByteType extends PartialType {
-   public CustomByteType(Integer var1) {
-      super(var1, "byte[]", byte[].class);
-   }
+public class CustomByteType extends PartialType<byte[], Integer> {
 
-   public byte[] read(ByteBuf var1, Integer var2) throws Exception {
-      String var3 = Gh.b();
-      if(var1.readableBytes() < var2.intValue()) {
-         throw new RuntimeException("Readable bytes does not match expected!");
-      } else {
-         byte[] var4 = new byte[var2.intValue()];
-         var1.readBytes(var4);
-         return var4;
-      }
-   }
+    public CustomByteType(Integer param) {
+        super(param, "byte[]", byte[].class);
+    }
 
-   public void write(ByteBuf var1, Integer var2, byte[] var3) throws Exception {
-      var1.writeBytes(var3);
-   }
+    @Override
+    public byte[] read(ByteBuf byteBuf, Integer integer) throws Exception {
+        if (byteBuf.readableBytes() < integer) throw new RuntimeException("Readable bytes does not match expected!");
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        byte[] byteArray = new byte[integer];
+        byteBuf.readBytes(byteArray);
+
+        return byteArray;
+    }
+
+    @Override
+    public void write(ByteBuf byteBuf, Integer integer, byte[] bytes) throws Exception {
+        byteBuf.writeBytes(bytes);
+    }
 }

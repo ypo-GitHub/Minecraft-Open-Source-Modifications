@@ -2,97 +2,162 @@ package net.minecraft.inventory;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.ContainerPlayer$1;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryCraftResult;
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.inventory.Slot;
-import net.minecraft.inventory.SlotCrafting;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 
 public class ContainerPlayer extends Container {
-   public InventoryCrafting craftMatrix = new InventoryCrafting(this, 2, 2);
-   public IInventory craftResult = new InventoryCraftResult();
-   public boolean isLocalWorld;
-   private final EntityPlayer thePlayer;
 
-   public ContainerPlayer(InventoryPlayer var1, boolean var2, EntityPlayer var3) {
-      this.isLocalWorld = var2;
-      this.thePlayer = var3;
-      this.addSlotToContainer(new SlotCrafting(var1.player, this.craftMatrix, this.craftResult, 0, 144, 36));
+    /**
+     * The crafting matrix inventory.
+     */
+    public InventoryCrafting craftMatrix = new InventoryCrafting(this, 2, 2);
+    public IInventory craftResult = new InventoryCraftResult();
 
-      for(int var4 = 0; var4 < 2; ++var4) {
-         for(int var5 = 0; var5 < 2; ++var5) {
-            this.addSlotToContainer(new Slot(this.craftMatrix, var5 + var4 * 2, 88 + var5 * 18, 26 + var4 * 18));
-         }
-      }
+    /**
+     * Determines if inventory manipulation should be handled.
+     */
+    public boolean isLocalWorld;
+    private final EntityPlayer thePlayer;
 
-      for(int var6 = 0; var6 < 4; ++var6) {
-         this.addSlotToContainer(new ContainerPlayer$1(this, var1, var1.getSizeInventory() - 1 - var6, 8, 8 + var6 * 18, var6));
-      }
+    public ContainerPlayer(final InventoryPlayer playerInventory, boolean localWorld, EntityPlayer player) {
+        this.isLocalWorld = localWorld;
+        this.thePlayer = player;
+        this.addSlotToContainer(new SlotCrafting(playerInventory.player, this.craftMatrix, this.craftResult, 0, 144, 36));
 
-      for(int var7 = 0; var7 < 3; ++var7) {
-         for(int var9 = 0; var9 < 9; ++var9) {
-            this.addSlotToContainer(new Slot(var1, var9 + (var7 + 1) * 9, 8 + var9 * 18, 84 + var7 * 18));
-         }
-      }
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                this.addSlotToContainer(new Slot(this.craftMatrix, j + i * 2, 88 + j * 18, 26 + i * 18));
+            }
+        }
 
-      for(int var8 = 0; var8 < 9; ++var8) {
-         this.addSlotToContainer(new Slot(var1, var8, 8 + var8 * 18, 142));
-      }
+        for (int k = 0; k < 4; ++k) {
+            final int k_f = k;
+            this.addSlotToContainer(new Slot(playerInventory, playerInventory.getSizeInventory() - 1 - k, 8, 8 + k * 18) {
 
-      this.onCraftMatrixChanged(this.craftMatrix);
-   }
+                public int getSlotStackLimit() {
+                    return 1;
+                }
 
-   public void onCraftMatrixChanged(IInventory var1) {
-      this.craftResult.setInventorySlotContents(0, CraftingManager.getInstance().findMatchingRecipe(this.craftMatrix, this.thePlayer.worldObj));
-   }
+                public boolean isItemValid(ItemStack stack) {
+                    return stack == null ? false : (stack.getItem() instanceof ItemArmor ? ((ItemArmor) stack.getItem()).armorType == k_f : (stack.getItem() != Item.getItemFromBlock(Blocks.pumpkin) && stack.getItem() != Items.skull ? false : k_f == 0));
+                }
 
-   public void onContainerClosed(EntityPlayer var1) {
-      super.onContainerClosed(var1);
+                public String getSlotTexture() {
+                    return ItemArmor.EMPTY_SLOT_NAMES[k_f];
+                }
+            });
+        }
 
-      for(int var2 = 0; var2 < 4; ++var2) {
-         ItemStack var3 = this.craftMatrix.removeStackFromSlot(var2);
-         var1.dropPlayerItemWithRandomChoice(var3, false);
-      }
+        for (int l = 0; l < 3; ++l) {
+            for (int j1 = 0; j1 < 9; ++j1) {
+                this.addSlotToContainer(new Slot(playerInventory, j1 + (l + 1) * 9, 8 + j1 * 18, 84 + l * 18));
+            }
+        }
 
-      this.craftResult.setInventorySlotContents(0, (ItemStack)null);
-   }
+        for (int i1 = 0; i1 < 9; ++i1) {
+            this.addSlotToContainer(new Slot(playerInventory, i1, 8 + i1 * 18, 142));
+        }
 
-   public boolean canInteractWith(EntityPlayer var1) {
-      return true;
-   }
+        this.onCraftMatrixChanged(this.craftMatrix);
+    }
 
-   public ItemStack transferStackInSlot(EntityPlayer var1, int var2) {
-      ItemStack var3 = null;
-      Slot var4 = (Slot)this.inventorySlots.get(var2);
-      if(var4.getHasStack()) {
-         ItemStack var5 = var4.getStack();
-         var3 = var5.copy();
-         if(!this.mergeItemStack(var5, 9, 45, true)) {
-            return null;
-         }
+    /**
+     * Callback for when the crafting matrix is changed.
+     */
+    public void onCraftMatrixChanged(IInventory inventoryIn) {
+        this.craftResult.setInventorySlotContents(0, CraftingManager.getInstance().findMatchingRecipe(this.craftMatrix, this.thePlayer.worldObj));
+    }
 
-         var4.onSlotChange(var5, var3);
-         if(var5.stackSize == 0) {
-            var4.putStack((ItemStack)null);
-         } else {
-            var4.onSlotChanged();
-         }
+    /**
+     * Called when the container is closed.
+     */
+    public void onContainerClosed(EntityPlayer playerIn) {
+        super.onContainerClosed(playerIn);
 
-         if(var5.stackSize == var3.stackSize) {
-            return null;
-         }
+        for (int i = 0; i < 4; ++i) {
+            ItemStack itemstack = this.craftMatrix.removeStackFromSlot(i);
 
-         var4.onPickupFromSlot(var1, var5);
-      }
+            if (itemstack != null) {
+                playerIn.dropPlayerItemWithRandomChoice(itemstack, false);
+            }
+        }
 
-      return var3;
-   }
+        this.craftResult.setInventorySlotContents(0, (ItemStack) null);
+    }
 
-   public boolean canMergeSlot(ItemStack var1, Slot var2) {
-      return var2.inventory != this.craftResult && super.canMergeSlot(var1, var2);
-   }
+    public boolean canInteractWith(EntityPlayer playerIn) {
+        return true;
+    }
+
+    /**
+     * Take a stack from the specified inventory slot.
+     */
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+        ItemStack itemstack = null;
+        Slot slot = (Slot) this.inventorySlots.get(index);
+
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
+
+            if (index == 0) {
+                if (!this.mergeItemStack(itemstack1, 9, 45, true)) {
+                    return null;
+                }
+
+                slot.onSlotChange(itemstack1, itemstack);
+            } else if (index >= 1 && index < 5) {
+                if (!this.mergeItemStack(itemstack1, 9, 45, false)) {
+                    return null;
+                }
+            } else if (index >= 5 && index < 9) {
+                if (!this.mergeItemStack(itemstack1, 9, 45, false)) {
+                    return null;
+                }
+            } else if (itemstack.getItem() instanceof ItemArmor && !((Slot) this.inventorySlots.get(5 + ((ItemArmor) itemstack.getItem()).armorType)).getHasStack()) {
+                int i = 5 + ((ItemArmor) itemstack.getItem()).armorType;
+
+                if (!this.mergeItemStack(itemstack1, i, i + 1, false)) {
+                    return null;
+                }
+            } else if (index >= 9 && index < 36) {
+                if (!this.mergeItemStack(itemstack1, 36, 45, false)) {
+                    return null;
+                }
+            } else if (index >= 36 && index < 45) {
+                if (!this.mergeItemStack(itemstack1, 9, 36, false)) {
+                    return null;
+                }
+            } else if (!this.mergeItemStack(itemstack1, 9, 45, false)) {
+                return null;
+            }
+
+            if (itemstack1.stackSize == 0) {
+                slot.putStack((ItemStack) null);
+            } else {
+                slot.onSlotChanged();
+            }
+
+            if (itemstack1.stackSize == itemstack.stackSize) {
+                return null;
+            }
+
+            slot.onPickupFromSlot(playerIn, itemstack1);
+        }
+
+        return itemstack;
+    }
+
+    /**
+     * Called to determine if the current slot is valid for the stack merging (double-click) code. The stack passed in
+     * is null for the initial slot that was double-clicked.
+     */
+    public boolean canMergeSlot(ItemStack stack, Slot p_94530_2_) {
+        return p_94530_2_.inventory != this.craftResult && super.canMergeSlot(stack, p_94530_2_);
+    }
+
 }

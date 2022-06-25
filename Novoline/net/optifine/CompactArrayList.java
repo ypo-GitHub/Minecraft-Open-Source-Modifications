@@ -1,126 +1,152 @@
 package net.optifine;
 
 import java.util.ArrayList;
-import net.acE;
-import net.optifine.MatchBlock;
 
-public class CompactArrayList {
-   private ArrayList list;
-   private int initialCapacity;
-   private float loadFactor;
-   private int countValid;
+public class CompactArrayList
+{
+    private ArrayList list;
+    private int initialCapacity;
+    private float loadFactor;
+    private int countValid;
 
-   public CompactArrayList() {
-      this(10, 0.75F);
-   }
+    public CompactArrayList()
+    {
+        this(10, 0.75F);
+    }
 
-   public CompactArrayList(int var1) {
-      this(var1, 0.75F);
-   }
+    public CompactArrayList(int p_i29_1_)
+    {
+        this(p_i29_1_, 0.75F);
+    }
 
-   public CompactArrayList(int var1, float var2) {
-      this.list = null;
-      this.initialCapacity = 0;
-      this.loadFactor = 1.0F;
-      this.countValid = 0;
-      this.list = new ArrayList(var1);
-      this.initialCapacity = var1;
-      this.loadFactor = var2;
-   }
+    public CompactArrayList(int p_i30_1_, float p_i30_2_)
+    {
+        this.list = null;
+        this.initialCapacity = 0;
+        this.loadFactor = 1.0F;
+        this.countValid = 0;
+        this.list = new ArrayList(p_i30_1_);
+        this.initialCapacity = p_i30_1_;
+        this.loadFactor = p_i30_2_;
+    }
 
-   public void add(int var1, Object var2) {
-      acE[] var3 = MatchBlock.b();
-      ++this.countValid;
-      this.list.add(var1, var2);
-   }
-
-   public boolean add(Object var1) {
-      ++this.countValid;
-      return this.list.add(var1);
-   }
-
-   public Object set(int var1, Object var2) {
-      MatchBlock.b();
-      Object var4 = this.list.set(var1, var2);
-      if(var2 != var4) {
-         if(var4 == null) {
+    public void add(int p_add_1_, Object p_add_2_)
+    {
+        if (p_add_2_ != null)
+        {
             ++this.countValid;
-         }
+        }
 
-         if(var2 == null) {
+        this.list.add(p_add_1_, p_add_2_);
+    }
+
+    public boolean add(Object p_add_1_)
+    {
+        if (p_add_1_ != null)
+        {
+            ++this.countValid;
+        }
+
+        return this.list.add(p_add_1_);
+    }
+
+    public Object set(int p_set_1_, Object p_set_2_)
+    {
+        Object object = this.list.set(p_set_1_, p_set_2_);
+
+        if (p_set_2_ != object)
+        {
+            if (object == null)
+            {
+                ++this.countValid;
+            }
+
+            if (p_set_2_ == null)
+            {
+                --this.countValid;
+            }
+        }
+
+        return object;
+    }
+
+    public Object remove(int p_remove_1_)
+    {
+        Object object = this.list.remove(p_remove_1_);
+
+        if (object != null)
+        {
             --this.countValid;
-         }
-      }
+        }
 
-      return var4;
-   }
+        return object;
+    }
 
-   public Object remove(int var1) {
-      MatchBlock.b();
-      Object var3 = this.list.remove(var1);
-      if(var3 != null) {
-         --this.countValid;
-      }
+    public void clear()
+    {
+        this.list.clear();
+        this.countValid = 0;
+    }
 
-      return var3;
-   }
+    public void compact()
+    {
+        if (this.countValid <= 0 && this.list.size() <= 0)
+        {
+            this.clear();
+        }
+        else if (this.list.size() > this.initialCapacity)
+        {
+            float f = (float)this.countValid * 1.0F / (float)this.list.size();
 
-   public void clear() {
-      this.list.clear();
-      this.countValid = 0;
-   }
+            if (f <= this.loadFactor)
+            {
+                int i = 0;
 
-   public void compact() {
-      acE[] var1 = MatchBlock.b();
-      if(this.countValid <= 0 && this.list.size() <= 0) {
-         this.clear();
-      }
+                for (int j = 0; j < this.list.size(); ++j)
+                {
+                    Object object = this.list.get(j);
 
-      if(this.list.size() > this.initialCapacity) {
-         float var2 = (float)this.countValid * 1.0F / (float)this.list.size();
-         if(var2 <= this.loadFactor) {
-            int var3 = 0;
-            int var4 = 0;
-            if(var4 < this.list.size()) {
-               Object var5 = this.list.get(var4);
-               if(var5 != null) {
-                  if(var4 != var3) {
-                     this.list.set(var3, var5);
-                  }
+                    if (object != null)
+                    {
+                        if (j != i)
+                        {
+                            this.list.set(i, object);
+                        }
 
-                  ++var3;
-               }
+                        ++i;
+                    }
+                }
 
-               ++var4;
+                for (int k = this.list.size() - 1; k >= i; --k)
+                {
+                    this.list.remove(k);
+                }
             }
+        }
+    }
 
-            var4 = this.list.size() - 1;
-            if(var4 >= var3) {
-               this.list.remove(var4);
-               --var4;
-            }
-         }
-      }
+    public boolean contains(Object p_contains_1_)
+    {
+        return this.list.contains(p_contains_1_);
+    }
 
-   }
+    public Object get(int p_get_1_)
+    {
+        return this.list.get(p_get_1_);
+    }
 
-   public boolean contains(Object var1) {
-      return this.list.contains(var1);
-   }
+    public boolean isEmpty()
+    {
+        return this.list.isEmpty();
+    }
 
-   public Object get(int var1) {
-      return this.list.get(var1);
-   }
+    public int size()
+    {
+        return this.list.size();
+    }
 
-   public boolean isEmpty() {
-      return this.list.isEmpty();
-   }
-
-   public int size() {
-      return this.list.size();
-   }
-
-   public int getCountValid() {
-      return this.countValid;
-   }
+    public int getCountValid()
+    {
+        return this.countValid;
+    }
 }

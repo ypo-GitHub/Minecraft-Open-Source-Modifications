@@ -1,70 +1,71 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import net.Gh;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.TypeConverter;
 
-public class VarLongType extends Type implements TypeConverter {
-   public VarLongType() {
-      super("VarLong", Long.class);
-   }
+public class VarLongType extends Type<Long> implements TypeConverter<Long> {
 
-   public long readPrimitive(ByteBuf var1) {
-      long var2 = 0L;
-      int var4 = 0;
+    public VarLongType() {
+        super("VarLong", Long.class);
+    }
 
-      while(true) {
-         byte var5 = var1.readByte();
-         var2 |= (long)(var5 & 127) << var4++ * 7;
-         if(var4 > 10) {
-            throw new RuntimeException("VarLong too big");
-         }
+    public long readPrimitive(ByteBuf buffer) {
+        long out = 0;
+        int bytes = 0;
+        byte in;
+        do {
+            in = buffer.readByte();
 
-         if((var5 & 128) != 128) {
-            break;
-         }
-      }
+            out |= (long) (in & 0x7F) << (bytes++ * 7);
 
-      return var2;
-   }
+            if (bytes > 10) { // 10 is maxBytes
+                throw new RuntimeException("VarLong too big");
+            }
+        } while ((in & 0x80) == 0x80);
+        return out;
+    }
 
-   public void writePrimitive(ByteBuf var1, long var2) {
-      String var4 = Gh.b();
+    public void writePrimitive(ByteBuf buffer, long object) {
+        int part;
+        do {
+            part = (int) (object & 0x7F);
 
-      while(true) {
-         int var5 = (int)(var2 & 127L);
-         var2 >>>= 7;
-         if(var2 != 0L) {
-            var5 |= 128;
-         }
+            object >>>= 7;
+            if (object != 0) {
+                part |= 0x80;
+            }
 
-         var1.writeByte(var5);
-         if(var2 == 0L) {
-            break;
-         }
-      }
+            buffer.writeByte(part);
+        } while (object != 0);
+    }
 
-   }
+    /**
+     * @deprecated use {@link #readPrimitive(ByteBuf)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public Long read(ByteBuf buffer) {
+        return readPrimitive(buffer);
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public Long read(ByteBuf var1) {
-      return Long.valueOf(this.readPrimitive(var1));
-   }
+    /**
+     * @deprecated use {@link #writePrimitive(ByteBuf, long)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public void write(ByteBuf buffer, Long object) {
+        writePrimitive(buffer, object);
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public void write(ByteBuf var1, Long var2) {
-      this.writePrimitive(var1, var2.longValue());
-   }
-
-   public Long from(Object var1) {
-      String var2 = Gh.b();
-      return var1 instanceof Number?Long.valueOf(((Number)var1).longValue()):(var1 instanceof Boolean?Long.valueOf(((Boolean)var1).booleanValue()?1L:0L):(Long)var1);
-   }
-
-   private static RuntimeException a(RuntimeException var0) {
-      return var0;
-   }
+    @Override
+    public Long from(Object o) {
+        if (o instanceof Number) {
+            return ((Number) o).longValue();
+        }
+        if (o instanceof Boolean) {
+            return ((Boolean) o) ? 1L : 0L;
+        }
+        return (Long) o;
+    }
 }

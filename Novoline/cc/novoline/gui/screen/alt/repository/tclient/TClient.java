@@ -1,53 +1,142 @@
 package cc.novoline.gui.screen.alt.repository.tclient;
 
 import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfile;
+import cc.novoline.gui.screen.alt.repository.hypixel.HypixelProfileFactory;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.UUID;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public final class TClient {
-   private static final String b = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.62";
-   private static final String g = "application/json";
-   private static final String a = "YWjDcNZfiryPSQBosg07bC4EVXkpI9GHT5MUnqwtmDdMTXgRENCkoSeatncvKiWq";
-   private static final int TIMEOUT = 5000;
-   private final Logger logger;
-   private final JsonParser parser;
-   private static boolean f;
 
-   public TClient() {
-      a();
-      super();
-      this.logger = LogManager.getLogger();
-      this.parser = new JsonParser();
-   }
+	private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.62";
+	private static final String CONTENT_TYPE = "application/json";
+	private static final String LICENSE_KEY = "YWjDcNZfiryPSQBosg07bC4EVXkpI9GHT5MUnqwtmDdMTXgRENCkoSeatncvKiWq";
+	private static final int TIMEOUT = 5_000;
 
-   @Nullable
-   public HypixelProfile find(@NotNull UUID param1) {
-      // $FF: Couldn't be decompiled
-   }
+	/* fields */
+	private final Logger logger = LogManager.getLogger();
+	private final JsonParser parser = new JsonParser();
 
-   public static void b(boolean var0) {
-      f = var0;
-   }
+	/* methods */
+	public @Nullable HypixelProfile find(@NotNull UUID uuid) {
+		HttpURLConnection connection;
 
-   public static boolean b() {
-      return f;
-   }
+		try {
+            logger.info("Opening connection with TClient");
+			connection = (HttpURLConnection) new URL(
+					"https://tclient.club/Modules/api/hypixel?cmd=stats&lang=ENG&service=other&no_images=1&args=" + uuid).openConnection();
+		} catch(IOException e) {
+            logger.error("An I/O error occurred while opening connection", e);
+			return null;
+		}
 
-   public static boolean a() {
-      boolean var0 = b();
-      return true;
-   }
+		connection.setConnectTimeout(5_000);
+		connection.setRequestProperty("User-Agent", USER_AGENT);
+		connection.setRequestProperty("Content-Type", CONTENT_TYPE);
+		connection.setRequestProperty("license-key", LICENSE_KEY);
+		connection.setUseCaches(false);
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+		JsonElement jsonElement;
+		byte[] byteArray = new byte[0];
 
-   static {
-      b(false);
-   }
+		try {
+			connection.connect();
+
+			int status = connection.getResponseCode();
+
+			if(status < 200 || status >= 300) {
+                logger.error("Server returned code " + status);
+				return null;
+			}
+
+			byteArray = IOUtils.toByteArray(connection.getInputStream());
+			InputStream in = new ByteArrayInputStream(byteArray);
+
+			jsonElement = parser.parse(new InputStreamReader(in));
+		} catch(IOException e) {
+			try {
+                logger.error("An I/O error occurred while reading response: {}",
+						IOUtils.readLines(new InputStreamReader(new ByteArrayInputStream(byteArray))), e);
+			} catch(IOException ex) {
+                logger.error("An I/O error occurred while reading response", e);
+			}
+
+			return null;
+		} finally {
+			connection.disconnect();
+		}
+
+		if(!jsonElement.isJsonObject()) {
+			return null;
+		}
+
+		JsonObject jsonObject = jsonElement.getAsJsonObject();
+		JsonElement okElement = jsonObject.get("ok");
+
+		if(okElement == null || !okElement.isJsonPrimitive() || !okElement.getAsBoolean()) return null;
+
+		JsonElement contentElement = jsonObject.get("response");
+		if(contentElement == null || !contentElement.isJsonObject()) return null;
+		JsonObject contentObject = contentElement.getAsJsonObject();
+
+		JsonElement statsElement = contentObject.get("stats");
+		if(statsElement == null || !statsElement.isJsonObject()) return null;
+		JsonObject statsObject = statsElement.getAsJsonObject();
+
+		JsonElement rankElement = statsObject.get("privilege");
+		if(rankElement == null || !rankElement.isJsonPrimitive()) return null;
+		String rank = rankElement.getAsString();
+
+		JsonElement levelElement = statsObject.get("level");
+		if(levelElement == null || !levelElement.isJsonPrimitive()) return null;
+		int level = levelElement.getAsInt();
+
+		JsonElement guildElement = statsObject.get("guild");
+		if(guildElement == null || !guildElement.isJsonPrimitive()) return null;
+		String guild = guildElement.getAsString();
+
+		JsonElement achievementPointsElement = statsObject.get("achievementPoints");
+		if(achievementPointsElement == null || !achievementPointsElement.isJsonPrimitive()) return null;
+		int achievementPoints = achievementPointsElement.getAsInt();
+
+		JsonElement questsElement = statsObject.get("quests");
+		if(questsElement == null || !questsElement.isJsonPrimitive()) return null;
+		int quests = questsElement.getAsInt();
+
+		JsonElement friendsElement = statsObject.get("friends");
+		if(friendsElement == null || !friendsElement.isJsonPrimitive()) return null;
+		int friends = friendsElement.getAsInt();
+
+		JsonElement firstLoginElement = statsObject.get("firstLogin_timestamp");
+		if(firstLoginElement == null || !firstLoginElement.isJsonPrimitive()) return null;
+		long firstLogin = firstLoginElement.getAsLong();
+
+		JsonElement lastLoginElement = statsObject.get("lastLogin_timestamp");
+		if(lastLoginElement == null || !lastLoginElement.isJsonPrimitive()) return null;
+		long lastLogin = lastLoginElement.getAsLong();
+
+		JsonElement cachedElement = statsObject.get("cached_timestamp");
+		if(cachedElement == null || !cachedElement.isJsonPrimitive()) return null;
+		long cached = cachedElement.getAsLong() * 1_000;
+
+		return HypixelProfileFactory.hypixelProfile(rank, level, guild, achievementPoints, quests, friends, firstLogin, lastLogin, cached);
+	}
+
 }

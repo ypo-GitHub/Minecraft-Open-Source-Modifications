@@ -1,7 +1,5 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -17,75 +15,93 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockEnchantmentTable extends BlockContainer {
-   protected BlockEnchantmentTable() {
-      super(Material.rock, MapColor.redColor);
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.75F, 1.0F);
-      this.setLightOpacity(0);
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    protected BlockEnchantmentTable() {
+        super(Material.rock, MapColor.redColor);
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.75F, 1.0F);
+        this.setLightOpacity(0);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-   public void randomDisplayTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      super.randomDisplayTick(var1, var2, var3, var4);
+    public boolean isFullCube() {
+        return false;
+    }
 
-      for(int var5 = -2; var5 <= 2; ++var5) {
-         for(int var6 = -2; var6 <= 2; ++var6) {
-            if(var5 > -2 && var5 < 2 && var6 == -1) {
-               var6 = 2;
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        super.randomDisplayTick(worldIn, pos, state, rand);
+
+        for (int i = -2; i <= 2; ++i) {
+            for (int j = -2; j <= 2; ++j) {
+                if (i > -2 && i < 2 && j == -1) {
+                    j = 2;
+                }
+
+                if (rand.nextInt(16) == 0) {
+                    for (int k = 0; k <= 1; ++k) {
+                        final BlockPos blockpos = pos.add(i, k, j);
+
+                        if (worldIn.getBlockState(blockpos).getBlock() == Blocks.bookshelf) {
+                            if (!worldIn.isAirBlock(pos.add(i / 2, 0, j / 2))) {
+                                break;
+                            }
+
+                            worldIn.spawnParticle(EnumParticleTypes.ENCHANTMENT_TABLE, (double) pos.getX() + 0.5D, (double) pos.getY() + 2.0D, (double) pos.getZ() + 0.5D, (double) ((float) i + rand.nextFloat()) - 0.5D, (float) k - rand.nextFloat() - 1.0F, (double) ((float) j + rand.nextFloat()) - 0.5D);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
+
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return 3;
+    }
+
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityEnchantmentTable();
+    }
+
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
+
+            if (tileentity instanceof TileEntityEnchantmentTable) {
+                playerIn.displayGui((TileEntityEnchantmentTable) tileentity);
             }
 
-            if(var4.nextInt(16) == 0) {
-               for(int var7 = 0; var7 <= 1; ++var7) {
-                  BlockPos var8 = var2.a(var5, var7, var6);
-                  if(var1.getBlockState(var8).getBlock() == Blocks.bookshelf) {
-                     if(!var1.isAirBlock(var2.a(var5 / 2, 0, var6 / 2))) {
-                        break;
-                     }
+        }
+        return true;
+    }
 
-                     var1.spawnParticle(EnumParticleTypes.ENCHANTMENT_TABLE, (double)var2.getX() + 0.5D, (double)var2.getY() + 2.0D, (double)var2.getZ() + 0.5D, (double)((float)var5 + var4.nextFloat()) - 0.5D, (double)((float)var7 - var4.nextFloat() - 1.0F), (double)((float)var6 + var4.nextFloat()) - 0.5D, new int[0]);
-                  }
-               }
+    /**
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
+     */
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+
+        if (stack.hasDisplayName()) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
+
+            if (tileentity instanceof TileEntityEnchantmentTable) {
+                ((TileEntityEnchantmentTable) tileentity).setCustomName(stack.getDisplayName());
             }
-         }
-      }
+        }
+    }
 
-   }
-
-   public boolean isOpaqueCube() {
-      return false;
-   }
-
-   public int getRenderType() {
-      return 3;
-   }
-
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityEnchantmentTable();
-   }
-
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var1.isRemote) {
-         TileEntity var9 = var1.getTileEntity(var2);
-         if(var9 instanceof TileEntityEnchantmentTable) {
-            var4.displayGui((TileEntityEnchantmentTable)var9);
-         }
-      }
-
-      return true;
-   }
-
-   public void onBlockPlacedBy(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4, ItemStack var5) {
-      super.onBlockPlacedBy(var1, var2, var3, var4, var5);
-      if(var5.hasDisplayName()) {
-         TileEntity var6 = var1.getTileEntity(var2);
-         if(var6 instanceof TileEntityEnchantmentTable) {
-            ((TileEntityEnchantmentTable)var6).setCustomName(var5.getDisplayName());
-         }
-      }
-
-   }
 }

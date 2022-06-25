@@ -1,107 +1,117 @@
 package viaversion.viaversion.api.platform;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import net.acE;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Handles injected UserConnections
+ */
 public class ViaConnectionManager {
-   protected final Map clients = new ConcurrentHashMap();
-   protected final Set connections = Collections.newSetFromMap(new ConcurrentHashMap());
-   private static boolean b;
+    protected final Map<UUID, UserConnection> clients = new ConcurrentHashMap<>();
+    protected final Set<UserConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-   public void onLoginSuccess(UserConnection var1) {
-      boolean var2 = c();
-      Objects.requireNonNull(var1, "connection is null!");
-      this.connections.add(var1);
-      if(this.isFrontEnd(var1)) {
-         UUID var3 = var1.getProtocolInfo().getUuid();
-         if(this.clients.put(var3, var1) != null) {
-            Via.getPlatform().getLogger().warning("Duplicate UUID on frontend connection! (" + var3 + ")");
-         }
-      }
+    public void onLoginSuccess(UserConnection connection) {
+        Objects.requireNonNull(connection, "connection is null!");
+        connections.add(connection);
 
-      if(var1.getChannel() != null) {
-         var1.getChannel().closeFuture().addListener(this::lambda$onLoginSuccess$0);
-      }
+        if (isFrontEnd(connection)) {
+            UUID id = connection.getProtocolInfo().getUuid();
+            if (clients.put(id, connection) != null) {
+                Via.getPlatform().getLogger().warning("Duplicate UUID on frontend connection! ("+id+")");
+            }
+        }
 
-   }
+        if (connection.getChannel() != null) {
+            connection.getChannel().closeFuture().addListener((ChannelFutureListener) future -> onDisconnect(connection));
+        }
+    }
 
-   public void onDisconnect(UserConnection var1) {
-      boolean var2 = c();
-      Objects.requireNonNull(var1, "connection is null!");
-      this.connections.remove(var1);
-      if(this.isFrontEnd(var1)) {
-         UUID var3 = var1.getProtocolInfo().getUuid();
-         this.clients.remove(var3);
-      }
+    public void onDisconnect(UserConnection connection) {
+        Objects.requireNonNull(connection, "connection is null!");
+        connections.remove(connection);
 
-      if(acE.b() == null) {
-         b(false);
-      }
+        if (isFrontEnd(connection)) {
+            UUID id = connection.getProtocolInfo().getUuid();
+            clients.remove(id);
+        }
+    }
 
-   }
+    /**
+     * Frontend connections will have the UUID stored. Override this if your platform isn't always frontend.
+     * UUIDs can't be duplicate between frontend connections.
+     */
+    public boolean isFrontEnd(UserConnection conn) {
+        return !conn.isClientSide();
+    }
 
-   public boolean isFrontEnd(UserConnection var1) {
-      boolean var2 = c();
-      return !var1.isClientSide();
-   }
+    /**
+     * Returns a map containing the UUIDs and frontend UserConnections from players connected to this proxy server
+     * Returns empty list when there isn't a server
+     * When ViaVersion is reloaded, this method may not return some players.
+     * May not contain ProtocolSupport players.
+     */
+    public Map<UUID, UserConnection> getConnectedClients() {
+        return Collections.unmodifiableMap(clients);
+    }
 
-   public Map getConnectedClients() {
-      return Collections.unmodifiableMap(this.clients);
-   }
+    /**
+     * Returns the frontend UserConnection from the player connected to this proxy server
+     * Returns null when there isn't a server or connection was not found
+     * When ViaVersion is reloaded, this method may not return some players.
+     * May not return ProtocolSupport players.
+     * <p>
+     * Note that connections are removed as soon as their channel is closed,
+     * so avoid using this method during player quits for example.
+     */
+    @Nullable
+    public UserConnection getConnectedClient(UUID clientIdentifier) {
+        return clients.get(clientIdentifier);
+    }
 
-   @Nullable
-   public UserConnection getConnectedClient(UUID var1) {
-      return (UserConnection)this.clients.get(var1);
-   }
+    /**
+     * Returns the UUID from the frontend connection to this proxy server
+     * Returns null when there isn't a server or this connection isn't frontend or it doesn't have an id
+     * When ViaVersion is reloaded, this method may not return some players.
+     * May not return ProtocolSupport players.
+     * <p>
+     * Note that connections are removed as soon as their channel is closed,
+     * so avoid using this method during player quits for example.
+     */
+    @Nullable
+    public UUID getConnectedClientId(UserConnection conn) {
+        if (conn.getProtocolInfo() == null) return null;
+        UUID uuid = conn.getProtocolInfo().getUuid();
+        UserConnection client = clients.get(uuid);
+        if (client != null && client.equals(conn)) {
+            // This is frontend
+            return uuid;
+        }
+        return null;
+    }
 
-   @Nullable
-   public UUID getConnectedClientId(UserConnection var1) {
-      boolean var2 = d();
-      if(var1.getProtocolInfo() == null) {
-         return null;
-      } else {
-         UUID var3 = var1.getProtocolInfo().getUuid();
-         UserConnection var4 = (UserConnection)this.clients.get(var3);
-         return var4 != null && var4.equals(var1)?var3:null;
-      }
-   }
+    /**
+     * Returns all UserConnections which are registered
+     * May contain duplicated UUIDs on multiple ProtocolInfo.
+     * May contain frontend, backend and/or client-sided connections.
+     * When ViaVersion is reloaded, this method may not return some players.
+     * May not contain ProtocolSupport players.
+     */
+    public Set<UserConnection> getConnections() {
+        return Collections.unmodifiableSet(connections);
+    }
 
-   public Set getConnections() {
-      return Collections.unmodifiableSet(this.connections);
-   }
-
-   public boolean isClientConnected(UUID var1) {
-      return this.clients.containsKey(var1);
-   }
-
-   private void lambda$onLoginSuccess$0(UserConnection var1, ChannelFuture var2) throws Exception {
-      this.onDisconnect(var1);
-   }
-
-   public static void b(boolean var0) {
-      b = var0;
-   }
-
-   public static boolean c() {
-      return b;
-   }
-
-   public static boolean d() {
-      boolean var0 = c();
-      return true;
-   }
-
-   static {
-      b(true);
-   }
+    /**
+     * Returns if Via injected into this player connection.
+     *
+     * @param playerId player uuid
+     * @return true if the player is handled by Via
+     */
+    public boolean isClientConnected(UUID playerId) {
+        return clients.containsKey(playerId);
+    }
 }

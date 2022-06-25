@@ -1,26 +1,25 @@
 package cc.novoline.utils.music;
 
-import cc.novoline.utils.music.WAVMusicPlayer;
-
 public class MusicPlayer {
-   private WAVMusicPlayer activePlayer = new WAVMusicPlayer();
 
-   public void setup(String var1) {
-      MusicPlayer var10000 = this;
+    private WAVMusicPlayer activePlayer;
 
-      try {
-         var10000.activePlayer.setup(var1);
-      } catch (Throwable var3) {
-         var3.printStackTrace();
-      }
+    public MusicPlayer(){
+        activePlayer = new WAVMusicPlayer();
+    }
 
-   }
+    public void setup(String string){
+        try {
+            activePlayer.setup(string);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+    }
+    public void play(){
+        activePlayer.playLooping();
+    }
 
-   public void play() {
-      this.activePlayer.playLooping();
-   }
-
-   public void stop() {
-      this.activePlayer.stop();
-   }
+    public void stop(){
+        activePlayer.stop();
+    }
 }

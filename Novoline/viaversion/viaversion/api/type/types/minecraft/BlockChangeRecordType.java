@@ -5,19 +5,22 @@ import viaversion.viaversion.api.minecraft.BlockChangeRecord;
 import viaversion.viaversion.api.minecraft.BlockChangeRecord1_8;
 import viaversion.viaversion.api.type.Type;
 
-public class BlockChangeRecordType extends Type {
-   public BlockChangeRecordType() {
-      super("BlockChangeRecord", BlockChangeRecord.class);
-   }
+public class BlockChangeRecordType extends Type<BlockChangeRecord> {
 
-   public BlockChangeRecord read(ByteBuf var1) throws Exception {
-      short var2 = Type.SHORT.readPrimitive(var1);
-      int var3 = Type.VAR_INT.readPrimitive(var1);
-      return new BlockChangeRecord1_8(var2 >> 12 & 15, var2 & 255, var2 >> 8 & 15, var3);
-   }
+    public BlockChangeRecordType() {
+        super("BlockChangeRecord", BlockChangeRecord.class);
+    }
 
-   public void write(ByteBuf var1, BlockChangeRecord var2) throws Exception {
-      Type.SHORT.writePrimitive(var1, (short)(var2.getSectionX() << 12 | var2.getSectionZ() << 8 | var2.getY()));
-      Type.VAR_INT.writePrimitive(var1, var2.getBlockId());
-   }
+    @Override
+    public BlockChangeRecord read(ByteBuf buffer) throws Exception {
+        short position = Type.SHORT.readPrimitive(buffer);
+        int blockId = Type.VAR_INT.readPrimitive(buffer);
+        return new BlockChangeRecord1_8(position >> 12 & 0xF, position & 0xFF, position >> 8 & 0xF, blockId);
+    }
+
+    @Override
+    public void write(ByteBuf buffer, BlockChangeRecord object) throws Exception {
+        Type.SHORT.writePrimitive(buffer, (short) (object.getSectionX() << 12 | object.getSectionZ() << 8 | object.getY()));
+        Type.VAR_INT.writePrimitive(buffer, object.getBlockId());
+    }
 }

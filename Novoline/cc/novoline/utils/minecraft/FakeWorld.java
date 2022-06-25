@@ -1,276 +1,515 @@
 package cc.novoline.utils.minecraft;
 
-import cc.novoline.utils.minecraft.FakeWorld$FakeChunkProvider;
-import cc.novoline.utils.minecraft.FakeWorld$FakeSaveHandler;
-import cc.novoline.utils.minecraft.FakeWorld$FakeWorldProvider;
-import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.profiler.Profiler;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.*;
 import net.minecraft.world.IWorldAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldSavedData;
+import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.chunk.storage.IChunkLoader;
+import net.minecraft.world.storage.IPlayerFileData;
+import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.WorldInfo;
 
+import java.io.File;
+import java.util.List;
+
+/**
+ * @author xDelsy
+ */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public final class FakeWorld extends World {
-   private static String[] O;
 
-   public FakeWorld() {
-      super(new FakeWorld$FakeSaveHandler(), new WorldInfo(new NBTTagCompound()), new FakeWorld$FakeWorldProvider(), (Profiler)null, false);
-   }
+    public FakeWorld() {
+        super(new FakeSaveHandler(), new WorldInfo(new NBTTagCompound()), new FakeWorldProvider(), null, false);
+    }
+
+    @Override
+    public void markBlocksDirtyVertical(final int par1, final int par2, final int par3, final int par4) {
+    }
+
+    @Override
+    public void markBlockRangeForRenderUpdate(final int p_147458_1_,
+                                              final int p_147458_2_,
+                                              final int p_147458_3_,
+                                              final int p_147458_4_,
+                                              final int p_147458_5_,
+                                              final int p_147458_6_) {
+    }
+
+    @Override
+    protected boolean isChunkLoaded(int x, int z, boolean allowEmpty) {
+        return true;
+    }
+
+    @Override
+    public float getLightBrightness(BlockPos pos) {
+        return 14;
+    }
+
+    @Override
+    public boolean isDaytime() {
+        return true;
+    }
+
+    @Override
+    public MovingObjectPosition rayTraceBlocks(final Vec3 par1Vec3, final Vec3 par2Vec3) {
+        return null;
+    }
+
+    @Override
+    public MovingObjectPosition rayTraceBlocks(final Vec3 par1Vec3, final Vec3 par2Vec3, final boolean par3) {
+        return null;
+    }
+
+    @Override
+    public MovingObjectPosition rayTraceBlocks(final Vec3 p_147447_1_, final Vec3 p_147447_2_, final boolean p_147447_3_, final boolean p_147447_4_, final boolean p_147447_5_) {
+        return null;
+    }
+
+    @Override
+    public void playSoundAtEntity(final Entity par1Entity, final String par2Str, final float par3, final float par4) {
+    }
+
+    @Override
+    public void playSoundToNearExcept(final EntityPlayer par1EntityPlayer, final String par2Str, final float par3, final float par4) {
+    }
+
+    @Override
+    public void playSoundEffect(final double par1, final double par3, final double par5, final String par7Str, final float par8, final float par9) {
+    }
+
+    @Override
+    public void playSound(final double par1, final double par3, final double par5, final String par7Str, final float par8, final float par9, final boolean par10) {
+    }
+
+    @Override
+    public boolean addWeatherEffect(final Entity par1Entity) {
+        return false;
+    }
+
+    @Override
+    public boolean spawnEntityInWorld(final Entity par1Entity) {
+        return false;
+    }
+
+    @Override
+    public void onEntityAdded(final Entity par1Entity) {
+    }
+
+    @Override
+    public void onEntityRemoved(final Entity par1Entity) {
+    }
+
+    @Override
+    public void removeEntity(final Entity par1Entity) {
+    }
+
+    @Override
+    public void removePlayerEntityDangerously(final Entity par1Entity) {
+    }
+
+    @Override
+    public int calculateSkylightSubtracted(final float par1) {
+        return 6;
+    }
+
+    @Override
+    public void removeWorldAccess(final IWorldAccess par1iWorldAccess) {
+    }
+
+    @Override
+    public void updateEntities() {
+    }
+
+    @Override
+    public void updateEntity(final Entity par1Entity) {
+    }
+
+    @Override
+    public void updateEntityWithOptionalForce(final Entity par1Entity, final boolean par2) {
+    }
+
+    @Override
+    public boolean checkNoEntityCollision(final AxisAlignedBB par1AxisAlignedBB) {
+        return true;
+    }
+
+    @Override
+    public boolean checkNoEntityCollision(final AxisAlignedBB par1AxisAlignedBB, final Entity par2Entity) {
+        return true;
+    }
+
+    @Override
+    public boolean checkBlockCollision(final AxisAlignedBB par1AxisAlignedBB) {
+        return false;
+    }
+
+    @Override
+    public boolean isAnyLiquid(final AxisAlignedBB par1AxisAlignedBB) {
+        return false;
+    }
+
+    @Override
+    public boolean handleMaterialAcceleration(final AxisAlignedBB par1AxisAlignedBB, final Material par2Material, final Entity par3Entity) {
+        return false;
+    }
+
+    @Override
+    public boolean isMaterialInBB(final AxisAlignedBB par1AxisAlignedBB, final Material par2Material) {
+        return false;
+    }
+
+    @Override
+    public boolean isAABBInMaterial(final AxisAlignedBB par1AxisAlignedBB, final Material par2Material) {
+        return false;
+    }
+
+    @Override
+    public String getDebugLoadedEntities() {
+        return "";
+    }
+
+    @Override
+    public String getProviderName() {
+        return "";
+    }
+
+    @Override
+    public void markTileEntityForRemoval(final TileEntity tileEntityIn) {
+    }
+
+    @Override
+    public void tick() {
+    }
+
+    @Override
+    protected void updateWeather() {
+    }
+
+    @Override
+    protected int getRenderDistanceChunks() {
+        return 0;
+    }
+
+    @Override
+    public void tickUpdates(final boolean par1) {
+    }
+
+    @Override
+    public List getPendingBlockUpdates(final Chunk par1Chunk, final boolean par2) {
+        return null;
+    }
+
+    @Override
+    public Entity findNearestEntityWithinAABB(final Class par1Class, final AxisAlignedBB par2AxisAlignedBB, final Entity par3Entity) {
+        return null;
+    }
+
+    @Override
+    public int countEntities(final Class par1Class) {
+        return 0;
+    }
+
+    @Override
+    public void checkSessionLock() {
+    }
+
+    @Override
+    public long getSeed() {
+        return 1L;
+    }
+
+    @Override
+    public long getTotalWorldTime() {
+        return 1L;
+    }
+
+    @Override
+    public long getWorldTime() {
+        return 1L;
+    }
+
+    @Override
+    public void setWorldTime(final long par1) {
+    }
+
+    @Override
+    public BlockPos getSpawnPoint() {
+        return new BlockPos(0, 64, 0);
+    }
+
+    @Override
+    public void joinEntityInSurroundings(final Entity par1Entity) {
+    }
+
+    @Override
+    public void setEntityState(final Entity par1Entity, final byte par2) {
+    }
+
+    @Override
+    public void updateAllPlayersSleepingFlag() {
+    }
+
+    @Override
+    public void setThunderStrength(final float p_147442_1_) {
+    }
+
+    @Override
+    public float getRainStrength(final float par1) {
+        return 0.0f;
+    }
+
+    @Override
+    public void setRainStrength(final float par1) {
+    }
+
+    @Override
+    public boolean isThundering() {
+        return false;
+    }
+
+    @Override
+    public boolean isRaining() {
+        return false;
+    }
+
+    @Override
+    public void setItemData(final String par1Str, final WorldSavedData par2WorldSavedData) {
+    }
+
+    @Override
+    public int getHeight() {
+        return 256;
+    }
+
+    @Override
+    public int getActualHeight() {
+        return 256;
+    }
+
+    @Override
+    public boolean extendedLevelsInChunkCache() {
+        return false;
+    }
+
+    @Override
+    public void makeFireworks(final double par1,
+                              final double par3,
+                              final double par5,
+                              final double par7,
+                              final double par9,
+                              final double par11,
+                              final NBTTagCompound par13nbtTagCompound) {
+    }
+
+    @Override
+    public void addTileEntity(final TileEntity entity) {
+    }
+
+    @Override
+    protected IChunkProvider createChunkProvider() {
+        return new FakeChunkProvider();
+    }
+
+    @Override
+    public Entity getEntityByID(final int i) {
+        return EntityList.createEntityByID(i, this);
+    }
+
+    @Override
+    public Chunk getChunkFromChunkCoords(final int par1, final int par2) {
+        return null;
+    }
+
+    @Override
+    public Block getBlock(final int x, final int y, final int z) {
+        return y > 63 ? Blocks.air : Blocks.grass;
+    }
+
+    protected static class FakeWorldProvider extends WorldProvider {
+
+        @Override
+        protected void generateLightBrightnessTable() {
+        }
+
+        @Override
+        public boolean isSurfaceWorld() {
+            return true;
+        }
+
+        @Override
+        public boolean canRespawnHere() {
+            return true;
+        }
+
+        @Override
+        public boolean isSkyColored() {
+            return true;
+        }
+
+        @Override
+        public int getAverageGroundLevel() {
+            return 63;
+        }
+
+        @Override
+        public boolean doesXZShowFog(final int par1, final int par2) {
+            return false;
+        }
+
+        @Override
+        public String getDimensionName() {
+            return "";
+        }
+
+        @Override
+        public String getInternalNameSuffix() {
+            return null;
+        }
+
+        @Override
+        public BlockPos getSpawnCoordinate() {
+            return new BlockPos(0, 64, 0);
+        }
+
+        @Override
+        public boolean canCoordinateBeSpawn(final int par1, final int par2) {
+            return true;
+        }
+
+    }
+
+    protected static class FakeSaveHandler implements ISaveHandler {
+
+        @Override
+        public WorldInfo loadWorldInfo() {
+            return null;
+        }
+
+        @Override
+        public void checkSessionLock() {
+        }
+
+        @Override
+        public IChunkLoader getChunkLoader(final WorldProvider var1) {
+            return null;
+        }
+
+        @Override
+        public void saveWorldInfoWithPlayer(final WorldInfo var1, final NBTTagCompound var2) {
+        }
+
+        @Override
+        public void saveWorldInfo(final WorldInfo var1) {
+        }
+
+        @Override
+        public IPlayerFileData getPlayerNBTManager() {
+            return null;
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public File getWorldDirectory() {
+            return null;
+        }
+
+        @Override
+        public File getMapFileFromName(final String var1) {
+            return null;
+        }
+
+        @Override
+        public String getWorldDirectoryName() {
+            return null;
+        }
+
+    }
+
+    public static class FakeChunkProvider implements IChunkProvider {
+
+        @Override
+        public boolean chunkExists(final int var1, final int var2) {
+            return false;
+        }
+
+        @Override
+        public Chunk provideChunk(final int var1, final int var2) {
+            return null;
+        }
+
+        @Override
+        public Chunk provideChunk(BlockPos blockPosIn) {
+            return null;
+        }
+
+        @Override
+        public void populate(final IChunkProvider var1, final int var2, final int var3) {
+        }
+
+        @Override
+        public boolean func_177460_a(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_) {
+            return false;
+        }
+
+        @Override
+        public boolean saveChunks(final boolean var1, final IProgressUpdate var2) {
+            return false;
+        }
+
+        @Override
+        public boolean unloadQueuedChunks() {
+            return false;
+        }
+
+        @Override
+        public boolean canSave() {
+            return false;
+        }
+
+        @Override
+        public String makeString() {
+            return null;
+        }
+
+        @Override
+        public List<BiomeGenBase.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos) {
+            return null;
+        }
+
+        @Override
+        public BlockPos getStrongholdGen(World worldIn, String structureName, BlockPos position) {
+            return null;
+        }
+
+        @Override
+        public int getLoadedChunkCount() {
+            return 0;
+        }
+
+        @Override
+        public void recreateStructures(Chunk p_180514_1_, int p_180514_2_, int p_180514_3_) {
+        }
+
+        @Override
+        public void saveExtraData() {
+        }
+
+    }
 
-   public void markBlocksDirtyVertical(int var1, int var2, int var3, int var4) {
-   }
-
-   public void markBlockRangeForRenderUpdate(int var1, int var2, int var3, int var4, int var5, int var6) {
-   }
-
-   protected boolean isChunkLoaded(int var1, int var2, boolean var3) {
-      return true;
-   }
-
-   public float getLightBrightness(BlockPos var1) {
-      return 14.0F;
-   }
-
-   public boolean isDaytime() {
-      return true;
-   }
-
-   public MovingObjectPosition rayTraceBlocks(Vec3 var1, Vec3 var2) {
-      return null;
-   }
-
-   public MovingObjectPosition rayTraceBlocks(Vec3 var1, Vec3 var2, boolean var3) {
-      return null;
-   }
-
-   public MovingObjectPosition rayTraceBlocks(Vec3 var1, Vec3 var2, boolean var3, boolean var4, boolean var5) {
-      return null;
-   }
-
-   public void playSoundAtEntity(Entity var1, String var2, float var3, float var4) {
-   }
-
-   public void playSoundToNearExcept(EntityPlayer var1, String var2, float var3, float var4) {
-   }
-
-   public void playSoundEffect(double var1, double var3, double var5, String var7, float var8, float var9) {
-   }
-
-   public void playSound(double var1, double var3, double var5, String var7, float var8, float var9, boolean var10) {
-   }
-
-   public boolean addWeatherEffect(Entity var1) {
-      return false;
-   }
-
-   public boolean spawnEntityInWorld(Entity var1) {
-      return false;
-   }
-
-   public void onEntityAdded(Entity var1) {
-   }
-
-   public void onEntityRemoved(Entity var1) {
-   }
-
-   public void removeEntity(Entity var1) {
-   }
-
-   public void removePlayerEntityDangerously(Entity var1) {
-   }
-
-   public int calculateSkylightSubtracted(float var1) {
-      return 6;
-   }
-
-   public void removeWorldAccess(IWorldAccess var1) {
-   }
-
-   public void updateEntities() {
-   }
-
-   public void updateEntity(Entity var1) {
-   }
-
-   public void updateEntityWithOptionalForce(Entity var1, boolean var2) {
-   }
-
-   public boolean checkNoEntityCollision(AxisAlignedBB var1) {
-      return true;
-   }
-
-   public boolean checkNoEntityCollision(AxisAlignedBB var1, Entity var2) {
-      return true;
-   }
-
-   public boolean checkBlockCollision(AxisAlignedBB var1) {
-      return false;
-   }
-
-   public boolean isAnyLiquid(AxisAlignedBB var1) {
-      return false;
-   }
-
-   public boolean handleMaterialAcceleration(AxisAlignedBB var1, Material var2, Entity var3) {
-      return false;
-   }
-
-   public boolean isMaterialInBB(AxisAlignedBB var1, Material var2) {
-      return false;
-   }
-
-   public boolean isAABBInMaterial(AxisAlignedBB var1, Material var2) {
-      return false;
-   }
-
-   public String getDebugLoadedEntities() {
-      return "";
-   }
-
-   public String getProviderName() {
-      return "";
-   }
-
-   public void markTileEntityForRemoval(TileEntity var1) {
-   }
-
-   public void tick() {
-   }
-
-   protected void updateWeather() {
-   }
-
-   protected int getRenderDistanceChunks() {
-      return 0;
-   }
-
-   public void tickUpdates(boolean var1) {
-   }
-
-   public List getPendingBlockUpdates(Chunk var1, boolean var2) {
-      return null;
-   }
-
-   public Entity findNearestEntityWithinAABB(Class var1, AxisAlignedBB var2, Entity var3) {
-      return null;
-   }
-
-   public int countEntities(Class var1) {
-      return 0;
-   }
-
-   public void checkSessionLock() {
-   }
-
-   public long getSeed() {
-      return 1L;
-   }
-
-   public long getTotalWorldTime() {
-      return 1L;
-   }
-
-   public long getWorldTime() {
-      return 1L;
-   }
-
-   public void setWorldTime(long var1) {
-   }
-
-   public BlockPos getSpawnPoint() {
-      return new BlockPos(0, 64, 0);
-   }
-
-   public void joinEntityInSurroundings(Entity var1) {
-   }
-
-   public void setEntityState(Entity var1, byte var2) {
-   }
-
-   public void updateAllPlayersSleepingFlag() {
-   }
-
-   public void setThunderStrength(float var1) {
-   }
-
-   public float getRainStrength(float var1) {
-      return 0.0F;
-   }
-
-   public void setRainStrength(float var1) {
-   }
-
-   public boolean isThundering() {
-      return false;
-   }
-
-   public boolean isRaining() {
-      return false;
-   }
-
-   public void setItemData(String var1, WorldSavedData var2) {
-   }
-
-   public int getHeight() {
-      return 256;
-   }
-
-   public int getActualHeight() {
-      return 256;
-   }
-
-   public boolean extendedLevelsInChunkCache() {
-      return false;
-   }
-
-   public void makeFireworks(double var1, double var3, double var5, double var7, double var9, double var11, NBTTagCompound var13) {
-   }
-
-   public void addTileEntity(TileEntity var1) {
-   }
-
-   protected IChunkProvider createChunkProvider() {
-      return new FakeWorld$FakeChunkProvider();
-   }
-
-   public Entity getEntityByID(int var1) {
-      return EntityList.createEntityByID(var1, this);
-   }
-
-   public Chunk getChunkFromChunkCoords(int var1, int var2) {
-      return null;
-   }
-
-   public Block getBlock(int var1, int var2, int var3) {
-      return (Block)(var2 > 63?Blocks.air:Blocks.grass);
-   }
-
-   public static void b(String[] var0) {
-      O = var0;
-   }
-
-   public static String[] b() {
-      return O;
-   }
-
-   static {
-      if(b() != null) {
-         b(new String[3]);
-      }
-
-   }
 }

@@ -1,6 +1,5 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.Packet;
@@ -8,37 +7,48 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.world.World;
 
-public class S49PacketUpdateEntityNBT implements Packet {
-   private int entityId;
-   private NBTTagCompound tagCompound;
+import java.io.IOException;
 
-   public S49PacketUpdateEntityNBT() {
-   }
+public class S49PacketUpdateEntityNBT implements Packet<INetHandlerPlayClient> {
+    private int entityId;
+    private NBTTagCompound tagCompound;
 
-   public S49PacketUpdateEntityNBT(int var1, NBTTagCompound var2) {
-      this.entityId = var1;
-      this.tagCompound = var2;
-   }
+    public S49PacketUpdateEntityNBT() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readVarIntFromBuffer();
-      this.tagCompound = var1.readNBTTagCompoundFromBuffer();
-   }
+    public S49PacketUpdateEntityNBT(int entityIdIn, NBTTagCompound tagCompoundIn) {
+        this.entityId = entityIdIn;
+        this.tagCompound = tagCompoundIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityId);
-      var1.writeNBTTagCompoundToBuffer(this.tagCompound);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.tagCompound = buf.readNBTTagCompoundFromBuffer();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEntityNBT(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeNBTTagCompoundToBuffer(this.tagCompound);
+    }
 
-   public NBTTagCompound getTagCompound() {
-      return this.tagCompound;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEntityNBT(this);
+    }
 
-   public Entity getEntity(World var1) {
-      return var1.getEntityByID(this.entityId);
-   }
+    public NBTTagCompound getTagCompound() {
+        return this.tagCompound;
+    }
+
+    public Entity getEntity(World worldIn) {
+        return worldIn.getEntityByID(this.entityId);
+    }
 }

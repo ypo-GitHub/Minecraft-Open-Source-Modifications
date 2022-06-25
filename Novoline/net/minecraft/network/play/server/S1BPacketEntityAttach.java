@@ -1,62 +1,73 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S1BPacketEntityAttach implements Packet {
-   private int leash;
-   private int entityId;
-   private int vehicleEntityId;
+import java.io.IOException;
 
-   public S1BPacketEntityAttach() {
-   }
+public class S1BPacketEntityAttach implements Packet<INetHandlerPlayClient> {
 
-   public S1BPacketEntityAttach(int var1, Entity var2, Entity var3) {
-      this.leash = var1;
-      this.entityId = var2.getEntityID();
-      this.vehicleEntityId = var3.getEntityID();
-   }
+    private int leash;
+    private int entityId;
+    private int vehicleEntityId;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readInt();
-      this.vehicleEntityId = var1.readInt();
-      this.leash = var1.readUnsignedByte();
-   }
+    public S1BPacketEntityAttach() {
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeInt(this.entityId);
-      var1.writeInt(this.vehicleEntityId);
-      var1.writeByte(this.leash);
-   }
+    public S1BPacketEntityAttach(int leashIn, Entity entityIn, Entity vehicle) {
+        this.leash = leashIn;
+        this.entityId = entityIn.getEntityID();
+        this.vehicleEntityId = vehicle != null ? vehicle.getEntityID() : -1;
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEntityAttach(this);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readInt();
+        this.vehicleEntityId = buf.readInt();
+        this.leash = buf.readUnsignedByte();
+    }
 
-   public int getLeash() {
-      return this.leash;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeInt(this.entityId);
+        buf.writeInt(this.vehicleEntityId);
+        buf.writeByte(this.leash);
+    }
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEntityAttach(this);
+    }
 
-   public int getVehicleEntityId() {
-      return this.vehicleEntityId;
-   }
+    public int getLeash() {
+        return this.leash;
+    }
 
-   public void setLeash(int var1) {
-      this.leash = var1;
-   }
+    public int getEntityId() {
+        return this.entityId;
+    }
 
-   public void setEntityId(int var1) {
-      this.entityId = var1;
-   }
+    public int getVehicleEntityId() {
+        return this.vehicleEntityId;
+    }
 
-   public void setVehicleEntityId(int var1) {
-      this.vehicleEntityId = var1;
-   }
+    public void setLeash(int leash) {
+        this.leash = leash;
+    }
+
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
+
+    public void setVehicleEntityId(int vehicleEntityId) {
+        this.vehicleEntityId = vehicleEntityId;
+    }
 }

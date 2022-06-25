@@ -1,19 +1,6 @@
 package viaversion.viaversion.boss;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import net.aRY;
-import net.acE;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.boss.BossBar;
@@ -21,240 +8,266 @@ import viaversion.viaversion.api.boss.BossColor;
 import viaversion.viaversion.api.boss.BossFlag;
 import viaversion.viaversion.api.boss.BossStyle;
 import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.boss.CommonBoss$UpdateAction;
+import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_9to1_8.Protocol1_9To1_8;
 
-public abstract class CommonBoss extends BossBar {
-   private final UUID uuid;
-   private final Set connections;
-   private final Set flags;
-   private String title;
-   private float health;
-   private BossColor color;
-   private BossStyle style;
-   private boolean visible;
-   private static acE[] c;
+import java.util.*;
+import java.util.stream.Collectors;
 
-   public CommonBoss(String var1, float var2, BossColor var3, BossStyle var4) {
-      d();
-      super();
-      Preconditions.checkNotNull(var1, "Title cannot be null");
-      Preconditions.checkArgument(var2 >= 0.0F && var2 <= 1.0F, "Health must be between 0 and 1");
-      this.uuid = UUID.randomUUID();
-      this.title = var1;
-      this.health = var2;
-      this.color = var3 == null?BossColor.PURPLE:var3;
-      this.style = var4 == null?BossStyle.SOLID:var4;
-      this.connections = Collections.newSetFromMap(new WeakHashMap());
-      this.flags = new HashSet();
-      this.visible = true;
-   }
+public abstract class CommonBoss<T> extends BossBar<T> {
+    private final UUID uuid;
+    private final Set<UserConnection> connections;
+    private final Set<BossFlag> flags;
+    private String title;
+    private float health;
+    private BossColor color;
+    private BossStyle style;
+    private boolean visible;
 
-   public BossBar setTitle(String var1) {
-      Preconditions.checkNotNull(var1);
-      this.title = var1;
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_TITLE);
-      return this;
-   }
+    public CommonBoss(String title, float health, BossColor color, BossStyle style) {
+        Preconditions.checkNotNull(title, "Title cannot be null");
+        Preconditions.checkArgument((health >= 0 && health <= 1), "Health must be between 0 and 1");
 
-   public BossBar setHealth(float var1) {
-      acE[] var2 = d();
-      Preconditions.checkArgument(var1 >= 0.0F && var1 <= 1.0F, "Health must be between 0 and 1");
-      this.health = var1;
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_HEALTH);
-      if(acE.b() == null) {
-         a(new acE[5]);
-      }
+        this.uuid = UUID.randomUUID();
+        this.title = title;
+        this.health = health;
+        this.color = color == null ? BossColor.PURPLE : color;
+        this.style = style == null ? BossStyle.SOLID : style;
+        this.connections = Collections.newSetFromMap(new WeakHashMap<>());
+        this.flags = new HashSet<>();
+        visible = true;
+    }
 
-      return this;
-   }
+    @Override
+    public BossBar setTitle(String title) {
+        Preconditions.checkNotNull(title);
+        this.title = title;
+        sendPacket(UpdateAction.UPDATE_TITLE);
+        return this;
+    }
 
-   public BossColor getColor() {
-      return this.color;
-   }
+    @Override
+    public BossBar setHealth(float health) {
+        Preconditions.checkArgument((health >= 0 && health <= 1), "Health must be between 0 and 1");
+        this.health = health;
+        sendPacket(UpdateAction.UPDATE_HEALTH);
+        return this;
+    }
 
-   public BossBar setColor(BossColor var1) {
-      Preconditions.checkNotNull(var1);
-      this.color = var1;
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_STYLE);
-      return this;
-   }
+    @Override
+    public BossColor getColor() {
+        return color;
+    }
 
-   public BossBar setStyle(BossStyle var1) {
-      Preconditions.checkNotNull(var1);
-      this.style = var1;
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_STYLE);
-      return this;
-   }
+    @Override
+    public BossBar setColor(BossColor color) {
+        Preconditions.checkNotNull(color);
+        this.color = color;
+        sendPacket(UpdateAction.UPDATE_STYLE);
+        return this;
+    }
 
-   public BossBar b(UUID var1) {
-      return this.addConnection(Via.getManager().getConnection(var1));
-   }
+    @Override
+    public BossBar setStyle(BossStyle style) {
+        Preconditions.checkNotNull(style);
+        this.style = style;
+        sendPacket(UpdateAction.UPDATE_STYLE);
+        return this;
+    }
 
-   public BossBar addConnection(UserConnection var1) {
-      acE[] var2 = d();
-      if(this.connections.add(var1) && this.visible) {
-         this.sendPacketConnection(var1, this.getPacket(CommonBoss$UpdateAction.ADD, var1));
-      }
+    @Override
+    public BossBar addPlayer(UUID player) {
+        return addConnection(Via.getManager().getConnection(player));
+    }
 
-      return this;
-   }
+    @Override
+    public BossBar addConnection(UserConnection conn) {
+        if (connections.add(conn) && visible) {
+            sendPacketConnection(conn, getPacket(UpdateAction.ADD, conn));
+        }
+        return this;
+    }
 
-   public BossBar a(UUID var1) {
-      return this.removeConnection(Via.getManager().getConnection(var1));
-   }
+    @Override
+    public BossBar removePlayer(UUID uuid) {
+        return removeConnection(Via.getManager().getConnection(uuid));
+    }
 
-   public BossBar removeConnection(UserConnection var1) {
-      acE[] var2 = d();
-      if(this.connections.remove(var1)) {
-         this.sendPacketConnection(var1, this.getPacket(CommonBoss$UpdateAction.REMOVE, var1));
-      }
+    @Override
+    public BossBar removeConnection(UserConnection conn) {
+        if (connections.remove(conn)) {
+            sendPacketConnection(conn, getPacket(UpdateAction.REMOVE, conn));
+        }
+        return this;
+    }
 
-      return this;
-   }
+    @Override
+    public BossBar addFlag(BossFlag flag) {
+        Preconditions.checkNotNull(flag);
+        if (!hasFlag(flag))
+            flags.add(flag);
+        sendPacket(UpdateAction.UPDATE_FLAGS);
+        return this;
+    }
 
-   public BossBar addFlag(BossFlag var1) {
-      d();
-      Preconditions.checkNotNull(var1);
-      if(!this.hasFlag(var1)) {
-         this.flags.add(var1);
-      }
+    @Override
+    public BossBar removeFlag(BossFlag flag) {
+        Preconditions.checkNotNull(flag);
+        if (hasFlag(flag))
+            flags.remove(flag);
+        sendPacket(UpdateAction.UPDATE_FLAGS);
+        return this;
+    }
 
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_FLAGS);
-      return this;
-   }
+    @Override
+    public boolean hasFlag(BossFlag flag) {
+        Preconditions.checkNotNull(flag);
+        return flags.contains(flag);
+    }
 
-   public BossBar removeFlag(BossFlag var1) {
-      d();
-      Preconditions.checkNotNull(var1);
-      if(this.hasFlag(var1)) {
-         this.flags.remove(var1);
-      }
+    @Override
+    public Set<UUID> getPlayers() {
+        return connections.stream().map(conn -> Via.getManager().getConnectedClientId(conn)).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
 
-      this.sendPacket(CommonBoss$UpdateAction.UPDATE_FLAGS);
-      return this;
-   }
+    @Override
+    public Set<UserConnection> getConnections() {
+        return Collections.unmodifiableSet(connections);
+    }
 
-   public boolean hasFlag(BossFlag var1) {
-      Preconditions.checkNotNull(var1);
-      return this.flags.contains(var1);
-   }
+    @Override
+    public BossBar show() {
+        setVisible(true);
+        return this;
+    }
 
-   public Set getPlayers() {
-      return (Set)this.connections.stream().map(CommonBoss::lambda$getPlayers$0).filter(Objects::nonNull).collect(Collectors.toSet());
-   }
+    @Override
+    public BossBar hide() {
+        setVisible(false);
+        return this;
+    }
 
-   public Set getConnections() {
-      return Collections.unmodifiableSet(this.connections);
-   }
+    @Override
+    public boolean isVisible() {
+        return visible;
+    }
 
-   public BossBar show() {
-      this.setVisible(true);
-      return this;
-   }
+    private void setVisible(boolean value) {
+        if (visible != value) {
+            visible = value;
+            sendPacket(value ? UpdateAction.ADD : UpdateAction.REMOVE);
+        }
+    }
 
-   public BossBar hide() {
-      this.setVisible(false);
-      return this;
-   }
+    @Override
+    public UUID getId() {
+        return uuid;
+    }
 
-   public boolean isVisible() {
-      return this.visible;
-   }
+    public UUID getUuid() {
+        return uuid;
+    }
 
-   private void setVisible(boolean var1) {
-      acE[] var2 = d();
-      if(this.visible != var1) {
-         this.visible = var1;
-         this.sendPacket(CommonBoss$UpdateAction.ADD);
-      }
+    @Override
+    public String getTitle() {
+        return title;
+    }
 
-   }
+    @Override
+    public float getHealth() {
+        return health;
+    }
 
-   public UUID getId() {
-      return this.uuid;
-   }
+    @Override
+    public BossStyle getStyle() {
+        return style;
+    }
 
-   public UUID getUuid() {
-      return this.uuid;
-   }
+    public Set<BossFlag> getFlags() {
+        return flags;
+    }
 
-   public String getTitle() {
-      return this.title;
-   }
+    private void sendPacket(UpdateAction action) {
+        for (UserConnection conn : new ArrayList<>(connections)) {
+            PacketWrapper wrapper = getPacket(action, conn);
+            sendPacketConnection(conn, wrapper);
+        }
+    }
 
-   public float getHealth() {
-      return this.health;
-   }
+    private void sendPacketConnection(UserConnection conn, PacketWrapper wrapper) {
+        if (conn.getProtocolInfo() == null || !conn.getProtocolInfo().getPipeline().contains(Protocol1_9To1_8.class)) {
+            connections.remove(conn);
+            return;
+        }
+        try {
+            wrapper.send(Protocol1_9To1_8.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-   public BossStyle getStyle() {
-      return this.style;
-   }
+    private PacketWrapper getPacket(UpdateAction action, UserConnection connection) {
+        try {
+            PacketWrapper wrapper = new PacketWrapper(0x0C, null, connection); // TODO don't use fixed packet ids for future support
+            wrapper.write(Type.UUID, uuid);
+            wrapper.write(Type.VAR_INT, action.getId());
+            switch (action) {
+                case ADD:
+                    Protocol1_9To1_8.FIX_JSON.write(wrapper, title);
+                    wrapper.write(Type.FLOAT, health);
+                    wrapper.write(Type.VAR_INT, color.getId());
+                    wrapper.write(Type.VAR_INT, style.getId());
+                    wrapper.write(Type.BYTE, (byte) flagToBytes());
+                    break;
+                case REMOVE:
+                    break;
+                case UPDATE_HEALTH:
+                    wrapper.write(Type.FLOAT, health);
+                    break;
+                case UPDATE_TITLE:
+                    Protocol1_9To1_8.FIX_JSON.write(wrapper, title);
+                    break;
+                case UPDATE_STYLE:
+                    wrapper.write(Type.VAR_INT, color.getId());
+                    wrapper.write(Type.VAR_INT, style.getId());
+                    break;
+                case UPDATE_FLAGS:
+                    wrapper.write(Type.BYTE, (byte) flagToBytes());
+                    break;
+            }
 
-   public Set getFlags() {
-      return this.flags;
-   }
+            return wrapper;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-   private void sendPacket(CommonBoss$UpdateAction var1) {
-      d();
-      Iterator var3 = (new ArrayList(this.connections)).iterator();
-      if(var3.hasNext()) {
-         UserConnection var4 = (UserConnection)var3.next();
-         PacketWrapper var5 = this.getPacket(var1, var4);
-         this.sendPacketConnection(var4, var5);
-      }
+    private int flagToBytes() {
+        int bitmask = 0;
+        for (BossFlag flag : flags)
+            bitmask |= flag.getId();
+        return bitmask;
+    }
 
-   }
+    private enum UpdateAction {
 
-   private void sendPacketConnection(UserConnection var1, PacketWrapper var2) {
-      acE[] var3 = d();
-      if(var1.getProtocolInfo() != null && var1.getProtocolInfo().getPipeline().contains(aRY.class)) {
-         PacketWrapper var10000 = var2;
-         Class var10001 = aRY.class;
+        ADD(0),
+        REMOVE(1),
+        UPDATE_HEALTH(2),
+        UPDATE_TITLE(3),
+        UPDATE_STYLE(4),
+        UPDATE_FLAGS(5);
 
-         try {
-            var10000.send(var10001);
-         } catch (Exception var5) {
-            var5.printStackTrace();
-         }
+        private final int id;
 
-      } else {
-         this.connections.remove(var1);
-      }
-   }
+        UpdateAction(int id) {
+            this.id = id;
+        }
 
-   private PacketWrapper getPacket(CommonBoss$UpdateAction param1, UserConnection param2) {
-      // $FF: Couldn't be decompiled
-   }
-
-   private int flagToBytes() {
-      d();
-      int var2 = 0;
-      Iterator var3 = this.flags.iterator();
-      if(var3.hasNext()) {
-         BossFlag var4 = (BossFlag)var3.next();
-         var2 |= var4.getId();
-      }
-
-      return var2;
-   }
-
-   private static UUID lambda$getPlayers$0(UserConnection var0) {
-      return Via.getManager().getConnectedClientId(var0);
-   }
-
-   public static void a(acE[] var0) {
-      c = var0;
-   }
-
-   public static acE[] d() {
-      return c;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
-
-   static {
-      a(new acE[2]);
-   }
+        public int getId() {
+            return id;
+        }
+    }
 }

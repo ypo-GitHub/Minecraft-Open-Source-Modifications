@@ -1,9 +1,5 @@
 package net.minecraft.command;
 
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.JsonToNBT;
@@ -11,58 +7,68 @@ import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class CommandEntityData extends CommandBase {
-   public String getCommandName() {
-      return "entitydata";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "entitydata";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.entitydata.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.entitydata.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 2) {
-         throw new WrongUsageException("commands.entitydata.usage", new Object[0]);
-      } else {
-         Entity var3 = func_175768_b(var1, var2[0]);
-         if(var3 instanceof EntityPlayer) {
-            throw new CommandException("commands.entitydata.noPlayers", new Object[]{var3.getDisplayName()});
-         } else {
-            NBTTagCompound var4 = new NBTTagCompound();
-            var3.writeToNBT(var4);
-            NBTTagCompound var5 = (NBTTagCompound)var4.copy();
-            ICommandSender var10000 = var1;
-            String[] var10001 = var2;
-            byte var10002 = 1;
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 2) {
+            throw new WrongUsageException("commands.entitydata.usage", new Object[0]);
+        } else {
+            Entity entity = func_175768_b(sender, args[0]);
 
-            NBTTagCompound var6;
-            try {
-               var6 = JsonToNBT.getTagFromJson(getChatComponentFromNthArg(var10000, var10001, var10002).getUnformattedText());
-            } catch (NBTException var8) {
-               throw new CommandException("commands.entitydata.tagError", new Object[]{var8.getMessage()});
-            }
-
-            var6.removeTag("UUIDMost");
-            var6.removeTag("UUIDLeast");
-            var4.merge(var6);
-            if(var4.equals(var5)) {
-               throw new CommandException("commands.entitydata.failed", new Object[]{var4.toString()});
+            if (entity instanceof EntityPlayer) {
+                throw new CommandException("commands.entitydata.noPlayers", new Object[]{entity.getDisplayName()});
             } else {
-               var3.readFromNBT(var4);
-               notifyOperators(var1, this, "commands.entitydata.success", new Object[]{var4.toString()});
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+                entity.writeToNBT(nbttagcompound);
+                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttagcompound.copy();
+                NBTTagCompound nbttagcompound2;
+
+                try {
+                    nbttagcompound2 = JsonToNBT.getTagFromJson(getChatComponentFromNthArg(sender, args, 1).getUnformattedText());
+                } catch (NBTException nbtexception) {
+                    throw new CommandException("commands.entitydata.tagError", new Object[]{nbtexception.getMessage()});
+                }
+
+                nbttagcompound2.removeTag("UUIDMost");
+                nbttagcompound2.removeTag("UUIDLeast");
+                nbttagcompound.merge(nbttagcompound2);
+
+                if (nbttagcompound.equals(nbttagcompound1)) {
+                    throw new CommandException("commands.entitydata.failed", new Object[]{nbttagcompound.toString()});
+                } else {
+                    entity.readFromNBT(nbttagcompound);
+                    notifyOperators(sender, this, "commands.entitydata.success", new Object[]{nbttagcompound.toString()});
+                }
             }
-         }
-      }
-   }
+        }
+    }
 
-   public boolean isUsernameIndex(String[] var1, int var2) {
-      return true;
-   }
-
-   private static NBTException a(NBTException var0) {
-      return var0;
-   }
+    /**
+     * Return whether the specified command parameter index is a username parameter.
+     */
+    public boolean isUsernameIndex(String[] args, int index) {
+        return index == 0;
+    }
 }

@@ -1,14 +1,21 @@
 package cc.novoline.gui.group2;
 
 import cc.novoline.gui.Element;
-import java.awt.Color;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
+import java.awt.*;
+
+/**
+ * @author xDelsy
+ */
 public interface Group extends Element {
-   int getColor();
 
-   void setColor(int var1);
+    int getColor();
 
-   default void setColor(Color var1) {
-      this.setColor(var1.getRGB());
-   }
+    void setColor(int color);
+
+    default void setColor(@NonNull Color color) {
+        setColor(color.getRGB());
+    }
+
 }

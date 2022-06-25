@@ -1,98 +1,122 @@
 package net.minecraft.entity;
 
-import java.util.Collection;
-import java.util.UUID;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.ai.attributes.BaseAttributeMap;
-import net.minecraft.entity.ai.attributes.IAttribute;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
-import net.minecraft.entity.ai.attributes.RangedAttribute;
+import net.minecraft.entity.ai.attributes.*;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
+import java.util.UUID;
+
 public final class SharedMonsterAttributes {
-   private static final Logger LOGGER = LogManager.getLogger();
-   public static final IAttribute maxHealth = (new RangedAttribute((IAttribute)null, "generic.maxHealth", 20.0D, 0.0D, 1024.0D)).setDescription("Max Health").setShouldWatch(true);
-   public static final IAttribute followRange = (new RangedAttribute((IAttribute)null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).setDescription("Follow Range");
-   public static final IAttribute knockbackResistance = (new RangedAttribute((IAttribute)null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).setDescription("Knockback Resistance");
-   public static final IAttribute movementSpeed = (new RangedAttribute((IAttribute)null, "generic.movementSpeed", 0.699999988079071D, 0.0D, 1024.0D)).setDescription("Movement Speed").setShouldWatch(true);
-   public static final IAttribute attackDamage = new RangedAttribute((IAttribute)null, "generic.attackDamage", 2.0D, 0.0D, 2048.0D);
 
-   public static NBTTagList writeBaseAttributeMapToNBT(BaseAttributeMap var0) {
-      NBTTagList var1 = new NBTTagList();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-      for(IAttributeInstance var3 : var0.getAllAttributes()) {
-         var1.appendTag(writeAttributeInstanceToNBT(var3));
-      }
+    public static final IAttribute maxHealth = new RangedAttribute(null, "generic.maxHealth", 20.0D, 0.0D, 1024.0D).setDescription("Max Health").setShouldWatch(true);
+    public static final IAttribute followRange = new RangedAttribute(null, "generic.followRange", 32.0D, 0.0D, 2048.0D).setDescription("Follow Range");
+    public static final IAttribute knockbackResistance = new RangedAttribute(null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D).setDescription("Knockback Resistance");
+    public static final IAttribute movementSpeed = new RangedAttribute(null, "generic.movementSpeed", 0.699999988079071D, 0.0D, 1024.0D).setDescription("Movement Speed").setShouldWatch(true);
+    public static final IAttribute attackDamage = new RangedAttribute(null, "generic.attackDamage", 2.0D, 0.0D, 2048.0D);
 
-      return var1;
-   }
+    /**
+     * Creates an NBTTagList from a BaseAttributeMap, including all its AttributeInstances
+     */
+    public static NBTTagList writeBaseAttributeMapToNBT(BaseAttributeMap p_111257_0_) {
+        final NBTTagList nbttaglist = new NBTTagList();
 
-   private static NBTTagCompound writeAttributeInstanceToNBT(IAttributeInstance var0) {
-      NBTTagCompound var1 = new NBTTagCompound();
-      IAttribute var2 = var0.getAttribute();
-      var1.setString("Name", var2.getAttributeUnlocalizedName());
-      var1.setDouble("Base", var0.getBaseValue());
-      Collection var3 = var0.func_111122_c();
-      if(!var3.isEmpty()) {
-         NBTTagList var4 = new NBTTagList();
+        for (IAttributeInstance iattributeinstance : p_111257_0_.getAllAttributes()) {
+            nbttaglist.appendTag(writeAttributeInstanceToNBT(iattributeinstance));
+        }
 
-         for(AttributeModifier var6 : var3) {
-            if(var6.isSaved()) {
-               var4.appendTag(writeAttributeModifierToNBT(var6));
+        return nbttaglist;
+    }
+
+    /**
+     * Creates an NBTTagCompound from an AttributeInstance, including its AttributeModifiers
+     */
+    private static NBTTagCompound writeAttributeInstanceToNBT(IAttributeInstance p_111261_0_) {
+        final NBTTagCompound nbttagcompound = new NBTTagCompound();
+        final IAttribute iattribute = p_111261_0_.getAttribute();
+        nbttagcompound.setString("Name", iattribute.getAttributeUnlocalizedName());
+        nbttagcompound.setDouble("Base", p_111261_0_.getBaseValue());
+        final Collection<AttributeModifier> collection = p_111261_0_.func_111122_c();
+
+        if (collection != null && !collection.isEmpty()) {
+            final NBTTagList nbttaglist = new NBTTagList();
+
+            for (AttributeModifier attributemodifier : collection) {
+                if (attributemodifier.isSaved()) {
+                    nbttaglist.appendTag(writeAttributeModifierToNBT(attributemodifier));
+                }
             }
-         }
 
-         var1.setTag("Modifiers", var4);
-      }
+            nbttagcompound.setTag("Modifiers", nbttaglist);
+        }
 
-      return var1;
-   }
+        return nbttagcompound;
+    }
 
-   private static NBTTagCompound writeAttributeModifierToNBT(AttributeModifier var0) {
-      NBTTagCompound var1 = new NBTTagCompound();
-      var1.setString("Name", var0.getName());
-      var1.setDouble("Amount", var0.getAmount());
-      var1.setInteger("Operation", var0.getOperation());
-      var1.setLong("UUIDMost", var0.getID().getMostSignificantBits());
-      var1.setLong("UUIDLeast", var0.getID().getLeastSignificantBits());
-      return var1;
-   }
+    /**
+     * Creates an NBTTagCompound from an AttributeModifier
+     */
+    private static NBTTagCompound writeAttributeModifierToNBT(AttributeModifier p_111262_0_) {
+        final NBTTagCompound nbttagcompound = new NBTTagCompound();
+        nbttagcompound.setString("Name", p_111262_0_.getName());
+        nbttagcompound.setDouble("Amount", p_111262_0_.getAmount());
+        nbttagcompound.setInteger("Operation", p_111262_0_.getOperation());
+        nbttagcompound.setLong("UUIDMost", p_111262_0_.getID().getMostSignificantBits());
+        nbttagcompound.setLong("UUIDLeast", p_111262_0_.getID().getLeastSignificantBits());
+        return nbttagcompound;
+    }
 
-   public static void a(BaseAttributeMap var0, NBTTagList var1) {
-      for(int var2 = 0; var2 < var1.tagCount(); ++var2) {
-         NBTTagCompound var3 = var1.getCompoundTagAt(var2);
-         IAttributeInstance var4 = var0.getAttributeInstanceByName(var3.getString("Name"));
-         applyModifiersToAttributeInstance(var4, var3);
-      }
+    public static void func_151475_a(BaseAttributeMap p_151475_0_, NBTTagList p_151475_1_) {
+        for (int i = 0; i < p_151475_1_.tagCount(); ++i) {
+            final NBTTagCompound nbttagcompound = p_151475_1_.getCompoundTagAt(i);
+            final IAttributeInstance iattributeinstance = p_151475_0_.getAttributeInstanceByName(nbttagcompound.getString("Name"));
 
-   }
+            if (iattributeinstance != null) {
+                applyModifiersToAttributeInstance(iattributeinstance, nbttagcompound);
+            } else {
+                LOGGER.warn("Ignoring unknown attribute '" + nbttagcompound.getString("Name") + "'");
+            }
+        }
+    }
 
-   private static void applyModifiersToAttributeInstance(IAttributeInstance var0, NBTTagCompound var1) {
-      var0.setBaseValue(var1.getDouble("Base"));
-      if(var1.hasKey("Modifiers", 9)) {
-         NBTTagList var2 = var1.getTagList("Modifiers", 10);
+    private static void applyModifiersToAttributeInstance(IAttributeInstance p_111258_0_, NBTTagCompound p_111258_1_) {
+        p_111258_0_.setBaseValue(p_111258_1_.getDouble("Base"));
 
-         for(int var3 = 0; var3 < var2.tagCount(); ++var3) {
-            AttributeModifier var4 = readAttributeModifierFromNBT(var2.getCompoundTagAt(var3));
-            AttributeModifier var5 = var0.getModifier(var4.getID());
-            var0.removeModifier(var5);
-            var0.applyModifier(var4);
-         }
-      }
+        if (p_111258_1_.hasKey("Modifiers", 9)) {
+            final NBTTagList nbttaglist = p_111258_1_.getTagList("Modifiers", 10);
 
-   }
+            for (int i = 0; i < nbttaglist.tagCount(); ++i) {
+                final AttributeModifier attributemodifier = readAttributeModifierFromNBT(nbttaglist.getCompoundTagAt(i));
 
-   public static AttributeModifier readAttributeModifierFromNBT(NBTTagCompound var0) {
-      UUID var1 = new UUID(var0.getLong("UUIDMost"), var0.getLong("UUIDLeast"));
+                if (attributemodifier != null) {
+                    final AttributeModifier attributemodifier1 = p_111258_0_.getModifier(attributemodifier.getID());
 
-      try {
-         return new AttributeModifier(var1, var0.getString("Name"), var0.getDouble("Amount"), var0.getInteger("Operation"));
-      } catch (Exception var3) {
-         LOGGER.warn("Unable to create attribute: " + var3.getMessage());
-         return null;
-      }
-   }
+                    if (attributemodifier1 != null) {
+                        p_111258_0_.removeModifier(attributemodifier1);
+                    }
+
+                    p_111258_0_.applyModifier(attributemodifier);
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates an AttributeModifier from an NBTTagCompound
+     */
+    public static AttributeModifier readAttributeModifierFromNBT(NBTTagCompound p_111259_0_) {
+        final UUID uuid = new UUID(p_111259_0_.getLong("UUIDMost"), p_111259_0_.getLong("UUIDLeast"));
+
+        try {
+            return new AttributeModifier(uuid, p_111259_0_.getString("Name"), p_111259_0_.getDouble("Amount"), p_111259_0_.getInteger("Operation"));
+        } catch (Exception exception) {
+            LOGGER.warn("Unable to create attribute: " + exception.getMessage());
+            return null;
+        }
+    }
+
 }

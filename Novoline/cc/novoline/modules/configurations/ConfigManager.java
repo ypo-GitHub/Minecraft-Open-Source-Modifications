@@ -1,12 +1,11 @@
 package cc.novoline.modules.configurations;
 
-import cc.novoline.Novoline;
 import cc.novoline.modules.ModuleArrayMap;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.configurations.ClientConfig;
-import cc.novoline.modules.configurations.ConfigManager$1;
+import cc.novoline.modules.configurations.annotation.DelsyConfig;
 import cc.novoline.modules.configurations.holder.CreatingModuleHolder;
 import cc.novoline.modules.configurations.holder.ModuleHolder;
+import cc.novoline.modules.configurations.property.Property;
 import cc.novoline.modules.configurations.property.mapper.PropertyMapperFactory;
 import cc.novoline.modules.exceptions.OutdatedConfigException;
 import cc.novoline.modules.exceptions.ReadConfigException;
@@ -16,320 +15,286 @@ import cc.novoline.modules.serializers.PropertySerializer;
 import cc.novoline.utils.java.Checks;
 import com.google.common.reflect.TypeToken;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.Ea;
-import net.J8;
-import net.X9;
-import net.a6t;
-import net.acE;
-import net.ahu;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
-import org.jetbrains.annotations.NotNull;
+
+import static cc.novoline.Novoline.getLogger;
+import static java.nio.file.Files.*;
+
 
 public final class ConfigManager {
-   private final ModuleManager moduleManager;
-   private final int configVersion;
-   private static ConfigurationOptions DEFAULT_OPTIONS;
-   private static final String a = ".novo";
-   private static int[] c;
 
-   public ConfigManager(@NotNull ModuleManager var1, int var2) {
-      this.moduleManager = var1;
-      this.configVersion = var2;
-   }
+    /* fields */
+    private final ModuleManager moduleManager;
+    private final int configVersion;
 
-   public void load(@NotNull String var1, boolean var2) throws IOException, X9 {
-      Path var3 = this.getConfigPath(var1);
-      this.load(var3, var2);
-   }
+    /* constructors */
+    public ConfigManager(@NotNull ModuleManager moduleManager, int configVersion) {
+        this.moduleManager = moduleManager;
+        this.configVersion = configVersion;
+    }
 
-   public void load(@NotNull Path var1, boolean var2) throws IOException, X9 {
-      int[] var3 = c();
-      if(Files.notExists(var1, new LinkOption[0])) {
-         throw new FileNotFoundException("file doesn\'t exist");
-      } else {
-         ConfigurationOptions var4 = this.defaultOptions();
-         HoconConfigurationLoader var5 = ((a6t)((a6t)HoconConfigurationLoader.b().setDefaultOptions(var4)).setPath(var1)).a();
-         HoconConfigurationLoader var10000 = var5;
-         ConfigurationOptions var10001 = var4;
+    /* methods */
+    public void load(@NotNull String name, boolean disable) throws IOException, ObjectMappingException {
+        final Path path = getConfigPath(name);
+        load(path, disable);
+    }
 
-         ConfigurationNode var6;
-         try {
-            var6 = var10000.load(var10001);
-         } catch (IOException var21) {
-            throw new ReadConfigException(var21);
-         }
+    public void load(@NotNull Path path, boolean disable) throws IOException, ObjectMappingException {
+        if (notExists(path)) {
+            throw new FileNotFoundException("file doesn't exist");
+        }
 
-         ClientConfig var7 = (ClientConfig)var6.getValue(TypeToken.of(ClientConfig.class));
-         if(var7 != null) {
-            if(var7.getConfigVersion() != this.configVersion) {
-               throw new OutdatedConfigException();
-            } else {
-               ModuleArrayMap var8 = this.moduleManager.getModuleManager();
-               ObjectIterator var9 = var8.values().iterator();
-               if(var9.hasNext()) {
-                  ModuleHolder var10 = (ModuleHolder)var9.next();
-                  var10.getModule().setEnabled(false);
-               }
+        final ConfigurationOptions options = defaultOptions();
+        final HoconConfigurationLoader loader = HoconConfigurationLoader.builder().setDefaultOptions(options).setPath(path).build();
+        final ConfigurationNode node;
 
-               ObjectIterator var24 = var7.getModules().entrySet().iterator();
-               if(var24.hasNext()) {
-                  Entry var11 = (Entry)var24.next();
-                  String var12 = (String)var11.getKey();
-                  ModuleHolder var13 = (ModuleHolder)var11.getValue();
-                  CreatingModuleHolder var23;
-                  if((var23 = (CreatingModuleHolder)var8.get(var12)) != null) {
-                     int var14 = 0;
-                     int var15 = 0;
-                     Iterator var16 = var23.getFields().entrySet().iterator();
-                     if(var16.hasNext()) {
-                        Entry var17 = (Entry)var16.next();
-                        String var18 = (String)var17.getKey();
-                        ahu var19 = (ahu)var17.getValue();
-                        ahu var27 = var19;
-                        ModuleHolder var28 = var13;
+        try {
+            node = loader.load(options);
+        } catch (IOException e) {
+            throw new ReadConfigException(e);
+        }
 
-                        try {
-                           var27.a(var28.getModule(), var23.getModule(), var2);
-                           ++var14;
-                        } catch (Throwable var22) {
-                           Novoline.getLogger().warn("An error occurred while updating property: value: " + var18 + ", module: " + var23.getName(), var22);
-                           ++var15;
-                        }
-                     }
-                  }
-               }
+        final ClientConfig value = node.getValue(TypeToken.of(ClientConfig.class));
 
+        if (value == null) {
+            return;
+        }
+
+        if (value.getConfigVersion() != this.configVersion) {
+            throw new OutdatedConfigException();
+        }
+
+        final ModuleArrayMap destModulesMap = this.moduleManager.getModuleManager();
+
+        if (disable) {
+            for (final ModuleHolder<?> moduleHolder : destModulesMap.values()) {
+                moduleHolder.getModule().setEnabled(false);
             }
-         }
-      }
-   }
+        }
 
-   public String saveToString(@NotNull String var1) throws IOException, X9 {
-      c();
-      Path var3 = this.getConfigPath(var1);
-      StringWriter var4 = new StringWriter();
-      ConfigurationOptions var5 = this.defaultOptions();
-      HoconConfigurationLoader var6 = ((a6t)((a6t)((a6t)HoconConfigurationLoader.b().setDefaultOptions(var5)).setPath(var3)).setSink(ConfigManager::lambda$saveToString$0)).a();
-      HoconConfigurationLoader var10000 = var6;
-      ConfigurationOptions var10001 = var5;
+        CreatingModuleHolder<?> destHolder;
 
-      ConfigurationNode var7;
-      try {
-         var7 = var10000.load(var10001);
-      } catch (IOException var9) {
-         throw new ReadConfigException(var9);
-      }
+        for (final Map.Entry<String, ModuleHolder<?>> moduleEntry : value.getModules().entrySet()) {
+            final String moduleName = moduleEntry.getKey();
+            final ModuleHolder<?> srcHolder = moduleEntry.getValue();
 
-      ClientConfig var8 = ClientConfig.of(this, var1);
-      var7.a(TypeToken.of(ClientConfig.class), var8);
-      var6.save(var7);
-      return var4.toString();
-   }
+            if ((destHolder = (CreatingModuleHolder<?>) destModulesMap.get(moduleName)) != null) {
+                int success = 0, error = 0;
 
-   public boolean save(@NotNull String var1) throws ReadConfigException, IOException, X9 {
-      c();
-      boolean var3 = false;
-      Path var4 = this.getConfigPath(var1);
-      if(Files.notExists(var4, new LinkOption[0])) {
-         Files.createFile(var4, new FileAttribute[0]);
-      }
+                for (final Map.Entry<String, CreatingModuleHolder.PropertyFieldData> propertyEntry : destHolder.getFields().entrySet()) {
+                    final String propertyName = propertyEntry.getKey();
+                    final CreatingModuleHolder.PropertyFieldData propertyFieldData = propertyEntry.getValue();
 
-      ConfigurationOptions var5 = this.defaultOptions();
-      HoconConfigurationLoader var6 = ((a6t)((a6t)HoconConfigurationLoader.b().setDefaultOptions(var5)).setPath(var4)).a();
-      HoconConfigurationLoader var10000 = var6;
-      ConfigurationOptions var10001 = var5;
+                    try {
+                        propertyFieldData.copyValue(srcHolder.getModule(), destHolder.getModule(), disable);
+                        // System.out.println("copied value " + propertyName + " - " + moduleName);
 
-      ConfigurationNode var7;
-      try {
-         var7 = var10000.load(var10001);
-      } catch (IOException var9) {
-         throw new ReadConfigException(var9);
-      }
+                        success++;
+                    } catch (Throwable t) {
+                        getLogger().warn("An error occurred while updating property: value: " + propertyName + ", module: " + destHolder.getName(), t);
+                        error++;
+                    }
+                }
 
-      ClientConfig var8 = ClientConfig.of(this, var1);
-      var7.a(TypeToken.of(ClientConfig.class), var8);
-      var6.save(var7);
-      if(acE.b() == null) {
-         b(new int[1]);
-      }
-
-      return true;
-   }
-
-   public boolean delete(@NotNull String var1) throws IOException {
-      c();
-      Path var3 = this.getConfigPath(var1);
-      if(Files.notExists(var3, new LinkOption[0])) {
-         throw new FileNotFoundException();
-      } else {
-         Files.deleteIfExists(var3);
-         return true;
-      }
-   }
-
-   @NotNull
-   public List getConfigs() {
-      Stream var1;
-      try {
-         var1 = Files.walk(this.getConfigsFolder(), new FileVisitOption[0]);
-      } catch (IOException var3) {
-         Novoline.getLogger().error("An I/O error occurred while getting contents of configs folder", var3);
-         return Collections.emptyList();
-      }
-
-      return (List)var1.filter(ConfigManager::lambda$getConfigs$1).map(Path::getFileName).map(Path::toString).filter(ConfigManager::lambda$getConfigs$2).map(ConfigManager::lambda$getConfigs$3).collect(Collectors.toCollection(ObjectArrayList::<init>));
-   }
-
-   @NotNull
-   public Path getConfigPath(@NotNull String var1) {
-      Checks.notBlank(var1, "name");
-      return this.getConfigsFolder().resolve(var1 + ".novo");
-   }
-
-   @NotNull
-   public ModuleManager getModuleManager() {
-      return this.moduleManager;
-   }
-
-   public int getConfigVersion() {
-      return this.configVersion;
-   }
-
-   @NotNull
-   public Path getConfigsFolder() {
-      c();
-      Path var2 = this.moduleManager.getNovoline().getDataFolder();
-      Path var3 = var2.resolve("configs");
-      if(Files.isRegularFile(var3, new LinkOption[0])) {
-         boolean var4 = false;
-         int var5 = 1;
-         if(var5 < Integer.MAX_VALUE) {
-            label57: {
-               try {
-                  Files.move(var3, var2.resolve("configs-" + var5), new CopyOption[0]);
-                  var4 = true;
-                  break label57;
-               } catch (FileAlreadyExistsException var8) {
-                  ;
-               } catch (IOException var9) {
-                  Novoline.getLogger().error("An I/O error occurred while creating configs folder", var9);
-               }
-
-               ++var5;
+				/*if(success + error > 0) {
+					getLogger().info("Loaded " + (success + error) + " properties for " + moduleName + " (" + success + " successes, " + error + " errors)");
+				}*/
             }
-         }
+        }
+    }
 
-         if(!var4) {
-            Novoline.getLogger().error("User created 2.147.483.648 configs-# files. Cannot create configs folder");
-         }
-      }
+    public String saveToString(@NotNull String name) throws IOException, ObjectMappingException {
+        final Path path = getConfigPath(name);
 
-      if(Files.notExists(var3, new LinkOption[0])) {
-         try {
-            Files.createDirectories(var3, new FileAttribute[0]);
-         } catch (IOException var7) {
-            Novoline.getLogger().error("An I/O error occurred while creating configs folder", var7);
-            var7.printStackTrace();
-         }
-      }
+        StringWriter config = new StringWriter();
 
-      return var3;
-   }
+        final ConfigurationOptions options = defaultOptions();
+        final HoconConfigurationLoader loader = HoconConfigurationLoader.builder().setDefaultOptions(options)
+                .setPath(path)
+                .setSink(() -> new BufferedWriter(config))
+                .build();
+        final ConfigurationNode node;
 
-   @NotNull
-   private ConfigurationOptions defaultOptions() {
-      int[] var1 = c();
-      if(DEFAULT_OPTIONS == null) {
-         ConfigurationOptions var2 = ConfigurationOptions.defaults().setObjectMapperFactory(new PropertyMapperFactory());
-         Ea var3 = TypeSerializers.b();
-         var3.a((TypeToken)(new ConfigManager$1(this)), new PropertySerializer());
-         var3.a((TypeToken)TypeToken.of(ModuleArrayMap.class), new ModuleMapSerializer(this.moduleManager));
-         var3.a((Predicate)(ConfigManager::lambda$defaultOptions$4), new ConfigSerializer(this.moduleManager));
-         var3 = TypeSerializers.a().a(var3);
-         var2 = var2.a(var3);
-         DEFAULT_OPTIONS = var2;
-         return var2;
-      } else {
-         return DEFAULT_OPTIONS;
-      }
-   }
+        try {
+            node = loader.load(options);
+        } catch (IOException e) {
+            throw new ReadConfigException(e);
+        }
 
-   public static String getExtension() {
-      return ".novo";
-   }
+        final ClientConfig value = ClientConfig.of(this, name);
+        node.setValue(TypeToken.of(ClientConfig.class), value);
 
-   private static boolean lambda$defaultOptions$4(TypeToken var0) {
-      c();
-      Class var2 = var0.getRawType();
+        loader.save(node);
+        return config.toString();
+    }
 
-      boolean var3;
-      while(true) {
-         if(!(var3 = var2.isAnnotationPresent(J8.class))) {
-            var2 = var2.getSuperclass();
-         }
+    public boolean save(@NotNull String name) throws ReadConfigException, IOException, ObjectMappingException {
+        boolean logged = false;
+        final Path path = getConfigPath(name);
 
-         if(var3 || var2 == null || var2.getSuperclass() == null) {
-            break;
-         }
-      }
+        if (notExists(path)) {
+            createFile(path);
+        }
 
-      return var3;
-   }
+        final ConfigurationOptions options = defaultOptions();
+        final HoconConfigurationLoader loader = HoconConfigurationLoader.builder().setDefaultOptions(options)
+                .setPath(path).build();
+        final ConfigurationNode node;
 
-   private static String lambda$getConfigs$3(String var0) {
-      return var0.substring(0, var0.length() - ".novo".length());
-   }
+        try {
+            node = loader.load(options);
+        } catch (IOException e) {
+            throw new ReadConfigException(e);
+        }
 
-   private static boolean lambda$getConfigs$2(String var0) {
-      return var0.endsWith(".novo");
-   }
+        final ClientConfig value = ClientConfig.of(this, name);
+        node.setValue(TypeToken.of(ClientConfig.class), value);
 
-   private static boolean lambda$getConfigs$1(Path var0) {
-      return Files.isRegularFile(var0, new LinkOption[0]);
-   }
+        loader.save(node);
+        return true;
+    }
 
-   private static BufferedWriter lambda$saveToString$0(StringWriter var0) throws Exception {
-      return new BufferedWriter(var0);
-   }
+    public boolean delete(@NotNull String name) throws IOException {
+        final Path path = getConfigPath(name);
 
-   public static void b(int[] var0) {
-      c = var0;
-   }
+        if (Files.notExists(path)) {
+            throw new FileNotFoundException();
+            // NotificationManager.pop("Config does not exist!", 5_000, NotificationType.ERROR);
+            // return false;
+        }
 
-   public static int[] c() {
-      return c;
-   }
+        Files.deleteIfExists(path);
+        return true;
+    }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    @NotNull
+    public List<@NotNull String> getConfigs() {
+        Stream<Path> filesStream;
 
-   static {
-      b(new int[1]);
-   }
+        try {
+            filesStream = walk(getConfigsFolder());
+        } catch (IOException e) {
+            getLogger().error("An I/O error occurred while getting contents of configs folder", e);
+            return Collections.emptyList();
+        }
+
+        return filesStream // @off
+                .filter(Files::isRegularFile)
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .filter(s -> s.endsWith(EXTENSION))
+                .map(s -> s.substring(0, s.length() - EXTENSION.length()))
+                .collect(Collectors.toCollection(ObjectArrayList::new)); // @on
+    }
+
+    @NotNull
+    public Path getConfigPath(@NotNull String name) {
+        Checks.notBlank(name, "name");
+        return getConfigsFolder().resolve(name + EXTENSION);
+    }
+
+    //region Lombok
+    @NotNull
+    public ModuleManager getModuleManager() {
+        return this.moduleManager;
+    }
+
+    public int getConfigVersion() {
+        return this.configVersion;
+    }
+
+    @NotNull
+    public Path getConfigsFolder() {
+        final Path path = this.moduleManager.getNovoline().getDataFolder();
+        final Path configsFolder = path.resolve("configs");
+
+        if (isRegularFile(configsFolder)) {
+            boolean b = false;
+
+            for (int i = 1; i < Integer.MAX_VALUE; i++) {
+                try {
+                    move(configsFolder, path.resolve("configs-" + i));
+
+                    b = true;
+                    break;
+                } catch (FileAlreadyExistsException ignored) {
+                } catch (IOException e) {
+                    getLogger().error("An I/O error occurred while creating configs folder", e);
+                }
+            }
+
+            if (!b) getLogger().error("User created 2.147.483.648 configs-# files. Cannot create configs folder");
+        }
+
+        if (notExists(configsFolder)) {
+            try {
+                createDirectories(configsFolder);
+            } catch (IOException e) {
+                getLogger().error("An I/O error occurred while creating configs folder", e);
+                e.printStackTrace();
+            }
+        }
+
+        return configsFolder;
+    }
+
+    //endregion
+    //region Hocon-loader options
+    private static ConfigurationOptions DEFAULT_OPTIONS;
+
+    private @NotNull ConfigurationOptions defaultOptions() {
+        if (DEFAULT_OPTIONS == null) {
+            ConfigurationOptions options = ConfigurationOptions.defaults()
+                    .setObjectMapperFactory(new PropertyMapperFactory());
+            TypeSerializerCollection serializers = TypeSerializers.newCollection();
+            serializers.registerType(new TypeToken<Property<?>>() {
+            }, new PropertySerializer());
+            serializers.registerType(TypeToken.of(ModuleArrayMap.class), new ModuleMapSerializer(this.moduleManager));
+            serializers.registerPredicate(input -> {
+                Class<? super Object> rawType = input.getRawType();
+                boolean b;
+
+                do {
+                    if (!(b = rawType.isAnnotationPresent(DelsyConfig.class))) {
+                        rawType = rawType.getSuperclass();
+                    }
+                } while (!b && rawType != null && rawType.getSuperclass() != null);
+
+                return b;
+            }, new ConfigSerializer(this.moduleManager));
+            serializers = TypeSerializers.getDefaultSerializers().and(serializers);
+            options = options.setSerializers(serializers);
+
+            return DEFAULT_OPTIONS = options;
+        } else {
+            return DEFAULT_OPTIONS;
+        }
+    }
+
+    private static final String EXTENSION = ".novo";
+
+    public static String getExtension() {
+        return EXTENSION;
+    }
+    //endregion
+
 }

@@ -1,86 +1,94 @@
 package viaversion.viabackwards.protocol.protocol1_12_2to1_13.block_entity_handlers;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import net.ayk;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.block_entity_handlers.FlowerPotHandler;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.providers.BackwardsBlockEntityProvider$BackwardsBlockEntityHandler;
+import java.util.StringJoiner;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.Protocol1_12_2To1_13;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.providers.BackwardsBlockEntityProvider;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.MappingDataLoader;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
 
-public class PistonHandler implements BackwardsBlockEntityProvider$BackwardsBlockEntityHandler {
-   private final Map pistonIds;
+public class PistonHandler implements BackwardsBlockEntityProvider.BackwardsBlockEntityHandler {
 
-   public PistonHandler() {
-      FlowerPotHandler.b();
-      this.pistonIds = new HashMap();
-      if(Via.getConfig().isServersideBlockConnections()) {
-         Map var2 = ConnectionData.keyToId;
+	private final Map<String, Integer> pistonIds = new HashMap<>();
 
-         for(Entry var4 : var2.entrySet()) {
-            if(((String)var4.getKey()).contains("piston")) {
-               this.addEntries((String)var4.getKey(), ((Integer)var4.getValue()).intValue());
-               break;
-            }
-         }
-      }
+	public PistonHandler() {
+		if(Via.getConfig().isServersideBlockConnections()) {
+			Map<String, Integer> keyToId = ConnectionData.keyToId;
 
-      JsonObject var6 = ((JsonObject)MappingDataLoader.getMappingsCache().get("mapping-1.13.json")).getAsJsonObject("blockstates");
+			for(Map.Entry<String, Integer> entry : keyToId.entrySet()) {
+				if(!entry.getKey().contains("piston")) continue;
 
-      for(Entry var8 : var6.entrySet()) {
-         String var5 = ((JsonElement)var8.getValue()).getAsString();
-         if(var5.contains("piston")) {
-            this.addEntries(var5, Integer.parseInt((String)var8.getKey()));
-            break;
-         }
-      }
+				addEntries(entry.getKey(), entry.getValue());
+			}
+		} else {
+			JsonObject mappings = MappingDataLoader.getMappingsCache().get("mapping-1.13.json").getAsJsonObject("blockstates");
+			for(Map.Entry<String, JsonElement> blockState : mappings.entrySet()) {
+				String key = blockState.getValue().getAsString();
+				if(!key.contains("piston")) continue;
 
-   }
+				addEntries(key, Integer.parseInt(blockState.getKey()));
+			}
+		}
+	}
 
-   private void addEntries(String var1, int var2) {
-      var2 = ayk.k.getNewBlockStateId(var2);
-      FlowerPotHandler.b();
-      this.pistonIds.put(var1, Integer.valueOf(var2));
-      String var4 = var1.substring(10);
-      if(var4.startsWith("piston") || var4.startsWith("sticky_piston")) {
-         String[] var5 = var1.substring(0, var1.length() - 1).split("\\[");
-         String[] var6 = var5[1].split(",");
-         var1 = var5[0] + "[" + var6[1] + "," + var6[0] + "]";
-         this.pistonIds.put(var1, Integer.valueOf(var2));
-      }
-   }
+	// There doesn't seem to be a nicer way around it :(
+	private void addEntries(String data, int id) {
+		id = Protocol1_12_2To1_13.MAPPINGS.getNewBlockStateId(id);
+		pistonIds.put(data, id);
 
-   public CompoundTag transform(UserConnection var1, int var2, CompoundTag var3) {
-      FlowerPotHandler.b();
-      CompoundTag var5 = (CompoundTag)var3.get("blockState");
-      if(var5 == null) {
-         return var3;
-      } else {
-         String var6 = this.a(var5);
-         if(var6 == null) {
-            return var3;
-         } else {
-            Integer var7 = (Integer)this.pistonIds.get(var6);
-            return var3;
-         }
-      }
-   }
+		String substring = data.substring(10);
+		if(!substring.startsWith("piston") && !substring.startsWith("sticky_piston")) return;
 
-   private String a(CompoundTag var1) {
-      FlowerPotHandler.b();
-      StringTag var3 = (StringTag)var1.get("Name");
-      if(var3 == null) {
-         return null;
-      } else {
-         CompoundTag var4 = (CompoundTag)var1.get("Properties");
-         return var3.getValue();
-      }
-   }
+		// Swap properties and add them to the map
+		String[] split = data.substring(0, data.length() - 1).split("\\[");
+		String[] properties = split[1].split(",");
+		data = split[0] + "[" + properties[1] + "," + properties[0] + "]";
+		pistonIds.put(data, id);
+	}
+
+	@Override
+	public CompoundTag transform(UserConnection user, int blockId, CompoundTag tag) {
+		CompoundTag blockState = tag.get("blockState");
+		if(blockState == null) return tag;
+
+		String dataFromTag = getDataFromTag(blockState);
+		if(dataFromTag == null) return tag;
+
+		Integer id = pistonIds.get(dataFromTag);
+		if(id == null) {
+			//TODO see why this could be null and if this is bad
+			return tag;
+		}
+
+		tag.put(new IntTag("blockId", id >> 4));
+		tag.put(new IntTag("blockData", id & 15));
+		return tag;
+	}
+
+	// The type hasn't actually been updated in the blockstorage, so we need to construct it
+	private String getDataFromTag(CompoundTag tag) {
+		StringTag name = tag.get("Name");
+		if(name == null) return null;
+
+		CompoundTag properties = tag.get("Properties");
+		if(properties == null) return name.getValue();
+
+		StringJoiner joiner = new StringJoiner(",", name.getValue() + "[", "]");
+
+		for(Tag property : properties) {
+			if(!(property instanceof StringTag)) continue;
+			joiner.add(property.getName() + "=" + ((StringTag) property).getValue());
+		}
+
+		return joiner.toString();
+	}
 }

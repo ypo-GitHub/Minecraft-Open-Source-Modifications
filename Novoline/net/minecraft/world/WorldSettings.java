@@ -1,80 +1,215 @@
 package net.minecraft.world;
 
-import net.minecraft.world.WorldSettings$GameType;
-import net.minecraft.world.WorldType;
+import cc.novoline.Novoline;
+import cc.novoline.modules.visual.ClickGUI;
+import cc.novoline.utils.ServerUtils;
+import cc.novoline.utils.Servers;
+import net.minecraft.entity.player.PlayerAbilities;
 import net.minecraft.world.storage.WorldInfo;
 
 public final class WorldSettings {
-   private final long seed;
-   private final WorldSettings$GameType theGameType;
-   private final boolean mapFeaturesEnabled;
-   private final boolean hardcoreEnabled;
-   private final WorldType terrainType;
-   private boolean commandsAllowed;
-   private boolean bonusChestEnabled;
-   private String worldName;
 
-   public WorldSettings(long var1, WorldSettings$GameType var3, boolean var4, boolean var5, WorldType var6) {
-      this.worldName = "";
-      this.seed = var1;
-      this.theGameType = var3;
-      this.mapFeaturesEnabled = var4;
-      this.hardcoreEnabled = var5;
-      this.terrainType = var6;
-   }
+    /**
+     * The seed for the map.
+     */
+    private final long seed;
 
-   public WorldSettings(WorldInfo var1) {
-      this(var1.getSeed(), var1.getGameType(), var1.isMapFeaturesEnabled(), var1.isHardcoreModeEnabled(), var1.getTerrainType());
-   }
+    /**
+     * The EnumGameType.
+     */
+    private final WorldSettings.GameType theGameType;
 
-   public WorldSettings enableBonusChest() {
-      this.bonusChestEnabled = true;
-      return this;
-   }
+    /**
+     * Switch for the map features. 'true' for enabled, 'false' for disabled.
+     */
+    private final boolean mapFeaturesEnabled;
 
-   public WorldSettings enableCommands() {
-      this.commandsAllowed = true;
-      return this;
-   }
+    /**
+     * True if hardcore mode is enabled
+     */
+    private final boolean hardcoreEnabled;
+    private final WorldType terrainType;
 
-   public boolean isBonusChestEnabled() {
-      return this.bonusChestEnabled;
-   }
+    /**
+     * True if Commands (cheats) are allowed.
+     */
+    private boolean commandsAllowed;
 
-   public long getSeed() {
-      return this.seed;
-   }
+    /**
+     * True if the Bonus Chest is enabled.
+     */
+    private boolean bonusChestEnabled;
+    private String worldName;
 
-   public WorldSettings$GameType getGameType() {
-      return this.theGameType;
-   }
+    public WorldSettings(long seedIn, WorldSettings.GameType gameType, boolean enableMapFeatures, boolean hardcoreMode, WorldType worldTypeIn) {
+        this.worldName = "";
+        this.seed = seedIn;
+        this.theGameType = gameType;
+        this.mapFeaturesEnabled = enableMapFeatures;
+        this.hardcoreEnabled = hardcoreMode;
+        this.terrainType = worldTypeIn;
+    }
 
-   public boolean getHardcoreEnabled() {
-      return this.hardcoreEnabled;
-   }
+    public WorldSettings(WorldInfo info) {
+        this(info.getSeed(), info.getGameType(), info.isMapFeaturesEnabled(), info.isHardcoreModeEnabled(), info.getTerrainType());
+    }
 
-   public boolean isMapFeaturesEnabled() {
-      return this.mapFeaturesEnabled;
-   }
+    /**
+     * Enables the bonus chest.
+     */
+    public WorldSettings enableBonusChest() {
+        this.bonusChestEnabled = true;
+        return this;
+    }
 
-   public WorldType getTerrainType() {
-      return this.terrainType;
-   }
+    /**
+     * Enables Commands (cheats).
+     */
+    public WorldSettings enableCommands() {
+        this.commandsAllowed = true;
+        return this;
+    }
 
-   public boolean areCommandsAllowed() {
-      return this.commandsAllowed;
-   }
+    /**
+     * Returns true if the Bonus Chest is enabled.
+     */
+    public boolean isBonusChestEnabled() {
+        return this.bonusChestEnabled;
+    }
 
-   public static WorldSettings$GameType getGameTypeById(int var0) {
-      return WorldSettings$GameType.getByID(var0);
-   }
+    /**
+     * Returns the seed for the world.
+     */
+    public long getSeed() {
+        return this.seed;
+    }
 
-   public String getWorldName() {
-      return this.worldName;
-   }
+    /**
+     * Gets the game type.
+     */
+    public WorldSettings.GameType getGameType() {
+        return this.theGameType;
+    }
 
-   public WorldSettings setWorldName(String var1) {
-      this.worldName = var1;
-      return this;
-   }
+    /**
+     * Returns true if hardcore mode is enabled, otherwise false
+     */
+    public boolean getHardcoreEnabled() {
+        return this.hardcoreEnabled;
+    }
+
+    /**
+     * Get whether the map features (e.g. strongholds) generation is enabled or disabled.
+     */
+    public boolean isMapFeaturesEnabled() {
+        return this.mapFeaturesEnabled;
+    }
+
+    public WorldType getTerrainType() {
+        return this.terrainType;
+    }
+
+    /**
+     * Returns true if Commands (cheats) are allowed.
+     */
+    public boolean areCommandsAllowed() {
+        return this.commandsAllowed;
+    }
+
+    /**
+     * Gets the GameType by ID
+     */
+    public static WorldSettings.GameType getGameTypeById(int id) {
+        return WorldSettings.GameType.getByID(id);
+    }
+
+    public String getWorldName() {
+        return this.worldName;
+    }
+
+    public WorldSettings setWorldName(String name) {
+        this.worldName = name;
+        return this;
+    }
+
+    public enum GameType {
+        NOT_SET(-1, ""),
+        SURVIVAL(0, "survival"),
+        CREATIVE(1, "creative"),
+        ADVENTURE(2, "adventure"),
+        SPECTATOR(3, "spectator");
+
+        int id;
+        String name;
+
+        GameType(int typeId, String nameIn) {
+            this.id = typeId;
+            this.name = nameIn;
+        }
+
+        public int getID() {
+            return this.id;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public void configurePlayerCapabilities(PlayerAbilities abilities) {
+            if (this == CREATIVE) {
+                abilities.setAllowFlying(true);
+                abilities.setCreative(true);
+                abilities.setDisabledDamage(true);
+            } else if (this == SPECTATOR) {
+                abilities.setAllowFlying(true);
+                abilities.setCreative(false);
+                abilities.setDisabledDamage(true);
+                abilities.setFlying(true);
+            } else {
+                abilities.setAllowFlying(false);
+                abilities.setCreative(false);
+                abilities.setDisabledDamage(false);
+                abilities.setFlying(false);
+            }
+
+            abilities.setAllowEdit(!this.isAdventure());
+
+            if (ServerUtils.isHypixel() && (ServerUtils.serverIs(Servers.NONE) || ServerUtils.serverIs(Servers.SG)) && !abilities.isAllowEdit()) {
+                Novoline.getInstance().getModuleManager().getModule(ClickGUI.class).setCurrentServer(Servers.LOBBY);
+            }
+        }
+
+        public boolean isAdventure() {
+            return this == ADVENTURE || this == SPECTATOR;
+        }
+
+        public boolean isCreative() {
+            return this == CREATIVE;
+        }
+
+        public boolean isSurvivalOrAdventure() {
+            return this == SURVIVAL || this == ADVENTURE;
+        }
+
+        public static WorldSettings.GameType getByID(int idIn) {
+            for (WorldSettings.GameType worldsettings$gametype : values()) {
+                if (worldsettings$gametype.id == idIn) {
+                    return worldsettings$gametype;
+                }
+            }
+
+            return SURVIVAL;
+        }
+
+        public static WorldSettings.GameType getByName(String p_77142_0_) {
+            for (WorldSettings.GameType worldsettings$gametype : values()) {
+                if (worldsettings$gametype.name.equals(p_77142_0_)) {
+                    return worldsettings$gametype;
+                }
+            }
+
+            return SURVIVAL;
+        }
+    }
+
 }

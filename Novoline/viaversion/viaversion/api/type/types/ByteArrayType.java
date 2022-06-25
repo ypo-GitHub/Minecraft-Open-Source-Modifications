@@ -4,21 +4,23 @@ import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import viaversion.viaversion.api.type.Type;
 
-public class ByteArrayType extends Type {
-   public ByteArrayType() {
-      super("byte[]", byte[].class);
-   }
+public class ByteArrayType extends Type<byte[]> {
+    public ByteArrayType() {
+        super("byte[]", byte[].class);
+    }
 
-   public void write(ByteBuf var1, byte[] var2) throws Exception {
-      Type.VAR_INT.writePrimitive(var1, var2.length);
-      var1.writeBytes(var2);
-   }
+    @Override
+    public void write(ByteBuf buffer, byte[] object) throws Exception {
+        Type.VAR_INT.writePrimitive(buffer, object.length);
+        buffer.writeBytes(object);
+    }
 
-   public byte[] read(ByteBuf var1) throws Exception {
-      int var2 = Type.VAR_INT.readPrimitive(var1);
-      Preconditions.checkArgument(var1.isReadable(var2), "Length is fewer than readable bytes");
-      byte[] var3 = new byte[var2];
-      var1.readBytes(var3);
-      return var3;
-   }
+    @Override
+    public byte[] read(ByteBuf buffer) throws Exception {
+        int length = Type.VAR_INT.readPrimitive(buffer);
+        Preconditions.checkArgument(buffer.isReadable(length), "Length is fewer than readable bytes");
+        byte[] array = new byte[length];
+        buffer.readBytes(array);
+        return array;
+    }
 }

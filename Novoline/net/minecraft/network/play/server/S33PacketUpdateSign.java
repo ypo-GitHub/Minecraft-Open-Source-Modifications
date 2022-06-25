@@ -1,6 +1,5 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
@@ -8,52 +7,57 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.world.World;
 
-public class S33PacketUpdateSign implements Packet {
-   private World world;
-   private BlockPos blockPos;
-   private IChatComponent[] lines;
+import java.io.IOException;
 
-   public S33PacketUpdateSign() {
-   }
+public class S33PacketUpdateSign implements Packet<INetHandlerPlayClient> {
+    private World world;
+    private BlockPos blockPos;
+    private IChatComponent[] lines;
 
-   public S33PacketUpdateSign(World var1, BlockPos var2, IChatComponent[] var3) {
-      this.world = var1;
-      this.blockPos = var2;
-      this.lines = new IChatComponent[]{var3[0], var3[1], var3[2], var3[3]};
-   }
+    public S33PacketUpdateSign() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.blockPos = var1.readBlockPos();
-      this.lines = new IChatComponent[4];
+    public S33PacketUpdateSign(World worldIn, BlockPos blockPosIn, IChatComponent[] linesIn) {
+        this.world = worldIn;
+        this.blockPos = blockPosIn;
+        this.lines = new IChatComponent[]{linesIn[0], linesIn[1], linesIn[2], linesIn[3]};
+    }
 
-      for(int var2 = 0; var2 < 4; ++var2) {
-         this.lines[var2] = var1.readChatComponent();
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.blockPos = buf.readBlockPos();
+        this.lines = new IChatComponent[4];
 
-   }
+        for (int i = 0; i < 4; ++i) {
+            this.lines[i] = buf.readChatComponent();
+        }
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeBlockPos(this.blockPos);
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeBlockPos(this.blockPos);
 
-      for(int var2 = 0; var2 < 4; ++var2) {
-         var1.writeChatComponent(this.lines[var2]);
-      }
+        for (int i = 0; i < 4; ++i) {
+            buf.writeChatComponent(this.lines[i]);
+        }
+    }
 
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleUpdateSign(this);
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleUpdateSign(this);
-   }
+    public BlockPos getPos() {
+        return this.blockPos;
+    }
 
-   public BlockPos getPos() {
-      return this.blockPos;
-   }
-
-   public IChatComponent[] getLines() {
-      return this.lines;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public IChatComponent[] getLines() {
+        return this.lines;
+    }
 }

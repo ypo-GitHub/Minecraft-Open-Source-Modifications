@@ -1,59 +1,77 @@
 package net.minecraft.entity.ai;
 
-import java.util.Random;
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class EntityAIFleeSun extends EntityAIBase {
-   private EntityCreature theCreature;
-   private double b;
-   private double d;
-   private double e;
-   private double movementSpeed;
-   private World theWorld;
+    private EntityCreature theCreature;
+    private double shelterX;
+    private double shelterY;
+    private double shelterZ;
+    private double movementSpeed;
+    private World theWorld;
 
-   public EntityAIFleeSun(EntityCreature var1, double var2) {
-      this.theCreature = var1;
-      this.movementSpeed = var2;
-      this.theWorld = var1.worldObj;
-      this.setMutexBits(1);
-   }
+    public EntityAIFleeSun(EntityCreature theCreatureIn, double movementSpeedIn) {
+        this.theCreature = theCreatureIn;
+        this.movementSpeed = movementSpeedIn;
+        this.theWorld = theCreatureIn.worldObj;
+        this.setMutexBits(1);
+    }
 
-   public boolean shouldExecute() {
-      if(!this.theWorld.isDaytime()) {
-         return false;
-      } else if(!this.theCreature.isBurning()) {
-         return false;
-      } else if(!this.theWorld.canSeeSky(new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ))) {
-         return false;
-      } else {
-         Vec3 var1 = this.findPossibleShelter();
-         return false;
-      }
-   }
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (!this.theWorld.isDaytime()) {
+            return false;
+        } else if (!this.theCreature.isBurning()) {
+            return false;
+        } else if (!this.theWorld.canSeeSky(new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ))) {
+            return false;
+        } else {
+            Vec3 vec3 = this.findPossibleShelter();
 
-   public boolean continueExecuting() {
-      return !this.theCreature.getNavigator().noPath();
-   }
+            if (vec3 == null) {
+                return false;
+            } else {
+                this.shelterX = vec3.xCoord;
+                this.shelterY = vec3.yCoord;
+                this.shelterZ = vec3.zCoord;
+                return true;
+            }
+        }
+    }
 
-   public void startExecuting() {
-      this.theCreature.getNavigator().tryMoveToXYZ(this.b, this.d, this.e, this.movementSpeed);
-   }
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return !this.theCreature.getNavigator().noPath();
+    }
 
-   private Vec3 findPossibleShelter() {
-      Random var1 = this.theCreature.getRNG();
-      BlockPos var2 = new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ);
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.theCreature.getNavigator().tryMoveToXYZ(this.shelterX, this.shelterY, this.shelterZ, this.movementSpeed);
+    }
 
-      for(int var3 = 0; var3 < 10; ++var3) {
-         BlockPos var4 = var2.a(var1.nextInt(20) - 10, var1.nextInt(6) - 3, var1.nextInt(20) - 10);
-         if(!this.theWorld.canSeeSky(var4) && this.theCreature.getBlockPathWeight(var4) < 0.0F) {
-            return new Vec3((double)var4.getX(), (double)var4.getY(), (double)var4.getZ());
-         }
-      }
+    private Vec3 findPossibleShelter() {
+        Random random = this.theCreature.getRNG();
+        BlockPos blockpos = new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ);
 
-      return null;
-   }
+        for (int i = 0; i < 10; ++i) {
+            BlockPos blockpos1 = blockpos.add(random.nextInt(20) - 10, random.nextInt(6) - 3, random.nextInt(20) - 10);
+
+            if (!this.theWorld.canSeeSky(blockpos1) && this.theCreature.getBlockPathWeight(blockpos1) < 0.0F) {
+                return new Vec3((double) blockpos1.getX(), (double) blockpos1.getY(), (double) blockpos1.getZ());
+            }
+        }
+
+        return null;
+    }
 }

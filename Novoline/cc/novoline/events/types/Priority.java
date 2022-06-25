@@ -1,24 +1,41 @@
 package cc.novoline.events.types;
 
+/**
+ * The priority for the dispatcher to determine what method should be invoked first.
+ * Ram was talking about the memory usage of the way I store the data so I decided
+ * to just use bytes for the priority because they take up only 8 bits of memory
+ * per value compared to the 32 bits per value of an enum (Same as an integer).
+ *
+ * @author DarkMagician6
+ * @since August 3, 2013
+ */
 public final class Priority {
-   public static final byte HIGHEST = 0;
-   public static final byte HIGH = 1;
-   public static final byte MEDIUM = 2;
-   public static final byte LOW = 3;
-   public static final byte LOWEST = 4;
-   public static final byte[] VALUE_ARRAY = new byte[]{(byte)0, (byte)1, (byte)2, (byte)3, (byte)4};
-   private static int[] e;
 
-   static {
-      int[] var10000 = new int[4];
-      b(var10000);
-   }
+    /**
+     * Highest priority, called first.
+     */
+    public static final byte HIGHEST = 0, /**
+     * High priority, called after the highest priority.
+     */
+    HIGH = 1, /**
+     * Medium priority, called after the high priority.
+     */
+    MEDIUM = 2, /**
+     * Low priority, called after the medium priority.
+     */
+    LOW = 3, /**
+     * Lowest priority, called after all the other priorities.
+     */
+    LOWEST = 4;
 
-   public static void b(int[] var0) {
-      e = var0;
-   }
+    /**
+     * Array containing all the priority values.
+     */
+    public static final byte[] VALUE_ARRAY;
 
-   public static int[] b() {
-      return e;
-   }
+    /* Sets up the VALUE_ARRAY the first time anything in this class is called */
+    static {
+        VALUE_ARRAY = new byte[]{HIGHEST, HIGH, MEDIUM, LOW, LOWEST};
+    }
+
 }

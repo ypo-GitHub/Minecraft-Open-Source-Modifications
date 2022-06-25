@@ -1,110 +1,126 @@
 package net.minecraft.command;
 
-import java.util.List;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.BlockPos$MutableBlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.structure.StructureBoundingBox;
 
+import java.util.List;
+
 public class CommandCompare extends CommandBase {
-   public String getCommandName() {
-      return "testforblocks";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "testforblocks";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.compare.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.compare.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 9) {
-         throw new WrongUsageException("commands.compare.usage", new Object[0]);
-      } else {
-         var1.setCommandStat(CommandResultStats$Type.AFFECTED_BLOCKS, 0);
-         BlockPos var3 = parseBlockPos(var1, var2, 0, false);
-         BlockPos var4 = parseBlockPos(var1, var2, 3, false);
-         BlockPos var5 = parseBlockPos(var1, var2, 6, false);
-         StructureBoundingBox var6 = new StructureBoundingBox(var3, var4);
-         StructureBoundingBox var7 = new StructureBoundingBox(var5, var5.add(var6.func_175896_b()));
-         int var8 = var6.getXSize() * var6.getYSize() * var6.getZSize();
-         if(var8 > 524288) {
-            throw new CommandException("commands.compare.tooManyBlocks", new Object[]{Integer.valueOf(var8), Integer.valueOf(524288)});
-         } else if(var6.minY >= 0 && var6.maxY < 256 && var7.minY >= 0 && var7.maxY < 256) {
-            World var9 = var1.getEntityWorld();
-            if(var9.isAreaLoaded(var6) && var9.isAreaLoaded(var7)) {
-               boolean var10 = false;
-               if(var2.length > 9 && var2[9].equals("masked")) {
-                  var10 = true;
-               }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 9) {
+            throw new WrongUsageException("commands.compare.usage", new Object[0]);
+        } else {
+            sender.setCommandStat(CommandResultStats.Type.AFFECTED_BLOCKS, 0);
+            BlockPos blockpos = parseBlockPos(sender, args, 0, false);
+            BlockPos blockpos1 = parseBlockPos(sender, args, 3, false);
+            BlockPos blockpos2 = parseBlockPos(sender, args, 6, false);
+            StructureBoundingBox structureboundingbox = new StructureBoundingBox(blockpos, blockpos1);
+            StructureBoundingBox structureboundingbox1 = new StructureBoundingBox(blockpos2, blockpos2.add(structureboundingbox.func_175896_b()));
+            int i = structureboundingbox.getXSize() * structureboundingbox.getYSize() * structureboundingbox.getZSize();
 
-               var8 = 0;
-               BlockPos var11 = new BlockPos(var7.minX - var6.minX, var7.minY - var6.minY, var7.minZ - var6.minZ);
-               BlockPos$MutableBlockPos var12 = new BlockPos$MutableBlockPos();
-               BlockPos$MutableBlockPos var13 = new BlockPos$MutableBlockPos();
+            if (i > 524288) {
+                throw new CommandException("commands.compare.tooManyBlocks", new Object[]{i, 524288});
+            } else if (structureboundingbox.minY >= 0 && structureboundingbox.maxY < 256 && structureboundingbox1.minY >= 0 && structureboundingbox1.maxY < 256) {
+                World world = sender.getEntityWorld();
 
-               for(int var14 = var6.minZ; var14 <= var6.maxZ; ++var14) {
-                  for(int var15 = var6.minY; var15 <= var6.maxY; ++var15) {
-                     for(int var16 = var6.minX; var16 <= var6.maxX; ++var16) {
-                        var12.func_181079_c(var16, var15, var14);
-                        var13.func_181079_c(var16 + var11.getX(), var15 + var11.getY(), var14 + var11.getZ());
-                        boolean var17 = false;
-                        IBlockState var18 = var9.getBlockState(var12);
-                        if(var18.getBlock() != Blocks.air) {
-                           if(var18 == var9.getBlockState(var13)) {
-                              TileEntity var19 = var9.getTileEntity(var12);
-                              TileEntity var20 = var9.getTileEntity(var13);
-                              NBTTagCompound var21 = new NBTTagCompound();
-                              var19.writeToNBT(var21);
-                              var21.removeTag("x");
-                              var21.removeTag("y");
-                              var21.removeTag("z");
-                              NBTTagCompound var22 = new NBTTagCompound();
-                              var20.writeToNBT(var22);
-                              var22.removeTag("x");
-                              var22.removeTag("y");
-                              var22.removeTag("z");
-                              if(!var21.equals(var22)) {
-                                 var17 = true;
-                              }
-                           } else {
-                              var17 = true;
-                           }
+                if (world.isAreaLoaded(structureboundingbox) && world.isAreaLoaded(structureboundingbox1)) {
+                    boolean flag = false;
 
-                           ++var8;
-                           throw new CommandException("commands.compare.failed", new Object[0]);
+                    if (args.length > 9 && args[9].equals("masked")) {
+                        flag = true;
+                    }
+
+                    i = 0;
+                    BlockPos blockpos3 = new BlockPos(structureboundingbox1.minX - structureboundingbox.minX, structureboundingbox1.minY - structureboundingbox.minY, structureboundingbox1.minZ - structureboundingbox.minZ);
+                    BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+                    BlockPos.MutableBlockPos blockpos$mutableblockpos1 = new BlockPos.MutableBlockPos();
+
+                    for (int j = structureboundingbox.minZ; j <= structureboundingbox.maxZ; ++j) {
+                        for (int k = structureboundingbox.minY; k <= structureboundingbox.maxY; ++k) {
+                            for (int l = structureboundingbox.minX; l <= structureboundingbox.maxX; ++l) {
+                                blockpos$mutableblockpos.func_181079_c(l, k, j);
+                                blockpos$mutableblockpos1.func_181079_c(l + blockpos3.getX(), k + blockpos3.getY(), j + blockpos3.getZ());
+                                boolean flag1 = false;
+                                IBlockState iblockstate = world.getBlockState(blockpos$mutableblockpos);
+
+                                if (!flag || iblockstate.getBlock() != Blocks.air) {
+                                    if (iblockstate == world.getBlockState(blockpos$mutableblockpos1)) {
+                                        TileEntity tileentity = world.getTileEntity(blockpos$mutableblockpos);
+                                        TileEntity tileentity1 = world.getTileEntity(blockpos$mutableblockpos1);
+
+                                        if (tileentity != null && tileentity1 != null) {
+                                            NBTTagCompound nbttagcompound = new NBTTagCompound();
+                                            tileentity.writeToNBT(nbttagcompound);
+                                            nbttagcompound.removeTag("x");
+                                            nbttagcompound.removeTag("y");
+                                            nbttagcompound.removeTag("z");
+                                            NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+                                            tileentity1.writeToNBT(nbttagcompound1);
+                                            nbttagcompound1.removeTag("x");
+                                            nbttagcompound1.removeTag("y");
+                                            nbttagcompound1.removeTag("z");
+
+                                            if (!nbttagcompound.equals(nbttagcompound1)) {
+                                                flag1 = true;
+                                            }
+                                        } else if (tileentity != null) {
+                                            flag1 = true;
+                                        }
+                                    } else {
+                                        flag1 = true;
+                                    }
+
+                                    ++i;
+
+                                    if (flag1) {
+                                        throw new CommandException("commands.compare.failed", new Object[0]);
+                                    }
+                                }
+                            }
                         }
-                     }
-                  }
-               }
+                    }
 
-               var1.setCommandStat(CommandResultStats$Type.AFFECTED_BLOCKS, var8);
-               notifyOperators(var1, this, "commands.compare.success", new Object[]{Integer.valueOf(var8)});
+                    sender.setCommandStat(CommandResultStats.Type.AFFECTED_BLOCKS, i);
+                    notifyOperators(sender, this, "commands.compare.success", new Object[]{i});
+                } else {
+                    throw new CommandException("commands.compare.outOfWorld", new Object[0]);
+                }
             } else {
-               throw new CommandException("commands.compare.outOfWorld", new Object[0]);
+                throw new CommandException("commands.compare.outOfWorld", new Object[0]);
             }
-         } else {
-            throw new CommandException("commands.compare.outOfWorld", new Object[0]);
-         }
-      }
-   }
+        }
+    }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length > 0 && var2.length <= 3?b(var2, 0, var3):(var2.length > 3 && var2.length <= 6?b(var2, 3, var3):(var2.length > 6 && var2.length <= 9?b(var2, 6, var3):(var2.length == 10?getListOfStringsMatchingLastWord(var2, new String[]{"masked", "all"}):null)));
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length > 0 && args.length <= 3 ? func_175771_a(args, 0, pos) : args.length > 3 && args.length <= 6 ? func_175771_a(args, 3, pos) : args.length > 6 && args.length <= 9 ? func_175771_a(args, 6, pos) : args.length == 10 ? getListOfStringsMatchingLastWord(args, new String[]{"masked", "all"}) : null;
+    }
 }

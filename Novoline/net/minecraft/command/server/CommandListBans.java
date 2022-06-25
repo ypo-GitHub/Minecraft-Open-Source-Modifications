@@ -1,6 +1,5 @@
 package net.minecraft.command.server;
 
-import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -9,39 +8,51 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 
+import java.util.List;
+
 public class CommandListBans extends CommandBase {
-   public String getCommandName() {
-      return "banlist";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "banlist";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 3;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 3;
+    }
 
-   public boolean canCommandSenderUseCommand(ICommandSender var1) {
-      return (MinecraftServer.getServer().getConfigurationManager().getBannedIPs().isLanServer() || MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().isLanServer()) && super.canCommandSenderUseCommand(var1);
-   }
+    /**
+     * Returns true if the given command sender is allowed to use this command.
+     */
+    public boolean canCommandSenderUseCommand(ICommandSender sender) {
+        return (MinecraftServer.getServer().getConfigurationManager().getBannedIPs().isLanServer() || MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().isLanServer()) && super.canCommandSenderUseCommand(sender);
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.banlist.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.banlist.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length >= 1 && var2[0].equalsIgnoreCase("ips")) {
-         var1.addChatMessage(new ChatComponentTranslation("commands.banlist.ips", new Object[]{Integer.valueOf(MinecraftServer.getServer().getConfigurationManager().getBannedIPs().getKeys().length)}));
-         var1.addChatMessage(new ChatComponentText(joinNiceString(MinecraftServer.getServer().getConfigurationManager().getBannedIPs().getKeys())));
-      } else {
-         var1.addChatMessage(new ChatComponentTranslation("commands.banlist.players", new Object[]{Integer.valueOf(MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().getKeys().length)}));
-         var1.addChatMessage(new ChatComponentText(joinNiceString(MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().getKeys())));
-      }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length >= 1 && args[0].equalsIgnoreCase("ips")) {
+            sender.addChatMessage(new ChatComponentTranslation("commands.banlist.ips", new Object[]{MinecraftServer.getServer().getConfigurationManager().getBannedIPs().getKeys().length}));
+            sender.addChatMessage(new ChatComponentText(joinNiceString(MinecraftServer.getServer().getConfigurationManager().getBannedIPs().getKeys())));
+        } else {
+            sender.addChatMessage(new ChatComponentTranslation("commands.banlist.players", new Object[]{MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().getKeys().length}));
+            sender.addChatMessage(new ChatComponentText(joinNiceString(MinecraftServer.getServer().getConfigurationManager().getBannedPlayers().getKeys())));
+        }
+    }
 
-   }
-
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 1?getListOfStringsMatchingLastWord(var2, new String[]{"players", "ips"}):null;
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, new String[]{"players", "ips"}) : null;
+    }
 }

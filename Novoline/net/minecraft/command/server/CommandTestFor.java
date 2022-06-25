@@ -1,6 +1,5 @@
 package net.minecraft.command.server;
 
-import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -13,55 +12,69 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 
+import java.util.List;
+
 public class CommandTestFor extends CommandBase {
-   public String getCommandName() {
-      return "testfor";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "testfor";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.testfor.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.testfor.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 1) {
-         throw new WrongUsageException("commands.testfor.usage", new Object[0]);
-      } else {
-         Entity var3 = func_175768_b(var1, var2[0]);
-         NBTTagCompound var4 = null;
-         if(var2.length >= 2) {
-            String[] var10000 = var2;
-            byte var10001 = 1;
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 1) {
+            throw new WrongUsageException("commands.testfor.usage", new Object[0]);
+        } else {
+            Entity entity = func_175768_b(sender, args[0]);
+            NBTTagCompound nbttagcompound = null;
 
-            try {
-               var4 = JsonToNBT.getTagFromJson(buildString(var10000, var10001));
-            } catch (NBTException var6) {
-               throw new CommandException("commands.testfor.tagError", new Object[]{var6.getMessage()});
+            if (args.length >= 2) {
+                try {
+                    nbttagcompound = JsonToNBT.getTagFromJson(buildString(args, 1));
+                } catch (NBTException nbtexception) {
+                    throw new CommandException("commands.testfor.tagError", new Object[]{nbtexception.getMessage()});
+                }
             }
-         }
 
-         NBTTagCompound var5 = new NBTTagCompound();
-         var3.writeToNBT(var5);
-         if(!NBTUtil.a(var4, var5, true)) {
-            throw new CommandException("commands.testfor.failure", new Object[]{var3.getName()});
-         } else {
-            notifyOperators(var1, this, "commands.testfor.success", new Object[]{var3.getName()});
-         }
-      }
-   }
+            if (nbttagcompound != null) {
+                NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+                entity.writeToNBT(nbttagcompound1);
 
-   public boolean isUsernameIndex(String[] var1, int var2) {
-      return true;
-   }
+                if (!NBTUtil.func_181123_a(nbttagcompound, nbttagcompound1, true)) {
+                    throw new CommandException("commands.testfor.failure", new Object[]{entity.getName()});
+                }
+            }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 1?getListOfStringsMatchingLastWord(var2, MinecraftServer.getServer().getAllUsernames()):null;
-   }
+            notifyOperators(sender, this, "commands.testfor.success", new Object[]{entity.getName()});
+        }
+    }
 
-   private static NBTException a(NBTException var0) {
-      return var0;
-   }
+    /**
+     * Return whether the specified command parameter index is a username parameter.
+     */
+    public boolean isUsernameIndex(String[] args, int index) {
+        return index == 0;
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames()) : null;
+    }
 }

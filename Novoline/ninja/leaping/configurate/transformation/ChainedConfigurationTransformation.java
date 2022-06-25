@@ -1,26 +1,43 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.transformation;
 
-import java.util.Arrays;
-import net.s;
 import ninja.leaping.configurate.ConfigurationNode;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-class ChainedConfigurationTransformation extends s {
-   private final s[] a;
+import java.util.Arrays;
 
-   ChainedConfigurationTransformation(s[] var1) {
-      this.a = (s[])Arrays.copyOf(var1, var1.length);
-   }
+/**
+ * Implements a chain of {@link ConfigurationTransformation}s.
+ */
+class ChainedConfigurationTransformation extends ConfigurationTransformation {
 
-   public void apply(ConfigurationNode var1) {
-      s[] var3 = this.a;
-      s.b();
-      int var4 = var3.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         s var6 = var3[var5];
-         var6.apply(var1);
-         ++var5;
-      }
+    private final ConfigurationTransformation[] transformations;
 
-   }
+    ChainedConfigurationTransformation(ConfigurationTransformation[] transformations) {
+        this.transformations = Arrays.copyOf(transformations, transformations.length);
+    }
+
+    @Override
+    public void apply(@NonNull ConfigurationNode node) {
+        for (ConfigurationTransformation transformation : transformations) {
+            transformation.apply(node);
+        }
+    }
+
 }

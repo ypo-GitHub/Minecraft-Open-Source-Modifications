@@ -1,37 +1,37 @@
 package viaversion.viaversion.api.minecraft;
 
 public class Vector {
-   private int a;
-   private int b;
-   private int c;
+    private int blockX;
+    private int blockY;
+    private int blockZ;
 
-   public Vector(int var1, int var2, int var3) {
-      this.a = var1;
-      this.b = var2;
-      this.c = var3;
-   }
+    public Vector(int blockX, int blockY, int blockZ) {
+        this.blockX = blockX;
+        this.blockY = blockY;
+        this.blockZ = blockZ;
+    }
 
-   public int c() {
-      return this.a;
-   }
+    public int getBlockX() {
+        return blockX;
+    }
 
-   public void c(int var1) {
-      this.a = var1;
-   }
+    public void setBlockX(int blockX) {
+        this.blockX = blockX;
+    }
 
-   public int a() {
-      return this.b;
-   }
+    public int getBlockY() {
+        return blockY;
+    }
 
-   public void b(int var1) {
-      this.b = var1;
-   }
+    public void setBlockY(int blockY) {
+        this.blockY = blockY;
+    }
 
-   public int b() {
-      return this.c;
-   }
+    public int getBlockZ() {
+        return blockZ;
+    }
 
-   public void a(int var1) {
-      this.c = var1;
-   }
+    public void setBlockZ(int blockZ) {
+        this.blockZ = blockZ;
+    }
 }

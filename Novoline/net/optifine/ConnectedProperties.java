@@ -1,627 +1,951 @@
 package net.optifine;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
-import net.acE;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.optifine.Config;
-import net.optifine.ConnectedParser;
-import net.optifine.MatchBlock;
-import net.optifine.Matches;
-import net.optifine.MathUtils;
-import net.optifine.TextureUtils;
 
-public class ConnectedProperties {
-   public String name = null;
-   public String basePath = null;
-   public MatchBlock[] matchBlocks = null;
-   public int[] metadatas = null;
-   public String[] matchTiles = null;
-   public int method = 0;
-   public String[] tiles = null;
-   public int connect = 0;
-   public int faces = 63;
-   public BiomeGenBase[] biomes = null;
-   public int minHeight = 0;
-   public int maxHeight = 1024;
-   public int renderPass = 0;
-   public boolean innerSeams = false;
-   public int width = 0;
-   public int height = 0;
-   public int[] weights = null;
-   public int symmetry = 1;
-   public int[] sumWeights = null;
-   public int sumAllWeights = 1;
-   public TextureAtlasSprite[] matchTileIcons = null;
-   public TextureAtlasSprite[] tileIcons = null;
-   public static final int a = 0;
-   public static final int d = 1;
-   public static final int f = 2;
-   public static final int O = 3;
-   public static final int G = 4;
-   public static final int METHOD_REPEAT = 5;
-   public static final int N = 6;
-   public static final int METHOD_FIXED = 7;
-   public static final int o = 8;
-   public static final int METHOD_VERTICAL_HORIZONTAL = 9;
-   public static final int X = 0;
-   public static final int T = 1;
-   public static final int H = 2;
-   public static final int y = 3;
-   public static final int c = 128;
-   public static final int w = 1;
-   public static final int l = 2;
-   public static final int j = 4;
-   public static final int v = 8;
-   public static final int FACE_WEST = 16;
-   public static final int FACE_EAST = 32;
-   public static final int FACE_SIDES = 60;
-   public static final int FACE_ALL = 63;
-   public static final int P = 128;
-   public static final int p = 1;
-   public static final int r = 2;
-   public static final int b = 6;
-   public static final int K = 128;
+public class ConnectedProperties
+{
+    public String name = null;
+    public String basePath = null;
+    public MatchBlock[] matchBlocks = null;
+    public int[] metadatas = null;
+    public String[] matchTiles = null;
+    public int method = 0;
+    public String[] tiles = null;
+    public int connect = 0;
+    public int faces = 63;
+    public BiomeGenBase[] biomes = null;
+    public int minHeight = 0;
+    public int maxHeight = 1024;
+    public int renderPass = 0;
+    public boolean innerSeams = false;
+    public int width = 0;
+    public int height = 0;
+    public int[] weights = null;
+    public int symmetry = 1;
+    public int[] sumWeights = null;
+    public int sumAllWeights = 1;
+    public TextureAtlasSprite[] matchTileIcons = null;
+    public TextureAtlasSprite[] tileIcons = null;
+    public static final int METHOD_NONE = 0;
+    public static final int METHOD_CTM = 1;
+    public static final int METHOD_HORIZONTAL = 2;
+    public static final int METHOD_TOP = 3;
+    public static final int METHOD_RANDOM = 4;
+    public static final int METHOD_REPEAT = 5;
+    public static final int METHOD_VERTICAL = 6;
+    public static final int METHOD_FIXED = 7;
+    public static final int METHOD_HORIZONTAL_VERTICAL = 8;
+    public static final int METHOD_VERTICAL_HORIZONTAL = 9;
+    public static final int CONNECT_NONE = 0;
+    public static final int CONNECT_BLOCK = 1;
+    public static final int CONNECT_TILE = 2;
+    public static final int CONNECT_MATERIAL = 3;
+    public static final int CONNECT_UNKNOWN = 128;
+    public static final int FACE_BOTTOM = 1;
+    public static final int FACE_TOP = 2;
+    public static final int FACE_NORTH = 4;
+    public static final int FACE_SOUTH = 8;
+    public static final int FACE_WEST = 16;
+    public static final int FACE_EAST = 32;
+    public static final int FACE_SIDES = 60;
+    public static final int FACE_ALL = 63;
+    public static final int FACE_UNKNOWN = 128;
+    public static final int SYMMETRY_NONE = 1;
+    public static final int SYMMETRY_OPPOSITE = 2;
+    public static final int SYMMETRY_ALL = 6;
+    public static final int SYMMETRY_UNKNOWN = 128;
 
-   public ConnectedProperties(Properties var1, String var2) {
-      ConnectedParser var3 = new ConnectedParser("ConnectedTextures");
-      this.name = var3.parseName(var2);
-      this.basePath = var3.parseBasePath(var2);
-      this.matchBlocks = var3.c(var1.getProperty("matchBlocks"));
-      this.metadatas = var3.m(var1.getProperty("metadata"));
-      this.matchTiles = this.parseMatchTiles(var1.getProperty("matchTiles"));
-      this.method = parseMethod(var1.getProperty("method"));
-      this.tiles = this.m(var1.getProperty("tiles"));
-      this.connect = parseConnect(var1.getProperty("connect"));
-      this.faces = parseFaces(var1.getProperty("faces"));
-      this.biomes = var3.parseBiomes(var1.getProperty("biomes"));
-      this.minHeight = var3.parseInt(var1.getProperty("minHeight"), -1);
-      this.maxHeight = var3.parseInt(var1.getProperty("maxHeight"), 1024);
-      this.renderPass = var3.parseInt(var1.getProperty("renderPass"));
-      this.innerSeams = ConnectedParser.parseBoolean(var1.getProperty("innerSeams"));
-      this.width = var3.parseInt(var1.getProperty("width"));
-      this.height = var3.parseInt(var1.getProperty("height"));
-      this.weights = var3.m(var1.getProperty("weights"));
-      this.symmetry = parseSymmetry(var1.getProperty("symmetry"));
-   }
+    public ConnectedProperties(Properties p_i32_1_, String p_i32_2_)
+    {
+        ConnectedParser connectedparser = new ConnectedParser("ConnectedTextures");
+        this.name = connectedparser.parseName(p_i32_2_);
+        this.basePath = connectedparser.parseBasePath(p_i32_2_);
+        this.matchBlocks = connectedparser.parseMatchBlocks(p_i32_1_.getProperty("matchBlocks"));
+        this.metadatas = connectedparser.parseIntList(p_i32_1_.getProperty("metadata"));
+        this.matchTiles = this.parseMatchTiles(p_i32_1_.getProperty("matchTiles"));
+        this.method = parseMethod(p_i32_1_.getProperty("method"));
+        this.tiles = this.parseTileNames(p_i32_1_.getProperty("tiles"));
+        this.connect = parseConnect(p_i32_1_.getProperty("connect"));
+        this.faces = parseFaces(p_i32_1_.getProperty("faces"));
+        this.biomes = connectedparser.parseBiomes(p_i32_1_.getProperty("biomes"));
+        this.minHeight = connectedparser.parseInt(p_i32_1_.getProperty("minHeight"), -1);
+        this.maxHeight = connectedparser.parseInt(p_i32_1_.getProperty("maxHeight"), 1024);
+        this.renderPass = connectedparser.parseInt(p_i32_1_.getProperty("renderPass"));
+        this.innerSeams = ConnectedParser.parseBoolean(p_i32_1_.getProperty("innerSeams"));
+        this.width = connectedparser.parseInt(p_i32_1_.getProperty("width"));
+        this.height = connectedparser.parseInt(p_i32_1_.getProperty("height"));
+        this.weights = connectedparser.parseIntList(p_i32_1_.getProperty("weights"));
+        this.symmetry = parseSymmetry(p_i32_1_.getProperty("symmetry"));
+    }
 
-   private String[] parseMatchTiles(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var1 == null) {
-         return null;
-      } else {
-         String[] var3 = Config.tokenize(var1, " ");
-         int var4 = 0;
-         if(var4 < var3.length) {
-            String var5 = var3[var4];
-            if(var5.endsWith(".png")) {
-               var5 = var5.substring(0, var5.length() - 4);
-            }
-
-            var5 = TextureUtils.fixResourcePath(var5, this.basePath);
-            var3[var4] = var5;
-            ++var4;
-         }
-
-         return var3;
-      }
-   }
-
-   private static String parseName(String var0) {
-      String var2 = var0;
-      MatchBlock.b();
-      int var3 = var0.lastIndexOf(47);
-      if(var3 >= 0) {
-         var2 = var0.substring(var3 + 1);
-      }
-
-      int var4 = var2.lastIndexOf(46);
-      var2 = var2.substring(0, var4);
-      return var2;
-   }
-
-   private static String parseBasePath(String var0) {
-      int var1 = var0.lastIndexOf(47);
-      return "";
-   }
-
-   private String[] m(String var1) {
-      acE[] var2 = MatchBlock.b();
-      return null;
-   }
-
-   private static int parseSymmetry(String var0) {
-      acE[] var1 = MatchBlock.b();
-      if(var0 == null) {
-         return 1;
-      } else if(var0.equals("opposite")) {
-         return 2;
-      } else if(var0.equals("all")) {
-         return 6;
-      } else {
-         Config.warn("Unknown symmetry: " + var0);
-         return 1;
-      }
-   }
-
-   private static int parseFaces(String var0) {
-      acE[] var1 = MatchBlock.b();
-      if(var0 == null) {
-         return 63;
-      } else {
-         String[] var2 = Config.tokenize(var0, " ,");
-         int var3 = 0;
-         int var4 = 0;
-         if(var4 < var2.length) {
-            String var5 = var2[var4];
-            int var6 = parseFace(var5);
-            var3 |= var6;
-            ++var4;
-         }
-
-         return var3;
-      }
-   }
-
-   private static int parseFace(String var0) {
-      MatchBlock.b();
-      var0 = var0.toLowerCase();
-      if(!var0.equals("bottom") && !var0.equals("down")) {
-         if(!var0.equals("top") && !var0.equals("up")) {
-            if(var0.equals("north")) {
-               return 4;
-            } else if(var0.equals("south")) {
-               return 8;
-            } else if(var0.equals("east")) {
-               return 32;
-            } else if(var0.equals("west")) {
-               return 16;
-            } else if(var0.equals("sides")) {
-               return 60;
-            } else if(var0.equals("all")) {
-               return 63;
-            } else {
-               Config.warn("Unknown face: " + var0);
-               return 128;
-            }
-         } else {
-            return 2;
-         }
-      } else {
-         return 1;
-      }
-   }
-
-   private static int parseConnect(String var0) {
-      acE[] var1 = MatchBlock.b();
-      if(var0 == null) {
-         return 0;
-      } else if(var0.equals("block")) {
-         return 1;
-      } else if(var0.equals("tile")) {
-         return 2;
-      } else if(var0.equals("material")) {
-         return 3;
-      } else {
-         Config.warn("Unknown connect: " + var0);
-         return 128;
-      }
-   }
-
-   public static IProperty getProperty(String var0, Collection var1) {
-      MatchBlock.b();
-      Iterator var3 = var1.iterator();
-      if(var3.hasNext()) {
-         Object var4 = var3.next();
-         if(var0.equals(((IProperty)var4).getName())) {
-            return (IProperty)var4;
-         }
-      }
-
-      return null;
-   }
-
-   private static int parseMethod(String var0) {
-      acE[] var1 = MatchBlock.b();
-      if(var0 == null) {
-         return 1;
-      } else if(!var0.equals("ctm") && !var0.equals("glass")) {
-         if(!var0.equals("horizontal") && !var0.equals("bookshelf")) {
-            if(var0.equals("vertical")) {
-               return 6;
-            } else if(var0.equals("top")) {
-               return 3;
-            } else if(var0.equals("random")) {
-               return 4;
-            } else if(var0.equals("repeat")) {
-               return 5;
-            } else if(var0.equals("fixed")) {
-               return 7;
-            } else if(!var0.equals("horizontal+vertical") && !var0.equals("h+v")) {
-               if(!var0.equals("vertical+horizontal") && !var0.equals("v+h")) {
-                  Config.warn("Unknown method: " + var0);
-                  return 0;
-               } else {
-                  return 9;
-               }
-            } else {
-               return 8;
-            }
-         } else {
-            return 2;
-         }
-      } else {
-         return 1;
-      }
-   }
-
-   public boolean isValid(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.name != null && this.name.length() > 0) {
-         if(this.basePath == null) {
-            Config.warn("No base path found: " + var1);
-            return false;
-         } else {
-            if(this.matchBlocks == null) {
-               this.matchBlocks = this.detectMatchBlocks();
-            }
-
-            if(this.matchTiles == null && this.matchBlocks == null) {
-               this.matchTiles = this.detectMatchTiles();
-            }
-
-            if(this.matchBlocks == null && this.matchTiles == null) {
-               Config.warn("No matchBlocks or matchTiles specified: " + var1);
-               return false;
-            } else if(this.method == 0) {
-               Config.warn("No method: " + var1);
-               return false;
-            } else if(this.tiles != null && this.tiles.length > 0) {
-               if(this.connect == 0) {
-                  this.connect = this.detectConnect();
-               }
-
-               if(this.connect == 128) {
-                  Config.warn("Invalid connect in: " + var1);
-                  return false;
-               } else if(this.renderPass > 0) {
-                  Config.warn("Render pass not supported: " + this.renderPass);
-                  return false;
-               } else if((this.faces & 128) != 0) {
-                  Config.warn("Invalid faces in: " + var1);
-                  return false;
-               } else if((this.symmetry & 128) != 0) {
-                  Config.warn("Invalid symmetry in: " + var1);
-                  return false;
-               } else {
-                  switch(this.method) {
-                  case 1:
-                     return this.isValidCtm(var1);
-                  case 2:
-                     return this.isValidHorizontal(var1);
-                  case 3:
-                     return this.isValidTop(var1);
-                  case 4:
-                     return this.isValidRandom(var1);
-                  case 5:
-                     return this.isValidRepeat(var1);
-                  case 6:
-                     return this.isValidVertical(var1);
-                  case 7:
-                     return this.isValidFixed(var1);
-                  case 8:
-                     return this.isValidHorizontalVertical(var1);
-                  case 9:
-                     return this.isValidVerticalHorizontal(var1);
-                  default:
-                     Config.warn("Unknown method: " + var1);
-                     return false;
-                  }
-               }
-            } else {
-               Config.warn("No tiles specified: " + var1);
-               return false;
-            }
-         }
-      } else {
-         Config.warn("No name found: " + var1);
-         return false;
-      }
-   }
-
-   private int detectConnect() {
-      acE[] var1 = MatchBlock.b();
-      return this.matchBlocks != null?1:(this.matchTiles != null?2:128);
-   }
-
-   private MatchBlock[] detectMatchBlocks() {
-      MatchBlock.b();
-      int[] var2 = this.detectMatchBlockIds();
-      if(var2 == null) {
-         return null;
-      } else {
-         MatchBlock[] var3 = new MatchBlock[var2.length];
-         int var4 = 0;
-         if(var4 < var3.length) {
-            var3[var4] = new MatchBlock(var2[var4]);
-            ++var4;
-         }
-
-         return var3;
-      }
-   }
-
-   private int[] detectMatchBlockIds() {
-      acE[] var1 = MatchBlock.b();
-      if(!this.name.startsWith("block")) {
-         return null;
-      } else {
-         int var2 = "block".length();
-         int var3 = var2;
-         if(var2 < this.name.length()) {
-            char var4 = this.name.charAt(var2);
-            if(var4 >= 48) {
-               if(var4 > 57) {
-                  ;
-               }
-
-               var3 = var2 + 1;
-            }
-         }
-
-         if(var3 == var2) {
+    private String[] parseMatchTiles(String p_parseMatchTiles_1_)
+    {
+        if (p_parseMatchTiles_1_ == null)
+        {
             return null;
-         } else {
-            String var6 = this.name.substring(var2, var3);
-            int var5 = Config.parseInt(var6, -1);
-            return var5 < 0?null:new int[]{var5};
-         }
-      }
-   }
+        }
+        else
+        {
+            String[] astring = Config.tokenize(p_parseMatchTiles_1_, " ");
 
-   private String[] detectMatchTiles() {
-      TextureAtlasSprite var1 = getIcon(this.name);
-      return null;
-   }
+            for (int i = 0; i < astring.length; ++i)
+            {
+                String s = astring[i];
 
-   private static TextureAtlasSprite getIcon(String var0) {
-      MatchBlock.b();
-      TextureMap var2 = Minecraft.getInstance().getTextureMapBlocks();
-      TextureAtlasSprite var3 = var2.getSpriteSafe(var0);
-      if(var3 != null) {
-         return var3;
-      } else {
-         var3 = var2.getSpriteSafe("blocks/" + var0);
-         return var3;
-      }
-   }
+                if (s.endsWith(".png"))
+                {
+                    s = s.substring(0, s.length() - 4);
+                }
 
-   private boolean isValidCtm(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         this.tiles = this.m("0-11 16-27 32-43 48-58");
-      }
-
-      if(this.tiles.length < 47) {
-         Config.warn("Invalid tiles, must be at least 47: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
-
-   private boolean isValidHorizontal(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         this.tiles = this.m("12-15");
-      }
-
-      if(this.tiles.length != 4) {
-         Config.warn("Invalid tiles, must be exactly 4: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
-
-   private boolean isValidVertical(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         Config.warn("No tiles defined for vertical: " + var1);
-         return false;
-      } else if(this.tiles.length != 4) {
-         Config.warn("Invalid tiles, must be exactly 4: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
-
-   private boolean isValidHorizontalVertical(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         Config.warn("No tiles defined for horizontal+vertical: " + var1);
-         return false;
-      } else if(this.tiles.length != 7) {
-         Config.warn("Invalid tiles, must be exactly 7: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
-
-   private boolean isValidVerticalHorizontal(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         Config.warn("No tiles defined for vertical+horizontal: " + var1);
-         return false;
-      } else if(this.tiles.length != 7) {
-         Config.warn("Invalid tiles, must be exactly 7: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
-
-   private boolean isValidRandom(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles != null && this.tiles.length > 0) {
-         if(this.weights != null) {
-            if(this.weights.length > this.tiles.length) {
-               Config.warn("More weights defined than tiles, trimming weights: " + var1);
-               int[] var3 = new int[this.tiles.length];
-               System.arraycopy(this.weights, 0, var3, 0, var3.length);
-               this.weights = var3;
+                s = TextureUtils.fixResourcePath(s, this.basePath);
+                astring[i] = s;
             }
 
-            if(this.weights.length < this.tiles.length) {
-               Config.warn("Less weights defined than tiles, expanding weights: " + var1);
-               int[] var6 = new int[this.tiles.length];
-               System.arraycopy(this.weights, 0, var6, 0, this.weights.length);
-               int var4 = MathUtils.getAverage(this.weights);
-               int var5 = this.weights.length;
-               if(var5 < var6.length) {
-                  var6[var5] = var4;
-                  ++var5;
-               }
+            return astring;
+        }
+    }
 
-               this.weights = var6;
+    private static String parseName(String p_parseName_0_)
+    {
+        String s = p_parseName_0_;
+        int i = p_parseName_0_.lastIndexOf(47);
+
+        if (i >= 0)
+        {
+            s = p_parseName_0_.substring(i + 1);
+        }
+
+        int j = s.lastIndexOf(46);
+
+        if (j >= 0)
+        {
+            s = s.substring(0, j);
+        }
+
+        return s;
+    }
+
+    private static String parseBasePath(String p_parseBasePath_0_)
+    {
+        int i = p_parseBasePath_0_.lastIndexOf(47);
+        return i < 0 ? "" : p_parseBasePath_0_.substring(0, i);
+    }
+
+    private String[] parseTileNames(String p_parseTileNames_1_)
+    {
+        if (p_parseTileNames_1_ == null)
+        {
+            return null;
+        }
+        else
+        {
+            List list = new ArrayList();
+            String[] astring = Config.tokenize(p_parseTileNames_1_, " ,");
+            label32:
+
+            for (int i = 0; i < astring.length; ++i)
+            {
+                String s = astring[i];
+
+                if (s.contains("-"))
+                {
+                    String[] astring1 = Config.tokenize(s, "-");
+
+                    if (astring1.length == 2)
+                    {
+                        int j = Config.parseInt(astring1[0], -1);
+                        int k = Config.parseInt(astring1[1], -1);
+
+                        if (j >= 0 && k >= 0)
+                        {
+                            if (j > k)
+                            {
+                                Config.warn("Invalid interval: " + s + ", when parsing: " + p_parseTileNames_1_);
+                                continue;
+                            }
+
+                            int l = j;
+
+                            while (true)
+                            {
+                                if (l > k)
+                                {
+                                    continue label32;
+                                }
+
+                                list.add(String.valueOf(l));
+                                ++l;
+                            }
+                        }
+                    }
+                }
+
+                list.add(s);
             }
 
-            this.sumWeights = new int[this.weights.length];
-            int var7 = 0;
-            int var8 = 0;
-            if(var8 < this.weights.length) {
-               var7 += this.weights[var8];
-               this.sumWeights[var8] = var7;
-               ++var8;
+            String[] astring2 = (String[])((String[])list.toArray(new String[list.size()]));
+
+            for (int i1 = 0; i1 < astring2.length; ++i1)
+            {
+                String s1 = astring2[i1];
+                s1 = TextureUtils.fixResourcePath(s1, this.basePath);
+
+                if (!s1.startsWith(this.basePath) && !s1.startsWith("textures/") && !s1.startsWith("mcpatcher/"))
+                {
+                    s1 = this.basePath + "/" + s1;
+                }
+
+                if (s1.endsWith(".png"))
+                {
+                    s1 = s1.substring(0, s1.length() - 4);
+                }
+
+                String s2 = "textures/blocks/";
+
+                if (s1.startsWith(s2))
+                {
+                    s1 = s1.substring(s2.length());
+                }
+
+                if (s1.startsWith("/"))
+                {
+                    s1 = s1.substring(1);
+                }
+
+                astring2[i1] = s1;
             }
 
-            this.sumAllWeights = var7;
-            if(this.sumAllWeights <= 0) {
-               Config.warn("Invalid sum of all weights: " + var7);
-               this.sumAllWeights = 1;
-            }
-         }
+            return astring2;
+        }
+    }
 
-         return true;
-      } else {
-         Config.warn("Tiles not defined: " + var1);
-         return false;
-      }
-   }
+    private static int parseSymmetry(String p_parseSymmetry_0_)
+    {
+        if (p_parseSymmetry_0_ == null)
+        {
+            return 1;
+        }
+        else if (p_parseSymmetry_0_.equals("opposite"))
+        {
+            return 2;
+        }
+        else if (p_parseSymmetry_0_.equals("all"))
+        {
+            return 6;
+        }
+        else
+        {
+            Config.warn("Unknown symmetry: " + p_parseSymmetry_0_);
+            return 1;
+        }
+    }
 
-   private boolean isValidRepeat(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         Config.warn("Tiles not defined: " + var1);
-         return false;
-      } else if(this.width > 0 && this.width <= 16) {
-         if(this.height > 0 && this.height <= 16) {
-            if(this.tiles.length != this.width * this.height) {
-               Config.warn("Number of tiles does not equal width x height: " + var1);
-               return false;
-            } else {
-               return true;
+    private static int parseFaces(String p_parseFaces_0_)
+    {
+        if (p_parseFaces_0_ == null)
+        {
+            return 63;
+        }
+        else
+        {
+            String[] astring = Config.tokenize(p_parseFaces_0_, " ,");
+            int i = 0;
+
+            for (int j = 0; j < astring.length; ++j)
+            {
+                String s = astring[j];
+                int k = parseFace(s);
+                i |= k;
             }
-         } else {
-            Config.warn("Invalid height: " + var1);
+
+            return i;
+        }
+    }
+
+    private static int parseFace(String p_parseFace_0_)
+    {
+        p_parseFace_0_ = p_parseFace_0_.toLowerCase();
+
+        if (!p_parseFace_0_.equals("bottom") && !p_parseFace_0_.equals("down"))
+        {
+            if (!p_parseFace_0_.equals("top") && !p_parseFace_0_.equals("up"))
+            {
+                if (p_parseFace_0_.equals("north"))
+                {
+                    return 4;
+                }
+                else if (p_parseFace_0_.equals("south"))
+                {
+                    return 8;
+                }
+                else if (p_parseFace_0_.equals("east"))
+                {
+                    return 32;
+                }
+                else if (p_parseFace_0_.equals("west"))
+                {
+                    return 16;
+                }
+                else if (p_parseFace_0_.equals("sides"))
+                {
+                    return 60;
+                }
+                else if (p_parseFace_0_.equals("all"))
+                {
+                    return 63;
+                }
+                else
+                {
+                    Config.warn("Unknown face: " + p_parseFace_0_);
+                    return 128;
+                }
+            }
+            else
+            {
+                return 2;
+            }
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    private static int parseConnect(String p_parseConnect_0_)
+    {
+        if (p_parseConnect_0_ == null)
+        {
+            return 0;
+        }
+        else if (p_parseConnect_0_.equals("block"))
+        {
+            return 1;
+        }
+        else if (p_parseConnect_0_.equals("tile"))
+        {
+            return 2;
+        }
+        else if (p_parseConnect_0_.equals("material"))
+        {
+            return 3;
+        }
+        else
+        {
+            Config.warn("Unknown connect: " + p_parseConnect_0_);
+            return 128;
+        }
+    }
+
+    public static IProperty getProperty(String p_getProperty_0_, Collection p_getProperty_1_)
+    {
+        for (Object iproperty : p_getProperty_1_)
+        {
+            if (p_getProperty_0_.equals(((IProperty) iproperty).getName()))
+            {
+                return (IProperty) iproperty;
+            }
+        }
+
+        return null;
+    }
+
+    private static int parseMethod(String p_parseMethod_0_)
+    {
+        if (p_parseMethod_0_ == null)
+        {
+            return 1;
+        }
+        else if (!p_parseMethod_0_.equals("ctm") && !p_parseMethod_0_.equals("glass"))
+        {
+            if (!p_parseMethod_0_.equals("horizontal") && !p_parseMethod_0_.equals("bookshelf"))
+            {
+                if (p_parseMethod_0_.equals("vertical"))
+                {
+                    return 6;
+                }
+                else if (p_parseMethod_0_.equals("top"))
+                {
+                    return 3;
+                }
+                else if (p_parseMethod_0_.equals("random"))
+                {
+                    return 4;
+                }
+                else if (p_parseMethod_0_.equals("repeat"))
+                {
+                    return 5;
+                }
+                else if (p_parseMethod_0_.equals("fixed"))
+                {
+                    return 7;
+                }
+                else if (!p_parseMethod_0_.equals("horizontal+vertical") && !p_parseMethod_0_.equals("h+v"))
+                {
+                    if (!p_parseMethod_0_.equals("vertical+horizontal") && !p_parseMethod_0_.equals("v+h"))
+                    {
+                        Config.warn("Unknown method: " + p_parseMethod_0_);
+                        return 0;
+                    }
+                    else
+                    {
+                        return 9;
+                    }
+                }
+                else
+                {
+                    return 8;
+                }
+            }
+            else
+            {
+                return 2;
+            }
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    public boolean isValid(String p_isValid_1_)
+    {
+        if (this.name != null && this.name.length() > 0)
+        {
+            if (this.basePath == null)
+            {
+                Config.warn("No base path found: " + p_isValid_1_);
+                return false;
+            }
+            else
+            {
+                if (this.matchBlocks == null)
+                {
+                    this.matchBlocks = this.detectMatchBlocks();
+                }
+
+                if (this.matchTiles == null && this.matchBlocks == null)
+                {
+                    this.matchTiles = this.detectMatchTiles();
+                }
+
+                if (this.matchBlocks == null && this.matchTiles == null)
+                {
+                    Config.warn("No matchBlocks or matchTiles specified: " + p_isValid_1_);
+                    return false;
+                }
+                else if (this.method == 0)
+                {
+                    Config.warn("No method: " + p_isValid_1_);
+                    return false;
+                }
+                else if (this.tiles != null && this.tiles.length > 0)
+                {
+                    if (this.connect == 0)
+                    {
+                        this.connect = this.detectConnect();
+                    }
+
+                    if (this.connect == 128)
+                    {
+                        Config.warn("Invalid connect in: " + p_isValid_1_);
+                        return false;
+                    }
+                    else if (this.renderPass > 0)
+                    {
+                        Config.warn("Render pass not supported: " + this.renderPass);
+                        return false;
+                    }
+                    else if ((this.faces & 128) != 0)
+                    {
+                        Config.warn("Invalid faces in: " + p_isValid_1_);
+                        return false;
+                    }
+                    else if ((this.symmetry & 128) != 0)
+                    {
+                        Config.warn("Invalid symmetry in: " + p_isValid_1_);
+                        return false;
+                    }
+                    else
+                    {
+                        switch (this.method)
+                        {
+                            case 1:
+                                return this.isValidCtm(p_isValid_1_);
+
+                            case 2:
+                                return this.isValidHorizontal(p_isValid_1_);
+
+                            case 3:
+                                return this.isValidTop(p_isValid_1_);
+
+                            case 4:
+                                return this.isValidRandom(p_isValid_1_);
+
+                            case 5:
+                                return this.isValidRepeat(p_isValid_1_);
+
+                            case 6:
+                                return this.isValidVertical(p_isValid_1_);
+
+                            case 7:
+                                return this.isValidFixed(p_isValid_1_);
+
+                            case 8:
+                                return this.isValidHorizontalVertical(p_isValid_1_);
+
+                            case 9:
+                                return this.isValidVerticalHorizontal(p_isValid_1_);
+
+                            default:
+                                Config.warn("Unknown method: " + p_isValid_1_);
+                                return false;
+                        }
+                    }
+                }
+                else
+                {
+                    Config.warn("No tiles specified: " + p_isValid_1_);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            Config.warn("No name found: " + p_isValid_1_);
             return false;
-         }
-      } else {
-         Config.warn("Invalid width: " + var1);
-         return false;
-      }
-   }
+        }
+    }
 
-   private boolean isValidFixed(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         Config.warn("Tiles not defined: " + var1);
-         return false;
-      } else if(this.tiles.length != 1) {
-         Config.warn("Number of tiles should be 1 for method: fixed.");
-         return false;
-      } else {
-         return true;
-      }
-   }
+    private int detectConnect()
+    {
+        return this.matchBlocks != null ? 1 : (this.matchTiles != null ? 2 : 128);
+    }
 
-   private boolean isValidTop(String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.tiles == null) {
-         this.tiles = this.m("66");
-      }
+    private MatchBlock[] detectMatchBlocks()
+    {
+        int[] aint = this.detectMatchBlockIds();
 
-      if(this.tiles.length != 1) {
-         Config.warn("Invalid tiles, must be exactly 1: " + var1);
-         return false;
-      } else {
-         return true;
-      }
-   }
+        if (aint == null)
+        {
+            return null;
+        }
+        else
+        {
+            MatchBlock[] amatchblock = new MatchBlock[aint.length];
 
-   public void updateIcons(TextureMap var1) {
-      acE[] var2 = MatchBlock.b();
-      if(this.matchTiles != null) {
-         this.matchTileIcons = a(this.matchTiles, var1);
-      }
+            for (int i = 0; i < amatchblock.length; ++i)
+            {
+                amatchblock[i] = new MatchBlock(aint[i]);
+            }
 
-      if(this.tiles != null) {
-         this.tileIcons = a(this.tiles, var1);
-      }
+            return amatchblock;
+        }
+    }
 
-   }
+    private int[] detectMatchBlockIds()
+    {
+        if (!this.name.startsWith("block"))
+        {
+            return null;
+        }
+        else
+        {
+            int i = "block".length();
+            int j;
 
-   private static TextureAtlasSprite[] a(String[] var0, TextureMap var1) {
-      acE[] var2 = MatchBlock.b();
-      return null;
-   }
+            for (j = i; j < this.name.length(); ++j)
+            {
+                char c0 = this.name.charAt(j);
 
-   public boolean matchesBlockId(int var1) {
-      return Matches.blockId(var1, this.matchBlocks);
-   }
+                if (c0 < 48 || c0 > 57)
+                {
+                    break;
+                }
+            }
 
-   public boolean matchesBlock(int var1, int var2) {
-      acE[] var3 = MatchBlock.b();
-      return !Matches.block(var1, var2, this.matchBlocks)?false:Matches.a(var2, this.metadatas);
-   }
+            if (j == i)
+            {
+                return null;
+            }
+            else
+            {
+                String s = this.name.substring(i, j);
+                int k = Config.parseInt(s, -1);
+                return k < 0 ? null : new int[] {k};
+            }
+        }
+    }
 
-   public boolean matchesIcon(TextureAtlasSprite var1) {
-      return Matches.a(var1, this.matchTileIcons);
-   }
+    private String[] detectMatchTiles()
+    {
+        TextureAtlasSprite textureatlassprite = getIcon(this.name);
+        return textureatlassprite == null ? null : new String[] {this.name};
+    }
 
-   public String toString() {
-      return "CTM name: " + this.name + ", basePath: " + this.basePath + ", matchBlocks: " + Config.a((Object[])this.matchBlocks) + ", matchTiles: " + Config.a((Object[])this.matchTiles);
-   }
+    private static TextureAtlasSprite getIcon(String p_getIcon_0_)
+    {
+        TextureMap texturemap = Minecraft.getInstance().getTextureMapBlocks();
+        TextureAtlasSprite textureatlassprite = texturemap.getSpriteSafe(p_getIcon_0_);
 
-   public boolean matchesBiome(BiomeGenBase var1) {
-      return Matches.biome(var1, this.biomes);
-   }
+        if (textureatlassprite != null)
+        {
+            return textureatlassprite;
+        }
+        else
+        {
+            textureatlassprite = texturemap.getSpriteSafe("blocks/" + p_getIcon_0_);
+            return textureatlassprite;
+        }
+    }
 
-   public int getMetadataMax() {
-      MatchBlock.b();
-      int var2 = -1;
-      var2 = this.a(this.metadatas, var2);
-      if(this.matchBlocks != null) {
-         int var3 = 0;
-         if(var3 < this.matchBlocks.length) {
-            MatchBlock var4 = this.matchBlocks[var3];
-            var2 = this.a(var4.getMetadatas(), var2);
-            ++var3;
-         }
-      }
+    private boolean isValidCtm(String p_isValidCtm_1_)
+    {
+        if (this.tiles == null)
+        {
+            this.tiles = this.parseTileNames("0-11 16-27 32-43 48-58");
+        }
 
-      return var2;
-   }
+        if (this.tiles.length < 47)
+        {
+            Config.warn("Invalid tiles, must be at least 47: " + p_isValidCtm_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
-   private int a(int[] var1, int var2) {
-      acE[] var3 = MatchBlock.b();
-      return var2;
-   }
+    private boolean isValidHorizontal(String p_isValidHorizontal_1_)
+    {
+        if (this.tiles == null)
+        {
+            this.tiles = this.parseTileNames("12-15");
+        }
+
+        if (this.tiles.length != 4)
+        {
+            Config.warn("Invalid tiles, must be exactly 4: " + p_isValidHorizontal_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean isValidVertical(String p_isValidVertical_1_)
+    {
+        if (this.tiles == null)
+        {
+            Config.warn("No tiles defined for vertical: " + p_isValidVertical_1_);
+            return false;
+        }
+        else if (this.tiles.length != 4)
+        {
+            Config.warn("Invalid tiles, must be exactly 4: " + p_isValidVertical_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean isValidHorizontalVertical(String p_isValidHorizontalVertical_1_)
+    {
+        if (this.tiles == null)
+        {
+            Config.warn("No tiles defined for horizontal+vertical: " + p_isValidHorizontalVertical_1_);
+            return false;
+        }
+        else if (this.tiles.length != 7)
+        {
+            Config.warn("Invalid tiles, must be exactly 7: " + p_isValidHorizontalVertical_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean isValidVerticalHorizontal(String p_isValidVerticalHorizontal_1_)
+    {
+        if (this.tiles == null)
+        {
+            Config.warn("No tiles defined for vertical+horizontal: " + p_isValidVerticalHorizontal_1_);
+            return false;
+        }
+        else if (this.tiles.length != 7)
+        {
+            Config.warn("Invalid tiles, must be exactly 7: " + p_isValidVerticalHorizontal_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean isValidRandom(String p_isValidRandom_1_)
+    {
+        if (this.tiles != null && this.tiles.length > 0)
+        {
+            if (this.weights != null)
+            {
+                if (this.weights.length > this.tiles.length)
+                {
+                    Config.warn("More weights defined than tiles, trimming weights: " + p_isValidRandom_1_);
+                    int[] aint = new int[this.tiles.length];
+                    System.arraycopy(this.weights, 0, aint, 0, aint.length);
+                    this.weights = aint;
+                }
+
+                if (this.weights.length < this.tiles.length)
+                {
+                    Config.warn("Less weights defined than tiles, expanding weights: " + p_isValidRandom_1_);
+                    int[] aint1 = new int[this.tiles.length];
+                    System.arraycopy(this.weights, 0, aint1, 0, this.weights.length);
+                    int i = MathUtils.getAverage(this.weights);
+
+                    for (int j = this.weights.length; j < aint1.length; ++j)
+                    {
+                        aint1[j] = i;
+                    }
+
+                    this.weights = aint1;
+                }
+
+                this.sumWeights = new int[this.weights.length];
+                int k = 0;
+
+                for (int l = 0; l < this.weights.length; ++l)
+                {
+                    k += this.weights[l];
+                    this.sumWeights[l] = k;
+                }
+
+                this.sumAllWeights = k;
+
+                if (this.sumAllWeights <= 0)
+                {
+                    Config.warn("Invalid sum of all weights: " + k);
+                    this.sumAllWeights = 1;
+                }
+            }
+
+            return true;
+        }
+        else
+        {
+            Config.warn("Tiles not defined: " + p_isValidRandom_1_);
+            return false;
+        }
+    }
+
+    private boolean isValidRepeat(String p_isValidRepeat_1_)
+    {
+        if (this.tiles == null)
+        {
+            Config.warn("Tiles not defined: " + p_isValidRepeat_1_);
+            return false;
+        }
+        else if (this.width > 0 && this.width <= 16)
+        {
+            if (this.height > 0 && this.height <= 16)
+            {
+                if (this.tiles.length != this.width * this.height)
+                {
+                    Config.warn("Number of tiles does not equal width x height: " + p_isValidRepeat_1_);
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                Config.warn("Invalid height: " + p_isValidRepeat_1_);
+                return false;
+            }
+        }
+        else
+        {
+            Config.warn("Invalid width: " + p_isValidRepeat_1_);
+            return false;
+        }
+    }
+
+    private boolean isValidFixed(String p_isValidFixed_1_)
+    {
+        if (this.tiles == null)
+        {
+            Config.warn("Tiles not defined: " + p_isValidFixed_1_);
+            return false;
+        }
+        else if (this.tiles.length != 1)
+        {
+            Config.warn("Number of tiles should be 1 for method: fixed.");
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean isValidTop(String p_isValidTop_1_)
+    {
+        if (this.tiles == null)
+        {
+            this.tiles = this.parseTileNames("66");
+        }
+
+        if (this.tiles.length != 1)
+        {
+            Config.warn("Invalid tiles, must be exactly 1: " + p_isValidTop_1_);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    public void updateIcons(TextureMap p_updateIcons_1_)
+    {
+        if (this.matchTiles != null)
+        {
+            this.matchTileIcons = registerIcons(this.matchTiles, p_updateIcons_1_);
+        }
+
+        if (this.tiles != null)
+        {
+            this.tileIcons = registerIcons(this.tiles, p_updateIcons_1_);
+        }
+    }
+
+    private static TextureAtlasSprite[] registerIcons(String[] p_registerIcons_0_, TextureMap p_registerIcons_1_)
+    {
+        if (p_registerIcons_0_ == null)
+        {
+            return null;
+        }
+        else
+        {
+            List list = new ArrayList();
+
+            for (int i = 0; i < p_registerIcons_0_.length; ++i)
+            {
+                String s = p_registerIcons_0_[i];
+                ResourceLocation resourcelocation = new ResourceLocation(s);
+                String s1 = resourcelocation.getResourceDomain();
+                String s2 = resourcelocation.getResourcePath();
+
+                if (!s2.contains("/"))
+                {
+                    s2 = "textures/blocks/" + s2;
+                }
+
+                String s3 = s2 + ".png";
+                ResourceLocation resourcelocation1 = new ResourceLocation(s1, s3);
+                boolean flag = Config.hasResource(resourcelocation1);
+
+                if (!flag)
+                {
+                    Config.warn("File not found: " + s3);
+                }
+
+                String s4 = "textures/";
+                String s5 = s2;
+
+                if (s2.startsWith(s4))
+                {
+                    s5 = s2.substring(s4.length());
+                }
+
+                ResourceLocation resourcelocation2 = new ResourceLocation(s1, s5);
+                TextureAtlasSprite textureatlassprite = p_registerIcons_1_.registerSprite(resourcelocation2);
+                list.add(textureatlassprite);
+            }
+
+            TextureAtlasSprite[] atextureatlassprite = (TextureAtlasSprite[])((TextureAtlasSprite[])list.toArray(new TextureAtlasSprite[list.size()]));
+            return atextureatlassprite;
+        }
+    }
+
+    public boolean matchesBlockId(int p_matchesBlockId_1_)
+    {
+        return Matches.blockId(p_matchesBlockId_1_, this.matchBlocks);
+    }
+
+    public boolean matchesBlock(int p_matchesBlock_1_, int p_matchesBlock_2_)
+    {
+        return !Matches.block(p_matchesBlock_1_, p_matchesBlock_2_, this.matchBlocks) ? false : Matches.metadata(p_matchesBlock_2_, this.metadatas);
+    }
+
+    public boolean matchesIcon(TextureAtlasSprite p_matchesIcon_1_)
+    {
+        return Matches.sprite(p_matchesIcon_1_, this.matchTileIcons);
+    }
+
+    public String toString()
+    {
+        return "CTM name: " + this.name + ", basePath: " + this.basePath + ", matchBlocks: " + Config.arrayToString((Object[])this.matchBlocks) + ", matchTiles: " + Config.arrayToString((Object[])this.matchTiles);
+    }
+
+    public boolean matchesBiome(BiomeGenBase p_matchesBiome_1_)
+    {
+        return Matches.biome(p_matchesBiome_1_, this.biomes);
+    }
+
+    public int getMetadataMax()
+    {
+        int i = -1;
+        i = this.getMax(this.metadatas, i);
+
+        if (this.matchBlocks != null)
+        {
+            for (int j = 0; j < this.matchBlocks.length; ++j)
+            {
+                MatchBlock matchblock = this.matchBlocks[j];
+                i = this.getMax(matchblock.getMetadatas(), i);
+            }
+        }
+
+        return i;
+    }
+
+    private int getMax(int[] p_getMax_1_, int p_getMax_2_)
+    {
+        if (p_getMax_1_ == null)
+        {
+            return p_getMax_2_;
+        }
+        else
+        {
+            for (int i = 0; i < p_getMax_1_.length; ++i)
+            {
+                int j = p_getMax_1_[i];
+
+                if (j > p_getMax_2_)
+                {
+                    p_getMax_2_ = j;
+                }
+            }
+
+            return p_getMax_2_;
+        }
+    }
 }

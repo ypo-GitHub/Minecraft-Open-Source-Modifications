@@ -1,174 +1,241 @@
 package net.minecraft.client.renderer.block.model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import net.aAp;
-import net.ayZ;
-import net.j6;
-import net.minecraft.client.renderer.block.model.BlockFaceUV;
-import net.minecraft.client.renderer.block.model.BlockPart;
-import net.minecraft.client.renderer.block.model.BlockPart$Deserializer;
-import net.minecraft.client.renderer.block.model.BlockPartFace;
-import net.minecraft.client.renderer.block.model.BlockPartFace$Deserializer;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms$TransformType;
-import net.minecraft.client.renderer.block.model.ItemTransformVec3f;
-import net.minecraft.client.renderer.block.model.ItemTransformVec3f$Deserializer;
-import net.minecraft.client.renderer.block.model.ModelBlock$Bookkeep;
-import net.minecraft.client.renderer.block.model.ModelBlock$LoopException;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.gson.*;
+import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 public class ModelBlock {
-   private static final Logger LOGGER = LogManager.getLogger();
-   static final Gson SERIALIZER = (new GsonBuilder()).registerTypeAdapter(ModelBlock.class, new aAp()).registerTypeAdapter(BlockPart.class, new BlockPart$Deserializer()).registerTypeAdapter(BlockPartFace.class, new BlockPartFace$Deserializer()).registerTypeAdapter(BlockFaceUV.class, new ayZ()).registerTypeAdapter(ItemTransformVec3f.class, new ItemTransformVec3f$Deserializer()).registerTypeAdapter(ItemCameraTransforms.class, new j6()).create();
-   private final List elements;
-   private final boolean gui3d;
-   private final boolean ambientOcclusion;
-   private final ItemCameraTransforms cameraTransforms;
-   public String name;
-   protected final Map textures;
-   protected ModelBlock parent;
-   protected ResourceLocation parentLocation;
 
-   public static ModelBlock deserialize(Reader var0) {
-      return (ModelBlock)SERIALIZER.fromJson(var0, ModelBlock.class);
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public static ModelBlock deserialize(String var0) {
-      return deserialize((Reader)(new StringReader(var0)));
-   }
+    static final Gson SERIALIZER = new GsonBuilder().registerTypeAdapter(ModelBlock.class, new ModelBlock.Deserializer()).registerTypeAdapter(BlockPart.class, new BlockPart.Deserializer()).registerTypeAdapter(BlockPartFace.class, new BlockPartFace.Deserializer()).registerTypeAdapter(BlockFaceUV.class, new BlockFaceUV.Deserializer()).registerTypeAdapter(ItemTransformVec3f.class, new ItemTransformVec3f.Deserializer()).registerTypeAdapter(ItemCameraTransforms.class, new ItemCameraTransforms.Deserializer()).create();
+    private final List<BlockPart> elements;
+    private final boolean gui3d;
+    private final boolean ambientOcclusion;
+    private final ItemCameraTransforms cameraTransforms;
+    public String name;
+    protected final Map<String, String> textures;
+    protected ModelBlock parent;
+    protected ResourceLocation parentLocation;
 
-   protected ModelBlock(List var1, Map var2, boolean var3, boolean var4, ItemCameraTransforms var5) {
-      this((ResourceLocation)null, var1, var2, var3, var4, var5);
-   }
+    public static ModelBlock deserialize(Reader p_178307_0_) {
+        return SERIALIZER.fromJson(p_178307_0_, ModelBlock.class);
+    }
 
-   protected ModelBlock(ResourceLocation var1, Map var2, boolean var3, boolean var4, ItemCameraTransforms var5) {
-      this(var1, Collections.emptyList(), var2, var3, var4, var5);
-   }
+    public static ModelBlock deserialize(String p_178294_0_) {
+        return deserialize(new StringReader(p_178294_0_));
+    }
 
-   private ModelBlock(ResourceLocation var1, List var2, Map var3, boolean var4, boolean var5, ItemCameraTransforms var6) {
-      this.name = "";
-      this.elements = var2;
-      this.ambientOcclusion = var4;
-      this.gui3d = var5;
-      this.textures = var3;
-      this.parentLocation = var1;
-      this.cameraTransforms = var6;
-   }
+    protected ModelBlock(List<BlockPart> p_i46225_1_, Map<String, String> p_i46225_2_, boolean p_i46225_3_, boolean p_i46225_4_, ItemCameraTransforms p_i46225_5_) {
+        this(null, p_i46225_1_, p_i46225_2_, p_i46225_3_, p_i46225_4_, p_i46225_5_);
+    }
 
-   public List getElements() {
-      return this.hasParent()?this.parent.getElements():this.elements;
-   }
+    protected ModelBlock(ResourceLocation p_i46226_1_, Map<String, String> p_i46226_2_, boolean p_i46226_3_, boolean p_i46226_4_, ItemCameraTransforms p_i46226_5_) {
+        this(p_i46226_1_, Collections.emptyList(), p_i46226_2_, p_i46226_3_, p_i46226_4_, p_i46226_5_);
+    }
 
-   private boolean hasParent() {
-      return this.parent != null;
-   }
+    private ModelBlock(ResourceLocation parentLocationIn, List<BlockPart> elementsIn, Map<String, String> texturesIn, boolean ambientOcclusionIn, boolean gui3dIn, ItemCameraTransforms cameraTransformsIn) {
+        this.name = "";
+        this.elements = elementsIn;
+        this.ambientOcclusion = ambientOcclusionIn;
+        this.gui3d = gui3dIn;
+        this.textures = texturesIn;
+        this.parentLocation = parentLocationIn;
+        this.cameraTransforms = cameraTransformsIn;
+    }
 
-   public boolean isAmbientOcclusion() {
-      return this.hasParent()?this.parent.isAmbientOcclusion():this.ambientOcclusion;
-   }
+    public List<BlockPart> getElements() {
+        return this.hasParent() ? this.parent.getElements() : this.elements;
+    }
 
-   public boolean isGui3d() {
-      return this.gui3d;
-   }
+    private boolean hasParent() {
+        return this.parent != null;
+    }
 
-   public boolean isResolved() {
-      return this.parentLocation == null || this.parent != null && this.parent.isResolved();
-   }
+    public boolean isAmbientOcclusion() {
+        return this.hasParent() ? this.parent.isAmbientOcclusion() : this.ambientOcclusion;
+    }
 
-   public void getParentFromMap(Map var1) {
-      if(this.parentLocation != null) {
-         this.parent = (ModelBlock)var1.get(this.parentLocation);
-      }
+    public boolean isGui3d() {
+        return this.gui3d;
+    }
 
-   }
+    public boolean isResolved() {
+        return this.parentLocation == null || this.parent != null && this.parent.isResolved();
+    }
 
-   public boolean isTexturePresent(String var1) {
-      return !"missingno".equals(this.resolveTextureName(var1));
-   }
+    public void getParentFromMap(Map<ResourceLocation, ModelBlock> p_178299_1_) {
+        if (this.parentLocation != null) {
+            this.parent = p_178299_1_.get(this.parentLocation);
+        }
+    }
 
-   public String resolveTextureName(String var1) {
-      if(!this.startsWithHash(var1)) {
-         var1 = '#' + var1;
-      }
+    public boolean isTexturePresent(String textureName) {
+        return !"missingno".equals(this.resolveTextureName(textureName));
+    }
 
-      return this.resolveTextureName(var1, new ModelBlock$Bookkeep(this));
-   }
+    public String resolveTextureName(String textureName) {
+        if (!this.startsWithHash(textureName)) {
+            textureName = '#' + textureName;
+        }
 
-   private String resolveTextureName(String var1, ModelBlock$Bookkeep var2) {
-      if(this.startsWithHash(var1)) {
-         if(this == var2.modelExt) {
-            LOGGER.warn("Unable to resolve texture due to upward reference: " + var1 + " in " + this.name);
-            return "missingno";
-         } else {
-            String var3 = (String)this.textures.get(var1.substring(1));
-            if(this.hasParent()) {
-               var3 = this.parent.resolveTextureName(var1, var2);
+        return this.resolveTextureName(textureName, new ModelBlock.Bookkeep(this));
+    }
+
+    private String resolveTextureName(String textureName, ModelBlock.Bookkeep p_178302_2_) {
+        if (this.startsWithHash(textureName)) {
+            if (this == p_178302_2_.modelExt) {
+                LOGGER.warn("Unable to resolve texture due to upward reference: " + textureName + " in " + this.name);
+                return "missingno";
+            } else {
+                String s = this.textures.get(textureName.substring(1));
+
+                if (s == null && this.hasParent()) {
+                    s = this.parent.resolveTextureName(textureName, p_178302_2_);
+                }
+
+                p_178302_2_.modelExt = this;
+
+                if (s != null && this.startsWithHash(s)) {
+                    s = p_178302_2_.model.resolveTextureName(s, p_178302_2_);
+                }
+
+                return s != null && !this.startsWithHash(s) ? s : "missingno";
+            }
+        } else {
+            return textureName;
+        }
+    }
+
+    private boolean startsWithHash(String hash) {
+        return hash.charAt(0) == 35;
+    }
+
+    public ResourceLocation getParentLocation() {
+        return this.parentLocation;
+    }
+
+    public ModelBlock getRootModel() {
+        return this.hasParent() ? this.parent.getRootModel() : this;
+    }
+
+    public ItemCameraTransforms func_181682_g() {
+        final ItemTransformVec3f itemtransformvec3f = this.func_181681_a(ItemCameraTransforms.TransformType.THIRD_PERSON);
+        final ItemTransformVec3f itemtransformvec3f1 = this.func_181681_a(ItemCameraTransforms.TransformType.FIRST_PERSON);
+        final ItemTransformVec3f itemtransformvec3f2 = this.func_181681_a(ItemCameraTransforms.TransformType.HEAD);
+        final ItemTransformVec3f itemtransformvec3f3 = this.func_181681_a(ItemCameraTransforms.TransformType.GUI);
+        final ItemTransformVec3f itemtransformvec3f4 = this.func_181681_a(ItemCameraTransforms.TransformType.GROUND);
+        final ItemTransformVec3f itemtransformvec3f5 = this.func_181681_a(ItemCameraTransforms.TransformType.FIXED);
+        return new ItemCameraTransforms(itemtransformvec3f, itemtransformvec3f1, itemtransformvec3f2, itemtransformvec3f3, itemtransformvec3f4, itemtransformvec3f5);
+    }
+
+    private ItemTransformVec3f func_181681_a(ItemCameraTransforms.TransformType p_181681_1_) {
+        return this.parent != null && !this.cameraTransforms.func_181687_c(p_181681_1_) ? this.parent.func_181681_a(p_181681_1_) : this.cameraTransforms.getTransform(p_181681_1_);
+    }
+
+    public static void checkModelHierarchy(Map<ResourceLocation, ModelBlock> p_178312_0_) {
+        for (ModelBlock modelblock : p_178312_0_.values()) {
+            try {
+                ModelBlock modelblock1 = modelblock.parent;
+
+                for (ModelBlock modelblock2 = modelblock1.parent; modelblock1 != modelblock2; modelblock2 = modelblock2.parent.parent) {
+                    modelblock1 = modelblock1.parent;
+                }
+
+                throw new ModelBlock.LoopException();
+            } catch (NullPointerException var5) {
+            }
+        }
+    }
+
+    static final class Bookkeep {
+
+        public final ModelBlock model;
+        public ModelBlock modelExt;
+
+        private Bookkeep(ModelBlock p_i46223_1_) {
+            this.model = p_i46223_1_;
+        }
+
+    }
+
+    public static class Deserializer implements JsonDeserializer<ModelBlock> {
+
+        public ModelBlock deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
+            final JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
+            final List<BlockPart> list = this.getModelElements(p_deserialize_3_, jsonobject);
+            final String s = this.getParent(jsonobject);
+            final boolean flag = StringUtils.isEmpty(s);
+            final boolean flag1 = list.isEmpty();
+
+            if (flag1 && flag) {
+                throw new JsonParseException("BlockModel requires either elements or parent, found neither");
+            } else if (!flag && !flag1) {
+                throw new JsonParseException("BlockModel requires either elements or parent, found both");
+            } else {
+                final Map<String, String> map = this.getTextures(jsonobject);
+                final boolean flag2 = this.getAmbientOcclusionEnabled(jsonobject);
+                ItemCameraTransforms itemcameratransforms = ItemCameraTransforms.DEFAULT;
+
+                if (jsonobject.has("display")) {
+                    final JsonObject jsonobject1 = JsonUtils.getJsonObject(jsonobject, "display");
+                    itemcameratransforms = p_deserialize_3_.deserialize(jsonobject1, ItemCameraTransforms.class);
+                }
+
+                return flag1 ? new ModelBlock(new ResourceLocation(s), map, flag2, true, itemcameratransforms) : new ModelBlock(list, map, flag2, true, itemcameratransforms);
+            }
+        }
+
+        private Map<String, String> getTextures(JsonObject p_178329_1_) {
+            final Map<String, String> map = Maps.newHashMap();
+
+            if (p_178329_1_.has("textures")) {
+                final JsonObject jsonobject = p_178329_1_.getAsJsonObject("textures");
+
+                for (Entry<String, JsonElement> entry : jsonobject.entrySet()) {
+                    map.put(entry.getKey(), entry.getValue().getAsString());
+                }
             }
 
-            var2.modelExt = this;
-            if(this.startsWithHash(var3)) {
-               var3 = var2.model.resolveTextureName(var3, var2);
+            return map;
+        }
+
+        private String getParent(JsonObject p_178326_1_) {
+            return JsonUtils.getString(p_178326_1_, "parent", "");
+        }
+
+        protected boolean getAmbientOcclusionEnabled(JsonObject p_178328_1_) {
+            return JsonUtils.getBoolean(p_178328_1_, "ambientocclusion", true);
+        }
+
+        protected List<BlockPart> getModelElements(JsonDeserializationContext p_178325_1_, JsonObject p_178325_2_) {
+            final List<BlockPart> list = Lists.newArrayList();
+
+            if (p_178325_2_.has("elements")) {
+                for (JsonElement jsonelement : JsonUtils.getJsonArray(p_178325_2_, "elements")) {
+                    list.add(p_178325_1_.deserialize(jsonelement, BlockPart.class));
+                }
             }
 
-            return !this.startsWithHash(var3)?var3:"missingno";
-         }
-      } else {
-         return var1;
-      }
-   }
+            return list;
+        }
 
-   private boolean startsWithHash(String var1) {
-      return var1.charAt(0) == 35;
-   }
+    }
 
-   public ResourceLocation getParentLocation() {
-      return this.parentLocation;
-   }
+    public static class LoopException extends RuntimeException {
+    }
 
-   public ModelBlock getRootModel() {
-      return this.hasParent()?this.parent.getRootModel():this;
-   }
-
-   public ItemCameraTransforms func_181682_g() {
-      ItemTransformVec3f var1 = this.func_181681_a(ItemCameraTransforms$TransformType.THIRD_PERSON);
-      ItemTransformVec3f var2 = this.func_181681_a(ItemCameraTransforms$TransformType.FIRST_PERSON);
-      ItemTransformVec3f var3 = this.func_181681_a(ItemCameraTransforms$TransformType.HEAD);
-      ItemTransformVec3f var4 = this.func_181681_a(ItemCameraTransforms$TransformType.GUI);
-      ItemTransformVec3f var5 = this.func_181681_a(ItemCameraTransforms$TransformType.GROUND);
-      ItemTransformVec3f var6 = this.func_181681_a(ItemCameraTransforms$TransformType.FIXED);
-      return new ItemCameraTransforms(var1, var2, var3, var4, var5, var6);
-   }
-
-   private ItemTransformVec3f func_181681_a(ItemCameraTransforms$TransformType var1) {
-      return this.parent != null && !this.cameraTransforms.func_181687_c(var1)?this.parent.func_181681_a(var1):this.cameraTransforms.getTransform(var1);
-   }
-
-   public static void checkModelHierarchy(Map var0) {
-      for(ModelBlock var2 : var0.values()) {
-         try {
-            ModelBlock var3 = var2.parent;
-
-            for(ModelBlock var4 = var3.parent; var3 != var4; var4 = var4.parent.parent) {
-               var3 = var3.parent;
-            }
-
-            throw new ModelBlock$LoopException();
-         } catch (NullPointerException var5) {
-            ;
-         }
-      }
-
-   }
-
-   private static ModelBlock$LoopException a(ModelBlock$LoopException var0) {
-      return var0;
-   }
 }

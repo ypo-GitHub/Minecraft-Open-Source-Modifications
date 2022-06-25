@@ -2,7 +2,6 @@ package net.minecraft.client.renderer.entity.layers;
 
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderWolf;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntitySheep;
 import net.minecraft.entity.passive.EntityWolf;
@@ -12,34 +11,34 @@ import net.optifine.Config;
 import net.optifine.CustomColors;
 
 public class LayerWolfCollar implements LayerRenderer {
-   private static final ResourceLocation WOLF_COLLAR = new ResourceLocation("textures/entity/wolf/wolf_collar.png");
-   private final RenderWolf wolfRenderer;
-   private static final String b = "CL_00002405";
+    private static final ResourceLocation WOLF_COLLAR = new ResourceLocation("textures/entity/wolf/wolf_collar.png");
+    private final RenderWolf wolfRenderer;
+    private static final String __OBFID = "CL_00002405";
 
-   public LayerWolfCollar(RenderWolf var1) {
-      this.wolfRenderer = var1;
-   }
+    public LayerWolfCollar(RenderWolf wolfRendererIn) {
+        this.wolfRenderer = wolfRendererIn;
+    }
 
-   public void doRenderLayer(EntityWolf var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      if(var1.isTamed() && !var1.isInvisible()) {
-         this.wolfRenderer.bindTexture(WOLF_COLLAR);
-         EnumDyeColor var9 = EnumDyeColor.byMetadata(var1.getCollarColor().getMetadata());
-         float[] var10 = EntitySheep.func_175513_a(var9);
-         if(Config.isCustomColors()) {
-            var10 = CustomColors.getWolfCollarColors(var9, var10);
-         }
+    public void doRenderLayer(EntityWolf entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        if (entitylivingbaseIn.isTamed() && !entitylivingbaseIn.isInvisible()) {
+            this.wolfRenderer.bindTexture(WOLF_COLLAR);
+            EnumDyeColor enumdyecolor = EnumDyeColor.byMetadata(entitylivingbaseIn.getCollarColor().getMetadata());
+            float[] afloat = EntitySheep.func_175513_a(enumdyecolor);
 
-         GlStateManager.color(var10[0], var10[1], var10[2]);
-         this.wolfRenderer.getMainModel().render(var1, var2, var3, var5, var6, var7, var8);
-      }
+            if (Config.isCustomColors()) {
+                afloat = CustomColors.getWolfCollarColors(enumdyecolor, afloat);
+            }
 
-   }
+            GlStateManager.color(afloat[0], afloat[1], afloat[2]);
+            this.wolfRenderer.getMainModel().render(entitylivingbaseIn, p_177141_2_, p_177141_3_, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+        }
+    }
 
-   public boolean shouldCombineTextures() {
-      return true;
-   }
+    public boolean shouldCombineTextures() {
+        return true;
+    }
 
-   public void doRenderLayer(EntityLivingBase var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      this.doRenderLayer((EntityWolf)var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        this.doRenderLayer((EntityWolf) entitylivingbaseIn, p_177141_2_, p_177141_3_, partialTicks, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+    }
 }

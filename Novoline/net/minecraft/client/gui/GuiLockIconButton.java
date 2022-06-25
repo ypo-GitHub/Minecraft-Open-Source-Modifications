@@ -1,50 +1,75 @@
 package net.minecraft.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiLockIconButton$Icon;
 import net.minecraft.client.renderer.GlStateManager;
 
 public class GuiLockIconButton extends GuiButton {
-   private boolean field_175231_o = false;
+    private boolean field_175231_o = false;
 
-   public GuiLockIconButton(int var1, int var2, int var3) {
-      super(var1, var2, var3, 20, 20, "");
-   }
+    public GuiLockIconButton(int p_i45538_1_, int p_i45538_2_, int p_i45538_3_) {
+        super(p_i45538_1_, p_i45538_2_, p_i45538_3_, 20, 20, "");
+    }
 
-   public boolean func_175230_c() {
-      return this.field_175231_o;
-   }
+    public boolean func_175230_c() {
+        return this.field_175231_o;
+    }
 
-   public void func_175229_b(boolean var1) {
-      this.field_175231_o = var1;
-   }
+    public void func_175229_b(boolean p_175229_1_) {
+        this.field_175231_o = p_175229_1_;
+    }
 
-   public void drawButton(Minecraft var1, int var2, int var3) {
-      if(this.visible) {
-         var1.getTextureManager().bindTexture(GuiButton.buttonTextures);
-         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-         if((double)var2 >= this.xPosition && (double)var3 >= this.yPosition && (double)var2 < this.xPosition + (double)this.width && (double)var3 < this.yPosition + (double)this.height) {
-            boolean var6 = true;
-         } else {
-            boolean var10000 = false;
-         }
+    /**
+     * Draws this button to the screen.
+     */
+    public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+        if (this.visible) {
+            mc.getTextureManager().bindTexture(GuiButton.buttonTextures);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+            GuiLockIconButton.Icon guilockiconbutton$icon;
 
-         GuiLockIconButton$Icon var5;
-         if(this.field_175231_o) {
-            if(!this.enabled) {
-               var5 = GuiLockIconButton$Icon.LOCKED_DISABLED;
+            if (this.field_175231_o) {
+                if (!this.enabled) {
+                    guilockiconbutton$icon = GuiLockIconButton.Icon.LOCKED_DISABLED;
+                } else if (flag) {
+                    guilockiconbutton$icon = GuiLockIconButton.Icon.LOCKED_HOVER;
+                } else {
+                    guilockiconbutton$icon = GuiLockIconButton.Icon.LOCKED;
+                }
+            } else if (!this.enabled) {
+                guilockiconbutton$icon = GuiLockIconButton.Icon.UNLOCKED_DISABLED;
+            } else if (flag) {
+                guilockiconbutton$icon = GuiLockIconButton.Icon.UNLOCKED_HOVER;
             } else {
-               var5 = GuiLockIconButton$Icon.LOCKED_HOVER;
+                guilockiconbutton$icon = GuiLockIconButton.Icon.UNLOCKED;
             }
-         } else if(!this.enabled) {
-            var5 = GuiLockIconButton$Icon.UNLOCKED_DISABLED;
-         } else {
-            var5 = GuiLockIconButton$Icon.UNLOCKED_HOVER;
-         }
 
-         this.drawTexturedModalRect((int)this.xPosition, (int)this.yPosition, var5.func_178910_a(), var5.func_178912_b(), this.width, this.height);
-      }
+            this.drawTexturedModalRect((int) this.xPosition, (int) this.yPosition, guilockiconbutton$icon.func_178910_a(), guilockiconbutton$icon.func_178912_b(), this.width, this.height);
+        }
+    }
 
-   }
+    enum Icon {
+        LOCKED(0, 146),
+        LOCKED_HOVER(0, 166),
+        LOCKED_DISABLED(0, 186),
+        UNLOCKED(20, 146),
+        UNLOCKED_HOVER(20, 166),
+        UNLOCKED_DISABLED(20, 186);
+
+        private final int field_178914_g;
+        private final int field_178920_h;
+
+        Icon(int p_i45537_3_, int p_i45537_4_) {
+            this.field_178914_g = p_i45537_3_;
+            this.field_178920_h = p_i45537_4_;
+        }
+
+        public int func_178910_a() {
+            return this.field_178914_g;
+        }
+
+        public int func_178912_b() {
+            return this.field_178920_h;
+        }
+    }
 }

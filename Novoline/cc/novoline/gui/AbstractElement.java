@@ -1,79 +1,77 @@
 package cc.novoline.gui;
 
-import cc.novoline.gui.Element;
 import java.util.Objects;
 
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractElement implements Element {
-   protected boolean visible = true;
-   protected int x;
-   protected int y;
-   private static int[] b;
 
-   public AbstractElement(int var1, int var2) {
-      this.x = var1;
-      this.y = var2;
-   }
+    /* fields */
+    protected boolean visible = true;
+    protected int x, y;
 
-   public final void draw(int var1, int var2) {
-      int[] var3 = b();
-      if(this.visible) {
-         this.onDraw(var1, var2);
-      }
-   }
+    /* constructors */
+    public AbstractElement(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
 
-   public boolean isVisible() {
-      return this.visible;
-   }
+    /* methods */
+    @Override
+    public final void draw(int mouseX, int mouseY) {
+        if (!this.visible) return;
+        onDraw(mouseX, mouseY);
+    }
 
-   public void setVisible(boolean var1) {
-      this.visible = var1;
-   }
+    @Override
+    public boolean isVisible() {
+        return this.visible;
+    }
 
-   public int getX() {
-      return this.x;
-   }
+    @Override
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 
-   public void setX(int var1) {
-      this.x = var1;
-   }
+    @Override
+    public int getX() {
+        return this.x;
+    }
 
-   public int getY() {
-      return this.y;
-   }
+    @Override
+    public void setX(int x) {
+        this.x = x;
+    }
 
-   public void setY(int var1) {
-      this.y = var1;
-   }
+    @Override
+    public int getY() {
+        return this.y;
+    }
 
-   public boolean equals(Object var1) {
-      int[] var2 = b();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractElement)) {
-         return false;
-      } else {
-         AbstractElement var3 = (AbstractElement)var1;
-         return this.visible == var3.visible && this.x == var3.x && this.y == var3.y;
-      }
-   }
+    @Override
+    public void setY(int y) {
+        this.y = y;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Boolean.valueOf(this.visible), Integer.valueOf(this.x), Integer.valueOf(this.y)});
-   }
+    //region Lombok
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractElement)) return false;
+        final AbstractElement that = (AbstractElement) o;
+        return this.visible == that.visible && this.x == that.x && this.y == that.y;
+    }
 
-   public String toString() {
-      return "AbstractDrawable{visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.visible, this.x, this.y);
+    }
 
-   public static void b(int[] var0) {
-      b = var0;
-   }
+    @Override
+    public String toString() {
+        return "AbstractDrawable{" + "visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
+    }
+    //endregion
 
-   public static int[] b() {
-      return b;
-   }
-
-   static {
-      b(new int[2]);
-   }
 }

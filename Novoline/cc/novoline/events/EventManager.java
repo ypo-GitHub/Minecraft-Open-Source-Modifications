@@ -1,197 +1,310 @@
 package cc.novoline.events;
 
-import cc.novoline.events.EventManager$1;
-import cc.novoline.events.EventManager$MethodData;
-import cc.novoline.events.EventTarget;
 import cc.novoline.events.events.Event;
+import cc.novoline.events.events.StoppableEvent;
 import cc.novoline.events.types.Priority;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Predicate;
-import net.acE;
 
+/**
+ * @author DarkMagician6
+ * @since February 2, 2014
+ */
 public final class EventManager {
-   private static final Map REGISTRY_MAP = new HashMap();
-   private static String[] b;
 
-   public static void register(Object var0) {
-      b();
-      Method[] var2 = var0.getClass().getDeclaredMethods();
-      int var3 = var2.length;
-      int var4 = 0;
-      if(var4 < var3) {
-         Method var5 = var2[var4];
-         if(isMethodBad(var5)) {
-            ;
-         }
+    /**
+     * HashMap containing all the registered MethodData sorted on the event parameters of the methods.
+     */
+    private static final Map<Class<? extends Event>, List<MethodData>> REGISTRY_MAP = new HashMap<>();
 
-         register(var5, var0);
-         ++var4;
-      }
+    /**
+     * All methods in this class are static so there would be no reason to create an object of the EventManager class.
+     */
+    private EventManager() {
+    }
 
-   }
-
-   public static void register(Object var0, Class var1) {
-      b();
-      Method[] var3 = var0.getClass().getDeclaredMethods();
-      int var4 = var3.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         Method var6 = var3[var5];
-         if(isMethodBad(var6, var1)) {
-            ;
-         }
-
-         register(var6, var0);
-         ++var5;
-      }
-
-      if(acE.b() == null) {
-         b(new String[4]);
-      }
-
-   }
-
-   public static void unregister(Object var0) {
-      b();
-      Iterator var2 = REGISTRY_MAP.values().iterator();
-      if(var2.hasNext()) {
-         List var3 = (List)var2.next();
-         var3.removeIf(EventManager::lambda$unregister$0);
-      }
-
-      cleanMap(true);
-   }
-
-   public static void unregister(Object var0, Class var1) {
-      String[] var2 = b();
-      if(REGISTRY_MAP.containsKey(var1)) {
-         ((List)REGISTRY_MAP.get(var1)).removeIf(EventManager::lambda$unregister$1);
-         cleanMap(true);
-      }
-
-   }
-
-   private static void register(Method var0, Object var1) {
-      b();
-      Class var3 = var0.getParameterTypes()[0];
-      EventManager$MethodData var4 = new EventManager$MethodData(var1, var0, ((EventTarget)var0.getAnnotation(EventTarget.class)).value());
-      if(!var4.getTarget().isAccessible()) {
-         var4.getTarget().setAccessible(true);
-      }
-
-      if(REGISTRY_MAP.containsKey(var3)) {
-         if(((List)REGISTRY_MAP.get(var3)).contains(var4)) {
-            return;
-         }
-
-         ((List)REGISTRY_MAP.get(var3)).add(var4);
-         sortListValue(var3);
-      }
-
-      REGISTRY_MAP.put(var3, new EventManager$1(var4));
-   }
-
-   public static void removeEntry(Class var0) {
-      b();
-      Iterator var2 = REGISTRY_MAP.entrySet().iterator();
-
-      while(var2.hasNext()) {
-         if(((Class)((Entry)var2.next()).getKey()).equals(var0)) {
-            var2.remove();
-            break;
-         }
-      }
-
-   }
-
-   public static void cleanMap(boolean var0) {
-      b();
-      Iterator var2 = REGISTRY_MAP.entrySet().iterator();
-
-      while(var2.hasNext()) {
-         if(!var0 || ((List)((Entry)var2.next()).getValue()).isEmpty()) {
-            var2.remove();
-            break;
-         }
-      }
-
-   }
-
-   private static void sortListValue(Class var0) {
-      b();
-      CopyOnWriteArrayList var2 = new CopyOnWriteArrayList();
-      byte[] var3 = Priority.VALUE_ARRAY;
-      int var4 = var3.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         byte var6 = var3[var5];
-         Iterator var7 = ((List)REGISTRY_MAP.get(var0)).iterator();
-         if(var7.hasNext()) {
-            EventManager$MethodData var8 = (EventManager$MethodData)var7.next();
-            if(var8.getPriority() == var6) {
-               var2.add(var8);
+    /**
+     * Registers all the methods marked with the EventTarget annotation in the class of the given Object.
+     *
+     * @param object Object that you want to register.
+     */
+    public static void register(Object object) {
+        for (final Method method : object.getClass().getDeclaredMethods()) {
+            if (isMethodBad(method)) {
+                continue;
             }
-         }
+            register(method, object);
+        }
+    }
 
-         ++var5;
-      }
+    /**
+     * Registers the methods marked with the EventTarget annotation and that require
+     * the specified Event as the parameter in the class of the given Object.
+     *
+     * @param object     Object that contains the Method you want to register.
+     * @param eventClass class for the marked method we are looking for.
+     */
+    public static void register(Object object, Class<? extends Event> eventClass) {
+        for (final Method method : object.getClass().getDeclaredMethods()) {
+            if (isMethodBad(method, eventClass)) {
+                continue;
+            }
+            register(method, object);
+        }
+    }
 
-      REGISTRY_MAP.put(var0, var2);
-   }
+    /**
+     * Unregisters all the methods inside the Object that are marked with the EventTarget annotation.
+     *
+     * @param object Object of which you want to unregister all Methods.
+     */
+    public static void unregister(Object object) {
+        for (final List<MethodData> dataList : REGISTRY_MAP.values()) {
+            dataList.removeIf(data -> data.getSource().equals(object));
+        }
 
-   private static boolean isMethodBad(Method var0) {
-      String[] var1 = b();
-      return var0.getParameterTypes().length != 1 || !var0.isAnnotationPresent(EventTarget.class);
-   }
+        cleanMap(true);
+    }
 
-   private static boolean isMethodBad(Method var0, Class var1) {
-      String[] var2 = b();
-      return isMethodBad(var0) || !var0.getParameterTypes()[0].equals(var1);
-   }
+    /**
+     * Unregisters all the methods in the given Object that have the specified class as a parameter.
+     *
+     * @param object     Object that implements the Listener interface.
+     * @param eventClass class for the method to remove.
+     */
+    public static void unregister(Object object, Class<? extends Event> eventClass) {
+        if (REGISTRY_MAP.containsKey(eventClass)) {
+            REGISTRY_MAP.get(eventClass).removeIf(data -> data.getSource().equals(object));
+            cleanMap(true);
+        }
+    }
 
-   public static Event call(Event var0) {
-      b();
-      List var2 = (List)REGISTRY_MAP.get(var0.getClass());
-      return var0;
-   }
+    /**
+     * Registers a new MethodData to the HashMap.
+     * If the HashMap already contains the key of the Method's first argument it will add
+     * a new MethodData to key's matching list and sorts it based on Priority.
+     *
+     * @param method Method to register to the HashMap.
+     * @param object Source object of the method.
+     * @see cc.novoline.events.types.Priority
+     * <p>
+     * Otherwise it will put a new entry in the HashMap with a the first argument's class
+     * and a new CopyOnWriteArrayList containing the new MethodData.
+     */
+    @SuppressWarnings("unchecked")
+    private static void register(Method method, Object object) {
+        Class<? extends Event> indexClass = (Class<? extends Event>) method.getParameterTypes()[0];
+        //New MethodData from the Method we are registering.
+        final MethodData data = new MethodData(object, method, method.getAnnotation(EventTarget.class).value());
 
-   private static void invoke(EventManager$MethodData var0, Event var1) {
-      try {
-         var0.getTarget().invoke(var0.getSource(), new Object[]{var1});
-      } catch (InvocationTargetException | IllegalArgumentException | IllegalAccessException var3) {
-         ;
-      }
+        //Set's the method to accessible so that we can also invoke it if it's protected or private.
+        if (!data.getTarget().isAccessible()) {
+            data.getTarget().setAccessible(true);
+        }
 
-   }
+        if (REGISTRY_MAP.containsKey(indexClass)) {
+            if (!REGISTRY_MAP.get(indexClass).contains(data)) {
+                REGISTRY_MAP.get(indexClass).add(data);
+                sortListValue(indexClass);
+            }
+        } else {
+            REGISTRY_MAP.put(indexClass, new CopyOnWriteArrayList<MethodData>() {
 
-   private static boolean lambda$unregister$1(Object var0, EventManager$MethodData var1) {
-      return var1.getSource().equals(var0);
-   }
+                //Eclipse was bitching about a serialVersionUID.
+                private static final long serialVersionUID = 666L;
 
-   private static boolean lambda$unregister$0(Object var0, EventManager$MethodData var1) {
-      return var1.getSource().equals(var0);
-   }
+                {
+                    add(data);
+                }
+            });
+        }
+    }
 
-   static {
-      b((String[])null);
-   }
+    /**
+     * Removes an entry based on the key value in the map.
+     *
+     * @param indexClass They index key in the map of which the entry should be removed.
+     */
+    public static void removeEntry(Class<? extends Event> indexClass) {
+        final Iterator<Map.Entry<Class<? extends Event>, List<MethodData>>> mapIterator = REGISTRY_MAP.entrySet()
+                .iterator();
 
-   public static void b(String[] var0) {
-      b = var0;
-   }
+        while (mapIterator.hasNext()) {
+            if (mapIterator.next().getKey().equals(indexClass)) {
+                mapIterator.remove();
+                break;
+            }
+        }
+    }
 
-   public static String[] b() {
-      return b;
-   }
+    /**
+     * Cleans up the map entries.
+     * Uses an iterator to make sure that the entry is completely removed.
+     *
+     * @param onlyEmptyEntries If true only remove the entries with an empty list, otherwise remove all the entries.
+     */
+    public static void cleanMap(boolean onlyEmptyEntries) {
+        final Iterator<Map.Entry<Class<? extends Event>, List<MethodData>>> mapIterator = REGISTRY_MAP.entrySet()
+                .iterator();
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+        while (mapIterator.hasNext()) {
+            if (!onlyEmptyEntries || mapIterator.next().getValue().isEmpty()) {
+                mapIterator.remove();
+            }
+        }
+    }
+
+    /**
+     * Sorts the List that matches the corresponding Event class based on priority value.
+     *
+     * @param indexClass The Event class index in the HashMap of the List to sort.
+     */
+    private static void sortListValue(Class<? extends Event> indexClass) {
+        final List<MethodData> sortedList = new CopyOnWriteArrayList<>();
+
+        for (final byte priority : Priority.VALUE_ARRAY) {
+            for (final MethodData data : REGISTRY_MAP.get(indexClass)) {
+                if (data.getPriority() == priority) {
+                    sortedList.add(data);
+                }
+            }
+        }
+
+        //Overwriting the existing entry.
+        REGISTRY_MAP.put(indexClass, sortedList);
+    }
+
+    /**
+     * Checks if the method does not meet the requirements to be used to receive event calls from the Dispatcher.
+     * Performed checks: Checks if the parameter length is not 1 and if the EventTarget annotation is not present.
+     *
+     * @param method Method to check.
+     * @return True if the method should not be used for receiving event calls from the Dispatcher.
+     * @see cc.novoline.events.EventTarget
+     */
+    private static boolean isMethodBad(Method method) {
+        return method.getParameterTypes().length != 1 || !method.isAnnotationPresent(EventTarget.class);
+    }
+
+    /**
+     * Checks if the method does not meet the requirements to be used to receive event calls from the Dispatcher.
+     * Performed checks: Checks if the parameter class of the method is the same as the event we want to receive.
+     *
+     * @param method     Method to check.
+     * @param eventClass of the Event we want to find a method for receiving it.
+     * @return True if the method should not be used for receiving event calls from the Dispatcher.
+     * @see cc.novoline.events.EventTarget
+     */
+    private static boolean isMethodBad(Method method, Class<? extends Event> eventClass) {
+        return isMethodBad(method) || !method.getParameterTypes()[0].equals(eventClass);
+    }
+
+    /**
+     * Call's an event and invokes the right methods that are listening to the event call.
+     * First get's the matching list from the registry map based on the class of the event.
+     * Then it checks if the list is not null. After that it will check if the event is an instance of
+     * EventStoppable and if so it will add an extra check when looping trough the data.
+     * If the Event was an instance of EventStoppable it will check every loop if the EventStoppable is stopped, and if
+     * it is it will break the loop, thus stopping the call.
+     * For every MethodData in the list it will invoke the Data's method with the Event as the argument.
+     * After that is all done it will return the Event.
+     *
+     * @param event Event to dispatch.
+     * @return Event in the state after dispatching it.
+     */
+    public static Event call(final Event event) {
+        final List<MethodData> dataList = REGISTRY_MAP.get(event.getClass());
+
+        if (dataList == null) return event;
+
+        if (event instanceof StoppableEvent) {
+            final StoppableEvent stoppable = (StoppableEvent) event;
+
+            for (final MethodData data : dataList) {
+                invoke(data, event);
+
+                if (stoppable.isStopped()) break;
+            }
+        } else {
+            for (final MethodData data : dataList) invoke(data, event);
+        }
+
+        return event;
+    }
+
+    /**
+     * Invokes a MethodData when an Event call is made.
+     *
+     * @param data     The data of which the targeted Method should be invoked.
+     * @param argument The called Event which should be used as an argument for the targeted Method.
+     */
+    private static void invoke(MethodData data, Event argument) {
+        try {
+            data.getTarget().invoke(data.getSource(), argument);
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException ignored) {
+        }
+    }
+
+    /**
+     * @author DarkMagician6
+     * @since January 2, 2014
+     */
+    private static final class MethodData {
+
+        private final Object source;
+
+        private final Method target;
+
+        private final byte priority;
+
+        /**
+         * Sets the values of the data.
+         *
+         * @param source   The source Object of the data. Used by the VM to
+         *                 determine to which object it should send the call to.
+         * @param target   The targeted Method to which the Event should be send to.
+         * @param priority The priority of this Method. Used by the registry to sort
+         *                 the data on.
+         */
+        public MethodData(Object source, Method target, byte priority) {
+            this.source = source;
+            this.target = target;
+            this.priority = priority;
+        }
+
+        /**
+         * Gets the source Object of the data.
+         *
+         * @return Source Object of the targeted Method.
+         */
+        public Object getSource() {
+            return this.source;
+        }
+
+        /**
+         * Gets the targeted Method.
+         *
+         * @return The Method that is listening to certain Event calls.
+         */
+        public Method getTarget() {
+            return this.target;
+        }
+
+        /**
+         * Gets the priority value of the targeted Method.
+         *
+         * @return The priority value of the targeted Method.
+         */
+        public byte getPriority() {
+            return this.priority;
+        }
+
+    }
+
 }

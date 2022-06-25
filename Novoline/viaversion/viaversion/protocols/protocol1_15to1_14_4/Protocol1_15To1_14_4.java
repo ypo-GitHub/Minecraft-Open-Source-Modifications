@@ -1,73 +1,76 @@
 package viaversion.viaversion.protocols.protocol1_15to1_14_4;
 
-import net.Mo;
-import net.Q3;
-import net.aTZ;
-import net.acE;
-import net.aeS;
-import net.ahW;
-import net.ai4;
-import net.awA;
-import net.awj;
-import net.cA;
-import net.cU;
-import net.vs;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.protocol.Protocol;
-import viaversion.viaversion.api.rewriters.IdRewriteFunction;
+import viaversion.viaversion.api.remapper.PacketRemapper;
+import viaversion.viaversion.api.rewriters.MetadataRewriter;
 import viaversion.viaversion.api.rewriters.RegistryType;
 import viaversion.viaversion.api.rewriters.SoundRewriter;
 import viaversion.viaversion.api.rewriters.StatisticsRewriter;
 import viaversion.viaversion.api.rewriters.TagRewriter;
-import viaversion.viaversion.protocols.protocol1_15to1_14_4.Protocol1_15To1_14_4$1;
+import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_14to1_13_2.ClientboundPackets1_14;
+import viaversion.viaversion.protocols.protocol1_14to1_13_2.ServerboundPackets1_14;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.data.MappingData;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.metadata.MetadataRewriter1_15To1_14_4;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.packets.EntityPackets;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.packets.InventoryPackets;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.packets.PlayerPackets;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.packets.WorldPackets;
+import viaversion.viaversion.protocols.protocol1_15to1_14_4.storage.EntityTracker1_15;
 
-public class Protocol1_15To1_14_4 extends Protocol {
-   public static final ai4 j = new ai4();
-   private TagRewriter tagRewriter;
+public class Protocol1_15To1_14_4 extends Protocol<ClientboundPackets1_14, ClientboundPackets1_15, ServerboundPackets1_14, ServerboundPackets1_14> {
 
-   public Protocol1_15To1_14_4() {
-      super(awj.class, Mo.class, ahW.class, ahW.class);
-   }
+    public static final MappingData MAPPINGS = new MappingData();
+    private TagRewriter tagRewriter;
 
-   protected void registerPackets() {
-      aTZ var2 = new aTZ(this);
-      awA.a(this);
-      vs.a(this);
-      aeS.a(this);
-      Q3.a(this);
-      Mo.b();
-      SoundRewriter var3 = new SoundRewriter(this);
-      var3.registerSound(awj.ENTITY_SOUND);
-      var3.registerSound(awj.SOUND);
-      var2.getClass();
-      (new StatisticsRewriter(this, var2::getNewEntityId)).register(awj.STATISTICS);
-      this.a(ahW.EDIT_BOOK, new Protocol1_15To1_14_4$1(this));
-      this.tagRewriter = new TagRewriter(this, awA::a);
-      this.tagRewriter.register(awj.TAGS);
-   }
+    public Protocol1_15To1_14_4() {
+        super(ClientboundPackets1_14.class, ClientboundPackets1_15.class, ServerboundPackets1_14.class, ServerboundPackets1_14.class);
+    }
 
-   protected void onMappingDataLoaded() {
-      Mo.b();
-      int[] var2 = new int[17];
-      short var3 = 501;
-      int var4 = 0;
-      if(var4 < 17) {
-         var2[var4] = var3 + var4;
-         ++var4;
-      }
+    @Override
+    protected void registerPackets() {
+        MetadataRewriter metadataRewriter = new MetadataRewriter1_15To1_14_4(this);
 
-      this.tagRewriter.addTag(RegistryType.BLOCK, "minecraft:shulker_boxes", var2);
-      if(acE.b() == null) {
-         Mo.b(new String[3]);
-      }
+        EntityPackets.register(this);
+        PlayerPackets.register(this);
+        WorldPackets.register(this);
+        InventoryPackets.register(this);
 
-   }
+        SoundRewriter soundRewriter = new SoundRewriter(this);
+        soundRewriter.registerSound(ClientboundPackets1_14.ENTITY_SOUND); // Entity Sound Effect (added somewhere in 1.14)
+        soundRewriter.registerSound(ClientboundPackets1_14.SOUND);
 
-   public void init(UserConnection var1) {
-      var1.a((cA)(new cU(var1)));
-   }
+        new StatisticsRewriter(this, metadataRewriter::getNewEntityId).register(ClientboundPackets1_14.STATISTICS);
 
-   public ai4 a() {
-      return j;
-   }
+        registerIncoming(ServerboundPackets1_14.EDIT_BOOK, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> InventoryPackets.toServer(wrapper.passthrough(Type.FLAT_VAR_INT_ITEM)));
+            }
+        });
+
+        tagRewriter = new TagRewriter(this, EntityPackets::getNewEntityId);
+        tagRewriter.register(ClientboundPackets1_14.TAGS);
+    }
+
+    @Override
+    protected void onMappingDataLoaded() {
+        int[] shulkerBoxes = new int[17];
+        int shulkerBoxOffset = 501;
+        for (int i = 0; i < 17; i++) {
+            shulkerBoxes[i] = shulkerBoxOffset + i;
+        }
+        tagRewriter.addTag(RegistryType.BLOCK, "minecraft:shulker_boxes", shulkerBoxes);
+    }
+
+    @Override
+    public void init(UserConnection userConnection) {
+        userConnection.put(new EntityTracker1_15(userConnection));
+    }
+
+    @Override
+    public MappingData getMappingData() {
+        return MAPPINGS;
+    }
 }

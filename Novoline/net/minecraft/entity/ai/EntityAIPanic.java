@@ -1,37 +1,52 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.ai.EntityAIBase;
-import net.minecraft.entity.ai.RandomPositionGenerator;
 import net.minecraft.util.Vec3;
 
 public class EntityAIPanic extends EntityAIBase {
-   private EntityCreature theEntityCreature;
-   protected double speed;
-   private double f;
-   private double c;
-   private double b;
+    private EntityCreature theEntityCreature;
+    protected double speed;
+    private double randPosX;
+    private double randPosY;
+    private double randPosZ;
 
-   public EntityAIPanic(EntityCreature var1, double var2) {
-      this.theEntityCreature = var1;
-      this.speed = var2;
-      this.setMutexBits(1);
-   }
+    public EntityAIPanic(EntityCreature creature, double speedIn) {
+        this.theEntityCreature = creature;
+        this.speed = speedIn;
+        this.setMutexBits(1);
+    }
 
-   public boolean shouldExecute() {
-      if(this.theEntityCreature.getAITarget() == null && !this.theEntityCreature.isBurning()) {
-         return false;
-      } else {
-         Vec3 var1 = RandomPositionGenerator.findRandomTarget(this.theEntityCreature, 5, 4);
-         return false;
-      }
-   }
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (this.theEntityCreature.getAITarget() == null && !this.theEntityCreature.isBurning()) {
+            return false;
+        } else {
+            Vec3 vec3 = RandomPositionGenerator.findRandomTarget(this.theEntityCreature, 5, 4);
 
-   public void startExecuting() {
-      this.theEntityCreature.getNavigator().tryMoveToXYZ(this.f, this.c, this.b, this.speed);
-   }
+            if (vec3 == null) {
+                return false;
+            } else {
+                this.randPosX = vec3.xCoord;
+                this.randPosY = vec3.yCoord;
+                this.randPosZ = vec3.zCoord;
+                return true;
+            }
+        }
+    }
 
-   public boolean continueExecuting() {
-      return !this.theEntityCreature.getNavigator().noPath();
-   }
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.theEntityCreature.getNavigator().tryMoveToXYZ(this.randPosX, this.randPosY, this.randPosZ, this.speed);
+    }
+
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return !this.theEntityCreature.getNavigator().noPath();
+    }
 }

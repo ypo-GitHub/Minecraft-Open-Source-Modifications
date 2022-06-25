@@ -3,5 +3,10 @@ package net.minecraft.network;
 import net.minecraft.util.IChatComponent;
 
 public interface INetHandler {
-   void onDisconnect(IChatComponent var1);
+
+    /**
+     * Invoked when disconnecting, the parameter is a ChatComponent describing the reason for termination
+     */
+    void onDisconnect(IChatComponent reason);
+
 }

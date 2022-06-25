@@ -1,36 +1,43 @@
 package viaversion.viaversion.protocols.protocol1_9to1_8.storage;
 
-import net.cA;
-import net.cq;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.Position;
 
-public class PlaceBlockTracker extends cA {
-   private long lastPlaceTimestamp = 0L;
-   private Position lastPlacedPosition = null;
+public class PlaceBlockTracker extends StoredObject {
+    private long lastPlaceTimestamp = 0;
+    private Position lastPlacedPosition = null;
 
-   public PlaceBlockTracker(UserConnection var1) {
-      super(var1);
-   }
+    public PlaceBlockTracker(UserConnection user) {
+        super(user);
+    }
 
-   public boolean isExpired(int var1) {
-      String var2 = cq.c();
-      return System.currentTimeMillis() > this.lastPlaceTimestamp + (long)var1;
-   }
+    /**
+     * Check if a certain amount of time has passed
+     *
+     * @param ms The amount of time in MS
+     * @return True if it has passed
+     */
+    public boolean isExpired(int ms) {
+        return System.currentTimeMillis() > (lastPlaceTimestamp + ms);
+    }
 
-   public void updateTime() {
-      this.lastPlaceTimestamp = System.currentTimeMillis();
-   }
+    /**
+     * Set the last place time to the current time
+     */
+    public void updateTime() {
+        lastPlaceTimestamp = System.currentTimeMillis();
+    }
 
-   public long getLastPlaceTimestamp() {
-      return this.lastPlaceTimestamp;
-   }
+    public long getLastPlaceTimestamp() {
+        return lastPlaceTimestamp;
+    }
 
-   public Position getLastPlacedPosition() {
-      return this.lastPlacedPosition;
-   }
+    public Position getLastPlacedPosition() {
+        return lastPlacedPosition;
+    }
 
-   public void setLastPlacedPosition(Position var1) {
-      this.lastPlacedPosition = var1;
-   }
+    public void setLastPlacedPosition(Position lastPlacedPosition) {
+        this.lastPlacedPosition = lastPlacedPosition;
+    }
 }

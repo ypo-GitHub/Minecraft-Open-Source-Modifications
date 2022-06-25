@@ -1,92 +1,59 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import net.abi;
-import net.acE;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-class ChestConnectionHandler extends abi {
-   private static final Map chestFacings = new HashMap();
-   private static final Map connectedStates = new HashMap();
-   private static final Set trappedChests = new HashSet();
+import java.util.*;
 
-   static ConnectionData$ConnectorInitAction init() {
-      ChestConnectionHandler var0 = new ChestConnectionHandler();
-      return ChestConnectionHandler::lambda$init$0;
-   }
+class ChestConnectionHandler extends ConnectionHandler {
+    private static final Map<Integer, BlockFace> chestFacings = new HashMap<>();
+    private static final Map<Byte, Integer> connectedStates = new HashMap<>();
+    private static final Set<Integer> trappedChests = new HashSet<>();
 
-   private static Byte getStates(WrappedBlockData var0) {
-      abi.b();
-      byte var2 = 0;
-      String var3 = var0.getValue("type");
-      if(var3.equals("left")) {
-         var2 = (byte)(var2 | 1);
-      }
-
-      if(var3.equals("right")) {
-         var2 = (byte)(var2 | 2);
-      }
-
-      var2 = (byte)(var2 | BlockFace.valueOf(var0.getValue("facing").toUpperCase(Locale.ROOT)).ordinal() << 2);
-      if(var0.getMinecraftKey().equals("minecraft:trapped_chest")) {
-         var2 = (byte)(var2 | 16);
-      }
-
-      return Byte.valueOf(var2);
-   }
-
-   public int connect(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      BlockFace var5 = (BlockFace)chestFacings.get(Integer.valueOf(var3));
-      byte var6 = 0;
-      var6 = (byte)(var6 | var5.ordinal() << 2);
-      boolean var7 = trappedChests.contains(Integer.valueOf(var3));
-      if(var7) {
-         var6 = (byte)(var6 | 16);
-      }
-
-      int var8;
-      if(chestFacings.containsKey(Integer.valueOf(var8 = this.getBlockData(var1, var2.getRelative(BlockFace.NORTH)))) && var7 == trappedChests.contains(Integer.valueOf(var8))) {
-         var6 = (byte)(var6 | (var5 == BlockFace.WEST?1:2));
-      }
-
-      if(chestFacings.containsKey(Integer.valueOf(var8 = this.getBlockData(var1, var2.getRelative(BlockFace.SOUTH)))) && var7 == trappedChests.contains(Integer.valueOf(var8))) {
-         var6 = (byte)(var6 | (var5 == BlockFace.EAST?1:2));
-      }
-
-      if(chestFacings.containsKey(Integer.valueOf(var8 = this.getBlockData(var1, var2.getRelative(BlockFace.WEST)))) && var7 == trappedChests.contains(Integer.valueOf(var8))) {
-         var6 = (byte)(var6 | (var5 == BlockFace.NORTH?2:1));
-      }
-
-      if(chestFacings.containsKey(Integer.valueOf(var8 = this.getBlockData(var1, var2.getRelative(BlockFace.EAST)))) && var7 == trappedChests.contains(Integer.valueOf(var8))) {
-         var6 = (byte)(var6 | (var5 == BlockFace.SOUTH?2:1));
-      }
-
-      Integer var9 = (Integer)connectedStates.get(Byte.valueOf(var6));
-      return var9 == null?var3:var9.intValue();
-   }
-
-   private static void lambda$init$0(ChestConnectionHandler var0, WrappedBlockData var1) {
-      acE[] var2 = abi.b();
-      if(var1.getMinecraftKey().equals("minecraft:chest") || var1.getMinecraftKey().equals("minecraft:trapped_chest")) {
-         if(!var1.getValue("waterlogged").equals("true")) {
-            chestFacings.put(Integer.valueOf(var1.getSavedBlockStateId()), BlockFace.valueOf(var1.getValue("facing").toUpperCase(Locale.ROOT)));
-            if(var1.getMinecraftKey().equalsIgnoreCase("minecraft:trapped_chest")) {
-               trappedChests.add(Integer.valueOf(var1.getSavedBlockStateId()));
+    static ConnectionData.ConnectorInitAction init() {
+        final ChestConnectionHandler connectionHandler = new ChestConnectionHandler();
+        return blockData -> {
+            if (!blockData.getMinecraftKey().equals("minecraft:chest") && !blockData.getMinecraftKey().equals("minecraft:trapped_chest"))
+                return;
+            if (blockData.getValue("waterlogged").equals("true")) return;
+            chestFacings.put(blockData.getSavedBlockStateId(), BlockFace.valueOf(blockData.getValue("facing").toUpperCase(Locale.ROOT)));
+            if (blockData.getMinecraftKey().equalsIgnoreCase("minecraft:trapped_chest")) {
+                trappedChests.add(blockData.getSavedBlockStateId());
             }
+            connectedStates.put(getStates(blockData), blockData.getSavedBlockStateId());
+            ConnectionData.connectionHandlerMap.put(blockData.getSavedBlockStateId(), connectionHandler);
+        };
+    }
 
-            connectedStates.put(getStates(var1), Integer.valueOf(var1.getSavedBlockStateId()));
-            ConnectionData.connectionHandlerMap.put(var1.getSavedBlockStateId(), var0);
-         }
-      }
-   }
+    private static Byte getStates(WrappedBlockData blockData) {
+        byte states = 0;
+        String type = blockData.getValue("type");
+        if (type.equals("left")) states |= 1;
+        if (type.equals("right")) states |= 2;
+        states |= (BlockFace.valueOf(blockData.getValue("facing").toUpperCase(Locale.ROOT)).ordinal() << 2);
+        if (blockData.getMinecraftKey().equals("minecraft:trapped_chest")) states |= 16;
+        return states;
+    }
+
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        BlockFace facing = chestFacings.get(blockState);
+        byte states = 0;
+        states |= (facing.ordinal() << 2);
+        boolean trapped = trappedChests.contains(blockState);
+        if (trapped) states |= 16;
+        int relative;
+        if (chestFacings.containsKey(relative = getBlockData(user, position.getRelative(BlockFace.NORTH))) && trapped == trappedChests.contains(relative)) {
+            states |= facing == BlockFace.WEST ? 1 : 2;
+        } else if (chestFacings.containsKey(relative = getBlockData(user, position.getRelative(BlockFace.SOUTH))) && trapped == trappedChests.contains(relative)) {
+            states |= facing == BlockFace.EAST ? 1 : 2;
+        } else if (chestFacings.containsKey(relative = getBlockData(user, position.getRelative(BlockFace.WEST))) && trapped == trappedChests.contains(relative)) {
+            states |= facing == BlockFace.NORTH ? 2 : 1;
+        } else if (chestFacings.containsKey(relative = getBlockData(user, position.getRelative(BlockFace.EAST))) && trapped == trappedChests.contains(relative)) {
+            states |= facing == BlockFace.SOUTH ? 2 : 1;
+        }
+        Integer newBlockState = connectedStates.get(states);
+        return newBlockState == null ? blockState : newBlockState;
+    }
 }

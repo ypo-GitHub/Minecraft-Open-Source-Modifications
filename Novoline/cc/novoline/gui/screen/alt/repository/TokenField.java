@@ -1,125 +1,127 @@
 package cc.novoline.gui.screen.alt.repository;
 
-import cc.novoline.utils.fonts.impl.Fonts$SFBOLD$SFBOLD_16;
-import java.awt.Color;
-import net.CI;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.util.MathHelper;
 
+import java.awt.*;
+
+import static cc.novoline.utils.fonts.impl.Fonts.SFBOLD.SFBOLD_16.SFBOLD_16;
+
 public class TokenField extends GuiTextField {
-   private final String shit;
 
-   public TokenField(int var1, FontRenderer var2, int var3, int var4, int var5, int var6, String var7) {
-      super(var1, var2, var3, var4, var5, var6);
-      this.shit = var7;
-   }
+    private final String shit;
 
-   public void drawTextBox() {
-      int[] var1 = CI.b();
-      if(this.getVisible()) {
-         Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.drawString(this.shit, this.xPosition - (float)Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.stringWidth(this.shit) - 5.0F, this.yPosition + 5.0F, (new Color(198, 198, 198)).getRGB());
-         drawRect((double)this.xPosition, (double)(this.yPosition + 15.0F), (double)(this.xPosition + (float)this.width), (double)(this.yPosition + 16.0F), (new Color(198, 198, 198)).getRGB());
-         int var2 = this.isEnabled?this.enabledColor:this.disabledColor;
-         int var3 = this.cursorPosition - this.lineScrollOffset;
-         int var4 = this.selectionEnd - this.lineScrollOffset;
-         String var5 = Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
-         boolean var6 = var3 >= 0 && var3 <= var5.length();
-         boolean var7 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && var6;
-         int var8 = this.enableBackgroundDrawing?(int)this.xPosition + 4:(int)this.xPosition;
-         int var9 = this.enableBackgroundDrawing?(int)this.yPosition + (this.height - 8) / 2:(int)this.yPosition;
-         int var10 = var8;
-         if(var4 > var5.length()) {
-            var4 = var5.length();
-         }
+    public TokenField(int componentId, FontRenderer fontRenderer, int x, int y, int width, int height, String shit) {
+        super(componentId, fontRenderer, x, y, width, height);
+        this.shit = shit;
+    }
 
-         if(!var5.isEmpty()) {
-            String var11 = var5.substring(0, var3);
-            var10 = (int)Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.drawString(var11, (double)((float)var8), (double)((float)var9), var2, true);
-         }
+    @Override
+    public void drawTextBox() {
+        if (this.getVisible()) {
+            SFBOLD_16.drawString(this.shit, this.xPosition - SFBOLD_16.stringWidth(this.shit) - 5,
+                    this.yPosition + 5, new Color(198, 198, 198).getRGB());
+            drawRect(this.xPosition, this.yPosition + 15, this.xPosition + this.width, this.yPosition + 16,
+                    new Color(198, 198, 198).getRGB());
+            int i = this.isEnabled ? this.enabledColor : this.disabledColor;
+            int j = this.cursorPosition - this.lineScrollOffset;
+            int k = this.selectionEnd - this.lineScrollOffset;
+            String s = SFBOLD_16.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
+            boolean flag = j >= 0 && j <= s.length();
+            boolean flag1 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && flag;
+            int l = this.enableBackgroundDrawing ? (int) this.xPosition + 4 : (int) this.xPosition;
+            int i1 = this.enableBackgroundDrawing ? (int) this.yPosition + (this.height - 8) / 2 : (int) this.yPosition;
+            int j1 = l;
 
-         boolean var14 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
-         int var12 = var10;
-         if(!var6) {
-            var12 = var3 > 0?var8 + this.width:var8;
-         }
-
-         if(var14) {
-            var12 = var10 - 1;
-            --var10;
-         }
-
-         if(!var5.isEmpty() && var6 && var3 < var5.length()) {
-            Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.drawString(var5.substring(var3), (double)((float)var10), (double)((float)var9), var2, true);
-         }
-
-         if(var7) {
-            if(var14) {
-               Gui.drawRect(var12, var9 - 1, var12 + 1, var9 + 1 + this.fontRendererInstance.getHeight(), -3092272);
+            if (k > s.length()) {
+                k = s.length();
             }
 
-            Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.drawString("_", (double)((float)var12), (double)((float)var9), var2, true);
-         }
+            if (!s.isEmpty()) {
+                String s1 = flag ? s.substring(0, j) : s;
+                j1 = (int) SFBOLD_16.drawString(s1, (float) l, (float) i1, i, true);
+            }
 
-         if(var4 != var3) {
-            int var13 = var8 + Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.stringWidth(var5.substring(0, var4));
-            this.drawCursorVertical(var12, var9 - 1, var13 - 1, var9 + 1 + this.fontRendererInstance.getHeight());
-         }
-      }
+            boolean flag2 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
+            int k1 = j1;
 
-   }
+            if (!flag) {
+                k1 = j > 0 ? l + this.width : l;
+            } else if (flag2) {
+                k1 = j1 - 1;
+                --j1;
+            }
 
-   public void mouseClicked(int var1, int var2, int var3) {
-      int[] var4 = CI.b();
-      boolean var5 = (float)var1 >= this.xPosition && (float)var1 < this.xPosition + (float)this.width && (float)var2 >= this.yPosition && (float)var2 < this.yPosition + (float)this.height;
-      if(this.canLoseFocus) {
-         this.setFocused(var5);
-      }
+            if (!s.isEmpty() && flag && j < s.length()) {
+                SFBOLD_16.drawString(s.substring(j), (float) j1, (float) i1, i, true);
+            }
 
-      if(this.isFocused && var5 && var3 == 0) {
-         int var6 = var1 - (int)this.xPosition;
-         if(this.enableBackgroundDrawing) {
-            var6 -= 4;
-         }
+            if (flag1) {
+                if (flag2) {
+                    Gui.drawRect(k1, i1 - 1, k1 + 1, i1 + 1 + this.fontRendererInstance.getHeight(), -3092272);
+                } else {
+                    SFBOLD_16.drawString("_", (float) k1, (float) i1, i, true);
+                }
+            }
 
-         String var7 = Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
-         this.setCursorPosition(Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.trimStringToWidth(var7, var6).length() + this.lineScrollOffset);
-      }
+            if (k != j) {
+                int l1 = l + SFBOLD_16.stringWidth(s.substring(0, k));
+                this.drawCursorVertical(k1, i1 - 1, l1 - 1, i1 + 1 + this.fontRendererInstance.getHeight());
+            }
+        }
+    }
 
-   }
+    @Override
+    public void mouseClicked(int p_146192_1_, int p_146192_2_, int p_146192_3_) {
+        boolean flag = p_146192_1_ >= this.xPosition && p_146192_1_ < this.xPosition + this.width && p_146192_2_ >= this.yPosition && p_146192_2_ < this.yPosition + this.height;
 
-   public void setSelectionPos(int var1) {
-      CI.b();
-      int var3 = this.text.length();
-      if(var1 > var3) {
-         var1 = var3;
-      }
+        if (this.canLoseFocus) {
+            setFocused(flag);
+        }
 
-      if(var1 < 0) {
-         var1 = 0;
-      }
+        if (this.isFocused && flag && p_146192_3_ == 0) {
+            int i = p_146192_1_ -(int)  this.xPosition;
 
-      this.selectionEnd = var1;
-      if(this.lineScrollOffset > var3) {
-         this.lineScrollOffset = var3;
-      }
+            if (this.enableBackgroundDrawing) {
+                i -= 4;
+            }
 
-      int var4 = this.getWidth();
-      String var5 = Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.trimStringToWidth(this.text.substring(this.lineScrollOffset), var4);
-      int var6 = var5.length() + this.lineScrollOffset;
-      if(var1 == this.lineScrollOffset) {
-         this.lineScrollOffset -= Fonts$SFBOLD$SFBOLD_16.SFBOLD_16.trimStringToWidth(this.text, var4, true).length();
-      }
+            final String s = SFBOLD_16
+                    .trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
+            setCursorPosition(SFBOLD_16.trimStringToWidth(s, i).length() + this.lineScrollOffset);
+        }
+    }
 
-      if(var1 > var6) {
-         this.lineScrollOffset += var1 - var6;
-      }
+    @Override
+    public void setSelectionPos(int p_146199_1_) {
+        final int i = this.text.length();
 
-      if(var1 <= this.lineScrollOffset) {
-         this.lineScrollOffset -= this.lineScrollOffset - var1;
-      }
+        if (p_146199_1_ > i) p_146199_1_ = i;
+        if (p_146199_1_ < 0) p_146199_1_ = 0;
 
-      this.lineScrollOffset = MathHelper.clamp_int(this.lineScrollOffset, 0, var3);
-   }
+        this.selectionEnd = p_146199_1_;
+
+        if (this.lineScrollOffset > i) {
+            this.lineScrollOffset = i;
+        }
+
+        final int j = getWidth();
+        final String s = SFBOLD_16.trimStringToWidth(this.text.substring(this.lineScrollOffset), j);
+        final int k = s.length() + this.lineScrollOffset;
+
+        if (p_146199_1_ == this.lineScrollOffset) {
+            this.lineScrollOffset -= SFBOLD_16.trimStringToWidth(this.text, j, true).length();
+        }
+
+        if (p_146199_1_ > k) {
+            this.lineScrollOffset += p_146199_1_ - k;
+        } else if (p_146199_1_ <= this.lineScrollOffset) {
+            this.lineScrollOffset -= this.lineScrollOffset - p_146199_1_;
+        }
+
+        this.lineScrollOffset = MathHelper.clamp_int(this.lineScrollOffset, 0, i);
+    }
+
 }

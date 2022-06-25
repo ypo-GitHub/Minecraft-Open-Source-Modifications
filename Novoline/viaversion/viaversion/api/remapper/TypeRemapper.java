@@ -1,22 +1,22 @@
 package viaversion.viaversion.api.remapper;
 
 import viaversion.viaversion.api.PacketWrapper;
-import viaversion.viaversion.api.remapper.ValueReader;
-import viaversion.viaversion.api.remapper.ValueWriter;
 import viaversion.viaversion.api.type.Type;
 
-public class TypeRemapper implements ValueReader, ValueWriter {
-   private final Type type;
+public class TypeRemapper<T> implements ValueReader<T>, ValueWriter<T> {
+    private final Type<T> type;
 
-   public TypeRemapper(Type var1) {
-      this.type = var1;
-   }
+    public TypeRemapper(Type<T> type) {
+        this.type = type;
+    }
 
-   public Object read(PacketWrapper var1) throws Exception {
-      return var1.read(this.type);
-   }
+    @Override
+    public T read(PacketWrapper wrapper) throws Exception {
+        return wrapper.read(type);
+    }
 
-   public void write(PacketWrapper var1, Object var2) {
-      var1.write(this.type, var2);
-   }
+    @Override
+    public void write(PacketWrapper output, T inputValue) {
+        output.write(type, inputValue);
+    }
 }

@@ -1,52 +1,57 @@
 package net.optifine;
 
-import net.optifine.Config;
-import net.optifine.MatchBlock;
-import net.optifine.RangeInt;
+public class RangeListInt
+{
+    private RangeInt[] ranges = new RangeInt[0];
 
-public class RangeListInt {
-   private RangeInt[] ranges = new RangeInt[0];
+    public void addRange(RangeInt p_addRange_1_)
+    {
+        this.ranges = (RangeInt[])((RangeInt[])Config.addObjectToArray(this.ranges, p_addRange_1_));
+    }
 
-   public void addRange(RangeInt var1) {
-      this.ranges = (RangeInt[])((RangeInt[])((RangeInt[])Config.addObjectToArray(this.ranges, var1)));
-   }
+    public boolean isInRange(int p_isInRange_1_)
+    {
+        for (int i = 0; i < this.ranges.length; ++i)
+        {
+            RangeInt rangeint = this.ranges[i];
 
-   public boolean isInRange(int var1) {
-      MatchBlock.b();
-      int var3 = 0;
-      if(var3 < this.ranges.length) {
-         RangeInt var4 = this.ranges[var3];
-         if(var4.isInRange(var1)) {
-            return true;
-         }
+            if (rangeint.isInRange(p_isInRange_1_))
+            {
+                return true;
+            }
+        }
 
-         ++var3;
-      }
+        return false;
+    }
 
-      return false;
-   }
+    public int getCountRanges()
+    {
+        return this.ranges.length;
+    }
 
-   public int getCountRanges() {
-      return this.ranges.length;
-   }
+    public RangeInt getRange(int p_getRange_1_)
+    {
+        return this.ranges[p_getRange_1_];
+    }
 
-   public RangeInt getRange(int var1) {
-      return this.ranges[var1];
-   }
+    public String toString()
+    {
+        StringBuffer stringbuffer = new StringBuffer();
+        stringbuffer.append("[");
 
-   public String toString() {
-      StringBuffer var2 = new StringBuffer();
-      var2.append("[");
-      MatchBlock.b();
-      int var3 = 0;
-      if(var3 < this.ranges.length) {
-         RangeInt var4 = this.ranges[var3];
-         var2.append(", ");
-         var2.append(var4.toString());
-         ++var3;
-      }
+        for (int i = 0; i < this.ranges.length; ++i)
+        {
+            RangeInt rangeint = this.ranges[i];
 
-      var2.append("]");
-      return var2.toString();
-   }
+            if (i > 0)
+            {
+                stringbuffer.append(", ");
+            }
+
+            stringbuffer.append(rangeint.toString());
+        }
+
+        stringbuffer.append("]");
+        return stringbuffer.toString();
+    }
 }

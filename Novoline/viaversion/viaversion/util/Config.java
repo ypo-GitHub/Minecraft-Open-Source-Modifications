@@ -1,129 +1,191 @@
 package viaversion.viaversion.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.representer.Representer;
 import viaversion.viaversion.api.configuration.ConfigurationProvider;
-import viaversion.viaversion.util.CommentStore;
-import viaversion.viaversion.util.YamlConstructor;
+
+import java.io.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public abstract class Config implements ConfigurationProvider {
-   private static final ThreadLocal YAML = ThreadLocal.withInitial(Config::lambda$static$0);
-   private final CommentStore commentStore = new CommentStore('.', 2);
-   private final File configFile;
-   private Map config;
-   private static String b;
+    private static final ThreadLocal<Yaml> YAML = ThreadLocal.withInitial(() -> {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setPrettyFlow(false);
+        options.setIndent(2);
+        return new Yaml(new YamlConstructor(), new Representer(), options);
+    });
 
-   public Config(File var1) {
-      this.configFile = var1;
-   }
+    private final CommentStore commentStore = new CommentStore('.', 2);
+    private final File configFile;
+    private Map<String, Object> config;
 
-   public abstract URL getDefaultConfigURL();
+    /**
+     * Create a new Config instance, this will *not* load the config by default.
+     * To load config see {@link #reloadConfig()}
+     *
+     * @param configFile The location of where the config is loaded/saved.
+     */
+    public Config(File configFile) {
+        this.configFile = configFile;
+    }
 
-   public synchronized Map loadConfig(File param1) {
-      // $FF: Couldn't be decompiled
-   }
+    public abstract URL getDefaultConfigURL();
 
-   protected abstract void handleConfig(Map var1);
+    public synchronized Map<String, Object> loadConfig(File location) {
+        List<String> unsupported = getUnsupportedOptions();
+        URL jarConfigFile = getDefaultConfigURL();
+        try {
+            commentStore.storeComments(jarConfigFile.openStream());
+            for (String option : unsupported) {
+                List<String> comments = commentStore.header(option);
+                if (comments != null) {
+                    comments.clear();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Map<String, Object> config = null;
+        if (location.exists()) {
+            try (FileInputStream input = new FileInputStream(location)) {
+                config = (Map<String, Object>) YAML.get().load(input);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (config == null) {
+            config = new HashMap<>();
+        }
 
-   public synchronized void saveConfig(File var1, Map var2) {
-      try {
-         this.commentStore.writeComments(((Yaml)YAML.get()).dump(var2), var1);
-      } catch (IOException var4) {
-         var4.printStackTrace();
-      }
+        Map<String, Object> defaults = config;
+        try (InputStream stream = jarConfigFile.openStream()) {
+            defaults = (Map<String, Object>) YAML.get().load(stream);
+            for (String option : unsupported) {
+                defaults.remove(option);
+            }
+            // Merge with defaultLoader
+            for (Map.Entry<String, Object> entry : config.entrySet()) {
+                // Set option in new conf if exists
+                if (defaults.containsKey(entry.getKey()) && !unsupported.contains(entry.getKey())) {
+                    defaults.put(entry.getKey(), entry.getValue());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Call Handler
+        handleConfig(defaults);
+        // Save
+        saveConfig(location, defaults);
 
-   }
+        return defaults;
+    }
 
-   public abstract List getUnsupportedOptions();
+    protected abstract void handleConfig(Map<String, Object> config);
 
-   public void set(String var1, Object var2) {
-      this.config.put(var1, var2);
-   }
+    public synchronized void saveConfig(File location, Map<String, Object> config) {
+        try {
+            commentStore.writeComments(YAML.get().dump(config), location);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-   public void saveConfig() {
-      this.configFile.getParentFile().mkdirs();
-      this.saveConfig(this.configFile, this.config);
-   }
+    public abstract List<String> getUnsupportedOptions();
 
-   public void reloadConfig() {
-      this.configFile.getParentFile().mkdirs();
-      this.config = new ConcurrentSkipListMap(this.loadConfig(this.configFile));
-   }
+    @Override
+    public void set(String path, Object value) {
+        config.put(path, value);
+    }
 
-   public Map getValues() {
-      return this.config;
-   }
+    @Override
+    public void saveConfig() {
+        this.configFile.getParentFile().mkdirs();
+        saveConfig(this.configFile, this.config);
+    }
 
-   @Nullable
-   public Object get(String var1, Class var2, Object var3) {
-      c();
-      Object var5 = this.config.get(var1);
-      return var5 != null?var5:var3;
-   }
+    @Override
+    public void reloadConfig() {
+        this.configFile.getParentFile().mkdirs();
+        this.config = new ConcurrentSkipListMap<>(loadConfig(this.configFile));
+    }
 
-   public boolean getBoolean(String var1, boolean var2) {
-      c();
-      Object var4 = this.config.get(var1);
-      return var4 != null?((Boolean)var4).booleanValue():var2;
-   }
+    @Override
+    public Map<String, Object> getValues() {
+        return this.config;
+    }
 
-   @Nullable
-   public String getString(String var1, @Nullable String var2) {
-      c();
-      Object var4 = this.config.get(var1);
-      return var4 != null?(String)var4:var2;
-   }
+    @Nullable
+    public <T> T get(String key, Class<T> clazz, T def) {
+        Object o = this.config.get(key);
+        if (o != null) {
+            return (T) o;
+        } else {
+            return def;
+        }
+    }
 
-   public int getInt(String var1, int var2) {
-      c();
-      Object var4 = this.config.get(var1);
-      return var4 != null?(var4 instanceof Number?((Number)var4).intValue():var2):var2;
-   }
+    public boolean getBoolean(String key, boolean def) {
+        Object o = this.config.get(key);
+        if (o != null) {
+            return (boolean) o;
+        } else {
+            return def;
+        }
+    }
 
-   public double getDouble(String var1, double var2) {
-      c();
-      Object var5 = this.config.get(var1);
-      return var5 != null?(var5 instanceof Number?((Number)var5).doubleValue():var2):var2;
-   }
+    @Nullable
+    public String getString(String key, @Nullable String def) {
+        final Object o = this.config.get(key);
+        if (o != null) {
+            return (String) o;
+        } else {
+            return def;
+        }
+    }
 
-   public List getIntegerList(String var1) {
-      c();
-      Object var3 = this.config.get(var1);
-      return (List)(var3 != null?(List)var3:new ArrayList());
-   }
+    public int getInt(String key, int def) {
+        Object o = this.config.get(key);
+        if (o != null) {
+            if (o instanceof Number) {
+                return ((Number) o).intValue();
+            } else {
+                return def;
+            }
+        } else {
+            return def;
+        }
+    }
 
-   private static Yaml lambda$static$0() {
-      DumperOptions var0 = new DumperOptions();
-      var0.setDefaultFlowStyle(FlowStyle.BLOCK);
-      var0.setPrettyFlow(false);
-      var0.setIndent(2);
-      return new Yaml(new YamlConstructor(), new Representer(), var0);
-   }
+    public double getDouble(String key, double def) {
+        Object o = this.config.get(key);
+        if (o != null) {
+            if (o instanceof Number) {
+                return ((Number) o).doubleValue();
+            } else {
+                return def;
+            }
+        } else {
+            return def;
+        }
+    }
 
-   static {
-      b((String)null);
-   }
-
-   public static void b(String var0) {
-      b = var0;
-   }
-
-   public static String c() {
-      return b;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public List<Integer> getIntegerList(String key) {
+        Object o = this.config.get(key);
+        if (o != null) {
+            return (List<Integer>) o;
+        } else {
+            return new ArrayList<>();
+        }
+    }
 }

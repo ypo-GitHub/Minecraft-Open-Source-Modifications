@@ -1,58 +1,68 @@
 package net.minecraft.network.handshake.client;
 
-import java.io.IOException;
 import net.minecraft.network.EnumConnectionState;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.handshake.INetHandlerHandshakeServer;
 
-public class C00Handshake implements Packet {
-   private int protocolVersion;
-   private String ip;
-   private int port;
-   private EnumConnectionState requestedState;
+import java.io.IOException;
 
-   public C00Handshake() {
-   }
+public class C00Handshake implements Packet<INetHandlerHandshakeServer> {
+    private int protocolVersion;
+    private String ip;
+    private int port;
+    private EnumConnectionState requestedState;
 
-   public C00Handshake(int var1, String var2, int var3, EnumConnectionState var4) {
-      this.protocolVersion = var1;
-      this.ip = var2;
-      this.port = var3;
-      this.requestedState = var4;
-   }
+    public C00Handshake() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.protocolVersion = var1.readVarIntFromBuffer();
-      this.ip = var1.a(255);
-      this.port = var1.readUnsignedShort();
-      this.requestedState = EnumConnectionState.getById(var1.readVarIntFromBuffer());
-   }
+    public C00Handshake(int version, String ip, int port, EnumConnectionState requestedState) {
+        this.protocolVersion = version;
+        this.ip = ip;
+        this.port = port;
+        this.requestedState = requestedState;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.protocolVersion);
-      var1.writeString(this.ip);
-      var1.writeShort(this.port);
-      var1.writeVarIntToBuffer(this.requestedState.getId());
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.protocolVersion = buf.readVarIntFromBuffer();
+        this.ip = buf.readStringFromBuffer(255);
+        this.port = buf.readUnsignedShort();
+        this.requestedState = EnumConnectionState.getById(buf.readVarIntFromBuffer());
+    }
 
-   public void processPacket(INetHandlerHandshakeServer var1) {
-      var1.processHandshake(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.protocolVersion);
+        buf.writeString(this.ip);
+        buf.writeShort(this.port);
+        buf.writeVarIntToBuffer(this.requestedState.getId());
+    }
 
-   public EnumConnectionState getRequestedState() {
-      return this.requestedState;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerHandshakeServer handler) {
+        handler.processHandshake(this);
+    }
 
-   public int getProtocolVersion() {
-      return this.protocolVersion;
-   }
+    public EnumConnectionState getRequestedState() {
+        return this.requestedState;
+    }
 
-   public String getIp() {
-      return this.ip;
-   }
+    public int getProtocolVersion() {
+        return this.protocolVersion;
+    }
 
-   public int getPort() {
-      return this.port;
-   }
+    public String getIp() {
+        return ip;
+    }
+
+    public int getPort() {
+        return port;
+    }
 }

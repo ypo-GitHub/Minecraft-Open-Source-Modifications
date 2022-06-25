@@ -1,75 +1,85 @@
 package net.minecraft.block;
 
-import com.google.common.base.Predicate;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockSign;
-import net.minecraft.block.BlockWallSign$1;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Axis;
-import net.minecraft.util.EnumFacing$Plane;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockWallSign extends BlockSign {
-   public static final PropertyDirection FACING = PropertyDirection.create("facing", (Predicate)EnumFacing$Plane.HORIZONTAL);
 
-   public BlockWallSign() {
-      this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
-   }
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      EnumFacing var3 = (EnumFacing)var1.getBlockState(var2).getValue(FACING);
-      float var4 = 0.28125F;
-      float var5 = 0.78125F;
-      float var6 = 0.0F;
-      float var7 = 1.0F;
-      float var8 = 0.125F;
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-      switch(BlockWallSign$1.$SwitchMap$net$minecraft$util$EnumFacing[var3.ordinal()]) {
-      case 1:
-         this.setBlockBounds(0.0F, 0.28125F, 0.875F, 1.0F, 0.78125F, 1.0F);
-         break;
-      case 2:
-         this.setBlockBounds(0.0F, 0.28125F, 0.0F, 1.0F, 0.78125F, 0.125F);
-         break;
-      case 3:
-         this.setBlockBounds(0.875F, 0.28125F, 0.0F, 1.0F, 0.78125F, 1.0F);
-         break;
-      case 4:
-         this.setBlockBounds(0.0F, 0.28125F, 0.0F, 0.125F, 0.78125F, 1.0F);
-      }
+    public BlockWallSign() {
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+    }
 
-   }
+    @SuppressWarnings("incomplete-switch")
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        final EnumFacing enumfacing = worldIn.getBlockState(pos).getValue(FACING);
+        final float f = 0.28125F;
+        final float f1 = 0.78125F;
+        final float f2 = 0.0F;
+        final float f3 = 1.0F;
+        final float f4 = 0.125F;
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      EnumFacing var5 = (EnumFacing)var3.getValue(FACING);
-      if(!var1.getBlockState(var2.offset(var5.getOpposite())).getBlock().getMaterial().isSolid()) {
-         this.dropBlockAsItem(var1, var2, var3, 0);
-         var1.setBlockToAir(var2);
-      }
+        switch (enumfacing) {
+            case NORTH:
+                this.setBlockBounds(f2, f, 1.0F - f4, f3, f1, 1.0F);
+                break;
 
-      super.onNeighborBlockChange(var1, var2, var3, var4);
-   }
+            case SOUTH:
+                this.setBlockBounds(f2, f, 0.0F, f3, f1, f4);
+                break;
 
-   public IBlockState getStateFromMeta(int var1) {
-      EnumFacing var2 = EnumFacing.getFront(var1);
-      if(var2.getAxis() == EnumFacing$Axis.Y) {
-         var2 = EnumFacing.NORTH;
-      }
+            case WEST:
+                this.setBlockBounds(1.0F - f4, f, f2, 1.0F, f1, f3);
+                break;
 
-      return this.getDefaultState().withProperty(FACING, var2);
-   }
+            case EAST:
+                this.setBlockBounds(0.0F, f, f2, f4, f1, f3);
+        }
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((EnumFacing)var1.getValue(FACING)).getIndex();
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        final EnumFacing enumfacing = state.getValue(FACING);
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{FACING});
-   }
+        if (!worldIn.getBlockState(pos.offset(enumfacing.getOpposite())).getBlock().getMaterial().isSolid()) {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
+        }
+
+        super.onNeighborBlockChange(worldIn, pos, state, neighborBlock);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
+
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y) {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(FACING).getIndex();
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, FACING);
+    }
+
 }

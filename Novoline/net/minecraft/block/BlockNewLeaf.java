@@ -1,12 +1,6 @@
 package net.minecraft.block;
 
 import com.google.common.base.Predicate;
-import java.util.List;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockLeaves;
-import net.minecraft.block.BlockNewLeaf$1;
-import net.minecraft.block.BlockPlanks$EnumType;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -20,71 +14,92 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.List;
+
 public class BlockNewLeaf extends BlockLeaves {
-   public static final PropertyEnum VARIANT = PropertyEnum.create("variant", BlockPlanks$EnumType.class, (Predicate)(new BlockNewLeaf$1()));
 
-   public BlockNewLeaf() {
-      this.setDefaultState(this.blockState.getBaseState().withProperty(VARIANT, BlockPlanks$EnumType.ACACIA).withProperty(CHECK_DECAY, Boolean.TRUE).withProperty(DECAYABLE, Boolean.TRUE));
-   }
+    public static final PropertyEnum<BlockPlanks.EnumType> VARIANT = PropertyEnum.create("variant", BlockPlanks.EnumType.class, new Predicate<BlockPlanks.EnumType>() {
 
-   protected void dropApple(World var1, BlockPos var2, IBlockState var3, int var4) {
-      if(var3.getValue(VARIANT) == BlockPlanks$EnumType.DARK_OAK && var1.rand.nextInt(var4) == 0) {
-         spawnAsEntity(var1, var2, new ItemStack(Items.apple, 1, 0));
-      }
+        public boolean apply(BlockPlanks.EnumType p_apply_1_) {
+            return p_apply_1_.getMetadata() >= 4;
+        }
+    });
 
-   }
+    public BlockNewLeaf() {
+        this.setDefaultState(this.blockState.getBaseState().withProperty(VARIANT, BlockPlanks.EnumType.ACACIA).withProperty(CHECK_DECAY, Boolean.TRUE).withProperty(DECAYABLE, Boolean.TRUE));
+    }
 
-   public int damageDropped(IBlockState var1) {
-      return ((BlockPlanks$EnumType)var1.getValue(VARIANT)).getMetadata();
-   }
+    protected void dropApple(World worldIn, BlockPos pos, IBlockState state, int chance) {
+        if (state.getValue(VARIANT) == BlockPlanks.EnumType.DARK_OAK && worldIn.rand.nextInt(chance) == 0) {
+            spawnAsEntity(worldIn, pos, new ItemStack(Items.apple, 1, 0));
+        }
+    }
 
-   public int getDamageValue(World var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2);
-      return var3.getBlock().getMetaFromState(var3) & 3;
-   }
+    /**
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
+     */
+    public int damageDropped(IBlockState state) {
+        return state.getValue(VARIANT).getMetadata();
+    }
 
-   public void getSubBlocks(Item var1, CreativeTabs var2, List var3) {
-      var3.add(new ItemStack(var1, 1, 0));
-      var3.add(new ItemStack(var1, 1, 1));
-   }
+    public int getDamageValue(World worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
+        return iblockstate.getBlock().getMetaFromState(iblockstate) & 3;
+    }
 
-   protected ItemStack createStackedBlock(IBlockState var1) {
-      return new ItemStack(Item.getItemFromBlock(this), 1, ((BlockPlanks$EnumType)var1.getValue(VARIANT)).getMetadata() - 4);
-   }
+    /**
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
+     */
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list) {
+        list.add(new ItemStack(itemIn, 1, 0));
+        list.add(new ItemStack(itemIn, 1, 1));
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(VARIANT, this.getWoodType(var1)).withProperty(DECAYABLE, Boolean.valueOf((var1 & 4) == 0)).withProperty(CHECK_DECAY, Boolean.valueOf((var1 & 8) > 0));
-   }
+    protected ItemStack createStackedBlock(IBlockState state) {
+        return new ItemStack(Item.getItemFromBlock(this), 1, state.getValue(VARIANT).getMetadata() - 4);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      int var2 = 0;
-      var2 = var2 | ((BlockPlanks$EnumType)var1.getValue(VARIANT)).getMetadata() - 4;
-      if(!((Boolean)var1.getValue(DECAYABLE)).booleanValue()) {
-         var2 |= 4;
-      }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(VARIANT, this.getWoodType(meta)).withProperty(DECAYABLE, (meta & 4) == 0).withProperty(CHECK_DECAY, (meta & 8) > 0);
+    }
 
-      if(((Boolean)var1.getValue(CHECK_DECAY)).booleanValue()) {
-         var2 |= 8;
-      }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        int i = 0;
+        i = i | state.getValue(VARIANT).getMetadata() - 4;
 
-      return var2;
-   }
+        if (!state.getValue(DECAYABLE)) {
+            i |= 4;
+        }
 
-   public BlockPlanks$EnumType getWoodType(int var1) {
-      return BlockPlanks$EnumType.byMetadata((var1 & 3) + 4);
-   }
+        if (state.getValue(CHECK_DECAY)) {
+            i |= 8;
+        }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{VARIANT, CHECK_DECAY, DECAYABLE});
-   }
+        return i;
+    }
 
-   public void harvestBlock(World var1, EntityPlayer var2, BlockPos var3, IBlockState var4, TileEntity var5) {
-      if(!var1.isRemote && var2.getCurrentEquippedItem() != null && var2.getCurrentEquippedItem().getItem() == Items.shears) {
-         var2.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
-         spawnAsEntity(var1, var3, new ItemStack(Item.getItemFromBlock(this), 1, ((BlockPlanks$EnumType)var4.getValue(VARIANT)).getMetadata() - 4));
-      } else {
-         super.harvestBlock(var1, var2, var3, var4, var5);
-      }
+    public BlockPlanks.EnumType getWoodType(int meta) {
+        return BlockPlanks.EnumType.byMetadata((meta & 3) + 4);
+    }
 
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, VARIANT, CHECK_DECAY, DECAYABLE);
+    }
+
+    public void harvestBlock(World worldIn, EntityPlayer player, BlockPos pos, IBlockState state, TileEntity te) {
+        if (!worldIn.isRemote && player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() == Items.shears) {
+            player.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
+            spawnAsEntity(worldIn, pos, new ItemStack(Item.getItemFromBlock(this), 1, state.getValue(VARIANT).getMetadata() - 4));
+        } else {
+            super.harvestBlock(worldIn, player, pos, state, te);
+        }
+    }
+
 }

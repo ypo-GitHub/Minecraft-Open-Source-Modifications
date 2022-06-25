@@ -1,14 +1,14 @@
 package net.minecraft.world.gen.layer;
 
-import net.minecraft.world.gen.layer.GenLayer;
-import net.minecraft.world.gen.layer.GenLayerZoom;
-
 public class GenLayerFuzzyZoom extends GenLayerZoom {
-   public GenLayerFuzzyZoom(long var1, GenLayer var3) {
-      super(var1, var3);
-   }
+    public GenLayerFuzzyZoom(long p_i2123_1_, GenLayer p_i2123_3_) {
+        super(p_i2123_1_, p_i2123_3_);
+    }
 
-   protected int selectModeOrRandom(int var1, int var2, int var3, int var4) {
-      return this.selectRandom(new int[]{var1, var2, var3, var4});
-   }
+    /**
+     * returns the most frequently occurring number of the set, or a random number from those provided
+     */
+    protected int selectModeOrRandom(int p_151617_1_, int p_151617_2_, int p_151617_3_, int p_151617_4_) {
+        return this.selectRandom(new int[]{p_151617_1_, p_151617_2_, p_151617_3_, p_151617_4_});
+    }
 }

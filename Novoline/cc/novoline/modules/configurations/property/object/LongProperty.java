@@ -1,53 +1,68 @@
 package cc.novoline.modules.configurations.property.object;
 
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class LongProperty extends AbstractNumberProperty {
-   public LongProperty(@Nullable Long var1) {
-      super(var1);
-   }
+public final class LongProperty extends AbstractNumberProperty<LongProperty, Long> {
 
-   public LongProperty() {
-      this(Long.valueOf(0L));
-   }
+    /* constructors */
+    public LongProperty(@Nullable Long value) {
+        super(value);
+    }
 
-   @NotNull
-   public static LongProperty of(@Nullable Long var0) {
-      return new LongProperty(var0);
-   }
+    public LongProperty() {
+        this(0L);
+    }
 
-   @NotNull
-   public static LongProperty create() {
-      return new LongProperty();
-   }
+    public static @NotNull LongProperty of(@Nullable Long value) {
+        return new LongProperty(value);
+    }
 
-   protected void c(@Nullable Long var1) {
-      this.value = Long.valueOf(((Long)this.value).longValue() + var1.longValue());
-   }
+    public static @NotNull LongProperty create() {
+        return new LongProperty();
+    }
 
-   protected void b(@Nullable Long var1) {
-      this.value = Long.valueOf(((Long)this.value).longValue() - var1.longValue());
-   }
+    /* methods */
+    @Override
+    protected void add(@Nullable Long number) {
+        this.value += number;
+    }
 
-   protected boolean greaterThan(@Nullable Long var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?this.value != null:(this.value == null?true:((Long)this.value).longValue() > var1.longValue());
-   }
+    @Override
+    protected void subtract(@Nullable Long number) {
+        this.value -= number;
+    }
 
-   protected boolean lessThan(@Nullable Long var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?false:(this.value == null?true:((Long)this.value).longValue() < var1.longValue());
-   }
+    @Override
+    protected boolean greaterThan(@Nullable Long number) {
+        if (number == null) {
+            return value != null;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value > number;
+        }
+    }
 
-   protected boolean inLimits(@NotNull Long var1) {
-      int[] var2 = IntProperty.a();
-      return (this.minimum == null || var1.longValue() >= ((Long)this.minimum).longValue()) && (this.maximum == null || var1.longValue() <= ((Long)this.maximum).longValue());
-   }
+    @Override
+    protected boolean lessThan(@Nullable Long number) {
+        if (number == null) {
+            return false;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value < number;
+        }
+    }
 
-   protected LongProperty self() {
-      return this;
-   }
+    @Override
+    protected boolean inLimits(@NotNull Long number) {
+        return (minimum == null || number >= minimum) && (maximum == null || number <= maximum);
+    }
+
+    @Override
+    protected LongProperty self() {
+        return this;
+    }
 }

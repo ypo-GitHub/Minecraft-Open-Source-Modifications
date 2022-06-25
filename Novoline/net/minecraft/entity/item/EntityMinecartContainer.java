@@ -1,9 +1,7 @@
 package net.minecraft.entity.item;
 
-import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -14,177 +12,225 @@ import net.minecraft.world.LockCode;
 import net.minecraft.world.World;
 
 public abstract class EntityMinecartContainer extends EntityMinecart implements ILockableContainer {
-   private ItemStack[] minecartContainerItems = new ItemStack[36];
-   private boolean dropContentsWhenDead = true;
+    private ItemStack[] minecartContainerItems = new ItemStack[36];
 
-   public EntityMinecartContainer(World var1) {
-      super(var1);
-   }
+    /**
+     * When set to true, the minecart will drop all items when setDead() is called. When false (such as when travelling
+     * dimensions) it preserves its contents.
+     */
+    private boolean dropContentsWhenDead = true;
 
-   public EntityMinecartContainer(World var1, double var2, double var4, double var6) {
-      super(var1, var2, var4, var6);
-   }
+    public EntityMinecartContainer(World worldIn) {
+        super(worldIn);
+    }
 
-   public void killMinecart(DamageSource var1) {
-      super.killMinecart(var1);
-      if(this.worldObj.getGameRules().getBoolean("doEntityDrops")) {
-         InventoryHelper.func_180176_a(this.worldObj, this, this);
-      }
+    public EntityMinecartContainer(World worldIn, double p_i1717_2_, double p_i1717_4_, double p_i1717_6_) {
+        super(worldIn, p_i1717_2_, p_i1717_4_, p_i1717_6_);
+    }
 
-   }
+    public void killMinecart(DamageSource p_94095_1_) {
+        super.killMinecart(p_94095_1_);
 
-   public ItemStack getStackInSlot(int var1) {
-      return this.minecartContainerItems[var1];
-   }
+        if (this.worldObj.getGameRules().getBoolean("doEntityDrops")) {
+            InventoryHelper.func_180176_a(this.worldObj, this, this);
+        }
+    }
 
-   public ItemStack decrStackSize(int var1, int var2) {
-      if(this.minecartContainerItems[var1] != null) {
-         if(this.minecartContainerItems[var1].stackSize <= var2) {
-            ItemStack var4 = this.minecartContainerItems[var1];
-            this.minecartContainerItems[var1] = null;
-            return var4;
-         } else {
-            ItemStack var3 = this.minecartContainerItems[var1].splitStack(var2);
-            if(this.minecartContainerItems[var1].stackSize == 0) {
-               this.minecartContainerItems[var1] = null;
+    /**
+     * Returns the stack in the given slot.
+     */
+    public ItemStack getStackInSlot(int index) {
+        return this.minecartContainerItems[index];
+    }
+
+    /**
+     * Removes up to a specified number of items from an inventory slot and returns them in a new stack.
+     */
+    public ItemStack decrStackSize(int index, int count) {
+        if (this.minecartContainerItems[index] != null) {
+            if (this.minecartContainerItems[index].stackSize <= count) {
+                ItemStack itemstack1 = this.minecartContainerItems[index];
+                this.minecartContainerItems[index] = null;
+                return itemstack1;
+            } else {
+                ItemStack itemstack = this.minecartContainerItems[index].splitStack(count);
+
+                if (this.minecartContainerItems[index].stackSize == 0) {
+                    this.minecartContainerItems[index] = null;
+                }
+
+                return itemstack;
             }
+        } else {
+            return null;
+        }
+    }
 
-            return var3;
-         }
-      } else {
-         return null;
-      }
-   }
+    /**
+     * Removes a stack from the given slot and returns it.
+     */
+    public ItemStack removeStackFromSlot(int index) {
+        if (this.minecartContainerItems[index] != null) {
+            ItemStack itemstack = this.minecartContainerItems[index];
+            this.minecartContainerItems[index] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
+    }
 
-   public ItemStack removeStackFromSlot(int var1) {
-      if(this.minecartContainerItems[var1] != null) {
-         ItemStack var2 = this.minecartContainerItems[var1];
-         this.minecartContainerItems[var1] = null;
-         return var2;
-      } else {
-         return null;
-      }
-   }
+    /**
+     * Sets the given item stack to the specified slot in the inventory (can be crafting or armor sections).
+     */
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        this.minecartContainerItems[index] = stack;
 
-   public void setInventorySlotContents(int var1, ItemStack var2) {
-      this.minecartContainerItems[var1] = var2;
-      if(var2.stackSize > this.getInventoryStackLimit()) {
-         var2.stackSize = this.getInventoryStackLimit();
-      }
+        if (stack != null && stack.stackSize > this.getInventoryStackLimit()) {
+            stack.stackSize = this.getInventoryStackLimit();
+        }
+    }
 
-   }
+    /**
+     * For tile entities, ensures the chunk containing the tile entity is saved to disk later - the game won't think it
+     * hasn't changed and skip it.
+     */
+    public void markDirty() {
+    }
 
-   public void markDirty() {
-   }
+    /**
+     * Do not make give this method the name canInteractWith because it clashes with Container
+     */
+    public boolean isUseableByPlayer(EntityPlayer player) {
+        return !this.isDead && player.getDistanceSqToEntity(this) <= 64.0D;
+    }
 
-   public boolean isUseableByPlayer(EntityPlayer var1) {
-      return !this.isDead && var1.getDistanceSqToEntity(this) <= 64.0D;
-   }
+    public void openInventory(EntityPlayer player) {
+    }
 
-   public void openInventory(EntityPlayer var1) {
-   }
+    public void closeInventory(EntityPlayer player) {
+    }
 
-   public void closeInventory(EntityPlayer var1) {
-   }
+    /**
+     * Returns true if automation is allowed to insert the given stack (ignoring stack size) into the given slot.
+     */
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return true;
+    }
 
-   public boolean isItemValidForSlot(int var1, ItemStack var2) {
-      return true;
-   }
+    /**
+     * Gets the name of this command sender (usually username, but possibly "Rcon")
+     */
+    public String getName() {
+        return this.hasCustomName() ? this.getCustomNameTag() : "container.minecart";
+    }
 
-   public String getName() {
-      return this.hasCustomName()?this.getCustomNameTag():"container.minecart";
-   }
+    /**
+     * Returns the maximum stack size for a inventory slot. Seems to always be 64, possibly will be extended.
+     */
+    public int getInventoryStackLimit() {
+        return 64;
+    }
 
-   public int getInventoryStackLimit() {
-      return 64;
-   }
+    /**
+     * Teleports the entity to another dimension. Params: Dimension number to teleport to
+     */
+    public void travelToDimension(int dimensionId) {
+        this.dropContentsWhenDead = false;
+        super.travelToDimension(dimensionId);
+    }
 
-   public void travelToDimension(int var1) {
-      this.dropContentsWhenDead = false;
-      super.travelToDimension(var1);
-   }
+    /**
+     * Will get destroyed next tick.
+     */
+    public void setDead() {
+        if (this.dropContentsWhenDead) {
+            InventoryHelper.func_180176_a(this.worldObj, this, this);
+        }
 
-   public void setDead() {
-      if(this.dropContentsWhenDead) {
-         InventoryHelper.func_180176_a(this.worldObj, this, this);
-      }
+        super.setDead();
+    }
 
-      super.setDead();
-   }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    protected void writeEntityToNBT(NBTTagCompound tagCompound) {
+        super.writeEntityToNBT(tagCompound);
+        NBTTagList nbttaglist = new NBTTagList();
 
-   protected void writeEntityToNBT(NBTTagCompound var1) {
-      super.writeEntityToNBT(var1);
-      NBTTagList var2 = new NBTTagList();
+        for (int i = 0; i < this.minecartContainerItems.length; ++i) {
+            if (this.minecartContainerItems[i] != null) {
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+                nbttagcompound.setByte("Slot", (byte) i);
+                this.minecartContainerItems[i].writeToNBT(nbttagcompound);
+                nbttaglist.appendTag(nbttagcompound);
+            }
+        }
 
-      for(int var3 = 0; var3 < this.minecartContainerItems.length; ++var3) {
-         if(this.minecartContainerItems[var3] != null) {
-            NBTTagCompound var4 = new NBTTagCompound();
-            var4.setByte("Slot", (byte)var3);
-            this.minecartContainerItems[var3].writeToNBT(var4);
-            var2.appendTag(var4);
-         }
-      }
+        tagCompound.setTag("Items", nbttaglist);
+    }
 
-      var1.setTag("Items", var2);
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    protected void readEntityFromNBT(NBTTagCompound tagCompund) {
+        super.readEntityFromNBT(tagCompund);
+        NBTTagList nbttaglist = tagCompund.getTagList("Items", 10);
+        this.minecartContainerItems = new ItemStack[this.getSizeInventory()];
 
-   protected void readEntityFromNBT(NBTTagCompound var1) {
-      super.readEntityFromNBT(var1);
-      NBTTagList var2 = var1.getTagList("Items", 10);
-      this.minecartContainerItems = new ItemStack[this.getSizeInventory()];
+        for (int i = 0; i < nbttaglist.tagCount(); ++i) {
+            NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+            int j = nbttagcompound.getByte("Slot") & 255;
 
-      for(int var3 = 0; var3 < var2.tagCount(); ++var3) {
-         NBTTagCompound var4 = var2.getCompoundTagAt(var3);
-         int var5 = var4.getByte("Slot") & 255;
-         if(var5 < this.minecartContainerItems.length) {
-            this.minecartContainerItems[var5] = ItemStack.loadItemStackFromNBT(var4);
-         }
-      }
+            if (j >= 0 && j < this.minecartContainerItems.length) {
+                this.minecartContainerItems[j] = ItemStack.loadItemStackFromNBT(nbttagcompound);
+            }
+        }
+    }
 
-   }
+    /**
+     * First layer of player interaction
+     */
+    public boolean interactFirst(EntityPlayer playerIn) {
+        if (!this.worldObj.isRemote) {
+            playerIn.displayGUIChest(this);
+        }
 
-   public boolean interactFirst(EntityPlayer var1) {
-      if(!this.worldObj.isRemote) {
-         var1.displayGUIChest(this);
-      }
+        return true;
+    }
 
-      return true;
-   }
+    protected void applyDrag() {
+        int i = 15 - Container.calcRedstoneFromInventory(this);
+        float f = 0.98F + (float) i * 0.001F;
+        this.motionX *= (double) f;
+        this.motionY *= 0.0D;
+        this.motionZ *= (double) f;
+    }
 
-   protected void applyDrag() {
-      int var1 = 15 - Container.a((IInventory)this);
-      float var2 = 0.98F + (float)var1 * 0.001F;
-      this.motionX *= (double)var2;
-      this.motionY *= 0.0D;
-      this.motionZ *= (double)var2;
-   }
+    public int getField(int id) {
+        return 0;
+    }
 
-   public int getField(int var1) {
-      return 0;
-   }
+    public void setField(int id, int value) {
+    }
 
-   public void setField(int var1, int var2) {
-   }
+    public int getFieldCount() {
+        return 0;
+    }
 
-   public int getFieldCount() {
-      return 0;
-   }
+    public boolean isLocked() {
+        return false;
+    }
 
-   public boolean isLocked() {
-      return false;
-   }
+    public void setLockCode(LockCode code) {
+    }
 
-   public void setLockCode(LockCode var1) {
-   }
+    public LockCode getLockCode() {
+        return LockCode.EMPTY_CODE;
+    }
 
-   public LockCode getLockCode() {
-      return LockCode.EMPTY_CODE;
-   }
-
-   public void clear() {
-      for(int var1 = 0; var1 < this.minecartContainerItems.length; ++var1) {
-         this.minecartContainerItems[var1] = null;
-      }
-
-   }
+    public void clear() {
+        for (int i = 0; i < this.minecartContainerItems.length; ++i) {
+            this.minecartContainerItems[i] = null;
+        }
+    }
 }

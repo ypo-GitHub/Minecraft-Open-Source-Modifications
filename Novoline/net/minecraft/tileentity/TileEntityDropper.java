@@ -1,13 +1,14 @@
 package net.minecraft.tileentity;
 
-import net.minecraft.tileentity.TileEntityDispenser;
-
 public class TileEntityDropper extends TileEntityDispenser {
-   public String getName() {
-      return this.hasCustomName()?this.customName:"container.dropper";
-   }
+    /**
+     * Gets the name of this command sender (usually username, but possibly "Rcon")
+     */
+    public String getName() {
+        return this.hasCustomName() ? this.customName : "container.dropper";
+    }
 
-   public String getGuiID() {
-      return "minecraft:dropper";
-   }
+    public String getGuiID() {
+        return "minecraft:dropper";
+    }
 }

@@ -1,47 +1,37 @@
 package net.shadersmod.client;
 
 import net.optifine.MatchBlock;
-import net.shadersmod.client.ShaderOption;
 
 public class BlockAlias {
-   private int blockId;
-   private MatchBlock[] matchBlocks;
+    private int blockId;
+    private MatchBlock[] matchBlocks;
 
-   public BlockAlias(int var1, MatchBlock[] var2) {
-      this.blockId = var1;
-      this.matchBlocks = var2;
-   }
+    public BlockAlias(int blockId, MatchBlock[] matchBlocks) {
+        this.blockId = blockId;
+        this.matchBlocks = matchBlocks;
+    }
 
-   public int getBlockId() {
-      return this.blockId;
-   }
+    public int getBlockId() {
+        return this.blockId;
+    }
 
-   public boolean matches(int var1, int var2) {
-      MatchBlock[] var4 = this.matchBlocks;
-      ShaderOption.p();
-      int var5 = var4.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         MatchBlock var7 = var4[var6];
-         if(var7.matches(var1, var2)) {
-            return true;
-         }
+    public boolean matches(int id, int metadata) {
+        for (MatchBlock matchblock : this.matchBlocks) {
+            if (matchblock.matches(id, metadata)) {
+                return true;
+            }
+        }
 
-         ++var6;
-      }
+        return false;
+    }
 
-      return false;
-   }
+    public int[] getMatchBlockIds() {
+        int[] aint = new int[this.matchBlocks.length];
 
-   public int[] getMatchBlockIds() {
-      ShaderOption.p();
-      int[] var2 = new int[this.matchBlocks.length];
-      int var3 = 0;
-      if(var3 < var2.length) {
-         var2[var3] = this.matchBlocks[var3].getBlockId();
-         ++var3;
-      }
+        for (int i = 0; i < aint.length; ++i) {
+            aint[i] = this.matchBlocks[i].getBlockId();
+        }
 
-      return var2;
-   }
+        return aint;
+    }
 }

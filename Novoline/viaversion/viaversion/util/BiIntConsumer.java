@@ -2,5 +2,6 @@ package viaversion.viaversion.util;
 
 @FunctionalInterface
 public interface BiIntConsumer {
-   void consume(int var1, int var2);
+
+    void consume(int i1, int i2);
 }

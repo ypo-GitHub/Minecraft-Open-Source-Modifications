@@ -7,34 +7,54 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 
 public abstract class NodeProcessor {
-   protected IBlockAccess blockaccess;
-   protected IntHashMap pointMap = new IntHashMap();
-   protected int entitySizeX;
-   protected int entitySizeY;
-   protected int entitySizeZ;
 
-   public void initProcessor(IBlockAccess var1, Entity var2) {
-      this.blockaccess = var1;
-      this.pointMap.clearMap();
-      this.entitySizeX = MathHelper.floor_float(var2.width + 1.0F);
-      this.entitySizeY = MathHelper.floor_float(var2.height + 1.0F);
-      this.entitySizeZ = MathHelper.floor_float(var2.width + 1.0F);
-   }
+    protected IBlockAccess blockaccess;
+    protected IntHashMap<PathPoint> pointMap = new IntHashMap();
+    protected int entitySizeX;
+    protected int entitySizeY;
+    protected int entitySizeZ;
 
-   public void postProcess() {
-   }
+    public void initProcessor(IBlockAccess iblockaccessIn, Entity entityIn) {
+        this.blockaccess = iblockaccessIn;
+        this.pointMap.clearMap();
+        this.entitySizeX = MathHelper.floor_float(entityIn.width + 1.0F);
+        this.entitySizeY = MathHelper.floor_float(entityIn.height + 1.0F);
+        this.entitySizeZ = MathHelper.floor_float(entityIn.width + 1.0F);
+    }
 
-   protected PathPoint openPoint(int var1, int var2, int var3) {
-      int var4 = PathPoint.makeHash(var1, var2, var3);
-      PathPoint var5 = (PathPoint)this.pointMap.lookup(var4);
-      var5 = new PathPoint(var1, var2, var3);
-      this.pointMap.addKey(var4, var5);
-      return var5;
-   }
+    /**
+     * This method is called when all nodes have been processed and PathEntity is created.
+     * {@link net.minecraft.world.pathfinder.WalkNodeProcessor WalkNodeProcessor} uses this to change its field {@link
+     * net.minecraft.world.pathfinder.WalkNodeProcessor#avoidsWater avoidsWater}
+     */
+    public void postProcess() {
+    }
 
-   public abstract PathPoint getPathPointTo(Entity var1);
+    /**
+     * Returns a mapped point or creates and adds one
+     */
+    protected PathPoint openPoint(int x, int y, int z) {
+        int i = PathPoint.makeHash(x, y, z);
+        PathPoint pathpoint = (PathPoint) this.pointMap.lookup(i);
 
-   public abstract PathPoint getPathPointToCoords(Entity var1, double var2, double var4, double var6);
+        if (pathpoint == null) {
+            pathpoint = new PathPoint(x, y, z);
+            this.pointMap.addKey(i, pathpoint);
+        }
 
-   public abstract int findPathOptions(PathPoint[] var1, Entity var2, PathPoint var3, PathPoint var4, float var5);
+        return pathpoint;
+    }
+
+    /**
+     * Returns given entity's position as PathPoint
+     */
+    public abstract PathPoint getPathPointTo(Entity entityIn);
+
+    /**
+     * Returns PathPoint for given coordinates
+     */
+    public abstract PathPoint getPathPointToCoords(Entity entityIn, double x, double y, double target);
+
+    public abstract int findPathOptions(PathPoint[] pathOptions, Entity entityIn, PathPoint currentPoint, PathPoint targetPoint, float maxDistance);
+
 }

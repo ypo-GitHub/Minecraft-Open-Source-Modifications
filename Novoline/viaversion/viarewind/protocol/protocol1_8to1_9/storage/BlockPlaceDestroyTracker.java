@@ -1,51 +1,45 @@
 package viaversion.viarewind.protocol.protocol1_8to1_9.storage;
 
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_8to1_9.storage.EntityTracker;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 
-public class BlockPlaceDestroyTracker extends cA {
-   private long blockPlaced;
-   private long lastMining;
-   private boolean mining;
+public class BlockPlaceDestroyTracker extends StoredObject {
+	private long blockPlaced, lastMining;
+	private boolean mining;
 
-   public BlockPlaceDestroyTracker(UserConnection var1) {
-      super(var1);
-   }
+	public BlockPlaceDestroyTracker(UserConnection user) {
+		super(user);
+	}
 
-   public long getBlockPlaced() {
-      return this.blockPlaced;
-   }
+	public long getBlockPlaced() {
+		return blockPlaced;
+	}
 
-   public void place() {
-      this.blockPlaced = System.currentTimeMillis();
-   }
+	public void place() {
+		blockPlaced = System.currentTimeMillis();
+	}
 
-   public boolean isMining() {
-      EntityTracker.d();
-      long var2 = System.currentTimeMillis() - this.lastMining;
-      return this.mining && var2 < 75L || var2 < 75L;
-   }
+	public boolean isMining() {
+		long time = System.currentTimeMillis()-lastMining;
+		return mining && time<75 || time<75;
+	}
 
-   public void setMining(boolean var1) {
-      String[] var2 = EntityTracker.d();
-      this.mining = var1 && ((EntityTracker)this.d().b(EntityTracker.class)).getPlayerGamemode() != 1;
-      this.lastMining = System.currentTimeMillis();
-   }
+	public void setMining(boolean mining) {
+		this.mining = mining && getUser().get(EntityTracker.class).getPlayerGamemode()!=1;
+		lastMining = System.currentTimeMillis();
+	}
 
-   public long getLastMining() {
-      return this.lastMining;
-   }
+	public long getLastMining() {
+		return lastMining;
+	}
 
-   public void updateMining() {
-      String[] var1 = EntityTracker.d();
-      if(this.isMining()) {
-         this.lastMining = System.currentTimeMillis();
-      }
+	public void updateMining() {
+		if (this.isMining()) {
+			lastMining = System.currentTimeMillis();
+		}
+	}
 
-   }
-
-   public void setLastMining(long var1) {
-      this.lastMining = var1;
-   }
+	public void setLastMining(long lastMining) {
+		this.lastMining = lastMining;
+	}
 }

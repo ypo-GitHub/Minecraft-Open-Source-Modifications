@@ -2,21 +2,21 @@ package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
 import java.util.ArrayList;
 import java.util.List;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.AbstractFenceConnectionHandler;
 
 public class BasicFenceConnectionHandler extends AbstractFenceConnectionHandler {
-   static List init() {
-      ArrayList var0 = new ArrayList();
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:oak_fence"));
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:birch_fence"));
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:jungle_fence"));
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:dark_oak_fence"));
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:acacia_fence"));
-      var0.add((new BasicFenceConnectionHandler("fenceConnections")).getInitAction("minecraft:spruce_fence"));
-      return var0;
-   }
 
-   public BasicFenceConnectionHandler(String var1) {
-      super(var1);
-   }
+    static List<ConnectionData.ConnectorInitAction> init() {
+        List<ConnectionData.ConnectorInitAction> actions = new ArrayList<>();
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:oak_fence"));
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:birch_fence"));
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:jungle_fence"));
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:dark_oak_fence"));
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:acacia_fence"));
+        actions.add(new BasicFenceConnectionHandler("fenceConnections").getInitAction("minecraft:spruce_fence"));
+        return actions;
+    }
+
+    public BasicFenceConnectionHandler(String blockConnections) {
+        super(blockConnections);
+    }
 }

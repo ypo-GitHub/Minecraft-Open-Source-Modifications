@@ -1,45 +1,60 @@
 package cc.novoline.modules.configurations;
 
 import cc.novoline.modules.ModuleArrayMap;
-import cc.novoline.modules.configurations.ConfigManager;
 import cc.novoline.utils.java.Checks;
-import net.WF;
 import ninja.leaping.configurate.objectmapping.Setting;
+import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-@WF
+/**
+ * @author xDelsy
+ */
+@ConfigSerializable
 public final class ClientConfig {
-   @Setting("modules")
-   private ModuleArrayMap modules;
-   @Setting("config-version")
-   private int configVersion;
 
-   public ClientConfig() {
-   }
+    /* fields @off */
+    @Setting("modules")
+    private ModuleArrayMap modules;
+    @Setting("config-version")
+    private int configVersion;
 
-   private ClientConfig(ModuleArrayMap var1, int var2) {
-      this.modules = var1;
-      this.configVersion = var2;
-   }
+    /* constructors @on */
+    public ClientConfig() {
+    }
 
-   public static ClientConfig of(String var0, ModuleArrayMap var1, int var2) {
-      Checks.notNull(var1, "modules");
-      return new ClientConfig(var1, var2);
-   }
+    private ClientConfig(@Nullable ModuleArrayMap options, int configVersion) {
+        this.modules = options;
+        this.configVersion = configVersion;
+    }
 
-   public static ClientConfig of(ConfigManager var0, String var1) {
-      Checks.notNull(var0, "module manager");
-      return new ClientConfig(var0.getModuleManager().getModuleManager(), var0.getConfigVersion());
-   }
+    @NonNull
+    public static ClientConfig of(@NonNull String name, @Nullable ModuleArrayMap options, int configVersion) {
+        Checks.notNull(options, "modules");
+        return new ClientConfig(options, configVersion);
+    }
 
-   public ModuleArrayMap getModules() {
-      return this.modules;
-   }
+    @NonNull
+    public static ClientConfig of(@NonNull ConfigManager configManager, @NonNull String name) {
+        Checks.notNull(configManager, "module manager");
+        return new ClientConfig(configManager.getModuleManager().getModuleManager(), configManager.getConfigVersion());
+    }
 
-   public int getConfigVersion() {
-      return this.configVersion;
-   }
+    /* methods */
+    //region Lombok
+    public ModuleArrayMap getModules() {
+        return this.modules;
+    }
 
-   public String toString() {
-      return "ClientConfig{options=" + this.modules + ", configVersion=" + this.configVersion + '}';
-   }
+    public int getConfigVersion() {
+        return this.configVersion;
+    }
+
+    @Override
+    @NonNull
+    public String toString() {
+        return "ClientConfig{options=" + this.modules + ", configVersion=" + this.configVersion + '}';
+    }
+    //endregion
+
 }

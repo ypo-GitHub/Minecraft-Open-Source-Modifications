@@ -1,88 +1,144 @@
 package net.minecraft.util;
 
-import java.io.File;
-import java.nio.IntBuffer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import net.lF;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.shader.Framebuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.IntBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public final class ScreenShotHelper {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
-   private static IntBuffer pixelBuffer;
-   private static int[] pixelValues;
 
-   public static void saveScreenshot(File var0, int var1, int var2, Framebuffer var3) {
-      saveScreenshot(var0, (String)null, var1, var2, var3);
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public static void saveScreenshot(File var0, String var1, int var2, int var3, Framebuffer var4) {
-      try {
-         File var5 = new File(var0, "screenshots");
-         var5.mkdir();
-         if(OpenGlHelper.isFramebufferEnabled()) {
-            var2 = var4.framebufferTextureWidth;
-            var3 = var4.framebufferTextureHeight;
-         }
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
 
-         int var6 = var2 * var3;
-         if(pixelBuffer == null || pixelBuffer.capacity() < var6) {
-            pixelBuffer = BufferUtils.createIntBuffer(var6);
-            pixelValues = new int[var6];
-         }
+    /**
+     * A buffer to hold pixel values returned by OpenGL.
+     */
+    private static IntBuffer pixelBuffer;
 
-         GL11.glPixelStorei(3333, 1);
-         GL11.glPixelStorei(3317, 1);
-         pixelBuffer.clear();
-         if(OpenGlHelper.isFramebufferEnabled()) {
-            GlStateManager.bindTexture(var4.framebufferTexture);
-            GL11.glGetTexImage(3553, 0, '胡', '荧', pixelBuffer);
-         } else {
-            GL11.glReadPixels(0, 0, var4.framebufferWidth, var4.framebufferHeight, '胡', '荧', pixelBuffer);
-         }
+    /**
+     * The built-up array that contains all the pixel values returned by OpenGL.
+     */
+    private static int[] pixelValues;
 
-         (new lF("ss", var4, var1, var5)).start();
-      } catch (Exception var7) {
-         LOGGER.warn("Couldn\'t save screenshot", var7);
-      }
+    /**
+     * Saves a screenshot in the game directory with a time-stamped filename.  Args: gameDirectory,
+     * requestedWidthInPixels, requestedHeightInPixels, frameBuffer
+     */
+    public static void saveScreenshot(File gameDirectory, int width, int height, Framebuffer buffer) {
+        saveScreenshot(gameDirectory, null, width, height, buffer);
+    }
 
-   }
+    /**
+     * Saves a screenshot in the game directory with the given file name (or null to generate a time-stamped name).
+     * Args: gameDirectory, fileName, requestedWidthInPixels, requestedHeightInPixels, frameBuffer
+     */
+    public static void saveScreenshot(File gameDirectory, String screenshotName, int width, int height, Framebuffer buffer) {
+        try {
+            final File file1 = new File(gameDirectory, "screenshots");
+            file1.mkdir();
 
-   private static File getTimestampedPNGFileForDirectory(File var0) {
-      String var1 = dateFormat.format(new Date());
-      int var2 = 1;
+            if (OpenGlHelper.isFramebufferEnabled()) {
+                width = buffer.framebufferTextureWidth;
+                height = buffer.framebufferTextureHeight;
+            }
 
-      while(true) {
-         File var3 = new File(var0, var1 + (var2 == 1?"":"_" + var2) + ".png");
-         if(!var3.exists()) {
-            return var3;
-         }
+            final int i = width * height;
 
-         ++var2;
-      }
-   }
+            if (pixelBuffer == null || pixelBuffer.capacity() < i) {
+                pixelBuffer = BufferUtils.createIntBuffer(i);
+                pixelValues = new int[i];
+            }
 
-   static int[] access$000() {
-      return pixelValues;
-   }
+            GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+            pixelBuffer.clear();
 
-   static IntBuffer access$100() {
-      return pixelBuffer;
-   }
+            if (OpenGlHelper.isFramebufferEnabled()) {
+                GlStateManager.bindTexture(buffer.framebufferTexture);
+                GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, pixelBuffer);
+            } else {
+                GL11.glReadPixels(0, 0, buffer.framebufferWidth, buffer.framebufferHeight, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, pixelBuffer);
+            }
 
-   static File access$200(File var0) {
-      return getTimestampedPNGFileForDirectory(var0);
-   }
+            new Thread("ss") {
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+                @Override
+                public void run() {
+                    pixelBuffer.get(pixelValues);
+                    TextureUtil.processPixelValues(pixelValues, buffer.framebufferWidth, buffer.framebufferHeight);
+
+                    BufferedImage bufferedimage = null;
+
+                    if (OpenGlHelper.isFramebufferEnabled()) {
+                        bufferedimage = new BufferedImage(buffer.framebufferWidth, buffer.framebufferHeight, 1);
+                        final int j = buffer.framebufferTextureHeight - buffer.framebufferHeight;
+
+                        for (int k = j; k < buffer.framebufferTextureHeight; ++k) {
+                            for (int l = 0; l < buffer.framebufferWidth; ++l) {
+                                bufferedimage.setRGB(l, k - j, pixelValues[k * buffer.framebufferTextureWidth + l]);
+                            }
+                        }
+                    } else {
+                        bufferedimage = new BufferedImage(buffer.framebufferWidth, buffer.framebufferHeight, 1);
+                        bufferedimage.setRGB(0, 0, buffer.framebufferWidth, buffer.framebufferHeight, pixelValues, 0, buffer.framebufferWidth);
+                    }
+
+
+                    final File file2;
+
+                    if (screenshotName == null) {
+                        file2 = getTimestampedPNGFileForDirectory(file1);
+                    } else {
+                        file2 = new File(file1, screenshotName);
+                    }
+
+                    try {
+                        ImageIO.write(bufferedimage, "png", file2);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    super.run();
+                }
+            }.start();
+        } catch (Exception exception) {
+            LOGGER.warn("Couldn't save screenshot", exception);
+        }
+    }
+
+    /**
+     * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
+     * is not enough to create a uniquely named file, though it still might suffer from an unlikely race condition where
+     * the filename was unique when this method was called, but another process or thread created a file at the same
+     * path immediately after this method returned.
+     */
+    private static File getTimestampedPNGFileForDirectory(File gameDirectory) {
+        final String s = dateFormat.format(new Date());
+        int i = 1;
+
+        while (true) {
+            final File file1 = new File(gameDirectory, s + (i == 1 ? "" : "_" + i) + ".png");
+
+            if (!file1.exists()) {
+                return file1;
+            }
+
+            ++i;
+        }
+    }
+
 }

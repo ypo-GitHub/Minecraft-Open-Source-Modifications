@@ -1,22 +1,25 @@
 package viaversion.viaversion.api.remapper;
 
 import viaversion.viaversion.api.PacketWrapper;
-import viaversion.viaversion.api.remapper.ValueWriter;
 import viaversion.viaversion.exception.InformativeException;
 
 @FunctionalInterface
 public interface ValueCreator extends ValueWriter {
-   void write(PacketWrapper var1) throws Exception;
+    /**
+     * Write new values to a Packet.
+     *
+     * @param wrapper The packet to write to
+     * @throws Exception Throws exception if it fails to write.
+     */
+    void write(PacketWrapper wrapper) throws Exception;
 
-   default void write(PacketWrapper var1, Object var2) throws Exception {
-      ValueCreator var10000 = this;
-      PacketWrapper var10001 = var1;
-
-      try {
-         var10000.write(var10001);
-      } catch (InformativeException var4) {
-         var4.addSource(this.getClass());
-         throw var4;
-      }
-   }
+    @Override
+    default void write(PacketWrapper writer, Object inputValue) throws Exception {
+        try {
+            write(writer);
+        } catch (InformativeException e) {
+            e.addSource(this.getClass());
+            throw e;
+        }
+    }
 }

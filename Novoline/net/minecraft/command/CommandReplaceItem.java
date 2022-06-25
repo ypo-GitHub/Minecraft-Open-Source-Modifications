@@ -1,15 +1,9 @@
 package net.minecraft.command;
 
 import com.google.common.collect.Maps;
-import java.util.List;
-import java.util.Map;
 import net.minecraft.block.Block;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.NumberInvalidException;
-import net.minecraft.command.WrongUsageException;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
@@ -21,147 +15,192 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Map;
+
 public class CommandReplaceItem extends CommandBase {
-   private static final Map SHORTCUTS = Maps.newHashMap();
+    private static final Map<String, Integer> SHORTCUTS = Maps.<String, Integer>newHashMap();
 
-   public String getCommandName() {
-      return "replaceitem";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "replaceitem";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.replaceitem.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.replaceitem.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length < 1) {
-         throw new WrongUsageException("commands.replaceitem.usage", new Object[0]);
-      } else {
-         if(var2[0].equals("entity")) {
-            boolean var3 = false;
-         } else {
-            if(!var2[0].equals("block")) {
-               throw new WrongUsageException("commands.replaceitem.usage", new Object[0]);
-            }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 1) {
+            throw new WrongUsageException("commands.replaceitem.usage", new Object[0]);
+        } else {
+            boolean flag;
 
-            boolean var16 = true;
-         }
-
-         if(var2.length < 6) {
-            throw new WrongUsageException("commands.replaceitem.block.usage", new Object[0]);
-         } else {
-            int var4 = 4;
-            int var5 = this.getSlotForShortcut(var2[var4++]);
-
-            Item var6;
-            try {
-               var6 = getItemByText(var1, var2[var4]);
-            } catch (NumberInvalidException var15) {
-               if(Block.getBlockFromName(var2[var4]) != Blocks.air) {
-                  throw var15;
-               }
-
-               var6 = null;
-            }
-
-            ++var4;
-            int var7 = var2.length > var4?parseInt(var2[var4++], 1, 64):1;
-            int var8 = var2.length > var4?parseInt(var2[var4++]):0;
-            ItemStack var9 = new ItemStack(var6, var7, var8);
-            if(var2.length > var4) {
-               String var10 = getChatComponentFromNthArg(var1, var2, var4).getUnformattedText();
-               ItemStack var21 = var9;
-               String var23 = var10;
-
-               try {
-                  var21.setTagCompound(JsonToNBT.getTagFromJson(var23));
-               } catch (NBTException var14) {
-                  throw new CommandException("commands.replaceitem.tagError", new Object[]{var14.getMessage()});
-               }
-            }
-
-            if(var9.getItem() == null) {
-               var9 = null;
-            }
-
-            var1.setCommandStat(CommandResultStats$Type.AFFECTED_ITEMS, 0);
-            BlockPos var19 = parseBlockPos(var1, var2, 1, false);
-            World var11 = var1.getEntityWorld();
-            TileEntity var12 = var11.getTileEntity(var19);
-            if(!(var12 instanceof IInventory)) {
-               throw new CommandException("commands.replaceitem.noContainer", new Object[]{Integer.valueOf(var19.getX()), Integer.valueOf(var19.getY()), Integer.valueOf(var19.getZ())});
+            if (args[0].equals("entity")) {
+                flag = false;
             } else {
-               IInventory var13 = (IInventory)var12;
-               if(var5 < var13.getSizeInventory()) {
-                  var13.setInventorySlotContents(var5, var9);
-               }
+                if (!args[0].equals("block")) {
+                    throw new WrongUsageException("commands.replaceitem.usage", new Object[0]);
+                }
 
-               var1.setCommandStat(CommandResultStats$Type.AFFECTED_ITEMS, var7);
-               notifyOperators(var1, this, "commands.replaceitem.success", new Object[]{Integer.valueOf(var5), Integer.valueOf(var7), "Air"});
+                flag = true;
             }
-         }
-      }
-   }
 
-   private int getSlotForShortcut(String var1) throws CommandException {
-      if(!SHORTCUTS.containsKey(var1)) {
-         throw new CommandException("commands.generic.parameter.invalid", new Object[]{var1});
-      } else {
-         return ((Integer)SHORTCUTS.get(var1)).intValue();
-      }
-   }
+            int i;
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 1?getListOfStringsMatchingLastWord(var2, new String[]{"entity", "block"}):(var2.length == 2 && var2[0].equals("entity")?getListOfStringsMatchingLastWord(var2, this.getUsernames()):(var2.length >= 2 && var2.length <= 4 && var2[0].equals("block")?b(var2, 1, var3):((var2.length != 3 || !var2[0].equals("entity")) && (var2.length != 5 || !var2[0].equals("block"))?(var2.length == 4 && var2[0].equals("entity") || var2.length == 6 && var2[0].equals("block")?getListOfStringsMatchingLastWord(var2, Item.itemRegistry.getKeys()):null):getListOfStringsMatchingLastWord(var2, SHORTCUTS.keySet()))));
-   }
+            if (flag) {
+                if (args.length < 6) {
+                    throw new WrongUsageException("commands.replaceitem.block.usage", new Object[0]);
+                }
 
-   protected String[] getUsernames() {
-      return MinecraftServer.getServer().getAllUsernames();
-   }
+                i = 4;
+            } else {
+                if (args.length < 4) {
+                    throw new WrongUsageException("commands.replaceitem.entity.usage", new Object[0]);
+                }
 
-   public boolean isUsernameIndex(String[] var1, int var2) {
-      return var1.length > 0 && var1[0].equals("entity") && var2 == 1;
-   }
+                i = 2;
+            }
 
-   static {
-      for(int var7 = 0; var7 < 54; ++var7) {
-         SHORTCUTS.put("slot.container." + var7, Integer.valueOf(var7));
-      }
+            int j = this.getSlotForShortcut(args[i++]);
+            Item item;
 
-      for(int var8 = 0; var8 < 9; ++var8) {
-         SHORTCUTS.put("slot.hotbar." + var8, Integer.valueOf(var8));
-      }
+            try {
+                item = getItemByText(sender, args[i]);
+            } catch (NumberInvalidException numberinvalidexception) {
+                if (Block.getBlockFromName(args[i]) != Blocks.air) {
+                    throw numberinvalidexception;
+                }
 
-      for(int var9 = 0; var9 < 27; ++var9) {
-         SHORTCUTS.put("slot.inventory." + var9, Integer.valueOf(9 + var9));
-      }
+                item = null;
+            }
 
-      for(int var10 = 0; var10 < 27; ++var10) {
-         SHORTCUTS.put("slot.enderchest." + var10, Integer.valueOf(200 + var10));
-      }
+            ++i;
+            int k = args.length > i ? parseInt(args[i++], 1, 64) : 1;
+            int l = args.length > i ? parseInt(args[i++]) : 0;
+            ItemStack itemstack = new ItemStack(item, k, l);
 
-      for(int var11 = 0; var11 < 8; ++var11) {
-         SHORTCUTS.put("slot.villager." + var11, Integer.valueOf(300 + var11));
-      }
+            if (args.length > i) {
+                String s = getChatComponentFromNthArg(sender, args, i).getUnformattedText();
 
-      for(int var12 = 0; var12 < 15; ++var12) {
-         SHORTCUTS.put("slot.horse." + var12, Integer.valueOf(500 + var12));
-      }
+                try {
+                    itemstack.setTagCompound(JsonToNBT.getTagFromJson(s));
+                } catch (NBTException nbtexception) {
+                    throw new CommandException("commands.replaceitem.tagError", new Object[]{nbtexception.getMessage()});
+                }
+            }
 
-      SHORTCUTS.put("slot.weapon", Integer.valueOf(99));
-      SHORTCUTS.put("slot.armor.head", Integer.valueOf(103));
-      SHORTCUTS.put("slot.armor.chest", Integer.valueOf(102));
-      SHORTCUTS.put("slot.armor.legs", Integer.valueOf(101));
-      SHORTCUTS.put("slot.armor.feet", Integer.valueOf(100));
-      SHORTCUTS.put("slot.horse.saddle", Integer.valueOf(400));
-      SHORTCUTS.put("slot.horse.armor", Integer.valueOf(401));
-      SHORTCUTS.put("slot.horse.chest", Integer.valueOf(499));
-   }
+            if (itemstack.getItem() == null) {
+                itemstack = null;
+            }
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+            if (flag) {
+                sender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, 0);
+                BlockPos blockpos = parseBlockPos(sender, args, 1, false);
+                World world = sender.getEntityWorld();
+                TileEntity tileentity = world.getTileEntity(blockpos);
+
+                if (tileentity == null || !(tileentity instanceof IInventory)) {
+                    throw new CommandException("commands.replaceitem.noContainer", new Object[]{blockpos.getX(), blockpos.getY(), blockpos.getZ()});
+                }
+
+                IInventory iinventory = (IInventory) tileentity;
+
+                if (j >= 0 && j < iinventory.getSizeInventory()) {
+                    iinventory.setInventorySlotContents(j, itemstack);
+                }
+            } else {
+                Entity entity = func_175768_b(sender, args[1]);
+                sender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, 0);
+
+                if (entity instanceof EntityPlayer) {
+                    ((EntityPlayer) entity).inventoryContainer.detectAndSendChanges();
+                }
+
+                if (!entity.replaceItemInInventory(j, itemstack)) {
+                    throw new CommandException("commands.replaceitem.failed", new Object[]{j, k, itemstack == null ? "Air" : itemstack.getChatComponent()});
+                }
+
+                if (entity instanceof EntityPlayer) {
+                    ((EntityPlayer) entity).inventoryContainer.detectAndSendChanges();
+                }
+            }
+
+            sender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, k);
+            notifyOperators(sender, this, "commands.replaceitem.success", new Object[]{j, k, itemstack == null ? "Air" : itemstack.getChatComponent()});
+        }
+    }
+
+    private int getSlotForShortcut(String shortcut) throws CommandException {
+        if (!SHORTCUTS.containsKey(shortcut)) {
+            throw new CommandException("commands.generic.parameter.invalid", new Object[]{shortcut});
+        } else {
+            return (Integer) SHORTCUTS.get(shortcut);
+        }
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, new String[]{"entity", "block"}) : args.length == 2 && args[0].equals("entity") ? getListOfStringsMatchingLastWord(args, this.getUsernames()) : args.length >= 2 && args.length <= 4 && args[0].equals("block") ? func_175771_a(args, 1, pos) : (args.length != 3 || !args[0].equals("entity")) && (args.length != 5 || !args[0].equals("block")) ? (args.length != 4 || !args[0].equals("entity")) && (args.length != 6 || !args[0].equals("block")) ? null : getListOfStringsMatchingLastWord(args, Item.itemRegistry.getKeys()) : getListOfStringsMatchingLastWord(args, SHORTCUTS.keySet());
+    }
+
+    protected String[] getUsernames() {
+        return MinecraftServer.getServer().getAllUsernames();
+    }
+
+    /**
+     * Return whether the specified command parameter index is a username parameter.
+     */
+    public boolean isUsernameIndex(String[] args, int index) {
+        return args.length > 0 && args[0].equals("entity") && index == 1;
+    }
+
+    static {
+        for (int i = 0; i < 54; ++i) {
+            SHORTCUTS.put("slot.container." + i, i);
+        }
+
+        for (int j = 0; j < 9; ++j) {
+            SHORTCUTS.put("slot.hotbar." + j, j);
+        }
+
+        for (int k = 0; k < 27; ++k) {
+            SHORTCUTS.put("slot.inventory." + k, 9 + k);
+        }
+
+        for (int l = 0; l < 27; ++l) {
+            SHORTCUTS.put("slot.enderchest." + l, 200 + l);
+        }
+
+        for (int i1 = 0; i1 < 8; ++i1) {
+            SHORTCUTS.put("slot.villager." + i1, 300 + i1);
+        }
+
+        for (int j1 = 0; j1 < 15; ++j1) {
+            SHORTCUTS.put("slot.horse." + j1, 500 + j1);
+        }
+
+        SHORTCUTS.put("slot.weapon", 99);
+        SHORTCUTS.put("slot.armor.head", 103);
+        SHORTCUTS.put("slot.armor.chest", 102);
+        SHORTCUTS.put("slot.armor.legs", 101);
+        SHORTCUTS.put("slot.armor.feet", 100);
+        SHORTCUTS.put("slot.horse.saddle", 400);
+        SHORTCUTS.put("slot.horse.armor", 401);
+        SHORTCUTS.put("slot.horse.chest", 499);
+    }
 }

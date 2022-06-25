@@ -1,7 +1,5 @@
 package net.minecraft.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -11,35 +9,43 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public abstract class BlockContainer extends Block implements ITileEntityProvider {
-   protected BlockContainer(Material var1) {
-      this(var1, var1.getMaterialMapColor());
-   }
 
-   protected BlockContainer(Material var1, MapColor var2) {
-      super(var1, var2);
-      this.isBlockContainer = true;
-   }
+    protected BlockContainer(Material materialIn) {
+        this(materialIn, materialIn.getMaterialMapColor());
+    }
 
-   protected boolean func_181086_a(World var1, BlockPos var2, EnumFacing var3) {
-      return var1.getBlockState(var2.offset(var3)).getBlock().getMaterial() == Material.cactus;
-   }
+    protected BlockContainer(Material p_i46402_1_, MapColor p_i46402_2_) {
+        super(p_i46402_1_, p_i46402_2_);
+        this.isBlockContainer = true;
+    }
 
-   protected boolean func_181087_e(World var1, BlockPos var2) {
-      return this.func_181086_a(var1, var2, EnumFacing.NORTH) || this.func_181086_a(var1, var2, EnumFacing.SOUTH) || this.func_181086_a(var1, var2, EnumFacing.WEST) || this.func_181086_a(var1, var2, EnumFacing.EAST);
-   }
+    protected boolean func_181086_a(World p_181086_1_, BlockPos p_181086_2_, EnumFacing p_181086_3_) {
+        return p_181086_1_.getBlockState(p_181086_2_.offset(p_181086_3_)).getBlock().getMaterial() == Material.cactus;
+    }
 
-   public int getRenderType() {
-      return -1;
-   }
+    protected boolean func_181087_e(World p_181087_1_, BlockPos p_181087_2_) {
+        return this.func_181086_a(p_181087_1_, p_181087_2_, EnumFacing.NORTH) || this.func_181086_a(p_181087_1_, p_181087_2_, EnumFacing.SOUTH) || this.func_181086_a(p_181087_1_, p_181087_2_, EnumFacing.WEST) || this.func_181086_a(p_181087_1_, p_181087_2_, EnumFacing.EAST);
+    }
 
-   public void breakBlock(World var1, BlockPos var2, IBlockState var3) {
-      super.breakBlock(var1, var2, var3);
-      var1.removeTileEntity(var2);
-   }
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return -1;
+    }
 
-   public boolean onBlockEventReceived(World var1, BlockPos var2, IBlockState var3, int var4, int var5) {
-      super.onBlockEventReceived(var1, var2, var3, var4, var5);
-      TileEntity var6 = var1.getTileEntity(var2);
-      return var6.receiveClientEvent(var4, var5);
-   }
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        super.breakBlock(worldIn, pos, state);
+        worldIn.removeTileEntity(pos);
+    }
+
+    /**
+     * Called on both Client and Server when World#addBlockEvent is called
+     */
+    public boolean onBlockEventReceived(World worldIn, BlockPos pos, IBlockState state, int eventID, int eventParam) {
+        super.onBlockEventReceived(worldIn, pos, state, eventID, eventParam);
+        final TileEntity tileentity = worldIn.getTileEntity(pos);
+        return tileentity != null && tileentity.receiveClientEvent(eventID, eventParam);
+    }
+
 }

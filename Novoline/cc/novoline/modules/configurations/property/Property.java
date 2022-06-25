@@ -2,9 +2,11 @@ package cc.novoline.modules.configurations.property;
 
 import org.jetbrains.annotations.Nullable;
 
-public interface Property {
-   @Nullable
-   Object get();
+/**
+ * @author xDelsy
+ */
+public interface Property<Type> {
 
-   void set(@Nullable Object var1);
+	@Nullable Type get();
+	void set(@Nullable Type value);
 }

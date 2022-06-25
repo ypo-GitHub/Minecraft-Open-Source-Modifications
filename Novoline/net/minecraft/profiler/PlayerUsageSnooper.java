@@ -1,144 +1,160 @@
 package net.minecraft.profiler;
 
 import com.google.common.collect.Maps;
+import net.minecraft.util.HttpUtil;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.UUID;
-import net.ami;
-import net.minecraft.profiler.IPlayerUsage;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class PlayerUsageSnooper {
-   private final Map field_152773_a = Maps.newHashMap();
-   private final Map field_152774_b = Maps.newHashMap();
-   private final String uniqueID = UUID.randomUUID().toString();
-   private final URL serverUrl;
-   private final IPlayerUsage playerStatsCollector;
-   private final Timer threadTrigger = new Timer("Snooper Timer", true);
-   private final Object syncLock = new Object();
-   private final long minecraftStartTimeMilis;
-   private boolean isRunning;
-   private int selfCounter;
+    private final Map<String, Object> field_152773_a = Maps.<String, Object>newHashMap();
+    private final Map<String, Object> field_152774_b = Maps.<String, Object>newHashMap();
+    private final String uniqueID = UUID.randomUUID().toString();
 
-   public PlayerUsageSnooper(String var1, IPlayerUsage var2, long var3) {
-      try {
-         this.serverUrl = new URL("http://snoop.minecraft.net/" + var1 + "?version=" + 2);
-      } catch (MalformedURLException var6) {
-         throw new IllegalArgumentException();
-      }
+    /**
+     * URL of the server to send the report to
+     */
+    private final URL serverUrl;
+    private final IPlayerUsage playerStatsCollector;
 
-      this.playerStatsCollector = var2;
-      this.minecraftStartTimeMilis = var3;
-   }
+    /**
+     * set to fire the snooperThread every 15 mins
+     */
+    private final Timer threadTrigger = new Timer("Snooper Timer", true);
+    private final Object syncLock = new Object();
+    private final long minecraftStartTimeMilis;
+    private boolean isRunning;
 
-   public void startSnooper() {
-      if(!this.isRunning) {
-         this.isRunning = true;
-         this.func_152766_h();
-         this.threadTrigger.schedule(new ami(this), 0L, 900000L);
-      }
+    /**
+     * incremented on every getSelfCounterFor
+     */
+    private int selfCounter;
 
-   }
+    public PlayerUsageSnooper(String p_i1563_1_, IPlayerUsage playerStatCollector, long startTime) {
+        try {
+            this.serverUrl = new URL("http://snoop.minecraft.net/" + p_i1563_1_ + "?version=" + 2);
+        } catch (MalformedURLException var6) {
+            throw new IllegalArgumentException();
+        }
 
-   private void func_152766_h() {
-      this.addJvmArgsToSnooper();
-      this.addClientStat("snooper_token", this.uniqueID);
-      this.addStatToSnooper("snooper_token", this.uniqueID);
-      this.addStatToSnooper("os_name", System.getProperty("os.name"));
-      this.addStatToSnooper("os_version", System.getProperty("os.version"));
-      this.addStatToSnooper("os_architecture", System.getProperty("os.arch"));
-      this.addStatToSnooper("java_version", System.getProperty("java.version"));
-      this.addClientStat("version", "1.8.8");
-      this.playerStatsCollector.addServerTypeToSnooper(this);
-   }
+        this.playerStatsCollector = playerStatCollector;
+        this.minecraftStartTimeMilis = startTime;
+    }
 
-   private void addJvmArgsToSnooper() {
-      RuntimeMXBean var1 = ManagementFactory.getRuntimeMXBean();
-      List var2 = var1.getInputArguments();
-      int var3 = 0;
+    /**
+     * Note issuing start multiple times is not an error.
+     */
+    public void startSnooper() {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.func_152766_h();
+            this.threadTrigger.schedule(new TimerTask() {
+                public void run() {
+                    if (PlayerUsageSnooper.this.playerStatsCollector.isSnooperEnabled()) {
+                        Map<String, Object> map;
 
-      for(String var5 : var2) {
-         if(var5.startsWith("-X")) {
-            this.addClientStat("jvm_arg[" + var3++ + "]", var5);
-         }
-      }
+                        synchronized (PlayerUsageSnooper.this.syncLock) {
+                            map = Maps.<String, Object>newHashMap(PlayerUsageSnooper.this.field_152774_b);
 
-      this.addClientStat("jvm_args", Integer.valueOf(var3));
-   }
+                            if (PlayerUsageSnooper.this.selfCounter == 0) {
+                                map.putAll(PlayerUsageSnooper.this.field_152773_a);
+                            }
 
-   public void addMemoryStatsToSnooper() {
-      this.addStatToSnooper("memory_total", Long.valueOf(Runtime.getRuntime().totalMemory()));
-      this.addStatToSnooper("memory_max", Long.valueOf(Runtime.getRuntime().maxMemory()));
-      this.addStatToSnooper("memory_free", Long.valueOf(Runtime.getRuntime().freeMemory()));
-      this.addStatToSnooper("cpu_cores", Integer.valueOf(Runtime.getRuntime().availableProcessors()));
-      this.playerStatsCollector.addServerStatsToSnooper(this);
-   }
+                            map.put("snooper_count", PlayerUsageSnooper.this.selfCounter++);
+                            map.put("snooper_token", PlayerUsageSnooper.this.uniqueID);
+                        }
 
-   public void addClientStat(String param1, Object param2) {
-      // $FF: Couldn't be decompiled
-   }
+                        HttpUtil.postMap(PlayerUsageSnooper.this.serverUrl, map, true);
+                    }
+                }
+            }, 0L, 900000L);
+        }
+    }
 
-   public void addStatToSnooper(String param1, Object param2) {
-      // $FF: Couldn't be decompiled
-   }
+    private void func_152766_h() {
+        this.addJvmArgsToSnooper();
+        this.addClientStat("snooper_token", this.uniqueID);
+        this.addStatToSnooper("snooper_token", this.uniqueID);
+        this.addStatToSnooper("os_name", System.getProperty("os.name"));
+        this.addStatToSnooper("os_version", System.getProperty("os.version"));
+        this.addStatToSnooper("os_architecture", System.getProperty("os.arch"));
+        this.addStatToSnooper("java_version", System.getProperty("java.version"));
+        this.addClientStat("version", "1.8.8");
+        this.playerStatsCollector.addServerTypeToSnooper(this);
+    }
 
-   public Map getCurrentStats() {
-      // $FF: Couldn't be decompiled
-   }
+    private void addJvmArgsToSnooper() {
+        RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
+        List<String> list = runtimemxbean.getInputArguments();
+        int i = 0;
 
-   public boolean isSnooperRunning() {
-      return this.isRunning;
-   }
+        for (String s : list) {
+            if (s.startsWith("-X")) {
+                this.addClientStat("jvm_arg[" + i++ + "]", s);
+            }
+        }
 
-   public void stopSnooper() {
-      this.threadTrigger.cancel();
-   }
+        this.addClientStat("jvm_args", i);
+    }
 
-   public String getUniqueID() {
-      return this.uniqueID;
-   }
+    public void addMemoryStatsToSnooper() {
+        this.addStatToSnooper("memory_total", Runtime.getRuntime().totalMemory());
+        this.addStatToSnooper("memory_max", Runtime.getRuntime().maxMemory());
+        this.addStatToSnooper("memory_free", Runtime.getRuntime().freeMemory());
+        this.addStatToSnooper("cpu_cores", Runtime.getRuntime().availableProcessors());
+        this.playerStatsCollector.addServerStatsToSnooper(this);
+    }
 
-   public long getMinecraftStartTimeMillis() {
-      return this.minecraftStartTimeMilis;
-   }
+    public void addClientStat(String p_152768_1_, Object p_152768_2_) {
+        synchronized (this.syncLock) {
+            this.field_152774_b.put(p_152768_1_, p_152768_2_);
+        }
+    }
 
-   static IPlayerUsage access$000(PlayerUsageSnooper var0) {
-      return var0.playerStatsCollector;
-   }
+    public void addStatToSnooper(String p_152767_1_, Object p_152767_2_) {
+        synchronized (this.syncLock) {
+            this.field_152773_a.put(p_152767_1_, p_152767_2_);
+        }
+    }
 
-   static Object access$100(PlayerUsageSnooper var0) {
-      return var0.syncLock;
-   }
+    public Map<String, String> getCurrentStats() {
+        Map<String, String> map = Maps.<String, String>newLinkedHashMap();
 
-   static Map access$200(PlayerUsageSnooper var0) {
-      return var0.field_152774_b;
-   }
+        synchronized (this.syncLock) {
+            this.addMemoryStatsToSnooper();
 
-   static int access$300(PlayerUsageSnooper var0) {
-      return var0.selfCounter;
-   }
+            for (Entry<String, Object> entry : this.field_152773_a.entrySet()) {
+                map.put(entry.getKey(), entry.getValue().toString());
+            }
 
-   static Map access$400(PlayerUsageSnooper var0) {
-      return var0.field_152773_a;
-   }
+            for (Entry<String, Object> entry1 : this.field_152774_b.entrySet()) {
+                map.put(entry1.getKey(), entry1.getValue().toString());
+            }
 
-   static int access$308(PlayerUsageSnooper var0) {
-      return var0.selfCounter++;
-   }
+            return map;
+        }
+    }
 
-   static String access$500(PlayerUsageSnooper var0) {
-      return var0.uniqueID;
-   }
+    public boolean isSnooperRunning() {
+        return this.isRunning;
+    }
 
-   static URL access$600(PlayerUsageSnooper var0) {
-      return var0.serverUrl;
-   }
+    public void stopSnooper() {
+        this.threadTrigger.cancel();
+    }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+    public String getUniqueID() {
+        return this.uniqueID;
+    }
+
+    /**
+     * Returns the saved value of System#currentTimeMillis when the game started
+     */
+    public long getMinecraftStartTimeMillis() {
+        return this.minecraftStartTimeMilis;
+    }
 }

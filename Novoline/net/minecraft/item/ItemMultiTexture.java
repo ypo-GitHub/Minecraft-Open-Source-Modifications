@@ -2,31 +2,46 @@ package net.minecraft.item;
 
 import com.google.common.base.Function;
 import net.minecraft.block.Block;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemMultiTexture$1;
-import net.minecraft.item.ItemStack;
 
 public class ItemMultiTexture extends ItemBlock {
-   protected final Block theBlock;
-   protected final Function nameFunction;
+    protected final Block theBlock;
+    protected final Function<ItemStack, String> nameFunction;
 
-   public ItemMultiTexture(Block var1, Block var2, Function var3) {
-      super(var1);
-      this.theBlock = var2;
-      this.nameFunction = var3;
-      this.setMaxDamage(0);
-      this.setHasSubtypes(true);
-   }
+    public ItemMultiTexture(Block block, Block block2, Function<ItemStack, String> nameFunction) {
+        super(block);
+        this.theBlock = block2;
+        this.nameFunction = nameFunction;
+        this.setMaxDamage(0);
+        this.setHasSubtypes(true);
+    }
 
-   public ItemMultiTexture(Block var1, Block var2, String[] var3) {
-      this(var1, var2, (Function)(new ItemMultiTexture$1(var3)));
-   }
+    public ItemMultiTexture(Block block, Block block2, final String[] namesByMeta) {
+        this(block, block2, new Function<ItemStack, String>() {
+            public String apply(ItemStack p_apply_1_) {
+                int i = p_apply_1_.getMetadata();
 
-   public int getMetadata(int var1) {
-      return var1;
-   }
+                if (i < 0 || i >= namesByMeta.length) {
+                    i = 0;
+                }
 
-   public String getUnlocalizedName(ItemStack var1) {
-      return super.getUnlocalizedName() + "." + (String)this.nameFunction.apply(var1);
-   }
+                return namesByMeta[i];
+            }
+        });
+    }
+
+    /**
+     * Converts the given ItemStack damage value into a metadata value to be placed in the world when this Item is
+     * placed as a Block (mostly used with ItemBlocks).
+     */
+    public int getMetadata(int damage) {
+        return damage;
+    }
+
+    /**
+     * Returns the unlocalized name of this item. This version accepts an ItemStack so different stacks can have
+     * different names based on their damage or NBT.
+     */
+    public String getUnlocalizedName(ItemStack stack) {
+        return super.getUnlocalizedName() + "." + (String) this.nameFunction.apply(stack);
+    }
 }

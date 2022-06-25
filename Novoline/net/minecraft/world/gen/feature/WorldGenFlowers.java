@@ -1,34 +1,34 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
 import net.minecraft.block.BlockFlower;
-import net.minecraft.block.BlockFlower$EnumFlowerType;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenFlowers extends WorldGenerator {
-   private BlockFlower flower;
-   private IBlockState field_175915_b;
+    private BlockFlower flower;
+    private IBlockState field_175915_b;
 
-   public WorldGenFlowers(BlockFlower var1, BlockFlower$EnumFlowerType var2) {
-      this.setGeneratedBlock(var1, var2);
-   }
+    public WorldGenFlowers(BlockFlower p_i45632_1_, BlockFlower.EnumFlowerType p_i45632_2_) {
+        this.setGeneratedBlock(p_i45632_1_, p_i45632_2_);
+    }
 
-   public void setGeneratedBlock(BlockFlower var1, BlockFlower$EnumFlowerType var2) {
-      this.flower = var1;
-      this.field_175915_b = var1.getDefaultState().withProperty(var1.getTypeProperty(), var2);
-   }
+    public void setGeneratedBlock(BlockFlower p_175914_1_, BlockFlower.EnumFlowerType p_175914_2_) {
+        this.flower = p_175914_1_;
+        this.field_175915_b = p_175914_1_.getDefaultState().withProperty(p_175914_1_.getTypeProperty(), p_175914_2_);
+    }
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      for(int var4 = 0; var4 < 64; ++var4) {
-         BlockPos var5 = var3.a(var2.nextInt(8) - var2.nextInt(8), var2.nextInt(4) - var2.nextInt(4), var2.nextInt(8) - var2.nextInt(8));
-         if(var1.isAirBlock(var5) && (!var1.provider.getHasNoSky() || var5.getY() < 255) && this.flower.canBlockStay(var1, var5, this.field_175915_b)) {
-            var1.setBlockState(var5, this.field_175915_b, 2);
-         }
-      }
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        for (int i = 0; i < 64; ++i) {
+            BlockPos blockpos = position.add(rand.nextInt(8) - rand.nextInt(8), rand.nextInt(4) - rand.nextInt(4), rand.nextInt(8) - rand.nextInt(8));
 
-      return true;
-   }
+            if (worldIn.isAirBlock(blockpos) && (!worldIn.provider.getHasNoSky() || blockpos.getY() < 255) && this.flower.canBlockStay(worldIn, blockpos, this.field_175915_b)) {
+                worldIn.setBlockState(blockpos, this.field_175915_b, 2);
+            }
+        }
+
+        return true;
+    }
 }

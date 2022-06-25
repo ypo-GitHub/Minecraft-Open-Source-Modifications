@@ -1,61 +1,87 @@
 package net.minecraft.world.biome;
 
+import net.minecraft.util.BlockPos;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.util.BlockPos;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.biome.WorldChunkManager;
 
 public class WorldChunkManagerHell extends WorldChunkManager {
-   private BiomeGenBase biomeGenerator;
-   private float rainfall;
+    /**
+     * The biome generator object.
+     */
+    private BiomeGenBase biomeGenerator;
 
-   public WorldChunkManagerHell(BiomeGenBase var1, float var2) {
-      this.biomeGenerator = var1;
-      this.rainfall = var2;
-   }
+    /**
+     * The rainfall in the world
+     */
+    private float rainfall;
 
-   public BiomeGenBase getBiomeGenerator(BlockPos var1) {
-      return this.biomeGenerator;
-   }
+    public WorldChunkManagerHell(BiomeGenBase p_i45374_1_, float p_i45374_2_) {
+        this.biomeGenerator = p_i45374_1_;
+        this.rainfall = p_i45374_2_;
+    }
 
-   public BiomeGenBase[] getBiomesForGeneration(BiomeGenBase[] var1, int var2, int var3, int var4, int var5) {
-      if(var1.length < var4 * var5) {
-         var1 = new BiomeGenBase[var4 * var5];
-      }
+    /**
+     * Returns the biome generator
+     */
+    public BiomeGenBase getBiomeGenerator(BlockPos pos) {
+        return this.biomeGenerator;
+    }
 
-      Arrays.fill(var1, 0, var4 * var5, this.biomeGenerator);
-      return var1;
-   }
+    /**
+     * Returns an array of biomes for the location input.
+     */
+    public BiomeGenBase[] getBiomesForGeneration(BiomeGenBase[] biomes, int x, int z, int width, int height) {
+        if (biomes == null || biomes.length < width * height) {
+            biomes = new BiomeGenBase[width * height];
+        }
 
-   public float[] getRainfall(float[] var1, int var2, int var3, int var4, int var5) {
-      if(var1.length < var4 * var5) {
-         var1 = new float[var4 * var5];
-      }
+        Arrays.fill(biomes, 0, width * height, this.biomeGenerator);
+        return biomes;
+    }
 
-      Arrays.fill(var1, 0, var4 * var5, this.rainfall);
-      return var1;
-   }
+    /**
+     * Returns a list of rainfall values for the specified blocks. Args: listToReuse, x, z, width, length.
+     */
+    public float[] getRainfall(float[] listToReuse, int x, int z, int width, int length) {
+        if (listToReuse == null || listToReuse.length < width * length) {
+            listToReuse = new float[width * length];
+        }
 
-   public BiomeGenBase[] loadBlockGeneratorData(BiomeGenBase[] var1, int var2, int var3, int var4, int var5) {
-      if(var1.length < var4 * var5) {
-         var1 = new BiomeGenBase[var4 * var5];
-      }
+        Arrays.fill(listToReuse, 0, width * length, this.rainfall);
+        return listToReuse;
+    }
 
-      Arrays.fill(var1, 0, var4 * var5, this.biomeGenerator);
-      return var1;
-   }
+    /**
+     * Returns biomes to use for the blocks and loads the other data like temperature and humidity onto the
+     * WorldChunkManager Args: oldBiomeList, x, z, width, depth
+     */
+    public BiomeGenBase[] loadBlockGeneratorData(BiomeGenBase[] oldBiomeList, int x, int z, int width, int depth) {
+        if (oldBiomeList == null || oldBiomeList.length < width * depth) {
+            oldBiomeList = new BiomeGenBase[width * depth];
+        }
 
-   public BiomeGenBase[] getBiomeGenAt(BiomeGenBase[] var1, int var2, int var3, int var4, int var5, boolean var6) {
-      return this.loadBlockGeneratorData(var1, var2, var3, var4, var5);
-   }
+        Arrays.fill(oldBiomeList, 0, width * depth, this.biomeGenerator);
+        return oldBiomeList;
+    }
 
-   public BlockPos findBiomePosition(int var1, int var2, int var3, List var4, Random var5) {
-      return var4.contains(this.biomeGenerator)?new BlockPos(var1 - var3 + var5.nextInt(var3 * 2 + 1), 0, var2 - var3 + var5.nextInt(var3 * 2 + 1)):null;
-   }
+    /**
+     * Return a list of biomes for the specified blocks. Args: listToReuse, x, y, width, length, cacheFlag (if false,
+     * don't check biomeCache to avoid infinite loop in BiomeCacheBlock)
+     */
+    public BiomeGenBase[] getBiomeGenAt(BiomeGenBase[] listToReuse, int x, int z, int width, int length, boolean cacheFlag) {
+        return this.loadBlockGeneratorData(listToReuse, x, z, width, length);
+    }
 
-   public boolean areBiomesViable(int var1, int var2, int var3, List var4) {
-      return var4.contains(this.biomeGenerator);
-   }
+    public BlockPos findBiomePosition(int x, int z, int range, List<BiomeGenBase> biomes, Random random) {
+        return biomes.contains(this.biomeGenerator) ? new BlockPos(x - range + random.nextInt(range * 2 + 1), 0, z - range + random.nextInt(range * 2 + 1)) : null;
+    }
+
+    /**
+     * checks given Chunk's Biomes against List of allowed ones
+     */
+    public boolean areBiomesViable(int p_76940_1_, int p_76940_2_, int p_76940_3_, List<BiomeGenBase> p_76940_4_) {
+        return p_76940_4_.contains(this.biomeGenerator);
+    }
 }

@@ -1,81 +1,110 @@
 package net.minecraft.network.play.server;
 
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
-import net.minecraft.network.play.server.S20PacketEntityProperties$Snapshot;
 
-public class S20PacketEntityProperties implements Packet {
-   private int entityId;
-   private final List field_149444_b = Lists.newArrayList();
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
-   public S20PacketEntityProperties() {
-   }
+public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> {
+    private int entityId;
+    private final List<S20PacketEntityProperties.Snapshot> field_149444_b = Lists.newArrayList();
 
-   public S20PacketEntityProperties(int var1, Collection var2) {
-      this.entityId = var1;
+    public S20PacketEntityProperties() {
+    }
 
-      for(IAttributeInstance var4 : var2) {
-         this.field_149444_b.add(new S20PacketEntityProperties$Snapshot(this, var4.getAttribute().getAttributeUnlocalizedName(), var4.getBaseValue(), var4.func_111122_c()));
-      }
+    public S20PacketEntityProperties(int entityIdIn, Collection<IAttributeInstance> p_i45236_2_) {
+        this.entityId = entityIdIn;
 
-   }
+        for (IAttributeInstance iattributeinstance : p_i45236_2_) {
+            this.field_149444_b.add(new S20PacketEntityProperties.Snapshot(iattributeinstance.getAttribute().getAttributeUnlocalizedName(), iattributeinstance.getBaseValue(), iattributeinstance.func_111122_c()));
+        }
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readVarIntFromBuffer();
-      int var2 = var1.readInt();
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readVarIntFromBuffer();
+        int i = buf.readInt();
 
-      for(int var3 = 0; var3 < var2; ++var3) {
-         String var4 = var1.a(64);
-         double var5 = var1.readDouble();
-         ArrayList var7 = Lists.newArrayList();
-         int var8 = var1.readVarIntFromBuffer();
+        for (int j = 0; j < i; ++j) {
+            String s = buf.readStringFromBuffer(64);
+            double d0 = buf.readDouble();
+            List<AttributeModifier> list = Lists.newArrayList();
+            int k = buf.readVarIntFromBuffer();
 
-         for(int var9 = 0; var9 < var8; ++var9) {
-            UUID var10 = var1.readUuid();
-            var7.add(new AttributeModifier(var10, "Unknown synced attribute modifier", var1.readDouble(), var1.readByte()));
-         }
+            for (int l = 0; l < k; ++l) {
+                UUID uuid = buf.readUuid();
+                list.add(new AttributeModifier(uuid, "Unknown synced attribute modifier", buf.readDouble(), buf.readByte()));
+            }
 
-         this.field_149444_b.add(new S20PacketEntityProperties$Snapshot(this, var4, var5, var7));
-      }
+            this.field_149444_b.add(new S20PacketEntityProperties.Snapshot(s, d0, list));
+        }
+    }
 
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeInt(this.field_149444_b.size());
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityId);
-      var1.writeInt(this.field_149444_b.size());
+        for (S20PacketEntityProperties.Snapshot s20packetentityproperties$snapshot : this.field_149444_b) {
+            buf.writeString(s20packetentityproperties$snapshot.func_151409_a());
+            buf.writeDouble(s20packetentityproperties$snapshot.func_151410_b());
+            buf.writeVarIntToBuffer(s20packetentityproperties$snapshot.func_151408_c().size());
 
-      for(S20PacketEntityProperties$Snapshot var3 : this.field_149444_b) {
-         var1.writeString(var3.func_151409_a());
-         var1.writeDouble(var3.func_151410_b());
-         var1.writeVarIntToBuffer(var3.func_151408_c().size());
+            for (AttributeModifier attributemodifier : s20packetentityproperties$snapshot.func_151408_c()) {
+                buf.writeUuid(attributemodifier.getID());
+                buf.writeDouble(attributemodifier.getAmount());
+                buf.writeByte(attributemodifier.getOperation());
+            }
+        }
+    }
 
-         for(AttributeModifier var5 : var3.func_151408_c()) {
-            var1.writeUuid(var5.getID());
-            var1.writeDouble(var5.getAmount());
-            var1.writeByte(var5.getOperation());
-         }
-      }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEntityProperties(this);
+    }
 
-   }
+    public int getEntityId() {
+        return this.entityId;
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEntityProperties(this);
-   }
+    public List<S20PacketEntityProperties.Snapshot> func_149441_d() {
+        return this.field_149444_b;
+    }
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+    public class Snapshot {
+        private final String field_151412_b;
+        private final double field_151413_c;
+        private final Collection<AttributeModifier> field_151411_d;
 
-   public List func_149441_d() {
-      return this.field_149444_b;
-   }
+        public Snapshot(String p_i45235_2_, double p_i45235_3_, Collection<AttributeModifier> p_i45235_5_) {
+            this.field_151412_b = p_i45235_2_;
+            this.field_151413_c = p_i45235_3_;
+            this.field_151411_d = p_i45235_5_;
+        }
+
+        public String func_151409_a() {
+            return this.field_151412_b;
+        }
+
+        public double func_151410_b() {
+            return this.field_151413_c;
+        }
+
+        public Collection<AttributeModifier> func_151408_c() {
+            return this.field_151411_d;
+        }
+    }
 }

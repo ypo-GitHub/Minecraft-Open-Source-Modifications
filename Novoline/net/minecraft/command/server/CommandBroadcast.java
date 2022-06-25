@@ -1,6 +1,5 @@
 package net.minecraft.command.server;
 
-import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -10,33 +9,43 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.IChatComponent;
 
+import java.util.List;
+
 public class CommandBroadcast extends CommandBase {
-   public String getCommandName() {
-      return "say";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "say";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 1;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 1;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.say.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.say.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length > 0 && !var2[0].isEmpty()) {
-         IChatComponent var3 = getChatComponentFromNthArg(var1, var2, 0, true);
-         MinecraftServer.getServer().getConfigurationManager().sendChatMsg(new ChatComponentTranslation("chat.type.announcement", new Object[]{var1.getDisplayName(), var3}));
-      } else {
-         throw new WrongUsageException("commands.say.usage", new Object[0]);
-      }
-   }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length > 0 && !args[0].isEmpty()) {
+            IChatComponent ichatcomponent = getChatComponentFromNthArg(sender, args, 0, true);
+            MinecraftServer.getServer().getConfigurationManager().sendChatMsg(new ChatComponentTranslation("chat.type.announcement", new Object[]{sender.getDisplayName(), ichatcomponent}));
+        } else {
+            throw new WrongUsageException("commands.say.usage", new Object[0]);
+        }
+    }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length >= 1?getListOfStringsMatchingLastWord(var2, MinecraftServer.getServer().getAllUsernames()):null;
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length >= 1 ? getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames()) : null;
+    }
 }

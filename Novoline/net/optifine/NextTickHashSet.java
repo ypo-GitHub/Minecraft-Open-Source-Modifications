@@ -4,145 +4,197 @@ import com.google.common.collect.Iterators;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import net.acE;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.LongHashMap;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.NextTickListEntry;
-import net.optifine.MatchBlock;
 
-public class NextTickHashSet extends TreeSet {
-   private LongHashMap longHashMap = new LongHashMap();
-   private int minX = Integer.MIN_VALUE;
-   private int minZ = Integer.MIN_VALUE;
-   private int maxX;
-   private int maxZ;
-   private static final int UNDEFINED = Integer.MIN_VALUE;
+public class NextTickHashSet extends TreeSet
+{
+    private LongHashMap longHashMap = new LongHashMap();
+    private int minX = Integer.MIN_VALUE;
+    private int minZ = Integer.MIN_VALUE;
+    private int maxX = Integer.MIN_VALUE;
+    private int maxZ = Integer.MIN_VALUE;
+    private static final int UNDEFINED = Integer.MIN_VALUE;
 
-   public NextTickHashSet(Set var1) {
-      MatchBlock.b();
-      this.maxX = Integer.MIN_VALUE;
-      this.maxZ = Integer.MIN_VALUE;
-      Iterator var3 = var1.iterator();
-      if(var3.hasNext()) {
-         Object var4 = var3.next();
-         this.add(var4);
-      }
+    public NextTickHashSet(Set p_i70_1_)
+    {
+        for (Object object : p_i70_1_)
+        {
+            this.add(object);
+        }
+    }
 
-   }
-
-   public boolean contains(Object var1) {
-      acE[] var2 = MatchBlock.b();
-      if(!(var1 instanceof NextTickListEntry)) {
-         return false;
-      } else {
-         NextTickListEntry var3 = (NextTickListEntry)var1;
-         Set var4 = this.getSubSet(var3, false);
-         return var4 == null?false:var4.contains(var3);
-      }
-   }
-
-   public boolean add(Object var1) {
-      acE[] var2 = MatchBlock.b();
-      if(!(var1 instanceof NextTickListEntry)) {
-         return false;
-      } else {
-         NextTickListEntry var3 = (NextTickListEntry)var1;
-         return false;
-      }
-   }
-
-   public boolean remove(Object var1) {
-      acE[] var2 = MatchBlock.b();
-      if(!(var1 instanceof NextTickListEntry)) {
-         return false;
-      } else {
-         NextTickListEntry var3 = (NextTickListEntry)var1;
-         Set var4 = this.getSubSet(var3, false);
-         if(var4 == null) {
+    public boolean contains(Object p_contains_1_)
+    {
+        if (!(p_contains_1_ instanceof NextTickListEntry))
+        {
             return false;
-         } else {
-            boolean var5 = var4.remove(var3);
-            boolean var6 = super.remove(var3);
-            if(var5 != var6) {
-               throw new IllegalStateException("Added: " + var5 + ", addedParent: " + var6);
-            } else {
-               return var6;
+        }
+        else
+        {
+            NextTickListEntry nextticklistentry = (NextTickListEntry)p_contains_1_;
+            Set set = this.getSubSet(nextticklistentry, false);
+            return set == null ? false : set.contains(nextticklistentry);
+        }
+    }
+
+    public boolean add(Object p_add_1_)
+    {
+        if (!(p_add_1_ instanceof NextTickListEntry))
+        {
+            return false;
+        }
+        else
+        {
+            NextTickListEntry nextticklistentry = (NextTickListEntry)p_add_1_;
+
+            if (nextticklistentry == null)
+            {
+                return false;
             }
-         }
-      }
-   }
+            else
+            {
+                Set set = this.getSubSet(nextticklistentry, true);
+                boolean flag = set.add(nextticklistentry);
+                boolean flag1 = super.add(p_add_1_);
 
-   private Set getSubSet(NextTickListEntry var1, boolean var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var1 == null) {
-         return null;
-      } else {
-         BlockPos var4 = var1.position;
-         int var5 = var4.getX() >> 4;
-         int var6 = var4.getZ() >> 4;
-         return this.getSubSet(var5, var6, var2);
-      }
-   }
+                if (flag != flag1)
+                {
+                    throw new IllegalStateException("Added: " + flag + ", addedParent: " + flag1);
+                }
+                else
+                {
+                    return flag1;
+                }
+            }
+        }
+    }
 
-   private Set getSubSet(int var1, int var2, boolean var3) {
-      MatchBlock.b();
-      long var5 = ChunkCoordIntPair.chunkXZ2Int(var1, var2);
-      HashSet var7 = (HashSet)this.longHashMap.getValueByKey(var5);
-      if(var7 == null) {
-         var7 = new HashSet();
-         this.longHashMap.add(var5, var7);
-      }
+    public boolean remove(Object p_remove_1_)
+    {
+        if (!(p_remove_1_ instanceof NextTickListEntry))
+        {
+            return false;
+        }
+        else
+        {
+            NextTickListEntry nextticklistentry = (NextTickListEntry)p_remove_1_;
+            Set set = this.getSubSet(nextticklistentry, false);
 
-      return var7;
-   }
+            if (set == null)
+            {
+                return false;
+            }
+            else
+            {
+                boolean flag = set.remove(nextticklistentry);
+                boolean flag1 = super.remove(nextticklistentry);
 
-   public Iterator iterator() {
-      acE[] var1 = MatchBlock.b();
-      if(this.minX == Integer.MIN_VALUE) {
-         return super.iterator();
-      } else if(this.size() <= 0) {
-         return Iterators.emptyIterator();
-      } else {
-         int var2 = this.minX >> 4;
-         int var3 = this.minZ >> 4;
-         int var4 = this.maxX >> 4;
-         int var5 = this.maxZ >> 4;
-         ArrayList var6 = new ArrayList();
-         if(var2 <= var4) {
-            if(var3 <= var5) {
-               Set var9 = this.getSubSet(var2, var3, false);
-               if(var9 != null) {
-                  var6.add(var9.iterator());
-               }
+                if (flag != flag1)
+                {
+                    throw new IllegalStateException("Added: " + flag + ", addedParent: " + flag1);
+                }
+                else
+                {
+                    return flag1;
+                }
+            }
+        }
+    }
 
-               int var8 = var3 + 1;
+    private Set getSubSet(NextTickListEntry p_getSubSet_1_, boolean p_getSubSet_2_)
+    {
+        if (p_getSubSet_1_ == null)
+        {
+            return null;
+        }
+        else
+        {
+            BlockPos blockpos = p_getSubSet_1_.position;
+            int i = blockpos.getX() >> 4;
+            int j = blockpos.getZ() >> 4;
+            return this.getSubSet(i, j, p_getSubSet_2_);
+        }
+    }
+
+    private Set getSubSet(int p_getSubSet_1_, int p_getSubSet_2_, boolean p_getSubSet_3_)
+    {
+        long i = ChunkCoordIntPair.chunkXZ2Int(p_getSubSet_1_, p_getSubSet_2_);
+        HashSet hashset = (HashSet)this.longHashMap.getValueByKey(i);
+
+        if (hashset == null && p_getSubSet_3_)
+        {
+            hashset = new HashSet();
+            this.longHashMap.add(i, hashset);
+        }
+
+        return hashset;
+    }
+
+    public Iterator iterator()
+    {
+        if (this.minX == Integer.MIN_VALUE)
+        {
+            return super.iterator();
+        }
+        else if (this.size() <= 0)
+        {
+            return Iterators.emptyIterator();
+        }
+        else
+        {
+            int i = this.minX >> 4;
+            int j = this.minZ >> 4;
+            int k = this.maxX >> 4;
+            int l = this.maxZ >> 4;
+            List list = new ArrayList();
+
+            for (int i1 = i; i1 <= k; ++i1)
+            {
+                for (int j1 = j; j1 <= l; ++j1)
+                {
+                    Set set = this.getSubSet(i1, j1, false);
+
+                    if (set != null)
+                    {
+                        list.add(set.iterator());
+                    }
+                }
             }
 
-            int var7 = var2 + 1;
-         }
+            if (list.size() <= 0)
+            {
+                return Iterators.emptyIterator();
+            }
+            else if (list.size() == 1)
+            {
+                return (Iterator)list.get(0);
+            }
+            else
+            {
+                return Iterators.concat(list.iterator());
+            }
+        }
+    }
 
-         return (Iterator)(var6.size() <= 0?Iterators.emptyIterator():(var6.size() == 1?(Iterator)var6.get(0):Iterators.concat(var6.iterator())));
-      }
-   }
+    public void setIteratorLimits(int p_setIteratorLimits_1_, int p_setIteratorLimits_2_, int p_setIteratorLimits_3_, int p_setIteratorLimits_4_)
+    {
+        this.minX = Math.min(p_setIteratorLimits_1_, p_setIteratorLimits_3_);
+        this.minZ = Math.min(p_setIteratorLimits_2_, p_setIteratorLimits_4_);
+        this.maxX = Math.max(p_setIteratorLimits_1_, p_setIteratorLimits_3_);
+        this.maxZ = Math.max(p_setIteratorLimits_2_, p_setIteratorLimits_4_);
+    }
 
-   public void setIteratorLimits(int var1, int var2, int var3, int var4) {
-      this.minX = Math.min(var1, var3);
-      this.minZ = Math.min(var2, var4);
-      this.maxX = Math.max(var1, var3);
-      this.maxZ = Math.max(var2, var4);
-   }
-
-   public void clearIteratorLimits() {
-      this.minX = Integer.MIN_VALUE;
-      this.minZ = Integer.MIN_VALUE;
-      this.maxX = Integer.MIN_VALUE;
-      this.maxZ = Integer.MIN_VALUE;
-   }
-
-   private static IllegalStateException a(IllegalStateException var0) {
-      return var0;
-   }
+    public void clearIteratorLimits()
+    {
+        this.minX = Integer.MIN_VALUE;
+        this.minZ = Integer.MIN_VALUE;
+        this.maxX = Integer.MIN_VALUE;
+        this.maxZ = Integer.MIN_VALUE;
+    }
 }

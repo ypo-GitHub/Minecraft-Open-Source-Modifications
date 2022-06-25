@@ -1,50 +1,79 @@
 package cc.novoline.utils.java;
 
-import cc.novoline.utils.java.Checks;
-import cc.novoline.utils.java.FilteredArrayList;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.function.Consumer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public final class HttpUtils {
-   private static final JsonParser PARSER = new JsonParser();
-   private static final Gson GSON = (new GsonBuilder()).disableHtmlEscaping().serializeNulls().excludeFieldsWithoutExposeAnnotation().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
-   private HttpUtils() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
+	private static final JsonParser PARSER = new JsonParser();
+	private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().excludeFieldsWithoutExposeAnnotation()
+			.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
-   public static JsonElement parseConnectionInput(HttpURLConnection param0, Consumer param1, Class param2) throws IOException {
-      // $FF: Couldn't be decompiled
-   }
+	/* constructors */
+	private HttpUtils() {
+		throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+	}
 
-   public static HttpURLConnection createConnection(String var0) throws IOException {
-      Checks.notBlank(var0, "URL");
-      HttpURLConnection var2 = (HttpURLConnection)(new URL(var0)).openConnection();
-      FilteredArrayList.c();
-      var2.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.62");
-      var2.setRequestProperty("Content-Type", "application/json");
-      var2.setConnectTimeout(15000);
-      var2.setRequestMethod("GET");
-      var2.setDoOutput(true);
-      return var2;
-   }
+	/* methods */
+	@Nullable
+	@SuppressWarnings("unchecked")
+	public static <T extends JsonElement> T parseConnectionInput(@NonNull HttpURLConnection connection,
+																 @Nullable Consumer<? super HttpURLConnection> consumer,
+																 @NonNull Class<T> elementClass) throws IOException {
+		connection.connect();
+		JsonElement element;
 
-   public static JsonParser getParser() {
-      return PARSER;
-   }
+		try {
+			if(connection.getResponseCode() < 200 || connection.getResponseCode() > 299) {
+				if(consumer != null) consumer.accept(connection);
+				return null;
+			}
 
-   public static Gson getGson() {
-      return GSON;
-   }
+			element = PARSER.parse(new InputStreamReader(connection.getInputStream()));
+		} finally {
+			connection.disconnect();
+		}
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+		if(!elementClass.isInstance(element)) {
+			throw new RuntimeException("API schema has been changed!");
+		}
+
+		return (T) element;
+	}
+
+	@NonNull
+	public static HttpURLConnection createConnection(String url) throws IOException {
+		Checks.notBlank(url, "URL");
+
+		HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+		connection.setRequestProperty("User-Agent",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.62");
+		connection.setRequestProperty("Content-Type", "application/json");
+		connection.setConnectTimeout(15_000);
+		connection.setRequestMethod("GET");
+		connection.setDoOutput(true);
+
+		// Novoline.getLogger().info("Opening a connection to " + url);
+		return connection;
+	}
+
+	//region Unimportant shit
+	public static JsonParser getParser() {
+		return PARSER;
+	}
+
+	public static Gson getGson() {
+		return GSON;
+	}
+	//endregion
+
 }

@@ -1,46 +1,55 @@
 package net.minecraft.util;
 
-import net.minecraft.util.ChatComponentStyle;
-import net.minecraft.util.IChatComponent;
-
 public class ChatComponentSelector extends ChatComponentStyle {
-   private final String selector;
+    /**
+     * The selector used to find the matching entities of this text component
+     */
+    private final String selector;
 
-   public ChatComponentSelector(String var1) {
-      this.selector = var1;
-   }
+    public ChatComponentSelector(String selectorIn) {
+        this.selector = selectorIn;
+    }
 
-   public String getSelector() {
-      return this.selector;
-   }
+    /**
+     * Gets the selector of this component, in plain text.
+     */
+    public String getSelector() {
+        return this.selector;
+    }
 
-   public String getUnformattedTextForChat() {
-      return this.selector;
-   }
+    /**
+     * Gets the text of this component, without any special formatting codes added, for chat.
+     */
+    public String getUnformattedTextForChat() {
+        return this.selector;
+    }
 
-   public ChatComponentSelector createCopy() {
-      ChatComponentSelector var1 = new ChatComponentSelector(this.selector);
-      var1.setChatStyle(this.getChatStyle().createShallowCopy());
+    /**
+     * Creates a copy of this component.  Almost a deep copy, except the style is shallow-copied.
+     */
+    public ChatComponentSelector createCopy() {
+        ChatComponentSelector chatcomponentselector = new ChatComponentSelector(this.selector);
+        chatcomponentselector.setChatStyle(this.getChatStyle().createShallowCopy());
 
-      for(IChatComponent var3 : this.getSiblings()) {
-         var1.appendSibling(var3.createCopy());
-      }
+        for (IChatComponent ichatcomponent : this.getSiblings()) {
+            chatcomponentselector.appendSibling(ichatcomponent.createCopy());
+        }
 
-      return var1;
-   }
+        return chatcomponentselector;
+    }
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof ChatComponentSelector)) {
-         return false;
-      } else {
-         ChatComponentSelector var2 = (ChatComponentSelector)var1;
-         return this.selector.equals(var2.selector) && super.equals(var1);
-      }
-   }
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        } else if (!(o instanceof ChatComponentSelector)) {
+            return false;
+        } else {
+            ChatComponentSelector chatcomponentselector = (ChatComponentSelector) o;
+            return this.selector.equals(chatcomponentselector.selector) && super.equals(o);
+        }
+    }
 
-   public String toString() {
-      return "SelectorComponent{pattern=\'" + this.selector + '\'' + ", siblings=" + this.siblings + ", style=" + this.getChatStyle() + '}';
-   }
+    public String toString() {
+        return "SelectorComponent{pattern=\'" + this.selector + '\'' + ", siblings=" + this.siblings + ", style=" + this.getChatStyle() + '}';
+    }
 }

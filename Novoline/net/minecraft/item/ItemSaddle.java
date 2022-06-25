@@ -4,32 +4,38 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 
 public class ItemSaddle extends Item {
-   public ItemSaddle() {
-      this.maxStackSize = 1;
-      this.setCreativeTab(CreativeTabs.tabTransport);
-   }
+    public ItemSaddle() {
+        this.maxStackSize = 1;
+        this.setCreativeTab(CreativeTabs.tabTransport);
+    }
 
-   public boolean itemInteractionForEntity(ItemStack var1, EntityPlayer var2, EntityLivingBase var3) {
-      if(var3 instanceof EntityPig) {
-         EntityPig var4 = (EntityPig)var3;
-         if(!var4.getSaddled() && !var4.isChild()) {
-            var4.setSaddled(true);
-            var4.worldObj.playSoundAtEntity(var4, "mob.horse.leather", 0.5F, 1.0F);
-            --var1.stackSize;
-         }
+    /**
+     * Returns true if the item can be used on the given entity, e.g. shears on sheep.
+     */
+    public boolean itemInteractionForEntity(ItemStack stack, EntityPlayer playerIn, EntityLivingBase target) {
+        if (target instanceof EntityPig) {
+            EntityPig entitypig = (EntityPig) target;
 
-         return true;
-      } else {
-         return false;
-      }
-   }
+            if (!entitypig.getSaddled() && !entitypig.isChild()) {
+                entitypig.setSaddled(true);
+                entitypig.worldObj.playSoundAtEntity(entitypig, "mob.horse.leather", 0.5F, 1.0F);
+                --stack.stackSize;
+            }
 
-   public boolean hitEntity(ItemStack var1, EntityLivingBase var2, EntityLivingBase var3) {
-      this.itemInteractionForEntity(var1, (EntityPlayer)null, var2);
-      return true;
-   }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Current implementations of this method in child classes do not use the entry argument beside ev. They just raise
+     * the damage on the stack.
+     */
+    public boolean hitEntity(ItemStack stack, EntityLivingBase target, EntityLivingBase attacker) {
+        this.itemInteractionForEntity(stack, (EntityPlayer) null, target);
+        return true;
+    }
 }

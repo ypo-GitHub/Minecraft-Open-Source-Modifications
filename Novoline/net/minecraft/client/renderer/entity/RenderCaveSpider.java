@@ -1,24 +1,29 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.entity.RenderSpider;
 import net.minecraft.entity.monster.EntityCaveSpider;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderCaveSpider extends RenderSpider {
-   private static final ResourceLocation caveSpiderTextures = new ResourceLocation("textures/entity/spider/cave_spider.png");
+public class RenderCaveSpider extends RenderSpider<EntityCaveSpider> {
+    private static final ResourceLocation caveSpiderTextures = new ResourceLocation("textures/entity/spider/cave_spider.png");
 
-   public RenderCaveSpider(RenderManager var1) {
-      super(var1);
-      this.shadowSize *= 0.7F;
-   }
+    public RenderCaveSpider(RenderManager renderManagerIn) {
+        super(renderManagerIn);
+        this.shadowSize *= 0.7F;
+    }
 
-   protected void preRenderCallback(EntityCaveSpider var1, float var2) {
-      GlStateManager.scale(0.7F, 0.7F, 0.7F);
-   }
+    /**
+     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
+     * entityLiving, partialTickTime
+     */
+    protected void preRenderCallback(EntityCaveSpider entityLivingBase, float partialTickTime) {
+        GlStateManager.scale(0.7F, 0.7F, 0.7F);
+    }
 
-   protected ResourceLocation getEntityTexture(EntityCaveSpider var1) {
-      return caveSpiderTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityCaveSpider entity) {
+        return caveSpiderTextures;
+    }
 }

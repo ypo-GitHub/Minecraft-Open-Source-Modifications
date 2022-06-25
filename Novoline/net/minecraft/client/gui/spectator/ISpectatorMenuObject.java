@@ -1,14 +1,13 @@
 package net.minecraft.client.gui.spectator;
 
-import net.minecraft.client.gui.spectator.SpectatorMenu;
 import net.minecraft.util.IChatComponent;
 
 public interface ISpectatorMenuObject {
-   void func_178661_a(SpectatorMenu var1);
+    void func_178661_a(SpectatorMenu menu);
 
-   IChatComponent getSpectatorName();
+    IChatComponent getSpectatorName();
 
-   void func_178663_a(float var1, int var2);
+    void func_178663_a(float p_178663_1_, int alpha);
 
-   boolean func_178662_A_();
+    boolean func_178662_A_();
 }

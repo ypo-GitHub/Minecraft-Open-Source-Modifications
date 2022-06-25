@@ -2,178 +2,158 @@ package cc.novoline.modules.configurations.property.object;
 
 import cc.novoline.modules.configurations.property.AbstractProperty;
 import cc.novoline.modules.configurations.property.exception.UnacceptableValueException;
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.util.Arrays;
+import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import net.acE;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
-public final class ListProperty extends AbstractProperty {
-   protected List acceptableValues;
+/**
+ * @author xDelsy
+ */
+public final class ListProperty<Type> extends AbstractProperty<List<Type>> {
 
-   public ListProperty(@NotNull List var1) {
-      super(var1);
-   }
+    /* fields */
+    protected List<Type> acceptableValues;
 
-   public ListProperty(@NotNull Collection var1) {
-      this((List)(new ObjectArrayList(var1)));
-   }
+    /* constructors */
+    public ListProperty(@NotNull List<Type> values) {
+        super(values);
+    }
 
-   @SafeVarargs
-   public ListProperty(@NotNull Object... var1) {
-      this((List)(new ObjectArrayList(var1)));
-   }
+    public ListProperty(@NotNull Collection<Type> values) {
+        this(new ObjectArrayList<>(values));
+    }
 
-   public ListProperty(@Nullable Object var1) {
-      this((List)(new ObjectArrayList(Collections.singletonList(var1))));
-   }
+    @SafeVarargs
+    public ListProperty(@NotNull Type... values) {
+        this(new ObjectArrayList<>(values));
+    }
 
-   public ListProperty(@Nullable Object var1, @Nullable Object var2) {
-      IntProperty.a();
-      this((List)(new ObjectArrayList(Arrays.asList(new Object[]{var1, var2}))));
-      if(acE.b() == null) {
-         IntProperty.b(new int[1]);
-      }
+    public ListProperty(@Nullable Type value) {
+        this(new ObjectArrayList<>(Collections.singletonList(value)));
+    }
 
-   }
+    public ListProperty(@Nullable Type value1, @Nullable Type value2) {
+        this(new ObjectArrayList<>(asList(value1, value2)));
+    }
 
-   public ListProperty(@Nullable Object var1, @Nullable Object var2, @Nullable Object var3) {
-      IntProperty.a();
-      this((List)(new ObjectArrayList(Arrays.asList(new Object[]{var1, var2, var3}))));
-   }
+    public ListProperty(@Nullable Type value1, @Nullable Type value2, @Nullable Type value3) {
+        this(new ObjectArrayList<>(asList(value1, value2, value3)));
+    }
 
-   public ListProperty() {
-      this((List)(new ObjectArrayList()));
-   }
+    public ListProperty() {
+        this(new ObjectArrayList<>());
+    }
 
-   @NotNull
-   public static ListProperty of(@NotNull List var0) {
-      return new ListProperty(var0);
-   }
+    public static @NotNull <Type> ListProperty<Type> of(@NotNull List<Type> values) {
+        return new ListProperty<>(values);
+    }
 
-   @NotNull
-   public static ListProperty of(@NotNull Collection var0) {
-      return new ListProperty(new ObjectArrayList(var0));
-   }
+    public static @NotNull <Type> ListProperty<Type> of(@NotNull Collection<Type> value) {
+        return new ListProperty<>(new ObjectArrayList<>(value));
+    }
 
-   @SafeVarargs
-   @NotNull
-   public static ListProperty of(@NotNull Object... var0) {
-      return new ListProperty(var0);
-   }
+    @SafeVarargs
+    public static @NotNull <Type> ListProperty<Type> of(@NotNull Type... values) {
+        return new ListProperty<>(values);
+    }
 
-   @NotNull
-   public static ListProperty of(@Nullable Object var0) {
-      return new ListProperty(var0);
-   }
+    public static @NotNull <Type> ListProperty<Type> of(@Nullable Type value) {
+        return new ListProperty<>(value);
+    }
 
-   @NotNull
-   public static ListProperty of(@Nullable Object var0, @Nullable Object var1) {
-      return new ListProperty(var0, var1);
-   }
+    public static @NotNull <Type> ListProperty<Type> of(@Nullable Type value1, @Nullable Type value2) {
+        return new ListProperty<>(value1, value2);
+    }
 
-   @NotNull
-   public static ListProperty of(@Nullable Object var0, @Nullable Object var1, @Nullable Object var2) {
-      return new ListProperty(var0, var1, var2);
-   }
+    public static @NotNull <Type> ListProperty<Type> of(@Nullable Type value1, @Nullable Type value2,
+                                                        @Nullable Type value3) {
+        return new ListProperty<>(value1, value2, value3);
+    }
 
-   @NotNull
-   public static ListProperty empty() {
-      return new ListProperty();
-   }
+    public static @NotNull <Type> ListProperty<Type> empty() {
+        return new ListProperty<>();
+    }
 
-   public void set(@Nullable List var1) {
-      int[] var2 = IntProperty.a();
-      if(this.inLimits(var1)) {
-         super.set(var1);
-      }
+    /* methods */
+    @Override
+    public void set(@Nullable List<Type> value) {
+        if (value == null || inLimits(value)) {
+            super.set(value);
+        } else {
+            throw new UnacceptableValueException(
+                    "Unable to set " + value + " as it contains unacceptable value(s): " + Collections2
+                            .filter(value, input -> !acceptableValues.contains(input)), this);
+        }
+    }
 
-      throw new UnacceptableValueException("Unable to set " + var1 + " as it contains unacceptable value(s): " + Collections2.filter(var1, this::lambda$set$0), this);
-   }
+    private boolean inLimits(@NotNull List<Type> value) {
+        if (acceptableValues == null || value.isEmpty() || acceptableValues.isEmpty()) return true;
 
-   private boolean inLimits(@NotNull List var1) {
-      int[] var2 = IntProperty.a();
-      if(this.acceptableValues != null && !var1.isEmpty() && !this.acceptableValues.isEmpty()) {
-         Iterator var3 = var1.iterator();
-         if(var3.hasNext()) {
-            Object var4 = var3.next();
-            if(!this.acceptableValues.contains(var4)) {
-               return false;
-            }
-         }
+        for (Type srcElement : value) {
+            if (!acceptableValues.contains(srcElement)) return false;
+        }
 
-         return true;
-      } else {
-         return true;
-      }
-   }
+        return true;
+    }
 
-   public ListProperty acceptableValues(@NotNull Collection var1) {
-      this.acceptableValues = new ObjectArrayList(var1);
-      return this;
-   }
+    public ListProperty<Type> acceptableValues(@NotNull Collection<Type> values) {
+        this.acceptableValues = new ObjectArrayList<>(values);
+        return this;
+    }
 
-   @SafeVarargs
-   public final ListProperty acceptableValues(@NotNull Object... var1) {
-      this.acceptableValues = new ObjectArrayList(var1);
-      return this;
-   }
+    @SafeVarargs
+    public final ListProperty<Type> acceptableValues(@NotNull Type... values) {
+        this.acceptableValues = new ObjectArrayList<>(values);
+        return this;
+    }
 
-   public Object get(int var1) {
-      int[] var2 = IntProperty.a();
-      return this.value != null?((List)this.value).get(var1):null;
-   }
+    public Type get(@Range(from = 0, to = Integer.MAX_VALUE) int index) {
+        return value != null ? value.get(index) : null;
+    }
 
-   public boolean contains(Object var1) {
-      int[] var2 = IntProperty.a();
-      return this.value != null && ((List)this.value).contains(var1);
-   }
+    public boolean contains(Type element) {
+        return value != null && value.contains(element);
+    }
 
-   public int size() {
-      int[] var1 = IntProperty.a();
-      return this.value != null?((List)this.value).size():0;
-   }
+    public int size() {
+        return value != null ? value.size() : 0;
+    }
 
-   public boolean isEmpty() {
-      int[] var1 = IntProperty.a();
-      return this.value == null || ((List)this.value).isEmpty();
-   }
+    public boolean isEmpty() {
+        return value == null || value.isEmpty();
+    }
 
-   public boolean add(@Nullable Object var1) {
-      int[] var2 = IntProperty.a();
-      if(this.acceptableValues != null && !this.acceptableValues.contains(var1)) {
-         return false;
-      } else {
-         if(this.value == null) {
-            this.set((List)(new ObjectArrayList()));
-         }
+    public boolean add(@Nullable Type element) {
+        if (acceptableValues != null && !acceptableValues.contains(element)) return false;
+        if (value == null) set(new ObjectArrayList<>());
 
-         return ((List)this.value).add(var1);
-      }
-   }
+        return value.add(element);
+    }
 
-   public boolean remove(@Nullable Object var1) {
-      int[] var2 = IntProperty.a();
-      return this.value != null && ((List)this.value).remove(var1);
-   }
+    public boolean remove(@Nullable Type element) {
+        return value != null && value.remove(element);
+    }
 
-   public List getAcceptableValues() {
-      return this.acceptableValues;
-   }
+    //region Lombok
+    public List<Type> getAcceptableValues() {
+        return acceptableValues;
+    }
+    //endregion
 
-   private boolean lambda$set$0(Object var1) {
-      int[] var2 = IntProperty.a();
-      return !this.acceptableValues.contains(var1);
-   }
+	/*@SafeVarargs
+	public final void addAll(@NotNull Type... values) {
+		if(value == null) set(new ObjectArrayList<>());
+		Collections.addAll(value, values);
+	}
 
-   private static UnacceptableValueException a(UnacceptableValueException var0) {
-      return var0;
-   }
+	public void addAll(@NotNull Collection<Type> values) {
+		if(value == null) set(new ObjectArrayList<>());
+		value.addAll(values);
+	}*/
 }

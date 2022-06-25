@@ -2,179 +2,262 @@ package net.minecraft.client.renderer.entity;
 
 import cc.novoline.Novoline;
 import cc.novoline.modules.visual.ItemPhysic;
-import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms$TransformType;
-import net.minecraft.client.renderer.entity.Render;
-import net.minecraft.client.renderer.entity.RenderItem;
-import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.resources.model.IBakedModel;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-public class RenderEntityItem extends Render {
-   private final RenderItem itemRenderer;
-   private final Random field_177079_e = new Random();
-   public static long tick;
-   public static double rotation;
-   public static Random random = new Random();
+import java.util.Random;
 
-   public RenderEntityItem(RenderManager var1, RenderItem var2) {
-      super(var1);
-      this.itemRenderer = var2;
-      this.shadowSize = 0.15F;
-      this.shadowOpaque = 0.75F;
-   }
+public class RenderEntityItem extends Render<EntityItem> {
+    private final RenderItem itemRenderer;
+    private final Random field_177079_e = new Random();
+    public static long tick;
+    public static double rotation;
+    public static Random random = new Random();
 
-   private int a(EntityItem var1, double var2, double var4, double var6, float var8, IBakedModel var9) {
-      ItemStack var10 = var1.getEntityItem();
-      Item var11 = var10.getItem();
-      return 0;
-   }
+    public RenderEntityItem(RenderManager renderManagerIn, RenderItem p_i46167_2_) {
+        super(renderManagerIn);
+        this.itemRenderer = p_i46167_2_;
+        this.shadowSize = 0.15F;
+        this.shadowOpaque = 0.75F;
+    }
 
-   private int func_177078_a(ItemStack var1) {
-      byte var2 = 1;
-      if(var1.stackSize > 48) {
-         var2 = 5;
-      } else if(var1.stackSize > 32) {
-         var2 = 4;
-      } else if(var1.stackSize > 16) {
-         var2 = 3;
-      } else if(var1.stackSize > 1) {
-         var2 = 2;
-      }
+    private int func_177077_a(EntityItem itemIn, double p_177077_2_, double p_177077_4_, double p_177077_6_, float p_177077_8_, IBakedModel p_177077_9_) {
+        ItemStack itemstack = itemIn.getEntityItem();
+        Item item = itemstack.getItem();
 
-      return var2;
-   }
+        if (item == null) {
+            return 0;
+        } else {
+            boolean flag = p_177077_9_.isGui3d();
+            int i = this.func_177078_a(itemstack);
+            float f = 0.25F;
+            float f1 = MathHelper.sin(((float) itemIn.getAge() + p_177077_8_) / 10.0F + itemIn.hoverStart) * 0.1F + 0.1F;
+            float f2 = p_177077_9_.getItemCameraTransforms().getTransform(ItemCameraTransforms.TransformType.GROUND).scale.y;
+            GlStateManager.translate((float) p_177077_2_, (float) p_177077_4_ + f1 + 0.25F * f2, (float) p_177077_6_);
 
-   public void vanillaRender(EntityItem var1, double var2, double var4, double var6, float var8, float var9) {
-      ItemStack var10 = var1.getEntityItem();
-      this.field_177079_e.setSeed(187L);
-      boolean var11 = false;
-      if(this.bindEntityTexture(var1)) {
-         this.renderManager.renderEngine.getTexture(this.getEntityTexture(var1)).setBlurMipmap(false, false);
-         var11 = true;
-      }
+            if (flag || this.renderManager.options != null) {
+                float f3 = (((float) itemIn.getAge() + p_177077_8_) / 20.0F + itemIn.hoverStart) * (180F / (float) Math.PI);
+                GlStateManager.rotate(f3, 0.0F, 1.0F, 0.0F);
+            }
 
-      GlStateManager.enableRescaleNormal();
-      GlStateManager.alphaFunc(516, 0.1F);
-      GlStateManager.enableBlend();
-      GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-      GlStateManager.pushMatrix();
-      IBakedModel var12 = this.itemRenderer.getItemModelMesher().getItemModel(var10);
-      int var13 = this.a(var1, var2, var4, var6, var9, var12);
+            if (!flag) {
+                float f6 = -0.0F * (float) (i - 1) * 0.5F;
+                float f4 = -0.0F * (float) (i - 1) * 0.5F;
+                float f5 = -0.046875F * (float) (i - 1) * 0.5F;
+                GlStateManager.translate(f6, f4, f5);
+            }
 
-      for(int var14 = 0; var14 < var13; ++var14) {
-         if(var12.isGui3d()) {
-            GlStateManager.pushMatrix();
-            float var15 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
-            float var16 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
-            float var17 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
-            GlStateManager.translate(var15, var16, var17);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            return i;
+        }
+    }
+
+    private int func_177078_a(ItemStack stack) {
+        int i = 1;
+
+        if (stack.stackSize > 48) {
+            i = 5;
+        } else if (stack.stackSize > 32) {
+            i = 4;
+        } else if (stack.stackSize > 16) {
+            i = 3;
+        } else if (stack.stackSize > 1) {
+            i = 2;
+        }
+
+        return i;
+    }
+
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void vanillaRender(EntityItem entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        ItemStack itemstack = entity.getEntityItem();
+        this.field_177079_e.setSeed(187L);
+        boolean flag = false;
+
+        if (this.bindEntityTexture(entity)) {
+            this.renderManager.renderEngine.getTexture(this.getEntityTexture(entity)).setBlurMipmap(false, false);
+            flag = true;
+        }
+
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.alphaFunc(516, 0.1F);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.pushMatrix();
+        IBakedModel ibakedmodel = this.itemRenderer.getItemModelMesher().getItemModel(itemstack);
+        int i = this.func_177077_a(entity, x, y, z, partialTicks, ibakedmodel);
+
+        for (int j = 0; j < i; ++j) {
+            if (ibakedmodel.isGui3d()) {
+                GlStateManager.pushMatrix();
+
+                if (j > 0) {
+                    float f = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    float f1 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    float f2 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    GlStateManager.translate(f, f1, f2);
+                }
+
+                GlStateManager.scale(0.5F, 0.5F, 0.5F);
+                ibakedmodel.getItemCameraTransforms().applyTransform(ItemCameraTransforms.TransformType.GROUND);
+                this.itemRenderer.renderItem(itemstack, ibakedmodel);
+                GlStateManager.popMatrix();
+            } else {
+                GlStateManager.pushMatrix();
+                ibakedmodel.getItemCameraTransforms().applyTransform(ItemCameraTransforms.TransformType.GROUND);
+                this.itemRenderer.renderItem(itemstack, ibakedmodel);
+                GlStateManager.popMatrix();
+                float f3 = ibakedmodel.getItemCameraTransforms().ground.scale.x;
+                float f4 = ibakedmodel.getItemCameraTransforms().ground.scale.y;
+                float f5 = ibakedmodel.getItemCameraTransforms().ground.scale.z;
+                GlStateManager.translate(0.0F * f3, 0.0F * f4, 0.046875F * f5);
+            }
+        }
+
+        GlStateManager.popMatrix();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.disableBlend();
+        this.bindEntityTexture(entity);
+
+        if (flag) {
+            this.renderManager.renderEngine.getTexture(this.getEntityTexture(entity)).restoreLastBlurMipmap();
+        }
+
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
+    }
+
+    private void physicsRender(EntityItem entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        Minecraft mc = Minecraft.getInstance();
+        rotation = (System.nanoTime() - tick) / 50000000000000D;
+        if (!mc.inGameHasFocus) {
+            rotation = 0;
+        }
+        EntityItem item = entity;
+
+        ItemStack itemstack = item.getEntityItem();
+        int i;
+
+        if (itemstack != null && itemstack.getItem() != null) {
+            i = Item.getIdFromItem(itemstack.getItem()) + itemstack.getMetadata();
+        } else {
+            i = 187;
+        }
+
+        random.setSeed(i);
+
+        Minecraft.getInstance().getTextureManager().bindTexture(getEntityTexture(entity));
+        Minecraft.getInstance().getTextureManager().getTexture(getEntityTexture(entity))
+                .setBlurMipmap(false, false);
+
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.alphaFunc(516, 0.1F);
+        GlStateManager.enableBlend();
+        RenderHelper.enableStandardItemLighting();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.pushMatrix();
+        IBakedModel ibakedmodel = mc.getRenderItem().getItemModelMesher().getItemModel(itemstack);
+        boolean flag1 = ibakedmodel.isGui3d();
+        boolean is3D = ibakedmodel.isGui3d();
+        int j = func_177078_a(itemstack);
+
+        GlStateManager.translate((float) x, (float) y, (float) z);
+
+        if (ibakedmodel.isGui3d()) {
             GlStateManager.scale(0.5F, 0.5F, 0.5F);
-            var12.getItemCameraTransforms().applyTransform(ItemCameraTransforms$TransformType.GROUND);
-            this.itemRenderer.renderItem(var10, var12);
-            GlStateManager.popMatrix();
-         } else {
-            GlStateManager.pushMatrix();
-            var12.getItemCameraTransforms().applyTransform(ItemCameraTransforms$TransformType.GROUND);
-            this.itemRenderer.renderItem(var10, var12);
-            GlStateManager.popMatrix();
-            float var19 = var12.getItemCameraTransforms().ground.scale.x;
-            float var20 = var12.getItemCameraTransforms().ground.scale.y;
-            float var21 = var12.getItemCameraTransforms().ground.scale.z;
-            GlStateManager.translate(0.0F * var19, 0.0F * var20, 0.046875F * var21);
-         }
-      }
+        }
 
-      GlStateManager.popMatrix();
-      GlStateManager.disableRescaleNormal();
-      GlStateManager.disableBlend();
-      this.bindEntityTexture(var1);
-      this.renderManager.renderEngine.getTexture(this.getEntityTexture(var1)).restoreLastBlurMipmap();
-      super.doRender(var1, var2, var4, var6, var8, var9);
-   }
+        GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(item.rotationYaw, 0.0F, 0.0F, 1.0F);
 
-   private void physicsRender(EntityItem var1, double var2, double var4, double var6, float var8, float var9) {
-      Minecraft var10 = Minecraft.getInstance();
-      rotation = (double)(System.nanoTime() - tick) / 5.0E13D;
-      if(!var10.inGameHasFocus) {
-         rotation = 0.0D;
-      }
+        if (is3D) {
+            GlStateManager.translate(0, 0, -0.08);
+        } else {
+            GlStateManager.translate(0, 0, -0.04);
+        }
 
-      ItemStack var11 = var1.getEntityItem();
-      int var12;
-      if(var11.getItem() != null) {
-         var12 = Item.b(var11.getItem()) + var11.getMetadata();
-      } else {
-         var12 = 187;
-      }
+        //Handle Rotations
+        if (is3D || mc.getRenderManager().options != null) {
+            if (is3D) {
+                if (!item.onGround) {
+                    double rotation = RenderEntityItem.rotation * 2;
+                    item.rotationPitch += rotation;
+                }
+            } else {
 
-      random.setSeed((long)var12);
-      Minecraft.getInstance().getTextureManager().bindTexture(this.getEntityTexture(var1));
-      Minecraft.getInstance().getTextureManager().getTexture(this.getEntityTexture(var1)).setBlurMipmap(false, false);
-      GlStateManager.enableRescaleNormal();
-      GlStateManager.alphaFunc(516, 0.1F);
-      GlStateManager.enableBlend();
-      RenderHelper.enableStandardItemLighting();
-      GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-      GlStateManager.pushMatrix();
-      IBakedModel var13 = var10.getRenderItem().getItemModelMesher().getItemModel(var11);
-      boolean var14 = var13.isGui3d();
-      boolean var15 = var13.isGui3d();
-      int var16 = this.func_177078_a(var11);
-      GlStateManager.translate((float)var2, (float)var4, (float)var6);
-      if(var13.isGui3d()) {
-         GlStateManager.scale(0.5F, 0.5F, 0.5F);
-      }
+                if (!Double.isNaN(item.posX) && !Double.isNaN(item.posY) && !Double
+                        .isNaN(item.posZ) && item.worldObj != null) {
+                    if (item.onGround) {
+                        item.rotationPitch = 0;
+                    } else {
+                        double rotation = RenderEntityItem.rotation * 2;
 
-      GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
-      GL11.glRotatef(var1.rotationYaw, 0.0F, 0.0F, 1.0F);
-      GlStateManager.translate(0.0D, 0.0D, -0.08D);
-      if(var10.getRenderManager().options != null) {
-         if(!var1.onGround) {
-            double var17 = rotation * 2.0D;
-            var1.rotationPitch = (float)((double)var1.rotationPitch + var17);
-         }
+                        item.rotationPitch += rotation;
+                    }
+                }
+            }
 
-         GlStateManager.rotate(var1.rotationPitch, 1.0F, 0.0F, 0.0F);
-      }
+            GlStateManager.rotate(item.rotationPitch, 1, 0, 0.0F);
+        }
 
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        for (int k = 0; k < j; ++k) {
+            if (flag1) {
+                GlStateManager.pushMatrix();
 
-      for(int var21 = 0; var21 < var16; ++var21) {
-         GlStateManager.pushMatrix();
-         float var18 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
-         float var19 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
-         float var20 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
-         GlStateManager.translate(var18, var19, var20);
-         var10.getRenderItem().renderItem(var11, var13);
-         GlStateManager.popMatrix();
-      }
+                if (k > 0) {
 
-      GlStateManager.popMatrix();
-      GlStateManager.disableRescaleNormal();
-      GlStateManager.disableBlend();
-      Minecraft.getInstance().getTextureManager().bindTexture(this.getEntityTexture(var1));
-      Minecraft.getInstance().getTextureManager().getTexture(this.getEntityTexture(var1)).restoreLastBlurMipmap();
-   }
+                    float f7 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    float f9 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    float f6 = (random.nextFloat() * 2.0F - 1.0F) * 0.15F;
+                    GlStateManager.translate(f7, f9, f6);
+                }
 
-   public void doRender(EntityItem var1, double var2, double var4, double var6, float var8, float var9) {
-      if(((ItemPhysic)Novoline.getInstance().getModuleManager().getModule(ItemPhysic.class)).isEnabled()) {
-         this.physicsRender(var1, var2, var4, var6, var8, var9);
-      } else {
-         this.vanillaRender(var1, var2, var4, var6, var8, var9);
-      }
+                mc.getRenderItem().renderItem(itemstack, ibakedmodel);
+                GlStateManager.popMatrix();
+            } else {
+                GlStateManager.pushMatrix();
 
-   }
+                mc.getRenderItem().renderItem(itemstack, ibakedmodel);
+                GlStateManager.popMatrix();
+                GlStateManager.translate(0.0F, 0.0F, 0.05375F);
+            }
+        }
 
-   protected ResourceLocation getEntityTexture(EntityItem var1) {
-      return TextureMap.locationBlocksTexture;
-   }
+        GlStateManager.popMatrix();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.disableBlend();
+        Minecraft.getInstance().getTextureManager().bindTexture(getEntityTexture(entity));
+        Minecraft.getInstance().getTextureManager().getTexture(getEntityTexture(entity)).restoreLastBlurMipmap();
+    }
+
+    @Override
+    public void doRender(EntityItem entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        if (Novoline.getInstance().getModuleManager().getModule(ItemPhysic.class).isEnabled()) {
+            physicsRender(entity, x, y, z, entityYaw, partialTicks);
+        } else {
+            vanillaRender(entity, x, y, z, entityYaw, partialTicks);
+        }
+    }
+
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityItem entity) {
+        return TextureMap.locationBlocksTexture;
+    }
 }

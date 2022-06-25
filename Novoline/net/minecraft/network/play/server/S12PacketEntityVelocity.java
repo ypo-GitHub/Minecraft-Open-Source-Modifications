@@ -1,99 +1,110 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S12PacketEntityVelocity implements Packet {
-   private int entityID;
-   private int motionX;
-   private int motionY;
-   private int motionZ;
+import java.io.IOException;
 
-   public S12PacketEntityVelocity() {
-   }
+public class S12PacketEntityVelocity implements Packet<INetHandlerPlayClient> {
+    private int entityID;
+    private int motionX;
+    private int motionY;
+    private int motionZ;
 
-   public S12PacketEntityVelocity(Entity var1) {
-      this(var1.getEntityID(), var1.motionX, var1.motionY, var1.motionZ);
-   }
+    public S12PacketEntityVelocity() {
+    }
 
-   public S12PacketEntityVelocity(int var1, double var2, double var4, double var6) {
-      this.entityID = var1;
-      double var8 = 3.9D;
-      if(var2 < -var8) {
-         var2 = -var8;
-      }
+    public S12PacketEntityVelocity(Entity entityIn) {
+        this(entityIn.getEntityID(), entityIn.motionX, entityIn.motionY, entityIn.motionZ);
+    }
 
-      if(var4 < -var8) {
-         var4 = -var8;
-      }
+    public S12PacketEntityVelocity(int entityIDIn, double motionXIn, double motionYIn, double motionZIn) {
+        this.entityID = entityIDIn;
+        double d0 = 3.9D;
 
-      if(var6 < -var8) {
-         var6 = -var8;
-      }
+        if (motionXIn < -d0) {
+            motionXIn = -d0;
+        }
 
-      if(var2 > var8) {
-         var2 = var8;
-      }
+        if (motionYIn < -d0) {
+            motionYIn = -d0;
+        }
 
-      if(var4 > var8) {
-         var4 = var8;
-      }
+        if (motionZIn < -d0) {
+            motionZIn = -d0;
+        }
 
-      if(var6 > var8) {
-         var6 = var8;
-      }
+        if (motionXIn > d0) {
+            motionXIn = d0;
+        }
 
-      this.motionX = (int)(var2 * 8000.0D);
-      this.motionY = (int)(var4 * 8000.0D);
-      this.motionZ = (int)(var6 * 8000.0D);
-   }
+        if (motionYIn > d0) {
+            motionYIn = d0;
+        }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityID = var1.readVarIntFromBuffer();
-      this.motionX = var1.readShort();
-      this.motionY = var1.readShort();
-      this.motionZ = var1.readShort();
-   }
+        if (motionZIn > d0) {
+            motionZIn = d0;
+        }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityID);
-      var1.writeShort(this.motionX);
-      var1.writeShort(this.motionY);
-      var1.writeShort(this.motionZ);
-   }
+        this.motionX = (int) (motionXIn * 8000.0D);
+        this.motionY = (int) (motionYIn * 8000.0D);
+        this.motionZ = (int) (motionZIn * 8000.0D);
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleEntityVelocity(this);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityID = buf.readVarIntFromBuffer();
+        this.motionX = buf.readShort();
+        this.motionY = buf.readShort();
+        this.motionZ = buf.readShort();
+    }
 
-   public int getEntityID() {
-      return this.entityID;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityID);
+        buf.writeShort(this.motionX);
+        buf.writeShort(this.motionY);
+        buf.writeShort(this.motionZ);
+    }
 
-   public int getMotionX() {
-      return this.motionX;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleEntityVelocity(this);
+    }
 
-   public int getMotionY() {
-      return this.motionY;
-   }
+    public int getEntityID() {
+        return this.entityID;
+    }
 
-   public int getMotionZ() {
-      return this.motionZ;
-   }
+    public int getMotionX() {
+        return this.motionX;
+    }
 
-   public void setMotionX(int var1) {
-      this.motionX = var1;
-   }
+    public int getMotionY() {
+        return this.motionY;
+    }
 
-   public void setMotionY(int var1) {
-      this.motionY = var1;
-   }
+    public int getMotionZ() {
+        return this.motionZ;
+    }
 
-   public void setMotionZ(int var1) {
-      this.motionZ = var1;
-   }
+    public void setMotionX(int X) {
+        this.motionX = X;
+    }
+
+    public void setMotionY(int Y) {
+        this.motionY = Y;
+    }
+
+    public void setMotionZ(int Z) {
+        this.motionZ = Z;
+    }
 }

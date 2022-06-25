@@ -2,92 +2,130 @@ package net.optifine;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.acE;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiVideoSettings;
-import net.minecraft.client.settings.GameSettings$Options;
-import net.optifine.IOptionControl;
-import net.optifine.Lang;
-import net.optifine.MatchBlock;
+import net.minecraft.client.settings.GameSettings;
 
-public class TooltipManager {
-   private GuiScreen guiScreen = null;
-   private int lastMouseX = 0;
-   private int lastMouseY = 0;
-   private long mouseStillTime = 0L;
+public class TooltipManager
+{
+    private GuiScreen guiScreen = null;
+    private int lastMouseX = 0;
+    private int lastMouseY = 0;
+    private long mouseStillTime = 0L;
 
-   public TooltipManager(GuiScreen var1) {
-      this.guiScreen = var1;
-   }
+    public TooltipManager(GuiScreen p_i97_1_)
+    {
+        this.guiScreen = p_i97_1_;
+    }
 
-   public void a(int var1, int var2, List var3) {
-      acE[] var4 = MatchBlock.b();
-      if(Math.abs(var1 - this.lastMouseX) <= 5 && Math.abs(var2 - this.lastMouseY) <= 5) {
-         short var5 = 700;
-         if(System.currentTimeMillis() >= this.mouseStillTime + (long)var5) {
-            int var6 = this.guiScreen.width / 2 - 150;
-            int var7 = this.guiScreen.height / 6 - 7;
-            if(var2 <= var7 + 98) {
-               var7 += 105;
+    public void drawTooltips(int p_drawTooltips_1_, int p_drawTooltips_2_, List p_drawTooltips_3_)
+    {
+        if (Math.abs(p_drawTooltips_1_ - this.lastMouseX) <= 5 && Math.abs(p_drawTooltips_2_ - this.lastMouseY) <= 5)
+        {
+            int i = 700;
+
+            if (System.currentTimeMillis() >= this.mouseStillTime + (long)i)
+            {
+                int j = this.guiScreen.width / 2 - 150;
+                int k = this.guiScreen.height / 6 - 7;
+
+                if (p_drawTooltips_2_ <= k + 98)
+                {
+                    k += 105;
+                }
+
+                int l = j + 150 + 150;
+                int i1 = k + 84 + 10;
+                GuiButton guibutton = this.getSelectedButton(p_drawTooltips_1_, p_drawTooltips_2_, p_drawTooltips_3_);
+
+                if (guibutton instanceof IOptionControl)
+                {
+                    IOptionControl ioptioncontrol = (IOptionControl)guibutton;
+                    GameSettings.Options gamesettings$options = ioptioncontrol.getOption();
+                    String[] astring = getTooltipLines(gamesettings$options);
+
+                    if (astring == null)
+                    {
+                        return;
+                    }
+
+                    GuiVideoSettings.drawGradientRect(this.guiScreen, j, k, l, i1, -536870912, -536870912);
+
+                    for (int j1 = 0; j1 < astring.length; ++j1)
+                    {
+                        String s = astring[j1];
+                        int k1 = 14540253;
+
+                        if (s.endsWith("!"))
+                        {
+                            k1 = 16719904;
+                        }
+
+                        FontRenderer fontrenderer = Minecraft.getInstance().fontRendererObj;
+                        fontrenderer.drawStringWithShadow(s, (float)(j + 5), (float)(k + 5 + j1 * 11), k1);
+                    }
+                }
+            }
+        }
+        else
+        {
+            this.lastMouseX = p_drawTooltips_1_;
+            this.lastMouseY = p_drawTooltips_2_;
+            this.mouseStillTime = System.currentTimeMillis();
+        }
+    }
+
+    private GuiButton getSelectedButton(int p_getSelectedButton_1_, int p_getSelectedButton_2_, List p_getSelectedButton_3_)
+    {
+        for (int i = 0; i < p_getSelectedButton_3_.size(); ++i)
+        {
+            GuiButton guibutton = (GuiButton)p_getSelectedButton_3_.get(i);
+            int j = GuiVideoSettings.getButtonWidth(guibutton);
+            int k = GuiVideoSettings.getButtonHeight(guibutton);
+            boolean flag = p_getSelectedButton_1_ >= guibutton.xPosition && p_getSelectedButton_2_ >= guibutton.yPosition && p_getSelectedButton_1_ < guibutton.xPosition + j && p_getSelectedButton_2_ < guibutton.yPosition + k;
+
+            if (flag)
+            {
+                return guibutton;
+            }
+        }
+
+        return null;
+    }
+
+    private static String[] getTooltipLines(GameSettings.Options p_getTooltipLines_0_)
+    {
+        return getTooltipLines(p_getTooltipLines_0_.getEnumString());
+    }
+
+    private static String[] getTooltipLines(String p_getTooltipLines_0_)
+    {
+        List<String> list = new ArrayList();
+
+        for (int i = 0; i < 10; ++i)
+        {
+            String s = p_getTooltipLines_0_ + ".tooltip." + (i + 1);
+            String s1 = Lang.get(s, (String)null);
+
+            if (s1 == null)
+            {
+                break;
             }
 
-            int var8 = var6 + 150 + 150;
-            int var9 = var7 + 84 + 10;
-            GuiButton var10 = this.getSelectedButton(var1, var2, var3);
-            if(var10 instanceof IOptionControl) {
-               IOptionControl var11 = (IOptionControl)var10;
-               GameSettings$Options var12 = var11.getOption();
-               String[] var13 = getTooltipLines(var12);
-               return;
-            }
-         }
-      }
+            list.add(s1);
+        }
 
-      this.lastMouseX = var1;
-      this.lastMouseY = var2;
-      this.mouseStillTime = System.currentTimeMillis();
-   }
-
-   private GuiButton getSelectedButton(int var1, int var2, List var3) {
-      MatchBlock.b();
-      byte var5 = 0;
-      if(var5 >= var3.size()) {
-         return null;
-      } else {
-         GuiButton var6 = (GuiButton)var3.get(var5);
-         int var7 = GuiVideoSettings.getButtonWidth(var6);
-         int var8 = GuiVideoSettings.getButtonHeight(var6);
-         if((double)var1 >= var6.xPosition && (double)var2 >= var6.yPosition && (double)var1 < var6.xPosition + (double)var7 && (double)var2 < var6.yPosition + (double)var8) {
-            boolean var10 = true;
-         } else {
-            boolean var10000 = false;
-         }
-
-         return var6;
-      }
-   }
-
-   private static String[] getTooltipLines(GameSettings$Options var0) {
-      return getTooltipLines(var0.getEnumString());
-   }
-
-   private static String[] getTooltipLines(String var0) {
-      MatchBlock.b();
-      ArrayList var2 = new ArrayList();
-      int var3 = 0;
-      if(var3 < 10) {
-         String var4 = var0 + ".tooltip." + (var3 + 1);
-         String var5 = Lang.get(var4, (String)null);
-         var2.add(var5);
-         ++var3;
-      }
-
-      if(var2.size() <= 0) {
-         return null;
-      } else {
-         String[] var7 = (String[])((String[])((String[])var2.toArray(new String[var2.size()])));
-         return var7;
-      }
-   }
+        if (list.size() <= 0)
+        {
+            return null;
+        }
+        else
+        {
+            String[] astring = (String[])((String[])list.toArray(new String[list.size()]));
+            return astring;
+        }
+    }
 }

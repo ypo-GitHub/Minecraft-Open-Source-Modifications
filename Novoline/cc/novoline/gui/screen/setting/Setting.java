@@ -1,1165 +1,959 @@
 package cc.novoline.gui.screen.setting;
 
-import cc.novoline.Novoline;
 import cc.novoline.events.EventManager;
 import cc.novoline.events.events.SettingEvent;
 import cc.novoline.gui.screen.click.DiscordGUI;
-import cc.novoline.gui.screen.setting.Manager;
-import cc.novoline.gui.screen.setting.Setting$1;
-import cc.novoline.gui.screen.setting.Setting$ColorPickerMode;
-import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
-import cc.novoline.modules.configurations.property.object.BooleanProperty;
-import cc.novoline.modules.configurations.property.object.ColorProperty;
-import cc.novoline.modules.configurations.property.object.DoubleProperty;
-import cc.novoline.modules.configurations.property.object.FloatProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import cc.novoline.modules.configurations.property.object.KeyBindProperty;
-import cc.novoline.modules.configurations.property.object.ListProperty;
-import cc.novoline.modules.configurations.property.object.LongProperty;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.configurations.property.object.StringProperty;
+import cc.novoline.modules.configurations.property.object.*;
 import cc.novoline.modules.visual.ClickGUI;
 import cc.novoline.utils.RenderUtils;
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.fonts.api.FontRenderer;
-import cc.novoline.utils.fonts.impl.Fonts$SFTHIN$SFTHIN_12;
-import cc.novoline.utils.fonts.impl.Fonts$SFTHIN$SFTHIN_16;
-import cc.novoline.utils.fonts.impl.Fonts$SFTHIN$SFTHIN_17;
-import java.awt.Color;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.util.MathHelper;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.lwjgl.input.Keyboard;
+
+import java.awt.*;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import net.acE;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.MathHelper;
-import org.lwjgl.input.Keyboard;
+
+import static cc.novoline.Novoline.getInstance;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.createBoolean;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.createString;
+import static cc.novoline.utils.RenderUtils.drawBorderedRect;
+import static cc.novoline.utils.RenderUtils.drawFilledCircle;
+import static cc.novoline.utils.fonts.impl.Fonts.SFTHIN.SFTHIN_12.SFTHIN_12;
+import static cc.novoline.utils.fonts.impl.Fonts.SFTHIN.SFTHIN_16.SFTHIN_16;
+import static cc.novoline.utils.fonts.impl.Fonts.SFTHIN.SFTHIN_17.SFTHIN_17;
 
 public class Setting {
-   private final String name;
-   private final String displayName;
-   private final SettingType settingType;
-   private final AbstractModule parentModule;
-   private Supplier supplier;
-   private Consumer l;
-   private int x = 0;
-   private int y = 0;
-   private int offset;
-   private int widthm;
-   private BooleanProperty checkBoxProperty;
-   private StringProperty comboBoxValue;
-   private boolean opened;
-   private AbstractNumberProperty sliderNumber;
-   private double increment;
-   private final double width;
-   private boolean dragging;
-   private ListProperty selectBox;
-   private String hint;
-   private StringProperty textBoxValue;
-   private boolean textHovered;
-   private final Timer backspace;
-   private final Timer caretTimer;
-   private Setting$ColorPickerMode colorPickerMode;
-   private boolean colorPickerRainbow;
-   private long colorPickerLastClickTime;
-   private ColorProperty color;
-   private float separatorHue;
-   private float separatorSaturation;
-   private float separatorBrightness;
-   private Set colorPickedDisabledModes;
-   private GuiScreen K;
-   private KeyBindProperty keyBindValue;
-   private int key;
-   private boolean listening;
-   private Timer timer;
-   private final DecimalFormat decimalFormat;
-   private static boolean e;
 
-   public void update() {
-      DiscordGUI var1 = Novoline.getInstance().getDiscordGUI();
-      this.x = var1.getXCoordinate() + 168;
-      this.y = var1.getYCoordinate() + this.offset + ((List)Manager.getSettingsByMod(this.parentModule).stream().filter(Setting::lambda$update$0).collect(Collectors.toList())).indexOf(this) * 25;
-      this.widthm = var1.getXCoordinate() + 45 + 105 + var1.getWidth() - 18;
-   }
+    /* fields */
+    private final String name;
+    private final String displayName;
+    private final SettingType settingType;
+    private final AbstractModule parentModule;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, GuiScreen var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.K = var5;
-   }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, Consumer var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.l = var5;
-   }
+    private Supplier<Boolean> supplier;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, GuiScreen var5, Supplier var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.K = var5;
-      this.supplier = var6;
-   }
+    private int x = 0;
+    private int y = 0;
+    private int offset = 30;
+    private int widthm = 5;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, BooleanProperty var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.checkBoxProperty = var5;
-   }
+    /* check box */
+    private BooleanProperty checkBoxProperty;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, BooleanProperty var5, Supplier var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.checkBoxProperty = var5;
-      this.supplier = var6;
-   }
+    /* combo box */
+    private StringProperty comboBoxValue;
+    private boolean opened = false;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, boolean var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.checkBoxProperty = PropertyFactory.createBoolean(Boolean.valueOf(var5));
-   }
+    /* slider */
+    @SuppressWarnings("rawtypes")
+    private AbstractNumberProperty sliderNumber;
+    private double increment;
+    private final double width = 70;
+    private boolean dragging;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, StringProperty var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.comboBoxValue = var5;
-   }
+    /* select box */
+    private ListProperty<String> selectBox;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, StringProperty var5, Supplier var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.comboBoxValue = var5;
-      this.supplier = var6;
-   }
+    /* text field */
+    private String hint;
+    private StringProperty textBoxValue;
+    private boolean textHovered;
+    private final Timer backspace = new Timer();
+    private final Timer caretTimer = new Timer();
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, AbstractNumberProperty var5, double var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.sliderNumber = var5;
-      this.increment = var6;
-   }
+    /* color picker */
+    private ColorPickerMode colorPickerMode = ColorPickerMode.HUE;
+    private boolean colorPickerRainbow;
+    private long colorPickerLastClickTime;
+    private ColorProperty color;
+    private float separatorHue, separatorSaturation, separatorBrightness;
+    private Set<ColorPickerMode> colorPickedDisabledModes;
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, AbstractNumberProperty var5, double var6, Supplier var8) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.sliderNumber = var5;
-      this.increment = var6;
-      this.supplier = var8;
-   }
+    /* keybindable */
+    private KeyBindProperty keyBindValue;
+    private int key;
+    private boolean listening;
+    //
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, double var5, double var7, double var9, double var11) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.sliderNumber = ((DoubleProperty)PropertyFactory.createDouble(Double.valueOf(var5)).minimum(Double.valueOf(var7))).maximum(Double.valueOf(var9));
-      this.increment = var11;
-   }
+    public void update() {
+        final DiscordGUI discordGUI = getInstance().getDiscordGUI();
+        this.x = discordGUI.getXCoordinate() + 168;
+        this.y = discordGUI.getYCoordinate() + this.offset + Manager.getSettingsByMod(this.parentModule).
+                stream().
+                filter(setting -> setting.getSupplier() != null ? setting.getSupplier().get() : true).
+                collect(Collectors.toList()).
+                indexOf(this) * 25;
+        this.widthm = discordGUI.getXCoordinate() + 45 + 105 + discordGUI.getWidth() - 18;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, ListProperty var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.selectBox = var5;
-   }
+    /* checkbox */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   BooleanProperty property) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.checkBoxProperty = property;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, ListProperty var5, Supplier var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.selectBox = var5;
-      this.supplier = var6;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   BooleanProperty property, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.checkBoxProperty = property;
+        this.supplier = supplier;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, List var5, List var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.selectBox = PropertyFactory.createList(var5).acceptableValues((Collection)var6);
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   boolean selectBoxValue) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.checkBoxProperty = createBoolean(selectBoxValue);
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, String var5, StringProperty var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.hint = var5;
-      this.textBoxValue = var6;
-   }
+    /* combobox */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, StringProperty value) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.comboBoxValue = value;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, String var5, StringProperty var6, Supplier var7) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.hint = var5;
-      this.textBoxValue = var6;
-      this.supplier = var7;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   StringProperty value, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.comboBoxValue = value;
+        this.supplier = supplier;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, String var5, String var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.hint = var5;
-      this.textBoxValue = PropertyFactory.createString(var6);
-   }
+	/*public Setting(String name, String displayName, SettingType settingType, AbstractModule module, String comboValue, List<String> options) {
+		this.name = name;
+		this.displayName = displayName;
+		this.settingType = settingType;
+		this.parentModule = module;
+		this.comboBoxValue = new StringProperty(comboValue).acceptableValues(options);
+	}*/
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, ColorProperty var5, EnumSet var6) {
-      SettingType.c();
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.color = var5;
-      this.colorPickedDisabledModes = var6;
-      float[] var8 = var5.getHSB();
-      this.separatorHue = var8[0] * 70.0F;
-      this.separatorSaturation = var8[1] * 70.0F;
-      this.separatorBrightness = var8[2] * 70.0F;
-      if(acE.b() == null) {
-         SettingType.b(false);
-      }
+    /* slider */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   AbstractNumberProperty<?, ?> number, double increment) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.sliderNumber = number;
+        this.increment = increment;
+    }
 
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   AbstractNumberProperty<?, ?> number, double increment, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.sliderNumber = number;
+        this.increment = increment;
+        this.supplier = supplier;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, ColorProperty var5, EnumSet var6, Supplier var7) {
-      this.offset = 30;
-      this.widthm = 5;
-      SettingType.c();
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.color = var5;
-      this.colorPickedDisabledModes = var6;
-      if(var6.contains(Setting$ColorPickerMode.HUE)) {
-         if(var6.contains(Setting$ColorPickerMode.BRIGHTNESS)) {
-            this.colorPickerMode = Setting$ColorPickerMode.SATURATION;
-         }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, double sliderValue,
+                   double minValue, double maxValue, double increment) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.sliderNumber = PropertyFactory.createDouble(sliderValue).minimum(minValue).maximum(maxValue);
+        this.increment = increment;
+    }
 
-         this.colorPickerMode = Setting$ColorPickerMode.BRIGHTNESS;
-      }
+    /* selectbox */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   ListProperty<String> selectedOptions) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.selectBox = selectedOptions;
+    }
 
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      float[] var9 = var5.getHSB();
-      this.separatorHue = var9[0] * 70.0F;
-      this.separatorSaturation = var9[1] * 70.0F;
-      this.separatorBrightness = var9[2] * 70.0F;
-      this.supplier = var7;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   ListProperty<String> selectedOptions, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.selectBox = selectedOptions;
+        this.supplier = supplier;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, Integer var5, EnumSet var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.color = PropertyFactory.createColor(var5);
-      this.colorPickedDisabledModes = var6;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module,
+                   List<String> selectedOptions, List<String> acceptableOptions) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.selectBox = PropertyFactory.createList(selectedOptions).acceptableValues(acceptableOptions);
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, KeyBindProperty var5) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.keyBindValue = var5;
-   }
+    /* textbox */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, String hint,
+                   StringProperty text) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.hint = hint;
+        this.textBoxValue = text;
+    }
 
-   public Setting(String var1, String var2, SettingType var3, AbstractModule var4, KeyBindProperty var5, Supplier var6) {
-      this.offset = 30;
-      this.widthm = 5;
-      this.opened = false;
-      this.width = 70.0D;
-      this.backspace = new Timer();
-      this.caretTimer = new Timer();
-      this.colorPickerMode = Setting$ColorPickerMode.HUE;
-      this.timer = new Timer();
-      this.decimalFormat = new DecimalFormat("#.#");
-      this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
-      this.name = var1;
-      this.displayName = var2;
-      this.settingType = var3;
-      this.parentModule = var4;
-      this.keyBindValue = var5;
-      this.supplier = var6;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, String hint,
+                   StringProperty text, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.hint = hint;
+        this.textBoxValue = text;
+        this.supplier = supplier;
+    }
 
-   public Supplier getSupplier() {
-      return this.supplier;
-   }
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, String hint,
+                   String text) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.hint = hint;
+        this.textBoxValue = createString(text);
+    }
 
-   public void drawScreen(int var1, int var2) {
-      boolean var3 = SettingType.c();
-      boolean var4 = false;
+    /* color picker */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, ColorProperty color,
+                   @Nullable EnumSet<ColorPickerMode> disabledModes) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.color = color;
+        this.colorPickedDisabledModes = disabledModes;
 
-      try {
-         int var5 = ((ClickGUI)Novoline.getInstance().getModuleManager().getModule(ClickGUI.class)).getGUIColor();
-         switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[this.settingType.ordinal()]) {
-         case 1:
-         case 2:
-            boolean var6 = this.isHovered(var1, var2);
-            int var7 = var6?var5:1677721600;
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y - 2), (float)this.widthm, (float)(this.y + 8), 1.0F, var7, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawCenteredString((CharSequence)this.comboBoxValue.get(), (float)(this.widthm - 35), (float)this.y, -1);
-            if(!this.opened) {
-               break;
+        final float[] hsb = color.getHSB();
+        this.separatorHue = hsb[0] * 70;
+        this.separatorSaturation = hsb[1] * 70;
+        this.separatorBrightness = hsb[2] * 70;
+    }
+
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, ColorProperty color,
+                   @Nullable EnumSet<ColorPickerMode> disabledModes, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.color = color;
+        this.colorPickedDisabledModes = disabledModes;
+
+        final float[] hsb = color.getHSB();
+        this.separatorHue = hsb[0] * 70;
+        this.separatorSaturation = hsb[1] * 70;
+        this.separatorBrightness = hsb[2] * 70;
+        this.supplier = supplier;
+    }
+
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, Integer color,
+                   @Nullable EnumSet<ColorPickerMode> disabledModes) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.color = PropertyFactory.createColor(color);
+        this.colorPickedDisabledModes = disabledModes;
+    }
+
+    /* keybindable */
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, KeyBindProperty property) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.keyBindValue = property;
+    }
+
+    public Setting(String name, String displayName, SettingType settingType, AbstractModule module, KeyBindProperty property, Supplier<Boolean> supplier) {
+        this.name = name;
+        this.displayName = displayName;
+        this.settingType = settingType;
+        this.parentModule = module;
+        this.keyBindValue = property;
+        this.supplier = supplier;
+    }
+
+    public Supplier<Boolean> getSupplier() {
+        return supplier;
+    }
+
+    /* methods */
+    public void drawScreen(int mouseX, int mouseY) {
+        try {
+            boolean isMaterial = getInstance().getModuleManager().getModule(ClickGUI.class).design.equalsIgnoreCase("Material");
+            final int oColor = getInstance().getModuleManager().getModule(ClickGUI.class).getGUIColor();
+
+            switch (this.settingType) {
+                case BINDABLE: {
+
+                    break;
+                }
+                case COMBOBOX: {
+                    final boolean topHovered = isHovered(mouseX, mouseY);
+                    final int col1 = topHovered ? oColor : 0x64000000;
+
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    drawBorderedRect(this.widthm - 70, this.y - 2, this.widthm, this.y + 8, 1, col1,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+                    SFTHIN_16.drawCenteredString(this.comboBoxValue.get(), this.widthm - 35, this.y, 0xFFFFFFFF);
+
+
+                    if (this.opened) {
+                        final List<String> acceptableValues = this.comboBoxValue.getAcceptableValues();
+
+                        drawBorderedRect(this.widthm - 70, this.y + 10, this.widthm,
+                                this.y + 10 + acceptableValues.size() * 11, 1, 0x64000000,
+                                isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+
+                        for (String option : acceptableValues) {
+                            SFTHIN_16.drawCenteredString(option, this.widthm - 35,
+                                    this.y + 13 + acceptableValues.indexOf(option) * 11,
+                                    getComboBoxValue().equalsIgnoreCase(option) ? oColor : 0xFFFFFFFF);
+                        }
+                    }
+                    break;
+                }
+                case SELECTBOX: {
+                    final boolean sTopHovered = isHovered(mouseX, mouseY);
+                    final int col2 = sTopHovered ? oColor : 0x64000000;
+
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    drawBorderedRect(this.widthm - 70, this.y - 2, this.widthm, this.y + 8, 1, col2,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+
+                    if (this.selectBox.isEmpty()) {
+                        SFTHIN_16.drawCenteredString("...", this.widthm - 35, this.y, 0xFFFFFFFF);
+                    } else {
+                        SFTHIN_16.drawCenteredString(
+                                this.selectBox.size() > 1 ? this.selectBox.get().get(0) + "..." :
+                                        this.selectBox.get().get(0), this.widthm - 35, this.y, 0xFFFFFFFF);
+                    }
+
+                    if (this.opened) {
+                        final List<String> acceptableValues = this.selectBox.getAcceptableValues();
+                        drawBorderedRect(this.widthm - 70, this.y + 10, this.widthm,
+                                this.y + 10 + acceptableValues.size() * 11, 1, 0x64000000,
+                                isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+
+                        for (String option : acceptableValues) {
+                            SFTHIN_16.drawCenteredString(option, this.widthm - 35,
+                                    this.y + 13 + acceptableValues.indexOf(option) * 11,
+                                    this.selectBox.contains(option) ? oColor : 0xFFFFFFFF);
+                        }
+                    }
+
+                    break;
+                }
+                case CHECKBOX: {
+                    drawBorderedRect(this.widthm - 10, this.y - 2, this.widthm, this.y + 8, 1, 0x64000000,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+                    if (checkBoxProperty.get())
+                        RenderUtils.drawCheck(widthm - 8, y + 2, 2, oColor);
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    break;
+                }
+                case SLIDER: {
+                    final double percentBar = (((Number) this.sliderNumber.get()).doubleValue() - this.sliderNumber
+                            .getMinimum().doubleValue()) / (this.sliderNumber.getMaximum().doubleValue() - this.sliderNumber.getMinimum().doubleValue());
+
+                    drawBorderedRect(this.widthm - 70, this.y + 2, this.widthm, this.y + 4, 1, 0x64000000,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+                    Gui.drawRect(this.widthm - 70, this.y + 2, (int) (this.widthm - 70 + percentBar * this.width), this.y + 4, oColor);
+                    drawFilledCircle((int) (this.widthm - 70 + percentBar * this.width), this.y + 3, 2, 0xffffffff);
+
+
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    SFTHIN_12
+                            .drawCenteredString(getValue() + "", (float) (this.widthm - 70 + this.width * percentBar),
+                                    this.y - 5, 0xFFFFFFFF);
+
+                    if (this.dragging) {
+                        final double difference = this.sliderNumber.getMaximum().doubleValue() - this.sliderNumber
+                                .getMinimum().doubleValue(), //
+                                value = this.sliderNumber.getMinimum().doubleValue() + MathHelper
+                                        .clamp_double((mouseX - (this.widthm - 70)) / this.width, 0, 1) * difference;
+                        double set = MathHelper.incValue(value, getIncrement());
+
+                        setSlider(set);
+                        EventManager.call(new SettingEvent(parentModule, this.getName(), this.sliderNumber));
+                    }
+
+                    break;
+                }
+                case TEXTBOX: {
+                    final String s = this.textBoxValue.get();
+
+                    if (this.textHovered && Keyboard.isKeyDown(Keyboard.KEY_BACK) && this.backspace.delay(100) && s
+                            .length() >= 1) {
+                        this.textBoxValue.set(s.substring(0, s.length() - 1));
+                        this.backspace.reset();
+                    }
+
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    drawBorderedRect(this.widthm - 70, this.y - 2, this.widthm, this.y + 8, 1,
+                            isTextHovered() ? oColor : 0x64000000,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+
+                    if (s.isEmpty()) {
+                        if (isTextHovered()) {
+                            if (this.caretTimer.delay(500)) {
+                                SFTHIN_16.drawString("|", this.widthm - 68, (float) (this.y - 0.5), 0x64FFFFFF);
+
+                                if (this.caretTimer.delay(1000)) {
+                                    this.caretTimer.reset();
+                                }
+                            }
+                        }
+
+                        SFTHIN_16.drawString(this.hint, this.widthm - 65, this.y, 0x64FFFFFF);
+                    }
+
+                    if (SFTHIN_16.stringWidth(s) > 65) {
+                        SFTHIN_16
+                                .drawString(SFTHIN_16.trimStringToWidth(s, 60, true), this.widthm - 68, this.y,
+                                        0xFFFFFFFF);
+                    } else {
+                        SFTHIN_16.drawString(s, this.widthm - 68, this.y, 0xFFFFFFFF);
+                    }
+
+                    break;
+                }
+                case COLOR_PICKER: {
+                    SFTHIN_17.drawString(this.displayName, this.x, this.y, 0xFFFFFFFF);
+                    drawBorderedRect(this.widthm - 70, this.y - 2, this.widthm, this.y + 8, 1,
+                            isTextHovered() ? oColor : 0x64000000,
+                            isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F2F2F);
+
+                    final Integer color = this.color.get();
+
+                    final int currentRed = color >> 16 & 0xFF, // @off
+                            currentGreen = color >> 8 & 0xFF,
+                            currentBlue = color & 0xFF; // @on
+
+                    final float[] hsb = Color.RGBtoHSB(currentRed, currentGreen, currentBlue, new float[3]);
+
+                    if (this.colorPickerRainbow) {
+                        this.separatorHue = (this.separatorHue + 0.35F) % 70;
+                    } else if (this.dragging) {
+                        final double selectedX = MathHelper.clamp_double(mouseX - this.widthm + 70, 0.35d, 70);
+                        final float normalizedValue = (float) (selectedX / 70);
+
+                        switch (this.colorPickerMode) {
+                            case HUE:
+                                this.separatorHue = (int) selectedX;
+                                this.color.set(Color.getHSBColor(normalizedValue, hsb[1], hsb[2]).getRGB());
+                                break;
+
+                            case SATURATION:
+                                this.separatorSaturation = (int) selectedX;
+                                this.color.set(Color.getHSBColor(hsb[0], normalizedValue, hsb[2]).getRGB());
+                                break;
+
+                            case BRIGHTNESS:
+                                this.separatorBrightness = (int) selectedX;
+                                this.color.set(Color.getHSBColor(hsb[0], hsb[1], normalizedValue).getRGB());
+                                break;
+                        }
+                    }
+
+                    switch (this.colorPickerMode) {
+                        case HUE:
+                            for (int max = 70, i = 0; i < max; i++) {
+                                Gui.drawRect(this.widthm - 70 + i, this.y - 2, this.widthm - 69 + i, this.y + 8,
+                                        Color.getHSBColor(i / (float) max, hsb[1], hsb[2]).getRGB());
+                            }
+
+                            Gui.drawRect(this.widthm - 70 + this.separatorHue, this.y - 2,
+                                    this.widthm - 69 + this.separatorHue, this.y + 8, 0xFF000000);
+                            break;
+
+                        case SATURATION:
+                            for (int max = 70, i = 0; i < max; i++) {
+                                Gui.drawRect(this.widthm - 70 + i, this.y - 2, this.widthm - 69 + i, this.y + 8,
+                                        Color.getHSBColor(hsb[0], i / (float) max, hsb[2]).getRGB());
+                            }
+
+                            Gui.drawRect(this.widthm - 70 + this.separatorSaturation, this.y - 2,
+                                    this.widthm - 69 + this.separatorSaturation, this.y + 8, 0xFF000000);
+                            break;
+
+                        case BRIGHTNESS:
+                            for (int max = 70, i = 0; i < max; i++) {
+                                Gui.drawRect(this.widthm - 70 + i, this.y - 2, this.widthm - 69 + i, this.y + 8,
+                                        Color.getHSBColor(hsb[0], hsb[1], i / (float) max).getRGB());
+                            }
+
+                            Gui.drawRect(this.widthm - 70 + this.separatorBrightness, this.y - 2,
+                                    this.widthm - 69 + this.separatorBrightness, this.y + 8, 0xFF000000);
+                            break;
+                    }
+
+                    // Gui.drawRect(x + 70, y + 20, x + 140, y + 40, this.color);
+                    break;
+                }
+                default: {
+                    throw new IllegalStateException("Unexpected value: " + this.settingType);
+                }
             }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
 
-            List var8 = this.comboBoxValue.getAcceptableValues();
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y + 10), (float)this.widthm, (float)(this.y + 10 + var8.size() * 11), 1.0F, 1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            Iterator var9 = var8.iterator();
-            if(var9.hasNext()) {
-               String var10 = (String)var9.next();
-               Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawCenteredString(var10, (float)(this.widthm - 35), (float)(this.y + 13 + var8.indexOf(var10) * 11), this.getComboBoxValue().equalsIgnoreCase(var10)?var5:-1);
+    private Timer timer = new Timer();
+
+    public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if (mouseButton == 0) {
+            switch (this.settingType) {
+                case COMBOBOX:
+                    if (toggleOpened(mouseX, mouseY)) {
+                        break;
+                    }
+
+                    if (this.opened //
+                            && mouseX >= this.widthm - 70 // minimum x
+                            && mouseX <= this.widthm // maximum x
+                    ) {
+                        for (int i = 0; i < this.comboBoxValue.getAcceptableValues().size(); i++) {
+                            final int v = this.y + 10 + i * 11;
+
+                            if (mouseY >= v && mouseY <= v + 11) {
+                                this.comboBoxValue.set(this.comboBoxValue.getAcceptableValues().get(i));
+                                this.opened = false;
+                                EventManager.call(new SettingEvent(parentModule, this.getName(), comboBoxValue));
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+
+                case SELECTBOX:
+                    if (toggleOpened(mouseX, mouseY)) break;
+
+                    if (this.opened //
+                            && mouseX >= this.widthm - 70 // minimum x
+                            && mouseX <= this.widthm // maximum x
+                    ) {
+                        final List<String> acceptableValues = this.selectBox.getAcceptableValues();
+
+                        for (int i = 0; i < acceptableValues.size(); i++) {
+                            final int v = this.y + 10 + i * 11;
+
+                            if (mouseY >= v && mouseY <= v + 11) {
+                                final String s = acceptableValues.get(i);
+
+                                if (this.selectBox.contains(s)) {
+                                    this.selectBox.remove(s);
+                                } else {
+                                    this.selectBox.add(s);
+                                }
+                                EventManager.call(new SettingEvent(parentModule, this.getName(), selectBox));
+                                return true;
+                            }
+                        }
+                    }
+
+                    break;
+
+                case CHECKBOX:
+                    if (isHovered(mouseX, mouseY)) {
+                        this.checkBoxProperty.invert();
+                        EventManager.call(new SettingEvent(parentModule, this.getName(), this.getDisplayName(), checkBoxProperty));
+                    }
+
+                    break;
+
+                case SLIDER:
+                    if (isHovered(mouseX, mouseY)) this.dragging = true;
+                    break;
+
+                case TEXTBOX:
+                    if (isHovered(mouseX, mouseY)) {
+                        this.textHovered = !this.textHovered;
+                    } else if (this.textHovered) {
+                        this.textHovered = false;
+                    }
+
+                    break;
+
+                case COLOR_PICKER:
+                    if (isHovered(mouseX, mouseY)) {
+						/*if(this.colorPickerMode == ColorPickerMode.HUE) {
+							val systemTime = Minecraft.getSystemTime();
+
+							if(systemTime - this.colorPickerLastClickTime <= 250) {
+								this.colorPickerRainbow = true;
+							} else {
+								this.colorPickerLastClickTime = systemTime;
+								this.colorPickerRainbow = false;
+								this.dragging = true;
+							}
+						} else {}*/
+
+                        this.dragging = true;
+                    }
+
+                    break;
             }
-         case 3:
-            boolean var15 = this.isHovered(var1, var2);
-            int var19 = var15?var5:1677721600;
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y - 2), (float)this.widthm, (float)(this.y + 8), 1.0F, var19, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            if(this.selectBox.isEmpty()) {
-               Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawCenteredString("...", (float)(this.widthm - 35), (float)this.y, -1);
+        } else if (mouseButton == 1 && this.settingType == SettingType.COLOR_PICKER && isHovered(mouseX, mouseY)) {
+            final ColorPickerMode[] values = ColorPickerMode.values();
+            final int i = (Arrays.binarySearch(values, this.colorPickerMode) + 1) % values.length;
+
+            if (this.colorPickedDisabledModes == null) {
+                this.colorPickerMode = values[i];
+            } else if (!this.colorPickedDisabledModes.isEmpty()) {
+                ColorPickerMode mode;
+
+                for (int i1 = 0; i1 < values.length - 1; i1++) {
+                    mode = values[(i + i1) % values.length];
+
+                    if (!this.colorPickedDisabledModes.contains(mode)) {
+                        this.colorPickerMode = values[(i1 + i) % values.length];
+                    }
+                }
             }
+        }
 
-            Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawCenteredString((CharSequence)(this.selectBox.size() > 1?(String)((List)this.selectBox.get()).get(0) + "...":(CharSequence)((List)this.selectBox.get()).get(0)), (float)(this.widthm - 35), (float)this.y, -1);
-            if(!this.opened) {
-               break;
+        return false;
+    }
+
+    public Set<ColorPickerMode> getColorPickedDisabledModes() {
+        return colorPickedDisabledModes;
+    }
+
+    public void setColorPickerMode(ColorPickerMode colorPickerMode) {
+        this.colorPickerMode = colorPickerMode;
+    }
+
+    private boolean toggleOpened(int mouseX, int mouseY) {
+        if (!isHovered(mouseX, mouseY)) return false;
+
+        if (this.opened = !this.opened) {
+            Manager.getSettingList().stream() //
+                    .filter(setting -> (setting.settingType == SettingType.COMBOBOX || setting.settingType == SettingType.SELECTBOX) //
+                            && !setting.name.equals(this.name)) //
+                    .forEach(setting -> setting.opened = false);
+        }
+
+        return true;
+    }
+
+    public void mouseReleased(int mouseX, int mouseY, int state) {
+        this.dragging = false;
+    }
+
+    private boolean isHovered(int mouseX, int mouseY) {
+        switch (this.settingType) { // @off
+            case CHECKBOX:
+                return mouseX >= this.widthm - 10 && mouseX <= this.widthm && mouseY >= this.y - 2 && mouseY <= this.y + 8;
+            case COMBOBOX:
+            case SELECTBOX:
+            case COLOR_PICKER:
+            case TEXTBOX:
+                return mouseX >= this.widthm - 70 && mouseX <= this.widthm && mouseY >= this.y - 2 && mouseY <= this.y + 8;
+            case SLIDER:
+                return mouseX >= this.widthm - 70 && mouseX <= this.widthm - 70 + this.width && mouseY >= this.y + 2 && mouseY <= this.y + 8;
+            default:
+                return false;
+        } // @on
+    }
+
+    public void keyTyped(char typedChar, int keyCode) {
+        if (this.settingType == SettingType.TEXTBOX) {
+            if (this.textHovered) {
+                if (keyCode == Keyboard.KEY_ESCAPE) {
+                    this.textHovered = false;
+                } else if (!(keyCode == Keyboard.KEY_BACK) && keyCode != Keyboard.KEY_RCONTROL && keyCode != Keyboard.KEY_LCONTROL && keyCode != Keyboard.KEY_RSHIFT && keyCode != Keyboard.KEY_LSHIFT && keyCode != Keyboard.KEY_TAB && keyCode != Keyboard.KEY_CAPITAL && keyCode != Keyboard.KEY_DELETE && keyCode != Keyboard.KEY_HOME && keyCode != Keyboard.KEY_INSERT && keyCode != Keyboard.KEY_UP && keyCode != Keyboard.KEY_DOWN && keyCode != Keyboard.KEY_RIGHT && keyCode != Keyboard.KEY_LEFT && keyCode != Keyboard.KEY_LMENU && keyCode != Keyboard.KEY_RMENU && keyCode != Keyboard.KEY_PAUSE && keyCode != Keyboard.KEY_SCROLL && keyCode != Keyboard.KEY_END && keyCode != Keyboard.KEY_PRIOR && keyCode != Keyboard.KEY_NEXT && keyCode != Keyboard.KEY_APPS && keyCode != Keyboard.KEY_F1 && keyCode != Keyboard.KEY_F2 && keyCode != Keyboard.KEY_F3 && keyCode != Keyboard.KEY_F4 && keyCode != Keyboard.KEY_F5 && keyCode != Keyboard.KEY_F6 && keyCode != Keyboard.KEY_F7 && keyCode != Keyboard.KEY_F8 && keyCode != Keyboard.KEY_F9 && keyCode != Keyboard.KEY_F10 && keyCode != Keyboard.KEY_F11 && keyCode != Keyboard.KEY_F12) {
+                    this.textBoxValue.append(typedChar);
+                }
             }
+        } else if (keyCode == Keyboard.KEY_ESCAPE && (this.settingType == SettingType.SELECTBOX || this.settingType == SettingType.COMBOBOX) && this.opened) {
+            this.opened = false;
+        }
+    }
+
+    public boolean isInsideMenu() {
+        final DiscordGUI discordGUI = getInstance().getDiscordGUI();
+        return this.y <= discordGUI.getYCoordinate() + discordGUI.getHeight() - 10 && this.y >= discordGUI
+                .getYCoordinate() + 23;
+    }
+
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.#");
+
+    {
+        this.decimalFormat.setRoundingMode(RoundingMode.CEILING);
+    }
+
+    public Object getValue() {
+        switch (this.settingType) { // @off
+            case CHECKBOX:
+                return this.checkBoxProperty;
+            case SLIDER:
+                return this.decimalFormat.format(getDouble());
+            case COMBOBOX:
+                return this.comboBoxValue;
+            case SELECTBOX:
+                return this.selectBox;
+            default:
+                return null;
+        } // @on
+    }
+
+    //region Lombok
+    public String getName() {
+        return this.name;
+    }
+
+    public SettingType getSettingType() {
+        return this.settingType;
+    }
+
+    public boolean isColorPickerRainbow() {
+        return colorPickerRainbow;
+    }
+
+    public float getSeparatorHue() {
+        return separatorHue;
+    }
+
+    public float getSeparatorBrightness() {
+        return separatorBrightness;
+    }
+
+    public float getSeparatorSaturation() {
+        return separatorSaturation;
+    }
+
+    public void setSeparatorBrightness(float separatorBrightness) {
+        this.separatorBrightness = separatorBrightness;
+    }
+
+    public void setSeparatorHue(float separatorHue) {
+        this.separatorHue = separatorHue;
+    }
+
+    public void setSeparatorSaturation(float separatorSaturation) {
+        this.separatorSaturation = separatorSaturation;
+    }
+
+    public ColorPickerMode getColorPickerMode() {
+        return colorPickerMode;
+    }
+
+    public ColorProperty getColor() {
+        return color;
+    }
+
+    public AbstractNumberProperty getSliderNumber() {
+        return sliderNumber;
+    }
+
+    public AbstractModule getParentModule() {
+        return this.parentModule;
+    }
+
+    public String getTextBoxValue() {
+        return this.textBoxValue.get();
+    }
+
+    public StringProperty getTextBoxValue2() {
+        return this.textBoxValue;
+    }
+
+
+    public void setTextBoxValue(String message) {
+        this.textBoxValue.set(message);
+    }
+
+    public BooleanProperty getCheckBoxProperty() {
+        return this.checkBoxProperty;
+    }
+
+    public Boolean getCheckBoxValue() {
+        return this.checkBoxProperty.get();
+    }
+
+    public double getDouble() {
+        return Math.round(((Number) this.sliderNumber.get()).doubleValue() / this.increment) * this.increment;
+    }
+
+    public float getFloat() {
+        return (float) getDouble();
+    }
+
+    public int getInt() {
+        return (int) getDouble();
+    }
+
+    public long getLong() {
+        return (long) getDouble();
+    }
+
+    public String getComboBoxValue() {
+        return this.comboBoxValue.get();
+    }
+
+    public StringProperty getComboBoxProperty() {
+        return this.comboBoxValue;
+    }
+
+
+    public void setComboBoxValue(String comboBoxValue) {
+        this.comboBoxValue.set(comboBoxValue);
+    }
+
+    public StringProperty getComboBox() {
+        return this.comboBoxValue;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setSliderValue(Number sliderValue) {
+        if (this.sliderNumber instanceof IntProperty) {
+            this.sliderNumber.set(sliderValue.intValue());
+        } else if (this.sliderNumber instanceof DoubleProperty) {
+            this.sliderNumber.set(sliderValue.doubleValue());
+        } else if (this.sliderNumber instanceof FloatProperty) {
+            this.sliderNumber.set(sliderValue.floatValue());
+        } else if (this.sliderNumber instanceof LongProperty) {
+            this.sliderNumber.set(sliderValue.longValue());
+        }
+    }
 
-            List var21 = this.selectBox.getAcceptableValues();
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y + 10), (float)this.widthm, (float)(this.y + 10 + var21.size() * 11), 1.0F, 1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            Iterator var24 = var21.iterator();
-            if(var24.hasNext()) {
-               String var26 = (String)var24.next();
-               Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawCenteredString(var26, (float)(this.widthm - 35), (float)(this.y + 13 + var21.indexOf(var26) * 11), this.selectBox.contains(var26)?var5:-1);
-            }
-         case 4:
-            RenderUtils.drawBorderedRect((float)(this.widthm - 10), (float)(this.y - 2), (float)this.widthm, (float)(this.y + 8), 1.0F, 1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            if(((Boolean)this.checkBoxProperty.get()).booleanValue()) {
-               RenderUtils.drawCheck((double)(this.widthm - 8), (double)(this.y + 2), 2, var5);
-            }
-
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-         case 5:
-            double var16 = (((Number)this.sliderNumber.get()).doubleValue() - this.sliderNumber.getMinimum().doubleValue()) / (this.sliderNumber.getMaximum().doubleValue() - this.sliderNumber.getMinimum().doubleValue());
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y + 2), (float)this.widthm, (float)(this.y + 4), 1.0F, 1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            int var10000 = this.widthm - 70;
-            int var10001 = this.y + 2;
-            double var10002 = (double)(this.widthm - 70);
-            this.getClass();
-            Gui.drawRect(var10000, var10001, (int)(var10002 + var16 * 70.0D), this.y + 4, var5);
-            double var38 = (double)(this.widthm - 70);
-            this.getClass();
-            RenderUtils.drawFilledCircle((float)((int)(var38 + var16 * 70.0D)), (float)(this.y + 3), 2.0F, -1);
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-            FontRenderer var39 = Fonts$SFTHIN$SFTHIN_12.SFTHIN_12;
-            String var41 = this.getValue() + "";
-            var10002 = (double)(this.widthm - 70);
-            this.getClass();
-            var39.drawCenteredString(var41, (float)(var10002 + 70.0D * var16), (float)(this.y - 5), -1);
-            if(!this.dragging) {
-               break;
-            }
-
-            double var22 = this.sliderNumber.getMaximum().doubleValue() - this.sliderNumber.getMinimum().doubleValue();
-            double var40 = this.sliderNumber.getMinimum().doubleValue();
-            double var42 = (double)(var1 - (this.widthm - 70));
-            this.getClass();
-            double var27 = var40 + MathHelper.clamp_double(var42 / 70.0D, 0.0D, 1.0D) * var22;
-            double var12 = MathHelper.incValue(var27, this.getIncrement());
-            this.setSlider(var12);
-            EventManager.call(new SettingEvent(this.parentModule, this.getName(), this.sliderNumber));
-         case 6:
-            String var17 = (String)this.textBoxValue.get();
-            if(this.textHovered && Keyboard.isKeyDown(14) && this.backspace.delay(100.0D) && var17.length() >= 1) {
-               this.textBoxValue.set(var17.substring(0, var17.length() - 1));
-               this.backspace.reset();
-            }
-
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y - 2), (float)this.widthm, (float)(this.y + 8), 1.0F, this.isTextHovered()?var5:1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            if(var17.isEmpty()) {
-               if(this.isTextHovered() && this.caretTimer.delay(500.0D)) {
-                  Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawString("|", (float)(this.widthm - 68), (float)((double)this.y - 0.5D), 1694498815);
-                  if(this.caretTimer.delay(1000.0D)) {
-                     this.caretTimer.reset();
-                  }
-               }
-
-               Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawString(this.hint, (float)(this.widthm - 65), (float)this.y, 1694498815);
-            }
-
-            if(Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.stringWidth(var17) > 65) {
-               Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawString(Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.trimStringToWidth(var17, 60, true), (float)(this.widthm - 68), (float)this.y, -1);
-            }
-
-            Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawString(var17, (float)(this.widthm - 68), (float)this.y, -1);
-         case 7:
-            Fonts$SFTHIN$SFTHIN_17.SFTHIN_17.drawString(this.displayName, (float)this.x, (float)this.y, -1);
-            RenderUtils.drawBorderedRect((float)(this.widthm - 70), (float)(this.y - 2), (float)this.widthm, (float)(this.y + 8), 1.0F, this.isTextHovered()?var5:1677721600, var4?(new Color(22, 23, 26)).getRGB():-13684945);
-            Integer var18 = this.color.get();
-            int var20 = var18.intValue() >> 16 & 255;
-            int var23 = var18.intValue() >> 8 & 255;
-            int var25 = var18.intValue() & 255;
-            float[] var28 = Color.RGBtoHSB(var20, var23, var25, new float[3]);
-            if(this.colorPickerRainbow) {
-               this.separatorHue = (this.separatorHue + 0.35F) % 70.0F;
-            }
-
-            if(this.dragging) {
-               double var11 = MathHelper.clamp_double((double)(var1 - this.widthm + 70), 0.35D, 70.0D);
-               float var13 = (float)(var11 / 70.0D);
-               switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$Setting$ColorPickerMode[this.colorPickerMode.ordinal()]) {
-               case 1:
-                  this.separatorHue = (float)((int)var11);
-                  this.color.set(Integer.valueOf(Color.getHSBColor(var13, var28[1], var28[2]).getRGB()));
-               case 2:
-                  this.separatorSaturation = (float)((int)var11);
-                  this.color.set(Integer.valueOf(Color.getHSBColor(var28[0], var13, var28[2]).getRGB()));
-               case 3:
-                  this.separatorBrightness = (float)((int)var11);
-                  this.color.set(Integer.valueOf(Color.getHSBColor(var28[0], var28[1], var13).getRGB()));
-               }
-            }
-
-            switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$Setting$ColorPickerMode[this.colorPickerMode.ordinal()]) {
-            case 1:
-               byte var29 = 70;
-               int var32 = 0;
-               if(var32 < var29) {
-                  Gui.drawRect(this.widthm - 70 + var32, this.y - 2, this.widthm - 69 + var32, this.y + 8, Color.getHSBColor((float)var32 / (float)var29, var28[1], var28[2]).getRGB());
-                  ++var32;
-               }
-
-               Gui.drawRect((double)((float)(this.widthm - 70) + this.separatorHue), (double)(this.y - 2), (double)((float)(this.widthm - 69) + this.separatorHue), (double)(this.y + 8), -16777216);
-            case 2:
-               byte var30 = 70;
-               int var34 = 0;
-               if(var34 < var30) {
-                  Gui.drawRect(this.widthm - 70 + var34, this.y - 2, this.widthm - 69 + var34, this.y + 8, Color.getHSBColor(var28[0], (float)var34 / (float)var30, var28[2]).getRGB());
-                  ++var34;
-               }
-
-               Gui.drawRect((double)((float)(this.widthm - 70) + this.separatorSaturation), (double)(this.y - 2), (double)((float)(this.widthm - 69) + this.separatorSaturation), (double)(this.y + 8), -16777216);
-            case 3:
-               byte var31 = 70;
-               int var36 = 0;
-               if(var36 < var31) {
-                  Gui.drawRect(this.widthm - 70 + var36, this.y - 2, this.widthm - 69 + var36, this.y + 8, Color.getHSBColor(var28[0], var28[1], (float)var36 / (float)var31).getRGB());
-                  ++var36;
-               }
-
-               Gui.drawRect((double)((float)(this.widthm - 70) + this.separatorBrightness), (double)(this.y - 2), (double)((float)(this.widthm - 69) + this.separatorBrightness), (double)(this.y + 8), -16777216);
-            }
-         default:
-            throw new IllegalStateException("Unexpected value: " + this.settingType);
-         }
-      } catch (Throwable var14) {
-         var14.printStackTrace();
-      }
-
-   }
-
-   public boolean mouseClicked(int var1, int var2, int var3) {
-      boolean var4 = SettingType.c();
-      if(var3 == 0) {
-         switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[this.settingType.ordinal()]) {
-         case 2:
-            if(this.toggleOpened(var1, var2)) {
-               ;
-            }
-
-            if(!this.opened || var1 < this.widthm - 70 || var1 > this.widthm) {
-               break;
-            }
-
-            int var5 = 0;
-            if(var5 < this.comboBoxValue.getAcceptableValues().size()) {
-               int var6 = this.y + 10 + var5 * 11;
-               if(var2 >= var6 && var2 <= var6 + 11) {
-                  this.comboBoxValue.set((String)this.comboBoxValue.getAcceptableValues().get(var5));
-                  this.opened = false;
-                  EventManager.call(new SettingEvent(this.parentModule, this.getName(), this.comboBoxValue));
-                  return true;
-               }
-
-               ++var5;
-            }
-         case 3:
-            if(this.toggleOpened(var1, var2) || !this.opened || var1 < this.widthm - 70 || var1 > this.widthm) {
-               break;
-            }
-
-            List var10 = this.selectBox.getAcceptableValues();
-            int var12 = 0;
-            if(var12 < var10.size()) {
-               int var7 = this.y + 10 + var12 * 11;
-               if(var2 >= var7 && var2 <= var7 + 11) {
-                  String var8 = (String)var10.get(var12);
-                  if(this.selectBox.contains(var8)) {
-                     this.selectBox.remove(var8);
-                  }
-
-                  this.selectBox.add(var8);
-                  EventManager.call(new SettingEvent(this.parentModule, this.getName(), this.selectBox));
-                  return true;
-               }
-
-               ++var12;
-            }
-         case 4:
-            if(!this.isHovered(var1, var2)) {
-               break;
-            }
-
-            this.checkBoxProperty.invert();
-            EventManager.call(new SettingEvent(this.parentModule, this.getName(), this.getDisplayName(), this.checkBoxProperty));
-         case 5:
-            if(!this.isHovered(var1, var2)) {
-               break;
-            }
-
-            this.dragging = true;
-         case 6:
-            if(this.isHovered(var1, var2)) {
-               this.textHovered = !this.textHovered;
-            }
-
-            if(!this.textHovered) {
-               break;
-            }
-
-            this.textHovered = false;
-         case 7:
-            if(this.isHovered(var1, var2)) {
-               this.dragging = true;
-            }
-         }
-      }
-
-      if(var3 == 1 && this.settingType == SettingType.COLOR_PICKER && this.isHovered(var1, var2)) {
-         Setting$ColorPickerMode[] var11 = Setting$ColorPickerMode.values();
-         int var14 = (Arrays.binarySearch(var11, this.colorPickerMode) + 1) % var11.length;
-         if(this.colorPickedDisabledModes == null) {
-            this.colorPickerMode = var11[var14];
-         }
-
-         if(!this.colorPickedDisabledModes.isEmpty()) {
-            int var16 = 0;
-            if(var16 < var11.length - 1) {
-               Setting$ColorPickerMode var15 = var11[(var14 + var16) % var11.length];
-               if(!this.colorPickedDisabledModes.contains(var15)) {
-                  this.colorPickerMode = var11[(var16 + var14) % var11.length];
-               }
-
-               ++var16;
-            }
-         }
-      }
-
-      return false;
-   }
-
-   public Set getColorPickedDisabledModes() {
-      return this.colorPickedDisabledModes;
-   }
-
-   public void setColorPickerMode(Setting$ColorPickerMode var1) {
-      this.colorPickerMode = var1;
-   }
-
-   private boolean toggleOpened(int var1, int var2) {
-      boolean var3 = SettingType.b();
-      if(!this.isHovered(var1, var2)) {
-         return false;
-      } else {
-         if(this.opened = !this.opened) {
-            Manager.getSettingList().stream().filter(this::lambda$toggleOpened$1).forEach(Setting::lambda$toggleOpened$2);
-         }
-
-         return true;
-      }
-   }
-
-   public void mouseReleased(int var1, int var2, int var3) {
-      this.dragging = false;
-   }
-
-   private boolean isHovered(int var1, int var2) {
-      boolean var3 = SettingType.c();
-      switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[this.settingType.ordinal()]) {
-      case 2:
-      case 3:
-      case 6:
-      case 7:
-         return var1 >= this.widthm - 70 && var1 <= this.widthm && var2 >= this.y - 2 && var2 <= this.y + 8;
-      case 4:
-         return var1 >= this.widthm - 10 && var1 <= this.widthm && var2 >= this.y - 2 && var2 <= this.y + 8;
-      case 5:
-         boolean var4;
-         if(var1 >= this.widthm - 70) {
-            double var10000 = (double)var1;
-            double var10001 = (double)(this.widthm - 70);
-            this.getClass();
-            if(var10000 <= var10001 + 70.0D && var2 >= this.y + 2 && var2 <= this.y + 8) {
-               var4 = true;
-               return var4;
-            }
-         }
-
-         var4 = false;
-         return var4;
-      default:
-         return false;
-      }
-   }
-
-   public void keyTyped(char var1, int var2) {
-      boolean var3 = SettingType.b();
-      if(this.settingType == SettingType.TEXTBOX) {
-         if(!this.textHovered) {
-            return;
-         }
-
-         if(var2 == 1) {
-            this.textHovered = false;
-         }
-
-         if(var2 == 14 || var2 == 157 || var2 == 29 || var2 == 54 || var2 == 42 || var2 == 15 || var2 == 58 || var2 == 211 || var2 == 199 || var2 == 210 || var2 == 200 || var2 == 208 || var2 == 205 || var2 == 203 || var2 == 56 || var2 == 184 || var2 == 197 || var2 == 70 || var2 == 207 || var2 == 201 || var2 == 209 || var2 == 221 || var2 == 59 || var2 == 60 || var2 == 61 || var2 == 62 || var2 == 63 || var2 == 64 || var2 == 65 || var2 == 66 || var2 == 67 || var2 == 68 || var2 == 87 || var2 == 88) {
-            return;
-         }
-
-         this.textBoxValue.append(Character.valueOf(var1));
-      }
-
-      if(var2 == 1 && (this.settingType == SettingType.SELECTBOX || this.settingType == SettingType.COMBOBOX) && this.opened) {
-         this.opened = false;
-      }
-
-   }
-
-   public boolean isInsideMenu() {
-      SettingType.b();
-      DiscordGUI var2 = Novoline.getInstance().getDiscordGUI();
-      return this.y <= var2.getYCoordinate() + var2.getHeight() - 10 && this.y >= var2.getYCoordinate() + 23;
-   }
-
-   public Object getValue() {
-      switch(Setting$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[this.settingType.ordinal()]) {
-      case 2:
-         return this.comboBoxValue;
-      case 3:
-         return this.selectBox;
-      case 4:
-         return this.checkBoxProperty;
-      case 5:
-         return this.decimalFormat.format(this.getDouble());
-      default:
-         return null;
-      }
-   }
-
-   public String getName() {
-      return this.name;
-   }
-
-   public SettingType getSettingType() {
-      return this.settingType;
-   }
-
-   public boolean isColorPickerRainbow() {
-      return this.colorPickerRainbow;
-   }
-
-   public float getSeparatorHue() {
-      return this.separatorHue;
-   }
-
-   public float getSeparatorBrightness() {
-      return this.separatorBrightness;
-   }
-
-   public float getSeparatorSaturation() {
-      return this.separatorSaturation;
-   }
-
-   public void setSeparatorBrightness(float var1) {
-      this.separatorBrightness = var1;
-   }
-
-   public void setSeparatorHue(float var1) {
-      this.separatorHue = var1;
-   }
-
-   public void setSeparatorSaturation(float var1) {
-      this.separatorSaturation = var1;
-   }
-
-   public Setting$ColorPickerMode getColorPickerMode() {
-      return this.colorPickerMode;
-   }
-
-   public ColorProperty getColor() {
-      return this.color;
-   }
-
-   public AbstractNumberProperty getSliderNumber() {
-      return this.sliderNumber;
-   }
-
-   public AbstractModule getParentModule() {
-      return this.parentModule;
-   }
-
-   public String getTextBoxValue() {
-      return (String)this.textBoxValue.get();
-   }
-
-   public StringProperty getTextBoxValue2() {
-      return this.textBoxValue;
-   }
-
-   public void setTextBoxValue(String var1) {
-      this.textBoxValue.set(var1);
-   }
-
-   public BooleanProperty getCheckBoxProperty() {
-      return this.checkBoxProperty;
-   }
-
-   public Boolean getCheckBoxValue() {
-      return (Boolean)this.checkBoxProperty.get();
-   }
-
-   public double getDouble() {
-      return (double)Math.round(((Number)this.sliderNumber.get()).doubleValue() / this.increment) * this.increment;
-   }
-
-   public float getFloat() {
-      return (float)this.getDouble();
-   }
-
-   public int getInt() {
-      return (int)this.getDouble();
-   }
-
-   public long getLong() {
-      return (long)this.getDouble();
-   }
-
-   public String getComboBoxValue() {
-      return (String)this.comboBoxValue.get();
-   }
-
-   public StringProperty getComboBoxProperty() {
-      return this.comboBoxValue;
-   }
-
-   public void setComboBoxValue(String var1) {
-      this.comboBoxValue.set(var1);
-   }
-
-   public StringProperty getComboBox() {
-      return this.comboBoxValue;
-   }
-
-   public void setSliderValue(Number var1) {
-      boolean var2 = SettingType.c();
-      if(this.sliderNumber instanceof IntProperty) {
-         this.sliderNumber.set((Number)Integer.valueOf(var1.intValue()));
-      }
-
-      if(this.sliderNumber instanceof DoubleProperty) {
-         this.sliderNumber.set((Number)Double.valueOf(var1.doubleValue()));
-      }
-
-      if(this.sliderNumber instanceof FloatProperty) {
-         this.sliderNumber.set((Number)Float.valueOf(var1.floatValue()));
-      }
-
-      if(this.sliderNumber instanceof LongProperty) {
-         this.sliderNumber.set((Number)Long.valueOf(var1.longValue()));
-      }
-
-   }
-
-   public void setSelectBoxValue(boolean var1) {
-      this.checkBoxProperty.set(Boolean.valueOf(var1));
-   }
-
-   public List getSelectBox() {
-      return (List)this.selectBox.get();
-   }
-
-   public ListProperty getSelectBoxProperty() {
-      return this.selectBox;
-   }
-
-   public int getOffset() {
-      return this.offset;
-   }
-
-   public void setOffset(int var1) {
-      this.offset = var1;
-   }
-
-   public boolean isOpened() {
-      return this.opened;
-   }
-
-   public void setOpened(boolean var1) {
-      this.opened = var1;
-   }
-
-   public boolean isTextHovered() {
-      return this.textHovered;
-   }
-
-   public void setTextHovered(boolean var1) {
-      this.textHovered = var1;
-   }
-
-   public int getY() {
-      return this.y;
-   }
-
-   public String getDisplayName() {
-      return this.displayName;
-   }
-
-   public void setDragging(boolean var1) {
-      this.dragging = var1;
-   }
-
-   public Color getColorPickerColor() {
-      return this.color.getAwtColor();
-   }
-
-   public void setColorPickerColor(int var1) {
-      this.color.set(Integer.valueOf(var1));
-   }
-
-   public double getIncrement() {
-      return this.increment;
-   }
-
-   public float[] getColorPickerHSB() {
-      return this.color.getHSB();
-   }
-
-   public float[] getHSBforStupidMinecraft() {
-      SettingType.c();
-      Integer var2 = this.color.get();
-      return var2 == null?Color.RGBtoHSB(0, 0, 0, new float[3]):Color.RGBtoHSB(var2.intValue() & 255, var2.intValue() >> 8 & 255, var2.intValue() >> 16 & 255, new float[3]);
-   }
-
-   public KeyBindProperty getKeyBindValue() {
-      return this.keyBindValue;
-   }
-
-   public boolean isListening() {
-      return this.listening;
-   }
-
-   public void setListening(boolean var1) {
-      this.listening = var1;
-   }
-
-   public int getColorPickerInteger() {
-      return this.color.get().intValue();
-   }
-
-   public Consumer I() {
-      return this.l;
-   }
-
-   public void setSlider(double var1) {
-      this.setSliderValue(Double.valueOf(MathHelper.clamp_double(var1, this.sliderNumber.getMinimum().doubleValue(), this.sliderNumber.getMaximum().doubleValue())));
-   }
-
-   public GuiScreen N() {
-      return this.K;
-   }
-
-   private static void lambda$toggleOpened$2(Setting var0) {
-      var0.opened = false;
-   }
-
-   private boolean lambda$toggleOpened$1(Setting var1) {
-      boolean var2 = SettingType.c();
-      return (var1.settingType == SettingType.COMBOBOX || var1.settingType == SettingType.SELECTBOX) && !var1.name.equals(this.name);
-   }
-
-   private static boolean lambda$update$0(Setting var0) {
-      boolean var1 = SettingType.c();
-      return var0.getSupplier() != null?((Boolean)var0.getSupplier().get()).booleanValue():true;
-   }
-
-   public static void b(boolean var0) {
-      e = var0;
-   }
-
-   public static boolean q() {
-      return e;
-   }
-
-   public static boolean L() {
-      boolean var0 = q();
-      return true;
-   }
-
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
-
-   static {
-      b(false);
-   }
+    public void setSelectBoxValue(boolean selectBoxValue) {
+        this.checkBoxProperty.set(selectBoxValue);
+    }
+
+    public List<String> getSelectBox() {
+        return this.selectBox.get();
+    }
+
+    public ListProperty<String> getSelectBoxProperty() {
+        return this.selectBox;
+    }
+
+    public int getOffset() {
+        return this.offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public boolean isOpened() {
+        return this.opened;
+    }
+
+    public void setOpened(boolean opened) {
+        this.opened = opened;
+    }
+
+    public boolean isTextHovered() {
+        return this.textHovered;
+    }
+
+    public void setTextHovered(boolean textHovered) {
+        this.textHovered = textHovered;
+    }
+
+    public int getY() {
+        return this.y;
+    }
+
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    public void setDragging(boolean dragging) {
+        this.dragging = dragging;
+    }
+
+    public Color getColorPickerColor() {
+        return this.color.getAwtColor();
+    }
+
+    public void setColorPickerColor(int color) {
+        this.color.set(color);
+    }
+
+    public double getIncrement() {
+        return this.increment;
+    }
+
+    public float[] getColorPickerHSB() {
+        return this.color.getHSB();
+    }
+
+    public float[] getHSBforStupidMinecraft() {
+        final Integer color = this.color.get();
+
+        if (color == null) return Color.RGBtoHSB(0, 0, 0, new float[3]);
+
+        return Color.RGBtoHSB(color & 0xFF, color >> 8 & 0xFF, color >> 16 & 0xFF, new float[3]);
+    }
+
+    public KeyBindProperty getKeyBindValue() {
+        return keyBindValue;
+    }
+
+    public boolean isListening() {
+        return listening;
+    }
+
+    public void setListening(boolean listening) {
+        this.listening = listening;
+    }
+
+    public int getColorPickerInteger() {
+        return this.color.get();
+    }
+
+    //endregion
+
+    public enum ColorPickerMode {
+
+        HUE,
+        SATURATION,
+        BRIGHTNESS
+
+    }
+
+    public void setSlider(double sliderValue) {
+        setSliderValue(MathHelper.clamp_double(sliderValue, this.sliderNumber.getMinimum().doubleValue(),
+                this.sliderNumber.getMaximum().doubleValue()));
+    }
+
 }

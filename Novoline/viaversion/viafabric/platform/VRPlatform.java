@@ -1,5 +1,33 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018- creeper123123321 <https://creeper123123321.keybase.pub/>
+ * Copyright (c) 2019- contributors <https://github.com/ViaVersion/ViaFabric/graphs/contributors>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package viaversion.viafabric.platform;
 
+import viaversion.viafabric.ViaFabric;
+import viaversion.viafabric.util.FutureTaskId;
+import viaversion.viafabric.util.JLoggerToLog4j;
 import com.google.gson.JsonObject;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -9,23 +37,13 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Logger;
-import net.acE;
-import net.bgY;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import org.apache.logging.log4j.LogManager;
-import viaversion.viafabric.ViaFabric;
-import viaversion.viafabric.platform.VRConnectionManager;
-import viaversion.viafabric.platform.VRViaAPI;
-import viaversion.viafabric.platform.VRViaConfig;
-import viaversion.viafabric.util.FutureTaskId;
-import viaversion.viafabric.util.JLoggerToLog4j;
 import viaversion.viaversion.api.ViaAPI;
 import viaversion.viaversion.api.ViaVersionConfig;
 import viaversion.viaversion.api.command.ViaCommandSender;
@@ -34,173 +52,185 @@ import viaversion.viaversion.api.platform.TaskId;
 import viaversion.viaversion.api.platform.ViaConnectionManager;
 import viaversion.viaversion.api.platform.ViaPlatform;
 
-public class VRPlatform implements ViaPlatform {
-   private final Logger logger = new JLoggerToLog4j(LogManager.getLogger("ViaVersion"));
-   private final VRViaConfig config;
-   private final File dataFolder;
-   private final ViaConnectionManager connectionManager;
-   private final ViaAPI api;
+public class VRPlatform implements ViaPlatform<UUID> {
+    private final Logger logger = new JLoggerToLog4j(LogManager.getLogger("ViaVersion"));
+    private final VRViaConfig config;
+    private final File dataFolder;
+    private final ViaConnectionManager connectionManager;
+    private final ViaAPI<UUID> api;
 
-   public VRPlatform() {
-      bgY.b();
-      Path var2 = Minecraft.getInstance().mcDataDir.toPath().resolve("ViaFabric");
-      this.config = new VRViaConfig(var2.resolve("viaversion.yml").toFile());
-      this.dataFolder = var2.toFile();
-      this.connectionManager = new VRConnectionManager();
-      this.api = new VRViaAPI();
-   }
+    public VRPlatform() {
+        Path configDir = Minecraft.getInstance().mcDataDir.toPath().resolve("ViaFabric");
+        config = new VRViaConfig(configDir.resolve("viaversion.yml").toFile());
+        dataFolder = configDir.toFile();
+        connectionManager = new VRConnectionManager();
+        api = new VRViaAPI();
+    }
 
-   public static MinecraftServer getServer() {
-      return !Minecraft.getInstance().isIntegratedServerRunning()?null:MinecraftServer.getServer();
-   }
+    public static MinecraftServer getServer() {
+        // In 1.8.9 integrated server instance exists even if it's not running
+        if (!Minecraft.getInstance().isIntegratedServerRunning()) return null;
+        return MinecraftServer.getServer();
+    }
 
-   public Logger getLogger() {
-      return this.logger;
-   }
+    @Override
+    public Logger getLogger() {
+        return logger;
+    }
 
-   public String getPlatformName() {
-      return "ViaFabric";
-   }
+    @Override
+    public String getPlatformName() {
+        return "ViaFabric";
+    }
 
-   public String getPlatformVersion() {
-      return ViaFabric.getVersion();
-   }
+    @Override
+    public String getPlatformVersion() {
+        return ViaFabric.getVersion();
+    }
 
-   public String getPluginVersion() {
-      return "3.3.0";
-   }
+    @Override
+    public String getPluginVersion() {
+        return "3.3.0";
+    }
 
-   public TaskId runAsync(Runnable var1) {
-      return new FutureTaskId(CompletableFuture.runAsync(var1, ViaFabric.ASYNC_EXECUTOR).exceptionally(VRPlatform::lambda$runAsync$0));
-   }
+    @Override
+    public TaskId runAsync(Runnable runnable) {
+        return new FutureTaskId(CompletableFuture
+                .runAsync(runnable, ViaFabric.ASYNC_EXECUTOR)
+                .exceptionally(throwable -> {
+                    if (!(throwable instanceof CancellationException)) {
+                        throwable.printStackTrace();
+                    }
+                    return null;
+                })
+        );
+    }
 
-   public TaskId runSync(Runnable var1) {
-      return getServer() != null?this.runServerSync(var1):this.runEventLoop(var1);
-   }
+    @Override
+    public TaskId runSync(Runnable runnable) {
+        if (getServer() != null) {
+            return runServerSync(runnable);
+        } else {
+            return runEventLoop(runnable);
+        }
+    }
 
-   private TaskId runServerSync(Runnable var1) {
-      return new FutureTaskId(CompletableFuture.runAsync(var1, VRPlatform::lambda$runServerSync$2));
-   }
+    private TaskId runServerSync(Runnable runnable) {
+        // Kick task needs to be on main thread, it does already have error logger
+        return new FutureTaskId(CompletableFuture.runAsync(runnable, it -> getServer().callFromMainThread((Callable
+                <Void>) () -> {
+            it.run();
+            return null;
+        })));
+    }
 
-   private TaskId runEventLoop(Runnable var1) {
-      return new FutureTaskId(ViaFabric.EVENT_LOOP.submit(var1).addListener(this.errorLogger()));
-   }
+    private TaskId runEventLoop(Runnable runnable) {
+        return new FutureTaskId(
+                ViaFabric.EVENT_LOOP
+                        .submit(runnable)
+                        .addListener(errorLogger())
+        );
+    }
 
-   public TaskId runSync(Runnable var1, Long var2) {
-      return new FutureTaskId(ViaFabric.EVENT_LOOP.schedule(this::lambda$runSync$3, var2.longValue() * 50L, TimeUnit.MILLISECONDS).addListener(this.errorLogger()));
-   }
+    @Override
+    public TaskId runSync(Runnable runnable, Long ticks) {
+        // ViaVersion seems to not need to run delayed tasks on main thread
+        return new FutureTaskId(
+                ViaFabric.EVENT_LOOP
+                        .schedule(() -> runSync(runnable), ticks * 50, TimeUnit.MILLISECONDS)
+                        .addListener(errorLogger())
+        );
+    }
 
-   public TaskId runRepeatingSync(Runnable var1, Long var2) {
-      acE[] var3 = bgY.b();
-      FutureTaskId var10000 = new FutureTaskId(ViaFabric.EVENT_LOOP.scheduleAtFixedRate(this::lambda$runRepeatingSync$4, 0L, var2.longValue() * 50L, TimeUnit.MILLISECONDS).addListener(this.errorLogger()));
-      if(acE.b() == null) {
-         bgY.b(new acE[1]);
-      }
+    @Override
+    public TaskId runRepeatingSync(Runnable runnable, Long ticks) {
+        // ViaVersion seems to not need to run repeating tasks on main thread
+        return new FutureTaskId(
+                ViaFabric.EVENT_LOOP
+                        .scheduleAtFixedRate(() -> runSync(runnable), 0, ticks * 50, TimeUnit.MILLISECONDS)
+                        .addListener(errorLogger())
+        );
+    }
 
-      return var10000;
-   }
+    private <T extends Future<?>> GenericFutureListener<T> errorLogger() {
+        return future -> {
+            if (!future.isCancelled() && future.cause() != null) {
+                future.cause().printStackTrace();
+            }
+        };
+    }
 
-   private GenericFutureListener errorLogger() {
-      return VRPlatform::lambda$errorLogger$5;
-   }
+    @Override
+    public void cancelTask(TaskId taskId) {
+        if (taskId instanceof FutureTaskId) {
+            ((FutureTaskId) taskId).getObject().cancel(false);
+        }
+    }
 
-   public void cancelTask(TaskId var1) {
-      acE[] var2 = bgY.b();
-      if(var1 instanceof FutureTaskId) {
-         ((FutureTaskId)var1).getObject().cancel(false);
-      }
+    @Override
+    public ViaCommandSender[] getOnlinePlayers() {
+        return new ViaCommandSender[0];
+    }
 
-   }
+    @Override
+    public void sendMessage(UUID uuid, String s) {
+    }
 
-   public ViaCommandSender[] getOnlinePlayers() {
-      return new ViaCommandSender[0];
-   }
+    @Override
+    public boolean kickPlayer(UUID uuid, String s) {
+        return kickServer(uuid, s);
+    }
 
-   public void sendMessage(UUID var1, String var2) {
-   }
+    private boolean kickServer(UUID uuid, String s) {
+        return false;  // Can't know if it worked
+    }
 
-   public boolean kickPlayer(UUID var1, String var2) {
-      return this.kickServer(var1, var2);
-   }
+    @Override
+    public boolean isPluginEnabled() {
+        return true;
+    }
 
-   private boolean kickServer(UUID var1, String var2) {
-      return false;
-   }
+    @Override
+    public ViaAPI<UUID> getApi() {
+        return api;
+    }
 
-   public boolean isPluginEnabled() {
-      return true;
-   }
+    @Override
+    public ViaVersionConfig getConf() {
+        return config;
+    }
 
-   public ViaAPI getApi() {
-      return this.api;
-   }
+    @Override
+    public ConfigurationProvider getConfigurationProvider() {
+        return config;
+    }
 
-   public ViaVersionConfig getConf() {
-      return this.config;
-   }
+    @Override
+    public File getDataFolder() {
+        return dataFolder;
+    }
 
-   public ConfigurationProvider getConfigurationProvider() {
-      return this.config;
-   }
+    @Override
+    public void onReload() {
+        // Nothing to do
+    }
 
-   public File getDataFolder() {
-      return this.dataFolder;
-   }
+    @Override
+    public JsonObject getDump() {
+        return new JsonObject();
+    }
 
-   public void onReload() {
-   }
+    @Override
+    public boolean isOldClientsAllowed() {
+        return true;
+    }
 
-   public JsonObject getDump() {
-      return new JsonObject();
-   }
+    @Override
+    public ViaConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
 
-   public boolean isOldClientsAllowed() {
-      return true;
-   }
-
-   public ViaConnectionManager getConnectionManager() {
-      return this.connectionManager;
-   }
-
-   private String legacyToJson(String var1) {
-      return ComponentSerializer.toString(TextComponent.fromLegacyText(var1));
-   }
-
-   private static void lambda$errorLogger$5(Future var0) throws Exception {
-      acE[] var1 = bgY.b();
-      if(!var0.isCancelled() && var0.cause() != null) {
-         var0.cause().printStackTrace();
-      }
-
-   }
-
-   private void lambda$runRepeatingSync$4(Runnable var1) {
-      this.runSync(var1);
-   }
-
-   private TaskId lambda$runSync$3(Runnable var1) throws Exception {
-      return this.runSync(var1);
-   }
-
-   private static void lambda$runServerSync$2(Runnable var0) {
-      getServer().callFromMainThread(VRPlatform::lambda$null$1);
-   }
-
-   private static Void lambda$null$1(Runnable var0) throws Exception {
-      var0.run();
-      return null;
-   }
-
-   private static Void lambda$runAsync$0(Throwable var0) {
-      acE[] var1 = bgY.b();
-      if(!(var0 instanceof CancellationException)) {
-         var0.printStackTrace();
-      }
-
-      return null;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    private String legacyToJson(String legacy) {
+        return ComponentSerializer.toString(TextComponent.fromLegacyText(legacy));
+    }
 }

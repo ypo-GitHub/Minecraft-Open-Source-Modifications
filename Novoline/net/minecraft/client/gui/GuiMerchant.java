@@ -1,10 +1,8 @@
 package net.minecraft.client.gui;
 
 import io.netty.buffer.Unpooled;
-import java.io.IOException;
-import net.aHz;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiMerchant$MerchantButton;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
@@ -20,146 +18,232 @@ import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.World;
 
-public class GuiMerchant extends aHz {
-   private static final ResourceLocation MERCHANT_GUI_TEXTURE = new ResourceLocation("textures/gui/container/villager.png");
-   private final IMerchant merchant;
-   private GuiMerchant$MerchantButton nextButton;
-   private GuiMerchant$MerchantButton previousButton;
-   private int selectedMerchantRecipe;
-   private final IChatComponent chatComponent;
+import java.io.IOException;
 
-   public GuiMerchant(InventoryPlayer var1, IMerchant var2, World var3) {
-      super(new ContainerMerchant(var1, var2, var3));
-      this.merchant = var2;
-      this.chatComponent = var2.getDisplayName();
-   }
+public class GuiMerchant extends GuiContainer {
 
-   public void initGui() {
-      super.initGui();
-      int var1 = (this.width - this.y) / 2;
-      int var2 = (this.height - this.ab) / 2;
-      this.buttonList.add(this.nextButton = new GuiMerchant$MerchantButton(1, var1 + 120 + 27, var2 + 24 - 1, true));
-      this.buttonList.add(this.previousButton = new GuiMerchant$MerchantButton(2, var1 + 36 - 19, var2 + 24 - 1, false));
-      this.nextButton.enabled = false;
-      this.previousButton.enabled = false;
-   }
+    /**
+     * The GUI texture for the villager merchant GUI.
+     */
+    private static final ResourceLocation MERCHANT_GUI_TEXTURE = new ResourceLocation("textures/gui/container/villager.png");
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      String var3 = this.chatComponent.getUnformattedText();
-      this.fontRendererObj.drawString(var3, (float)(this.y / 2 - this.fontRendererObj.d(var3) / 2), 6.0F, 4210752);
-      this.fontRendererObj.drawString(I18n.format("container.inventory", new Object[0]), 8.0F, (float)(this.ab - 96 + 2), 4210752);
-   }
+    /**
+     * The current IMerchant instance in use for this specific merchant.
+     */
+    private final IMerchant merchant;
 
-   public void updateScreen() {
-      super.updateScreen();
-      MerchantRecipeList var1 = this.merchant.getRecipes(this.mc.player);
-      this.nextButton.enabled = this.selectedMerchantRecipe < var1.size() - 1;
-      this.previousButton.enabled = this.selectedMerchantRecipe > 0;
-   }
+    /**
+     * The button which proceeds to the next available merchant recipe.
+     */
+    private GuiMerchant.MerchantButton nextButton;
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      boolean var2 = false;
-      if(var1 == this.nextButton) {
-         ++this.selectedMerchantRecipe;
-         MerchantRecipeList var3 = this.merchant.getRecipes(this.mc.player);
-         if(this.selectedMerchantRecipe >= var3.size()) {
-            this.selectedMerchantRecipe = var3.size() - 1;
-         }
+    /**
+     * Returns to the previous Merchant recipe if one is applicable.
+     */
+    private GuiMerchant.MerchantButton previousButton;
 
-         var2 = true;
-      } else if(var1 == this.previousButton) {
-         --this.selectedMerchantRecipe;
-         if(this.selectedMerchantRecipe < 0) {
-            this.selectedMerchantRecipe = 0;
-         }
+    /**
+     * The integer value corresponding to the currently selected merchant recipe.
+     */
+    private int selectedMerchantRecipe;
 
-         var2 = true;
-      }
+    /**
+     * The chat component utilized by this GuiMerchant instance.
+     */
+    private final IChatComponent chatComponent;
 
-      ((ContainerMerchant)this.V).setCurrentRecipeIndex(this.selectedMerchantRecipe);
-      PacketBuffer var6 = new PacketBuffer(Unpooled.buffer());
-      var6.writeInt(this.selectedMerchantRecipe);
-      this.mc.getNetHandler().b(new C17PacketCustomPayload("MC|TrSel", var6));
-   }
+    public GuiMerchant(InventoryPlayer p_i45500_1_, IMerchant p_i45500_2_, World worldIn) {
+        super(new ContainerMerchant(p_i45500_1_, p_i45500_2_, worldIn));
+        this.merchant = p_i45500_2_;
+        this.chatComponent = p_i45500_2_.getDisplayName();
+    }
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(MERCHANT_GUI_TEXTURE);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.ab);
-      MerchantRecipeList var6 = this.merchant.getRecipes(this.mc.player);
-      if(!var6.isEmpty()) {
-         int var7 = this.selectedMerchantRecipe;
-         if(var7 >= var6.size()) {
-            return;
-         }
+    /**
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
+     */
+    public void initGui() {
+        super.initGui();
+        final int i = (this.width - this.xSize) / 2;
+        final int j = (this.height - this.ySize) / 2;
+        this.buttonList.add(this.nextButton = new GuiMerchant.MerchantButton(1, i + 120 + 27, j + 24 - 1, true));
+        this.buttonList.add(this.previousButton = new GuiMerchant.MerchantButton(2, i + 36 - 19, j + 24 - 1, false));
+        this.nextButton.enabled = false;
+        this.previousButton.enabled = false;
+    }
 
-         MerchantRecipe var8 = (MerchantRecipe)var6.get(var7);
-         if(var8.isRecipeDisabled()) {
-            this.mc.getTextureManager().bindTexture(MERCHANT_GUI_TEXTURE);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        final String s = this.chatComponent.getUnformattedText();
+        this.fontRendererObj.drawString(s, this.xSize / 2 - this.fontRendererObj.getStringWidth(s) / 2, 6, 4210752);
+        this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+    }
+
+    /**
+     * Called from the main game loop to update the screen.
+     */
+    public void updateScreen() {
+        super.updateScreen();
+        final MerchantRecipeList merchantrecipelist = this.merchant.getRecipes(this.mc.player);
+
+        if (merchantrecipelist != null) {
+            this.nextButton.enabled = this.selectedMerchantRecipe < merchantrecipelist.size() - 1;
+            this.previousButton.enabled = this.selectedMerchantRecipe > 0;
+        }
+    }
+
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException {
+        boolean flag = false;
+
+        if (button == this.nextButton) {
+            ++this.selectedMerchantRecipe;
+            final MerchantRecipeList merchantrecipelist = this.merchant.getRecipes(this.mc.player);
+
+            if (merchantrecipelist != null && this.selectedMerchantRecipe >= merchantrecipelist.size()) {
+                this.selectedMerchantRecipe = merchantrecipelist.size() - 1;
+            }
+
+            flag = true;
+        } else if (button == this.previousButton) {
+            --this.selectedMerchantRecipe;
+
+            if (this.selectedMerchantRecipe < 0) {
+                this.selectedMerchantRecipe = 0;
+            }
+
+            flag = true;
+        }
+
+        if (flag) {
+            ((ContainerMerchant) this.inventorySlots).setCurrentRecipeIndex(this.selectedMerchantRecipe);
+            final PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
+            packetbuffer.writeInt(this.selectedMerchantRecipe);
+            this.mc.getNetHandler().sendPacket(new C17PacketCustomPayload("MC|TrSel", packetbuffer));
+        }
+    }
+
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(MERCHANT_GUI_TEXTURE);
+        final int i = (this.width - this.xSize) / 2;
+        final int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+        final MerchantRecipeList merchantrecipelist = this.merchant.getRecipes(this.mc.player);
+
+        if (merchantrecipelist != null && !merchantrecipelist.isEmpty()) {
+            final int k = this.selectedMerchantRecipe;
+
+            if (k < 0 || k >= merchantrecipelist.size()) {
+                return;
+            }
+
+            final MerchantRecipe merchantrecipe = merchantrecipelist.get(k);
+
+            if (merchantrecipe.isRecipeDisabled()) {
+                this.mc.getTextureManager().bindTexture(MERCHANT_GUI_TEXTURE);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                GlStateManager.disableLighting();
+                this.drawTexturedModalRect(this.guiLeft + 83, this.guiTop + 21, 212, 0, 28, 21);
+                this.drawTexturedModalRect(this.guiLeft + 83, this.guiTop + 51, 212, 0, 28, 21);
+            }
+        }
+    }
+
+    /**
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
+     */
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        super.drawScreen(mouseX, mouseY, partialTicks);
+        final MerchantRecipeList merchantrecipelist = this.merchant.getRecipes(this.mc.player);
+
+        if (merchantrecipelist != null && !merchantrecipelist.isEmpty()) {
+            final int i = (this.width - this.xSize) / 2;
+            final int j = (this.height - this.ySize) / 2;
+            final int k = this.selectedMerchantRecipe;
+            final MerchantRecipe merchantrecipe = merchantrecipelist.get(k);
+            final ItemStack itemstack = merchantrecipe.getItemToBuy();
+            final ItemStack itemstack1 = merchantrecipe.getSecondItemToBuy();
+            final ItemStack itemstack2 = merchantrecipe.getItemToSell();
+            GlStateManager.pushMatrix();
+            RenderHelper.enableGUIStandardItemLighting();
             GlStateManager.disableLighting();
-            this.drawTexturedModalRect(this.R + 83, this.W + 21, 212, 0, 28, 21);
-            this.drawTexturedModalRect(this.R + 83, this.W + 51, 212, 0, 28, 21);
-         }
-      }
+            GlStateManager.enableRescaleNormal();
+            GlStateManager.enableColorMaterial();
+            GlStateManager.enableLighting();
+            this.itemRender.zLevel = 100.0F;
+            this.itemRender.renderItemAndEffectIntoGUI(itemstack, i + 36, j + 24);
+            this.itemRender.renderItemOverlays(this.fontRendererObj, itemstack, i + 36, j + 24);
 
-   }
+            if (itemstack1 != null) {
+                this.itemRender.renderItemAndEffectIntoGUI(itemstack1, i + 62, j + 24);
+                this.itemRender.renderItemOverlays(this.fontRendererObj, itemstack1, i + 62, j + 24);
+            }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      super.drawScreen(var1, var2, var3);
-      MerchantRecipeList var4 = this.merchant.getRecipes(this.mc.player);
-      if(!var4.isEmpty()) {
-         int var5 = (this.width - this.y) / 2;
-         int var6 = (this.height - this.ab) / 2;
-         int var7 = this.selectedMerchantRecipe;
-         MerchantRecipe var8 = (MerchantRecipe)var4.get(var7);
-         ItemStack var9 = var8.getItemToBuy();
-         ItemStack var10 = var8.getSecondItemToBuy();
-         ItemStack var11 = var8.getItemToSell();
-         GlStateManager.pushMatrix();
-         RenderHelper.enableGUIStandardItemLighting();
-         GlStateManager.disableLighting();
-         GlStateManager.enableRescaleNormal();
-         GlStateManager.enableColorMaterial();
-         GlStateManager.enableLighting();
-         this.itemRender.zLevel = 100.0F;
-         this.itemRender.renderItemAndEffectIntoGUI(var9, (float)(var5 + 36), (float)(var6 + 24));
-         this.itemRender.renderItemOverlays(this.fontRendererObj, var9, var5 + 36, var6 + 24);
-         this.itemRender.renderItemAndEffectIntoGUI(var10, (float)(var5 + 62), (float)(var6 + 24));
-         this.itemRender.renderItemOverlays(this.fontRendererObj, var10, var5 + 62, var6 + 24);
-         this.itemRender.renderItemAndEffectIntoGUI(var11, (float)(var5 + 120), (float)(var6 + 24));
-         this.itemRender.renderItemOverlays(this.fontRendererObj, var11, var5 + 120, var6 + 24);
-         this.itemRender.zLevel = 0.0F;
-         GlStateManager.disableLighting();
-         if(this.a(36, 24, 16, 16, var1, var2)) {
-            this.renderToolTip(var9, var1, var2);
-         } else if(this.a(62, 24, 16, 16, var1, var2)) {
-            this.renderToolTip(var10, var1, var2);
-         } else if(this.a(120, 24, 16, 16, var1, var2)) {
-            this.renderToolTip(var11, var1, var2);
-         } else if(var8.isRecipeDisabled() && (this.a(83, 21, 28, 21, var1, var2) || this.a(83, 51, 28, 21, var1, var2))) {
-            this.drawCreativeTabHoveringText(I18n.format("merchant.deprecated", new Object[0]), var1, var2);
-         }
+            this.itemRender.renderItemAndEffectIntoGUI(itemstack2, i + 120, j + 24);
+            this.itemRender.renderItemOverlays(this.fontRendererObj, itemstack2, i + 120, j + 24);
+            this.itemRender.zLevel = 0.0F;
+            GlStateManager.disableLighting();
 
-         GlStateManager.popMatrix();
-         GlStateManager.enableLighting();
-         GlStateManager.enableDepth();
-         RenderHelper.enableStandardItemLighting();
-      }
+            if (this.isPointInRegion(36, 24, 16, 16, mouseX, mouseY) && itemstack != null) {
+                this.renderToolTip(itemstack, mouseX, mouseY);
+            } else if (itemstack1 != null && this.isPointInRegion(62, 24, 16, 16, mouseX, mouseY)) {
+                this.renderToolTip(itemstack1, mouseX, mouseY);
+            } else if (itemstack2 != null && this.isPointInRegion(120, 24, 16, 16, mouseX, mouseY)) {
+                this.renderToolTip(itemstack2, mouseX, mouseY);
+            } else if (merchantrecipe.isRecipeDisabled() && (this.isPointInRegion(83, 21, 28, 21, mouseX, mouseY) || this.isPointInRegion(83, 51, 28, 21, mouseX, mouseY))) {
+                this.drawCreativeTabHoveringText(I18n.format("merchant.deprecated"), mouseX, mouseY);
+            }
 
-   }
+            GlStateManager.popMatrix();
+            GlStateManager.enableLighting();
+            GlStateManager.enableDepth();
+            RenderHelper.enableStandardItemLighting();
+        }
+    }
 
-   public IMerchant getMerchant() {
-      return this.merchant;
-   }
+    public IMerchant getMerchant() {
+        return this.merchant;
+    }
 
-   static ResourceLocation access$000() {
-      return MERCHANT_GUI_TEXTURE;
-   }
+    static class MerchantButton extends GuiButton {
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        private final boolean field_146157_o;
+
+        public MerchantButton(int buttonID, int x, int y, boolean p_i1095_4_) {
+            super(buttonID, x, y, 12, 19, "");
+            this.field_146157_o = p_i1095_4_;
+        }
+
+        public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+            if (this.visible) {
+                mc.getTextureManager().bindTexture(GuiMerchant.MERCHANT_GUI_TEXTURE);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                final boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+                int i = 0;
+                int j = 176;
+
+                if (!this.enabled) {
+                    j += this.width * 2;
+                } else if (flag) {
+                    j += this.width;
+                }
+
+                if (!this.field_146157_o) {
+                    i += this.height;
+                }
+
+                this.drawTexturedModalRect((int) this.xPosition,(int)  this.yPosition, j, i, this.width, this.height);
+            }
+        }
+
+    }
+
 }

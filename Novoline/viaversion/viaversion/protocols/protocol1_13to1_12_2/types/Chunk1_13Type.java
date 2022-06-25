@@ -1,13 +1,7 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.types;
 
-import cc.novoline.modules.PlayerManager;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.logging.Level;
-import net.aEY;
-import net.acE;
-import net.cT;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.minecraft.Environment;
 import viaversion.viaversion.api.minecraft.chunks.BaseChunk;
@@ -16,72 +10,106 @@ import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 import viaversion.viaversion.api.type.PartialType;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.types.minecraft.BaseChunkType;
+import viaversion.viaversion.api.type.types.version.Types1_13;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.storage.ClientWorld;
 
-public class Chunk1_13Type extends PartialType {
-   public Chunk1_13Type(cT var1) {
-      super(var1, "Chunk", Chunk.class);
-   }
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
 
-   public Chunk a(ByteBuf var1, cT var2) throws Exception {
-      int var4 = var1.readInt();
-      int var5 = var1.readInt();
-      PlayerManager.b();
-      boolean var6 = var1.readBoolean();
-      int var7 = Type.VAR_INT.readPrimitive(var1);
-      ByteBuf var8 = var1.readSlice(Type.VAR_INT.readPrimitive(var1));
-      ChunkSection[] var9 = new ChunkSection[16];
-      int var10 = 0;
-      if(var10 < 16) {
-         if((var7 & 1 << var10) != 0) {
-            ChunkSection var11 = (ChunkSection)aEY.c.read(var8);
-            var9[var10] = var11;
-            var11.readBlockLight(var8);
-            if(var2.a() == Environment.NORMAL) {
-               var11.readSkyLight(var8);
+public class Chunk1_13Type extends PartialType<Chunk, ClientWorld> {
+
+    public Chunk1_13Type(ClientWorld param) {
+        super(param, "Chunk", Chunk.class);
+    }
+
+    @Override
+    public Chunk read(ByteBuf input, ClientWorld world) throws Exception {
+        int chunkX = input.readInt();
+        int chunkZ = input.readInt();
+
+        boolean fullChunk = input.readBoolean();
+        int primaryBitmask = Type.VAR_INT.readPrimitive(input);
+        ByteBuf data = input.readSlice(Type.VAR_INT.readPrimitive(input));
+
+        // Read sections
+        ChunkSection[] sections = new ChunkSection[16];
+        for (int i = 0; i < 16; i++) {
+            if ((primaryBitmask & (1 << i)) == 0) continue; // Section not set
+
+            ChunkSection section = Types1_13.CHUNK_SECTION.read(data);
+            sections[i] = section;
+            section.readBlockLight(data);
+            if (world.getEnvironment() == Environment.NORMAL) {
+                section.readSkyLight(data);
             }
-         }
+        }
 
-         ++var10;
-      }
-
-      int[] var14 = var6?new int[256]:null;
-      if(var6) {
-         if(var8.readableBytes() >= 1024) {
-            int var15 = 0;
-            if(var15 < 256) {
-               var14[var15] = var8.readInt();
-               ++var15;
+        int[] biomeData = fullChunk ? new int[256] : null;
+        if (fullChunk) {
+            if (data.readableBytes() >= 256 * 4) {
+                for (int i = 0; i < 256; i++) {
+                    biomeData[i] = data.readInt();
+                }
+            } else {
+                Via.getPlatform().getLogger().log(Level.WARNING, "Chunk x=" + chunkX + " z=" + chunkZ + " doesn't have biome data!");
             }
-         }
+        }
 
-         Via.getPlatform().getLogger().log(Level.WARNING, "Chunk x=" + var4 + " z=" + var5 + " doesn\'t have biome data!");
-      }
+        List<CompoundTag> nbtData = new ArrayList<>(Arrays.asList(Type.NBT_ARRAY.read(input)));
 
-      ArrayList var17 = new ArrayList(Arrays.asList((Object[])Type.NBT_ARRAY.read(var1)));
-      if(var1.readableBytes() > 0) {
-         byte[] var12 = (byte[])Type.REMAINING_BYTES.read(var1);
-         if(Via.getManager().isDebug()) {
-            Via.getPlatform().getLogger().warning("Found " + var12.length + " more bytes than expected while reading the chunk: " + var4 + "/" + var5);
-         }
-      }
+        // Read all the remaining bytes (workaround for #681)
+        if (input.readableBytes() > 0) {
+            byte[] array = Type.REMAINING_BYTES.read(input);
+            if (Via.getManager().isDebug()) {
+                Via.getPlatform().getLogger().warning("Found " + array.length + " more bytes than expected while reading the chunk: " + chunkX + "/" + chunkZ);
+            }
+        }
 
-      BaseChunk var10000 = new BaseChunk(var4, var5, var6, false, var7, var9, var14, var17);
-      if(acE.b() == null) {
-         PlayerManager.b(new acE[5]);
-      }
+        return new BaseChunk(chunkX, chunkZ, fullChunk, false, primaryBitmask, sections, biomeData, nbtData);
+    }
 
-      return var10000;
-   }
+    @Override
+    public void write(ByteBuf output, ClientWorld world, Chunk chunk) throws Exception {
+        output.writeInt(chunk.getX());
+        output.writeInt(chunk.getZ());
 
-   public void a(ByteBuf param1, cT param2, Chunk param3) throws Exception {
-      // $FF: Couldn't be decompiled
-   }
+        output.writeBoolean(chunk.isFullChunk());
+        Type.VAR_INT.writePrimitive(output, chunk.getBitmask());
 
-   public Class getBaseClass() {
-      return BaseChunkType.class;
-   }
+        ByteBuf buf = output.alloc().buffer();
+        try {
+            for (int i = 0; i < 16; i++) {
+                ChunkSection section = chunk.getSections()[i];
+                if (section == null) continue; // Section not set
+                Types1_13.CHUNK_SECTION.write(buf, section);
+                section.writeBlockLight(buf);
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+                if (!section.hasSkyLight()) continue; // No sky light, we're done here.
+                section.writeSkyLight(buf);
+
+            }
+            buf.readerIndex(0);
+            Type.VAR_INT.writePrimitive(output, buf.readableBytes() + (chunk.isBiomeData() ? 1024 : 0));
+            output.writeBytes(buf);
+        } finally {
+            buf.release(); // release buffer
+        }
+
+        // Write biome data
+        if (chunk.isBiomeData()) {
+            for (int value : chunk.getBiomeData()) {
+                output.writeInt(value);
+            }
+        }
+
+        // Write Block Entities
+        Type.NBT_ARRAY.write(output, chunk.getBlockEntities().toArray(new CompoundTag[0]));
+    }
+
+    @Override
+    public Class<? extends Type> getBaseClass() {
+        return BaseChunkType.class;
+    }
 }

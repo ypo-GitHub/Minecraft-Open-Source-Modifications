@@ -1,17 +1,7 @@
 package net.minecraft.block;
 
 import cc.novoline.modules.visual.XRay;
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockDirt;
-import net.minecraft.block.BlockDirt$DirtType;
-import net.minecraft.block.BlockFlower;
-import net.minecraft.block.BlockFlower$EnumFlowerType;
-import net.minecraft.block.BlockTallGrass;
-import net.minecraft.block.BlockTallGrass$EnumType;
-import net.minecraft.block.IGrowable;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -25,110 +15,131 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeColorHelper;
 
+import java.util.Random;
+
 public class BlockGrass extends Block implements IGrowable {
-   public static final PropertyBool SNOWY = PropertyBool.create("snowy");
 
-   protected BlockGrass() {
-      super(Material.grass);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(SNOWY, Boolean.FALSE));
-      this.setTickRandomly(true);
-      this.setCreativeTab(CreativeTabs.tabBlock);
-   }
+    public static final PropertyBool SNOWY = PropertyBool.create("snowy");
 
-   public IBlockState getActualState(IBlockState var1, IBlockAccess var2, BlockPos var3) {
-      Block var4 = var2.getBlockState(var3.up()).getBlock();
-      return var1.withProperty(SNOWY, Boolean.valueOf(var4 == Blocks.snow || var4 == Blocks.snow_layer));
-   }
+    protected BlockGrass() {
+        super(Material.grass);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(SNOWY, Boolean.FALSE));
+        this.setTickRandomly(true);
+        this.setCreativeTab(CreativeTabs.tabBlock);
+    }
 
-   public int getBlockColor() {
-      return ColorizerGrass.getGrassColor(0.5D, 1.0D);
-   }
+    /**
+     * Get the actual Block state of this Block at the given position. This applies properties not visible in the
+     * metadata, such as fence connections.
+     */
+    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
+        final Block block = worldIn.getBlockState(pos.up()).getBlock();
+        return state.withProperty(SNOWY, block == Blocks.snow || block == Blocks.snow_layer);
+    }
 
-   public int getRenderColor(IBlockState var1) {
-      return this.getBlockColor();
-   }
+    public int getBlockColor() {
+        return ColorizerGrass.getGrassColor(0.5D, 1.0D);
+    }
 
-   public int colorMultiplier(IBlockAccess var1, BlockPos var2, int var3) {
-      return BiomeColorHelper.getGrassColorAtPos(var1, var2);
-   }
+    public int getRenderColor(IBlockState state) {
+        return this.getBlockColor();
+    }
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      if(!var1.isRemote) {
-         if(var1.getLightFromNeighbors(var2.up()) < 4 && var1.getBlockState(var2.up()).getBlock().getLightOpacity() > 2) {
-            var1.setBlockState(var2, Blocks.dirt.getDefaultState());
-         } else if(var1.getLightFromNeighbors(var2.up()) >= 9) {
-            for(int var5 = 0; var5 < 4; ++var5) {
-               BlockPos var6 = var2.a(var4.nextInt(3) - 1, var4.nextInt(5) - 3, var4.nextInt(3) - 1);
-               Block var7 = var1.getBlockState(var6.up()).getBlock();
-               IBlockState var8 = var1.getBlockState(var6);
-               if(var8.getBlock() == Blocks.dirt && var8.getValue(BlockDirt.VARIANT) == BlockDirt$DirtType.DIRT && var1.getLightFromNeighbors(var6.up()) >= 4 && var7.getLightOpacity() <= 2) {
-                  var1.setBlockState(var6, Blocks.grass.getDefaultState());
-               }
+    public int colorMultiplier(IBlockAccess worldIn, BlockPos pos, int renderPass) {
+        return BiomeColorHelper.getGrassColorAtPos(worldIn, pos);
+    }
+
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        if (!worldIn.isRemote) {
+            if (worldIn.getLightFromNeighbors(pos.up()) < 4 && worldIn.getBlockState(pos.up()).getBlock().getLightOpacity() > 2) {
+                worldIn.setBlockState(pos, Blocks.dirt.getDefaultState());
+            } else {
+                if (worldIn.getLightFromNeighbors(pos.up()) >= 9) {
+                    for (int i = 0; i < 4; ++i) {
+                        final BlockPos blockpos = pos.add(rand.nextInt(3) - 1, rand.nextInt(5) - 3, rand.nextInt(3) - 1);
+                        final Block block = worldIn.getBlockState(blockpos.up()).getBlock();
+                        final IBlockState iblockstate = worldIn.getBlockState(blockpos);
+
+                        if (iblockstate.getBlock() == Blocks.dirt && iblockstate.getValue(BlockDirt.VARIANT) == BlockDirt.DirtType.DIRT && worldIn.getLightFromNeighbors(blockpos.up()) >= 4 && block.getLightOpacity() <= 2) {
+                            worldIn.setBlockState(blockpos, Blocks.grass.getDefaultState());
+                        }
+                    }
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Blocks.dirt.getItemDropped(Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT, BlockDirt.DirtType.DIRT), rand, fortune);
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Blocks.dirt.getItemDropped(Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT, BlockDirt$DirtType.DIRT), var2, var3);
-   }
+    /**
+     * Whether this IGrowable can grow
+     */
+    public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient) {
+        return true;
+    }
 
-   public boolean canGrow(World var1, BlockPos var2, IBlockState var3, boolean var4) {
-      return true;
-   }
+    public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state) {
+        return true;
+    }
 
-   public boolean canUseBonemeal(World var1, Random var2, BlockPos var3, IBlockState var4) {
-      return true;
-   }
+    public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state) {
+        final BlockPos blockpos = pos.up();
 
-   public void grow(World var1, Random var2, BlockPos var3, IBlockState var4) {
-      BlockPos var5 = var3.up();
+        for (int i = 0; i < 128; ++i) {
+            BlockPos blockpos1 = blockpos;
+            int j = 0;
 
-      for(int var6 = 0; var6 < 128; ++var6) {
-         BlockPos var7 = var5;
-         int var8 = 0;
+            while (true) {
+                if (j >= i / 16) {
+                    if (worldIn.getBlockState(blockpos1).getBlock().blockMaterial == Material.air) {
+                        if (rand.nextInt(8) == 0) {
+                            final BlockFlower.EnumFlowerType blockflower$enumflowertype = worldIn.getBiomeGenForCoords(blockpos1).pickRandomFlower(rand, blockpos1);
+                            final BlockFlower blockflower = blockflower$enumflowertype.getBlockType().getBlock();
+                            final IBlockState iblockstate = blockflower.getDefaultState().withProperty(blockflower.getTypeProperty(), blockflower$enumflowertype);
 
-         while(true) {
-            if(var8 >= var6 / 16) {
-               if(var1.getBlockState(var7).getBlock().blockMaterial == Material.air) {
-                  if(var2.nextInt(8) == 0) {
-                     BlockFlower$EnumFlowerType var9 = var1.getBiomeGenForCoords(var7).pickRandomFlower(var2, var7);
-                     BlockFlower var10 = var9.getBlockType().getBlock();
-                     IBlockState var11 = var10.getDefaultState().withProperty(var10.getTypeProperty(), var9);
-                     if(var10.canBlockStay(var1, var7, var11)) {
-                        var1.setBlockState(var7, var11, 3);
-                     }
-                  } else {
-                     IBlockState var12 = Blocks.tallgrass.getDefaultState().withProperty(BlockTallGrass.TYPE, BlockTallGrass$EnumType.GRASS);
-                     if(Blocks.tallgrass.canBlockStay(var1, var7, var12)) {
-                        var1.setBlockState(var7, var12, 3);
-                     }
-                  }
-               }
-               break;
+                            if (blockflower.canBlockStay(worldIn, blockpos1, iblockstate)) {
+                                worldIn.setBlockState(blockpos1, iblockstate, 3);
+                            }
+                        } else {
+                            final IBlockState iblockstate1 = Blocks.tallgrass.getDefaultState().withProperty(BlockTallGrass.TYPE, BlockTallGrass.EnumType.GRASS);
+
+                            if (Blocks.tallgrass.canBlockStay(worldIn, blockpos1, iblockstate1)) {
+                                worldIn.setBlockState(blockpos1, iblockstate1, 3);
+                            }
+                        }
+                    }
+
+                    break;
+                }
+
+                blockpos1 = blockpos1.add(rand.nextInt(3) - 1, (rand.nextInt(3) - 1) * rand.nextInt(3) / 2, rand.nextInt(3) - 1);
+
+                if (worldIn.getBlockState(blockpos1.down()).getBlock() != Blocks.grass || worldIn.getBlockState(blockpos1).getBlock().isNormalCube()) {
+                    break;
+                }
+                ++j;
             }
+        }
+    }
 
-            var7 = var7.a(var2.nextInt(3) - 1, (var2.nextInt(3) - 1) * var2.nextInt(3) / 2, var2.nextInt(3) - 1);
-            if(var1.getBlockState(var7.down()).getBlock() != Blocks.grass || var1.getBlockState(var7).getBlock().isNormalCube()) {
-               break;
-            }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return XRay.isEnabled ? super.getBlockLayer() : EnumWorldBlockLayer.CUTOUT_MIPPED;
+    }
 
-            ++var8;
-         }
-      }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return 0;
+    }
 
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, SNOWY);
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return XRay.isEnabled?super.getBlockLayer():EnumWorldBlockLayer.CUTOUT_MIPPED;
-   }
-
-   public int getMetaFromState(IBlockState var1) {
-      return 0;
-   }
-
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{SNOWY});
-   }
 }

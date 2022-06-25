@@ -1,28 +1,28 @@
 package net.minecraft.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.GlStateManager;
 
 public class GuiButtonLanguage extends GuiButton {
-   public GuiButtonLanguage(int var1, int var2, int var3) {
-      super(var1, var2, var3, 20, 20, "");
-   }
+    public GuiButtonLanguage(int buttonID, int xPos, int yPos) {
+        super(buttonID, xPos, yPos, 20, 20, "");
+    }
 
-   public void drawButton(Minecraft var1, int var2, int var3) {
-      if(this.visible) {
-         var1.getTextureManager().bindTexture(GuiButton.buttonTextures);
-         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-         if((double)var2 >= this.xPosition && (double)var3 >= this.yPosition && (double)var2 < this.xPosition + (double)this.width && (double)var3 < this.yPosition + (double)this.height) {
-            boolean var7 = true;
-         } else {
-            boolean var10000 = false;
-         }
+    /**
+     * Draws this button to the screen.
+     */
+    public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+        if (this.visible) {
+            mc.getTextureManager().bindTexture(GuiButton.buttonTextures);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+            int i = 106;
 
-         int var5 = 106;
-         var5 = var5 + this.height;
-         this.drawTexturedModalRect((int)this.xPosition, (int)this.yPosition, 0, var5, this.width, this.height);
-      }
+            if (flag) {
+                i += this.height;
+            }
 
-   }
+            this.drawTexturedModalRect((int) this.xPosition, (int) this.yPosition, 0, i, this.width, this.height);
+        }
+    }
 }

@@ -1,17 +1,18 @@
 package net.minecraft.client.resources;
 
-import java.io.InputStream;
 import net.minecraft.client.resources.data.IMetadataSection;
 import net.minecraft.util.ResourceLocation;
 
+import java.io.InputStream;
+
 public interface IResource {
-   ResourceLocation getResourceLocation();
+    ResourceLocation getResourceLocation();
 
-   InputStream getInputStream();
+    InputStream getInputStream();
 
-   boolean hasMetadata();
+    boolean hasMetadata();
 
-   IMetadataSection getMetadata(String var1);
+    <T extends IMetadataSection> T getMetadata(String p_110526_1_);
 
-   String getResourcePackName();
+    String getResourcePackName();
 }

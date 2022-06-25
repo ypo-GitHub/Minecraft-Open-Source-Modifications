@@ -1,10 +1,7 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.iV;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
@@ -22,108 +19,135 @@ import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockSnow extends Block {
-   public static final iV P = iV.a("layers", 1, 8);
 
-   protected BlockSnow() {
-      super(Material.snow);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(1)));
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
-      this.setTickRandomly(true);
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-      this.setBlockBoundsForItemRender();
-   }
+    public static final PropertyInteger LAYERS = PropertyInteger.create("layers", 1, 8);
 
-   public boolean isPassable(IBlockAccess var1, BlockPos var2) {
-      return ((Integer)var1.getBlockState(var2).getValue(P)).intValue() < 5;
-   }
+    protected BlockSnow() {
+        super(Material.snow);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(LAYERS, 1));
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
+        this.setTickRandomly(true);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+        this.setBlockBoundsForItemRender();
+    }
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      int var4 = ((Integer)var3.getValue(P)).intValue() - 1;
-      float var5 = 0.125F;
-      return new AxisAlignedBB((double)var2.getX() + this.minX, (double)var2.getY() + this.minY, (double)var2.getZ() + this.minZ, (double)var2.getX() + this.maxX, (double)((float)var2.getY() + (float)var4 * 0.125F), (double)var2.getZ() + this.maxZ);
-   }
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos) {
+        return worldIn.getBlockState(pos).getValue(LAYERS) < 5;
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        final int i = state.getValue(LAYERS) - 1;
+        final float f = 0.125F;
+        return new AxisAlignedBB((double) pos.getX() + this.minX, (double) pos.getY() + this.minY, (double) pos.getZ() + this.minZ, (double) pos.getX() + this.maxX, (float) pos.getY() + (float) i * f, (double) pos.getZ() + this.maxZ);
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void setBlockBoundsForItemRender() {
-      this.getBoundsForLayers(0);
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2);
-      this.getBoundsForLayers(((Integer)var3.getValue(P)).intValue());
-   }
+    /**
+     * Sets the block's bounds for rendering it as an item
+     */
+    public void setBlockBoundsForItemRender() {
+        this.getBoundsForLayers(0);
+    }
 
-   protected void getBoundsForLayers(int var1) {
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, (float)var1 / 8.0F, 1.0F);
-   }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
+        this.getBoundsForLayers(iblockstate.getValue(LAYERS));
+    }
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2.down());
-      Block var4 = var3.getBlock();
-      return var4 != Blocks.ice && var4 != Blocks.packed_ice && (var4.getMaterial() == Material.leaves || var4 == this && ((Integer)var3.getValue(P)).intValue() >= 7 || var4.isOpaqueCube() && var4.blockMaterial.blocksMovement());
-   }
+    protected void getBoundsForLayers(int p_150154_1_) {
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, (float) p_150154_1_ / 8.0F, 1.0F);
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      this.checkAndDropBlock(var1, var2, var3);
-   }
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos.down());
+        final Block block = iblockstate.getBlock();
+        return block != Blocks.ice && block != Blocks.packed_ice && (block.getMaterial() == Material.leaves || block == this && iblockstate.getValue(LAYERS) >= 7 || block.isOpaqueCube() && block.blockMaterial.blocksMovement());
+    }
 
-   private boolean checkAndDropBlock(World var1, BlockPos var2, IBlockState var3) {
-      if(!this.canPlaceBlockAt(var1, var2)) {
-         this.dropBlockAsItem(var1, var2, var3, 0);
-         var1.setBlockToAir(var2);
-         return false;
-      } else {
-         return true;
-      }
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        this.checkAndDropBlock(worldIn, pos, state);
+    }
 
-   public void harvestBlock(World var1, EntityPlayer var2, BlockPos var3, IBlockState var4, TileEntity var5) {
-      spawnAsEntity(var1, var3, new ItemStack(Items.snowball, ((Integer)var4.getValue(P)).intValue() + 1, 0));
-      var1.setBlockToAir(var3);
-      var2.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
-   }
+    private boolean checkAndDropBlock(World worldIn, BlockPos pos, IBlockState state) {
+        if (!this.canPlaceBlockAt(worldIn, pos)) {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
+            return false;
+        } else {
+            return true;
+        }
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Items.snowball;
-   }
+    public void harvestBlock(World worldIn, EntityPlayer player, BlockPos pos, IBlockState state, TileEntity te) {
+        spawnAsEntity(worldIn, pos, new ItemStack(Items.snowball, state.getValue(LAYERS) + 1, 0));
+        worldIn.setBlockToAir(pos);
+        player.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
+    }
 
-   public int quantityDropped(Random var1) {
-      return 0;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Items.snowball;
+    }
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      if(var1.getLightFor(EnumSkyBlock.BLOCK, var2) > 11) {
-         this.dropBlockAsItem(var1, var2, var1.getBlockState(var2), 0);
-         var1.setBlockToAir(var2);
-      }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return 0;
+    }
 
-   }
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        if (worldIn.getLightFor(EnumSkyBlock.BLOCK, pos) > 11) {
+            this.dropBlockAsItem(worldIn, pos, worldIn.getBlockState(pos), 0);
+            worldIn.setBlockToAir(pos);
+        }
+    }
 
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      return var3 == EnumFacing.UP || super.shouldSideBeRendered(var1, var2, var3);
-   }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        return side == EnumFacing.UP || super.shouldSideBeRendered(worldIn, pos, side);
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf((var1 & 7) + 1));
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(LAYERS, (meta & 7) + 1);
+    }
 
-   public boolean isReplaceable(World var1, BlockPos var2) {
-      return ((Integer)var1.getBlockState(var2).getValue(P)).intValue() == 1;
-   }
+    /**
+     * Whether this Block can be replaced directly by other blocks (true for e.g. tall grass)
+     */
+    public boolean isReplaceable(World worldIn, BlockPos pos) {
+        return worldIn.getBlockState(pos).getValue(LAYERS) == 1;
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue() - 1;
-   }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(LAYERS) - 1;
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, LAYERS);
+    }
+
 }

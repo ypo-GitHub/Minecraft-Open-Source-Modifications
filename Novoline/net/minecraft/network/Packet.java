@@ -1,13 +1,22 @@
 package net.minecraft.network;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
-import net.minecraft.network.PacketBuffer;
 
-public interface Packet {
-   void readPacketData(PacketBuffer var1) throws IOException;
+public interface Packet<T extends INetHandler> {
 
-   void writePacketData(PacketBuffer var1) throws IOException;
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    void readPacketData(PacketBuffer buf) throws IOException;
 
-   void processPacket(INetHandler var1);
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    void writePacketData(PacketBuffer buf) throws IOException;
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    void processPacket(T handler);
+
 }

@@ -1,7 +1,5 @@
 package net.minecraft.entity;
 
-import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.EntityList;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -11,137 +9,205 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public abstract class EntityAgeable extends EntityCreature {
-   protected int growingAge;
-   protected int field_175502_b;
-   protected int field_175503_c;
-   private float ageWidth = -1.0F;
-   private float ageHeight;
+    protected int growingAge;
+    protected int field_175502_b;
+    protected int field_175503_c;
+    private float ageWidth = -1.0F;
+    private float ageHeight;
 
-   public EntityAgeable(World var1) {
-      super(var1);
-   }
+    public EntityAgeable(World worldIn) {
+        super(worldIn);
+    }
 
-   public abstract EntityAgeable createChild(EntityAgeable var1);
+    public abstract EntityAgeable createChild(EntityAgeable ageable);
 
-   public boolean interact(EntityPlayer var1) {
-      ItemStack var2 = var1.inventory.getCurrentItem();
-      if(var2.getItem() == Items.spawn_egg) {
-         if(!this.worldObj.isRemote) {
-            Class var3 = EntityList.getClassFromID(var2.getMetadata());
-            if(this.getClass() == var3) {
-               EntityAgeable var4 = this.createChild(this);
-               var4.setGrowingAge(-24000);
-               var4.setLocationAndAngles(this.posX, this.posY, this.posZ, 0.0F, 0.0F);
-               this.worldObj.spawnEntityInWorld(var4);
-               if(var2.hasDisplayName()) {
-                  var4.setCustomNameTag(var2.getDisplayName());
-               }
+    /**
+     * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
+     */
+    public boolean interact(EntityPlayer player) {
+        ItemStack itemstack = player.inventory.getCurrentItem();
 
-               if(!var1.abilities.isCreative()) {
-                  --var2.stackSize;
-                  if(var2.stackSize <= 0) {
-                     var1.inventory.setInventorySlotContents(var1.inventory.currentItem, (ItemStack)null);
-                  }
-               }
-            }
-         }
+        if (itemstack != null && itemstack.getItem() == Items.spawn_egg) {
+            if (!this.worldObj.isRemote) {
+                Class<? extends Entity> oclass = EntityList.getClassFromID(itemstack.getMetadata());
 
-         return true;
-      } else {
-         return false;
-      }
-   }
+                if (oclass != null && this.getClass() == oclass) {
+                    EntityAgeable entityageable = this.createChild(this);
 
-   protected void entityInit() {
-      super.entityInit();
-      this.I.b(12, Byte.valueOf((byte)0));
-   }
+                    if (entityageable != null) {
+                        entityageable.setGrowingAge(-24000);
+                        entityageable.setLocationAndAngles(this.posX, this.posY, this.posZ, 0.0F, 0.0F);
+                        this.worldObj.spawnEntityInWorld(entityageable);
 
-   public int getGrowingAge() {
-      return this.worldObj.isRemote?this.I.g(12):this.growingAge;
-   }
+                        if (itemstack.hasDisplayName()) {
+                            entityageable.setCustomNameTag(itemstack.getDisplayName());
+                        }
 
-   public void func_175501_a(int var1, boolean var2) {
-      int var3 = this.getGrowingAge();
-      int var4 = var3;
-      var3 = var3 + var1 * 20;
-      var3 = 0;
-      this.onGrowingAdult();
-      int var5 = var3 - var4;
-      this.setGrowingAge(var3);
-      this.field_175502_b += var5;
-      if(this.field_175503_c == 0) {
-         this.field_175503_c = 40;
-      }
+                        if (!player.abilities.isCreative()) {
+                            --itemstack.stackSize;
 
-      if(this.getGrowingAge() == 0) {
-         this.setGrowingAge(this.field_175502_b);
-      }
-
-   }
-
-   public void addGrowth(int var1) {
-      this.func_175501_a(var1, false);
-   }
-
-   public void setGrowingAge(int var1) {
-      this.I.a(12, Byte.valueOf((byte)MathHelper.clamp_int(var1, -1, 1)));
-      this.growingAge = var1;
-      this.setScaleForAge(this.isChild());
-   }
-
-   public void writeEntityToNBT(NBTTagCompound var1) {
-      super.writeEntityToNBT(var1);
-      var1.setInteger("Age", this.getGrowingAge());
-      var1.setInteger("ForcedAge", this.field_175502_b);
-   }
-
-   public void readEntityFromNBT(NBTTagCompound var1) {
-      super.readEntityFromNBT(var1);
-      this.setGrowingAge(var1.getInteger("Age"));
-      this.field_175502_b = var1.getInteger("ForcedAge");
-   }
-
-   public void onLivingUpdate() {
-      super.onLivingUpdate();
-      if(this.worldObj.isRemote) {
-         if(this.field_175503_c > 0) {
-            if(this.field_175503_c % 4 == 0) {
-               this.worldObj.spawnParticle(EnumParticleTypes.VILLAGER_HAPPY, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + 0.5D + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, 0.0D, 0.0D, 0.0D, new int[0]);
+                            if (itemstack.stackSize <= 0) {
+                                player.inventory.setInventorySlotContents(player.inventory.currentItem, null);
+                            }
+                        }
+                    }
+                }
             }
 
-            --this.field_175503_c;
-         }
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-         this.setScaleForAge(this.isChild());
-      } else {
-         int var1 = this.getGrowingAge();
-         ++var1;
-         this.setGrowingAge(var1);
-         this.onGrowingAdult();
-      }
+    protected void entityInit() {
+        super.entityInit();
+        this.dataWatcher.addObject(12, (byte) 0);
+    }
 
-   }
+    /**
+     * The age value may be negative or positive or zero. If it's negative, it get's incremented on each tick, if it's
+     * positive, it get's decremented each tick. Don't confuse this with EntityLiving.getAge. With a negative value the
+     * Entity is considered a child.
+     */
+    public int getGrowingAge() {
+        return this.worldObj.isRemote ? this.dataWatcher.getWatchableObjectByte(12) : this.growingAge;
+    }
 
-   protected void onGrowingAdult() {
-   }
+    public void func_175501_a(int p_175501_1_, boolean p_175501_2_) {
+        int i = this.getGrowingAge();
+        int j = i;
+        i = i + p_175501_1_ * 20;
 
-   public boolean isChild() {
-      return this.getGrowingAge() < 0;
-   }
+        if (i > 0) {
+            i = 0;
 
-   public void setScaleForAge(boolean var1) {
-      this.setScale(0.5F);
-   }
+            if (j < 0) {
+                this.onGrowingAdult();
+            }
+        }
 
-   protected final void setSize(float var1, float var2) {
-      boolean var3 = this.ageWidth > 0.0F;
-      this.ageWidth = var1;
-      this.ageHeight = var2;
-      this.setScale(1.0F);
-   }
+        int k = i - j;
+        this.setGrowingAge(i);
 
-   protected final void setScale(float var1) {
-      super.setSize(this.ageWidth * var1, this.ageHeight * var1);
-   }
+        if (p_175501_2_) {
+            this.field_175502_b += k;
+
+            if (this.field_175503_c == 0) {
+                this.field_175503_c = 40;
+            }
+        }
+
+        if (this.getGrowingAge() == 0) {
+            this.setGrowingAge(this.field_175502_b);
+        }
+    }
+
+    /**
+     * "Adds the value of the parameter times 20 to the age of this entity. If the entity is an adult (if the entity's
+     * age is greater than 0), it will have no effect."
+     */
+    public void addGrowth(int growth) {
+        this.func_175501_a(growth, false);
+    }
+
+    /**
+     * The age value may be negative or positive or zero. If it's negative, it get's incremented on each tick, if it's
+     * positive, it get's decremented each tick. With a negative value the Entity is considered a child.
+     */
+    public void setGrowingAge(int age) {
+        this.dataWatcher.updateObject(12, (byte) MathHelper.clamp_int(age, -1, 1));
+        this.growingAge = age;
+        this.setScaleForAge(this.isChild());
+    }
+
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+        super.writeEntityToNBT(tagCompound);
+        tagCompound.setInteger("Age", this.getGrowingAge());
+        tagCompound.setInteger("ForcedAge", this.field_175502_b);
+    }
+
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+        super.readEntityFromNBT(tagCompund);
+        this.setGrowingAge(tagCompund.getInteger("Age"));
+        this.field_175502_b = tagCompund.getInteger("ForcedAge");
+    }
+
+    /**
+     * Called frequently so the entity can update its state every tick as required. For example, zombies and skeletons
+     * use this to react to sunlight and start to burn.
+     */
+    public void onLivingUpdate() {
+        super.onLivingUpdate();
+
+        if (this.worldObj.isRemote) {
+            if (this.field_175503_c > 0) {
+                if (this.field_175503_c % 4 == 0) {
+                    this.worldObj.spawnParticle(EnumParticleTypes.VILLAGER_HAPPY, this.posX + (double) (this.rand.nextFloat() * this.width * 2.0F) - (double) this.width, this.posY + 0.5D + (double) (this.rand.nextFloat() * this.height), this.posZ + (double) (this.rand.nextFloat() * this.width * 2.0F) - (double) this.width, 0.0D, 0.0D, 0.0D);
+                }
+
+                --this.field_175503_c;
+            }
+
+            this.setScaleForAge(this.isChild());
+        } else {
+            int i = this.getGrowingAge();
+
+            if (i < 0) {
+                ++i;
+                this.setGrowingAge(i);
+
+                if (i == 0) {
+                    this.onGrowingAdult();
+                }
+            } else if (i > 0) {
+                --i;
+                this.setGrowingAge(i);
+            }
+        }
+    }
+
+    /**
+     * This is called when Entity's growing age timer reaches 0 (negative values are considered as a child, positive as
+     * an adult)
+     */
+    protected void onGrowingAdult() {
+    }
+
+    /**
+     * If Animal, checks if the age timer is negative
+     */
+    public boolean isChild() {
+        return this.getGrowingAge() < 0;
+    }
+
+    /**
+     * "Sets the scale for an ageable entity according to the boolean parameter, which says if it's a child."
+     */
+    public void setScaleForAge(boolean p_98054_1_) {
+        this.setScale(p_98054_1_ ? 0.5F : 1.0F);
+    }
+
+    /**
+     * Sets the width and height of the entity. Args: width, height
+     */
+    protected final void setSize(float width, float height) {
+        boolean flag = this.ageWidth > 0.0F;
+        this.ageWidth = width;
+        this.ageHeight = height;
+
+        if (!flag) {
+            this.setScale(1.0F);
+        }
+    }
+
+    protected final void setScale(float scale) {
+        super.setSize(this.ageWidth * scale, this.ageHeight * scale);
+    }
 }

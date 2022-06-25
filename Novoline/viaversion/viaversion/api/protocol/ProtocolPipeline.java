@@ -1,140 +1,158 @@
 package viaversion.viaversion.api.protocol;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
-import net.a66;
-import net.acE;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.platform.ViaPlatform;
-import viaversion.viaversion.api.protocol.Protocol;
-import viaversion.viaversion.api.protocol.ProtocolRegistry;
-import viaversion.viaversion.api.protocol.SimpleProtocol;
 import viaversion.viaversion.packets.Direction;
+import viaversion.viaversion.packets.State;
 import viaversion.viaversion.protocols.base.ProtocolInfo;
 
 public class ProtocolPipeline extends SimpleProtocol {
-   private List protocolList;
-   private UserConnection userConnection;
 
-   public ProtocolPipeline(UserConnection var1) {
-      this.init(var1);
-   }
+    private List<Protocol> protocolList;
+    private UserConnection userConnection;
 
-   protected void registerPackets() {
-      this.protocolList = new CopyOnWriteArrayList();
-      this.protocolList.add(ProtocolRegistry.BASE_PROTOCOL);
-   }
+    public ProtocolPipeline(UserConnection userConnection) {
+        init(userConnection);
+    }
 
-   public void init(UserConnection var1) {
-      this.userConnection = var1;
-      ProtocolInfo var3 = new ProtocolInfo(var1);
-      Protocol.h();
-      var3.setPipeline(this);
-      var1.setProtocolInfo(var3);
-      Iterator var4 = this.protocolList.iterator();
-      if(var4.hasNext()) {
-         Protocol var5 = (Protocol)var4.next();
-         var5.init(var1);
-      }
+    @Override
+    protected void registerPackets() {
+        protocolList = new CopyOnWriteArrayList<>();
+        // This is a pipeline so we register basic pipes
+        protocolList.add(ProtocolRegistry.BASE_PROTOCOL);
+    }
 
-   }
+    @Override
+    public void init(UserConnection userConnection) {
+        this.userConnection = userConnection;
 
-   public void add(Protocol var1) {
-      acE[] var2 = Protocol.h();
-      if(this.protocolList != null) {
-         this.protocolList.add(var1);
-         var1.init(this.userConnection);
-         ArrayList var3 = new ArrayList();
-         Iterator var4 = this.protocolList.iterator();
-         if(var4.hasNext()) {
-            Protocol var5 = (Protocol)var4.next();
-            if(ProtocolRegistry.isBaseProtocol(var5)) {
-               var3.add(var5);
+        ProtocolInfo protocolInfo = new ProtocolInfo(userConnection);
+        protocolInfo.setPipeline(this);
+
+        userConnection.setProtocolInfo(protocolInfo);
+
+        /* Init through all our pipes */
+        for(Protocol protocol : protocolList) {
+            protocol.init(userConnection);
+        }
+    }
+
+    /**
+     * Add a protocol to the current pipeline
+     * This will call the {@link Protocol#init(UserConnection)} method.
+     *
+     * @param protocol The protocol to add to the end
+     */
+    public void add(Protocol protocol) {
+        if(protocolList != null) {
+            protocolList.add(protocol);
+            protocol.init(userConnection);
+            // Move base Protocols to the end, so the login packets can be modified by other protocols
+            List<Protocol> toMove = new ArrayList<>();
+            for(Protocol p : protocolList) {
+                if(ProtocolRegistry.isBaseProtocol(p)) {
+                    toMove.add(p);
+                }
             }
-         }
+            protocolList.removeAll(toMove);
+            protocolList.addAll(toMove);
+        } else {
+            throw new NullPointerException("Tried to add protocol too early");
+        }
+    }
 
-         this.protocolList.removeAll(var3);
-         this.protocolList.addAll(var3);
-      }
+    @Override
+    public void transform(Direction direction, State state, PacketWrapper packetWrapper) throws Exception {
+        int originalID = packetWrapper.getId();
 
-      throw new NullPointerException("Tried to add protocol too early");
-   }
+        // Apply protocols
+        packetWrapper.apply(direction, state, 0, protocolList, direction == Direction.OUTGOING);
+        super.transform(direction, state, packetWrapper);
 
-   public void a(Direction var1, a66 var2, PacketWrapper var3) throws Exception {
-      Protocol.h();
-      int var5 = var3.getId();
-      var3.a(var1, var2, 0, (List)this.protocolList, var1 == Direction.OUTGOING);
-      super.a(var1, var2, var3);
-      if(Via.getManager().isDebug()) {
-         this.a(var1, var2, var3, var5);
-      }
+        if(Via.getManager().isDebug()) {
+            logPacket(direction, state, packetWrapper, originalID);
+        }
+    }
 
-   }
+    private void logPacket(Direction direction, State state, PacketWrapper packetWrapper, int originalID) {
+        // Debug packet
+        int clientProtocol = userConnection.getProtocolInfo().getProtocolVersion();
+        ViaPlatform platform = Via.getPlatform();
 
-   private void a(Direction var1, a66 var2, PacketWrapper var3, int var4) {
-      Protocol.h();
-      int var6 = this.userConnection.getProtocolInfo().getProtocolVersion();
-      ViaPlatform var7 = Via.getPlatform();
-      String var8 = var3.user().getProtocolInfo().getUsername();
-      String var9 = var8 != null?var8 + " ":"";
-      var7.getLogger().log(Level.INFO, "{0}{1} {2}: {3} (0x{4}) -> {5} (0x{6}) [{7}] {8}", new Object[]{var9, var1, var2, Integer.valueOf(var4), Integer.toHexString(var4), Integer.valueOf(var3.getId()), Integer.toHexString(var3.getId()), Integer.toString(var6), var3});
-   }
+        String actualUsername = packetWrapper.user().getProtocolInfo().getUsername();
+        String username = actualUsername != null ? actualUsername + " " : "";
 
-   public boolean contains(Class var1) {
-      Protocol.h();
-      Iterator var3 = this.protocolList.iterator();
-      if(var3.hasNext()) {
-         Protocol var4 = (Protocol)var3.next();
-         if(var4.getClass() == var1) {
-            return true;
-         }
-      }
+        platform.getLogger().log(Level.INFO, "{0}{1} {2}: {3} (0x{4}) -> {5} (0x{6}) [{7}] {8}",
+                new Object[]{
+                        username,
+                        direction,
+                        state,
+                        originalID,
+                        Integer.toHexString(originalID),
+                        packetWrapper.getId(),
+                        Integer.toHexString(packetWrapper.getId()),
+                        Integer.toString(clientProtocol),
+                        packetWrapper
+                });
+    }
 
-      return false;
-   }
+    /**
+     * Check if the pipeline contains a protocol
+     *
+     * @param pipeClass The class to check
+     * @return True if the protocol class is in the pipeline
+     */
+    public boolean contains(Class<? extends Protocol> pipeClass) {
+        for(Protocol protocol : protocolList) {
+            if(protocol.getClass() == pipeClass) return true;
+        }
+        return false;
+    }
 
-   public Protocol getProtocol(Class var1) {
-      Protocol.h();
-      Iterator var3 = this.protocolList.iterator();
-      if(var3.hasNext()) {
-         Protocol var4 = (Protocol)var3.next();
-         if(var4.getClass() == var1) {
-            return var4;
-         }
-      }
+    public <P extends Protocol> P getProtocol(Class<P> pipeClass) {
+        for(Protocol protocol : protocolList) {
+            if(protocol.getClass() == pipeClass) return (P) protocol;
+        }
+        return null;
+    }
 
-      return null;
-   }
+    /**
+     * Use the pipeline to filter a NMS packet
+     *
+     * @param o    The NMS packet object
+     * @param list The output list to write to
+     *
+     * @return If it should not write the input object to te list.
+     *
+     * @throws Exception If it failed to convert / packet cancelld.
+     */
+    public boolean filter(Object o, List list) throws Exception {
+        for(Protocol protocol : protocolList) {
+            if(protocol.isFiltered(o.getClass())) {
+                protocol.filterPacket(userConnection, o, list);
+                return true;
+            }
+        }
 
-   public boolean filter(Object var1, List var2) throws Exception {
-      Protocol.h();
-      Iterator var4 = this.protocolList.iterator();
-      if(var4.hasNext()) {
-         Protocol var5 = (Protocol)var4.next();
-         if(var5.isFiltered(var1.getClass())) {
-            var5.filterPacket(this.userConnection, var1, var2);
-            return true;
-         }
-      }
+        return false;
+    }
 
-      return false;
-   }
+    public List<Protocol> pipes() {
+        return protocolList;
+    }
 
-   public List pipes() {
-      return this.protocolList;
-   }
-
-   public void cleanPipes() {
-      this.pipes().clear();
-      this.registerPackets();
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    /**
+     * Cleans the pipe and adds {@link viaversion.viaversion.protocols.base.BaseProtocol}
+     * /!\ WARNING - It doesn't add version-specific base Protocol
+     */
+    public void cleanPipes() {
+        pipes().clear();
+        registerPackets();
+    }
 }

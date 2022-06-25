@@ -1,7 +1,5 @@
 package cc.novoline.gui.screen.alt.login;
 
-import cc.novoline.gui.screen.alt.login.AltLoginListener;
-import cc.novoline.gui.screen.alt.login.AltType;
 import cc.novoline.gui.screen.alt.repository.credential.AltCredential;
 import cc.novoline.utils.thealtening.TheAlteningAuthentication;
 import cc.novoline.utils.thealtening.service.AlteningServiceType;
@@ -10,77 +8,94 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import com.mojang.authlib.yggdrasil.YggdrasilUserAuthentication;
-import java.net.Proxy;
-import net.Bv;
-import net.acE;
 import net.minecraft.util.Session;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.net.Proxy;
 
 public final class AltLoginThread {
-   private static final TheAlteningAuthentication MOJANG = TheAlteningAuthentication.mojang();
-   public final AltCredential credentials;
-   public AltLoginListener handler;
-   private String caller;
 
-   public AltLoginThread(AltCredential var1, AltLoginListener var2) {
-      Bv.b();
-      this.credentials = var1;
-      this.handler = var2;
-      if(var1.getLogin().endsWith("@alt.com")) {
-         MOJANG.updateService(AlteningServiceType.THEALTENING);
-      }
+    private static final TheAlteningAuthentication MOJANG = TheAlteningAuthentication.mojang();
 
-      MOJANG.updateService(AlteningServiceType.MOJANG);
-   }
+    /* fields */
+    @NonNull
+    public final AltCredential credentials;
+    @Nullable
+    public AltLoginListener handler;
+    @Nullable
+    private String caller;
 
-   public AltLoginThread(AltCredential var1, String var2) {
-      Bv.b();
-      super();
-      this.credentials = var1;
-      this.caller = var2;
-      if(var1.getLogin().endsWith("@alt.com")) {
-         MOJANG.updateService(AlteningServiceType.THEALTENING);
-      }
+    // constructors
+    public AltLoginThread(@NonNull AltCredential credential, @NonNull AltLoginListener handler) {
+        // super("Alt Login Thread");
 
-      MOJANG.updateService(AlteningServiceType.MOJANG);
-      if(acE.b() == null) {
-         Bv.b("tOH0Fb");
-      }
+        this.credentials = credential;
+        this.handler = handler;
 
-   }
+        if (credential.getLogin().endsWith("@alt.com")) {
+            MOJANG.updateService(AlteningServiceType.THEALTENING);
+        } else {
+            MOJANG.updateService(AlteningServiceType.MOJANG);
+        }
+    }
 
-   public Session run() {
-      String var1 = Bv.b();
-      String var2 = !this.credentials.getLogin().endsWith("@alt.com")?this.credentials.getPassword():"1";
-      if(var2 == null) {
-         Session var4 = new Session(this.credentials.getLogin(), "", "", "mojang");
-         if(this.handler != null) {
-            this.handler.onLoginSuccess(AltType.CRACKED, var4);
-         }
+    public AltLoginThread(@NonNull AltCredential credential, @Nullable String caller) {
+        // super("Alt Login Thread");
 
-         return var4;
-      } else {
-         Session var3 = createSession(this.credentials.getLogin(), var2);
-         if(this.handler != null) {
-            this.handler.onLoginFailed();
-         }
+        this.credentials = credential;
+        this.caller = caller;
 
-         return null;
-      }
-   }
+        if (credential.getLogin().endsWith("@alt.com")) {
+            MOJANG.updateService(AlteningServiceType.THEALTENING);
+        } else {
+            MOJANG.updateService(AlteningServiceType.MOJANG);
+        }
+    }
 
-   public static Session createSession(String var0, String var1) {
-      YggdrasilAuthenticationService var2 = new YggdrasilAuthenticationService(Proxy.NO_PROXY, "");
-      YggdrasilUserAuthentication var3 = (YggdrasilUserAuthentication)var2.createUserAuthentication(Agent.MINECRAFT);
-      var3.setUsername(var0);
-      var3.setPassword(var1);
+    /* methods */
+    @Nullable
+    public Session run() {
+        final String password = !this.credentials.getLogin().endsWith("@alt.com") ?
+                this.credentials.getPassword() :
+                "1";
 
-      try {
-         var3.logIn();
-         GameProfile var4 = var3.getSelectedProfile();
-         return new Session(var4.getName(), var4.getId().toString(), var3.getAuthenticatedToken(), "mojang");
-      } catch (AuthenticationException var5) {
-         var5.printStackTrace();
-         return null;
-      }
-   }
+        if (password == null) {
+            final Session crackedSession = new Session(this.credentials.getLogin(), "", "", "mojang");
+
+            if (this.handler != null) this.handler.onLoginSuccess(AltType.CRACKED, crackedSession);
+            return crackedSession;
+        }
+
+        final Session session = createSession(this.credentials.getLogin(), password);
+
+        if (session == null) {
+            if (this.handler != null) this.handler.onLoginFailed();
+            return null;
+        }
+
+        if (this.handler != null) this.handler.onLoginSuccess(AltType.PREMIUM, session);
+        return session;
+    }
+
+    @Nullable
+    public static Session createSession(String username, String password) {
+        final YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(Proxy.NO_PROXY, "");
+        final YggdrasilUserAuthentication auth = (YggdrasilUserAuthentication) service
+                .createUserAuthentication(Agent.MINECRAFT);
+
+        auth.setUsername(username);
+        auth.setPassword(password);
+
+        try {
+            auth.logIn();
+            final GameProfile selectedProfile = auth.getSelectedProfile();
+            return new Session(selectedProfile.getName(), selectedProfile.getId().toString(),
+                    auth.getAuthenticatedToken(), "mojang");
+        } catch (AuthenticationException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

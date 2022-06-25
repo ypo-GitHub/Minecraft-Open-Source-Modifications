@@ -2,14 +2,7 @@ package viaversion.viaversion.api.rewriters;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Logger;
-import net.Gh;
-import net.a7N;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.ParticleMappings;
 import viaversion.viaversion.api.data.UserConnection;
@@ -18,225 +11,281 @@ import viaversion.viaversion.api.minecraft.metadata.Metadata;
 import viaversion.viaversion.api.protocol.ClientboundPacketType;
 import viaversion.viaversion.api.protocol.Protocol;
 import viaversion.viaversion.api.remapper.PacketHandler;
-import viaversion.viaversion.api.rewriters.MetadataRewriter$1;
-import viaversion.viaversion.api.rewriters.MetadataRewriter$3;
-import viaversion.viaversion.api.rewriters.MetadataRewriter$4;
-import viaversion.viaversion.api.rewriters.MetadataRewriter$5;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.storage.EntityTracker;
 import viaversion.viaversion.api.type.Type;
-import viaversion.viaversion.api.type.types.Particle$ParticleData;
+import viaversion.viaversion.api.type.types.Particle;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 public abstract class MetadataRewriter {
-   private final Class entityTrackerClass;
-   protected final Protocol protocol;
-   private Int2IntMap typeMapping;
-   private static boolean d;
+    private final Class<? extends EntityTracker> entityTrackerClass;
+    protected final Protocol protocol;
+    private Int2IntMap typeMapping;
 
-   protected MetadataRewriter(Protocol var1, Class var2) {
-      this.protocol = var1;
-      this.entityTrackerClass = var2;
-      var1.put(this);
-   }
+    protected MetadataRewriter(Protocol protocol, Class<? extends EntityTracker> entityTrackerClass) {
+        this.protocol = protocol;
+        this.entityTrackerClass = entityTrackerClass;
+        protocol.put(this);
+    }
 
-   public final void handleMetadata(int var1, List var2, UserConnection var3) {
-      EntityType var5 = ((EntityTracker)var3.b(this.entityTrackerClass)).getEntity(var1);
-      c();
-      Iterator var6 = (new ArrayList(var2)).iterator();
-      if(var6.hasNext()) {
-         Metadata var7 = (Metadata)var6.next();
-         MetadataRewriter var10000 = this;
-         int var10001 = var1;
-         EntityType var10002 = var5;
-         Metadata var10003 = var7;
-         List var10004 = var2;
-         UserConnection var10005 = var3;
+    public final void handleMetadata(int entityId, List<Metadata> metadatas, UserConnection connection) {
+        EntityType type = connection.get(entityTrackerClass).getEntity(entityId);
+        for (Metadata metadata : new ArrayList<>(metadatas)) {
+            try {
+                handleMetadata(entityId, type, metadata, metadatas, connection);
+            } catch (Exception e) {
+                metadatas.remove(metadata);
+                if (!Via.getConfig().isSuppressMetadataErrors() || Via.getManager().isDebug()) {
+                    Logger logger = Via.getPlatform().getLogger();
 
-         try {
-            var10000.handleMetadata(var10001, var10002, var10003, var10004, var10005);
-         } catch (Exception var10) {
-            var2.remove(var7);
-            if(!Via.getConfig().isSuppressMetadataErrors() || Via.getManager().isDebug()) {
-               Logger var9 = Via.getPlatform().getLogger();
-               var9.warning("An error occurred with entity metadata handler");
-               var9.warning("This is most likely down to one of your plugins sending bad datawatchers. Please test if this occurs without any plugins except ViaVersion before reporting it on GitHub");
-               var9.warning("Also make sure that all your plugins are compatible with your server version.");
-               var9.warning("Entity type: " + var5);
-               var9.warning("Metadata: " + var7);
-               var10.printStackTrace();
+                    logger.warning("An error occurred with entity metadata handler");
+                    logger.warning("This is most likely down to one of your plugins sending bad datawatchers. Please test if this occurs without any plugins except ViaVersion before reporting it on GitHub");
+                    logger.warning("Also make sure that all your plugins are compatible with your server version.");
+                    logger.warning("Entity type: " + type);
+                    logger.warning("Metadata: " + metadata);
+                    e.printStackTrace();
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    protected void rewriteParticle(Particle particle) {
+        ParticleMappings mappings = protocol.getMappingData().getParticleMappings();
+        int id = particle.getId();
+        if (id == mappings.getBlockId() || id == mappings.getFallingDustId()) {
+            Particle.ParticleData data = particle.getArguments().get(0);
+            data.setValue(protocol.getMappingData().getNewBlockStateId(data.get()));
+        } else if (id == mappings.getItemId()) {
+            Particle.ParticleData data = particle.getArguments().get(0);
+            data.setValue(protocol.getMappingData().getNewItemId(data.get()));
+        }
 
-   protected void a(Gh var1) {
-      e();
-      ParticleMappings var3 = this.protocol.getMappingData().getParticleMappings();
-      int var4 = var1.c();
-      if(var4 == var3.getBlockId() || var4 == var3.getFallingDustId()) {
-         Particle$ParticleData var5 = (Particle$ParticleData)var1.d().get(0);
-         var5.setValue(Integer.valueOf(this.protocol.getMappingData().getNewBlockStateId(((Integer)var5.get()).intValue())));
-      }
+        particle.setId(protocol.getMappingData().getNewParticleId(id));
+    }
 
-      if(var4 == var3.getItemId()) {
-         Particle$ParticleData var6 = (Particle$ParticleData)var1.d().get(0);
-         var6.setValue(Integer.valueOf(this.protocol.getMappingData().getNewItemId(((Integer)var6.get()).intValue())));
-      }
+    //TODO add respawn/join once they stop changing too much
 
-      var1.a(this.protocol.getMappingData().getNewParticleId(var4));
-   }
-
-   public void registerTracker(ClientboundPacketType var1) {
-      this.protocol.a((ClientboundPacketType)var1, new MetadataRewriter$1(this));
-   }
-
-   public void registerSpawnTrackerWithData(ClientboundPacketType var1, EntityType var2) {
-      this.protocol.a((ClientboundPacketType)var1, new a7N(this, var2));
-   }
-
-   public void registerTracker(ClientboundPacketType var1, EntityType var2) {
-      this.protocol.a((ClientboundPacketType)var1, new MetadataRewriter$3(this, var2));
-   }
-
-   public void registerEntityDestroy(ClientboundPacketType var1) {
-      this.protocol.a((ClientboundPacketType)var1, new MetadataRewriter$4(this));
-   }
-
-   public void registerMetadataRewriter(ClientboundPacketType var1, @Nullable Type var2, Type var3) {
-      this.protocol.a((ClientboundPacketType)var1, new MetadataRewriter$5(this, var2, var3));
-   }
-
-   public void registerMetadataRewriter(ClientboundPacketType var1, Type var2) {
-      this.registerMetadataRewriter(var1, (Type)null, var2);
-   }
-
-   public void mapTypes(EntityType[] var1, Class var2) {
-      boolean var3 = e();
-      if(this.typeMapping == null) {
-         this.typeMapping = new Int2IntOpenHashMap(var1.length, 1.0F);
-         this.typeMapping.defaultReturnValue(-1);
-      }
-
-      int var5 = var1.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         EntityType var7 = var1[var6];
-
-         try {
-            Enum var8 = Enum.valueOf(var2, var7.name());
-            this.typeMapping.put(var7.getId(), ((EntityType)var8).getId());
-         } catch (IllegalArgumentException var9) {
-            if(!this.typeMapping.containsKey(var7.getId())) {
-               Via.getPlatform().getLogger().warning("Could not find new entity type for " + var7 + "! Old type: " + var7.getClass().getEnclosingClass().getCanonicalName() + ", new type: " + var2.getEnclosingClass().getCanonicalName());
+    public void registerTracker(ClientboundPacketType packetType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity ID
+                map(Type.UUID); // 1 - Entity UUID
+                map(Type.VAR_INT); // 2 - Entity Type
+                handler(getTracker());
             }
-         }
+        });
+    }
 
-         ++var6;
-      }
+    public void registerSpawnTrackerWithData(ClientboundPacketType packetType, EntityType fallingBlockType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity id
+                map(Type.UUID); // 1 - Entity UUID
+                map(Type.VAR_INT); // 2 - Entity Type
+                map(Type.DOUBLE); // 3 - X
+                map(Type.DOUBLE); // 4 - Y
+                map(Type.DOUBLE); // 5 - Z
+                map(Type.BYTE); // 6 - Pitch
+                map(Type.BYTE); // 7 - Yaw
+                map(Type.INT); // 8 - Data
+                handler(getTracker());
+                handler(wrapper -> {
+                    int entityId = wrapper.get(Type.VAR_INT, 0);
+                    EntityType entityType = wrapper.user().get(entityTrackerClass).getEntity(entityId);
+                    if (entityType == fallingBlockType) {
+                        wrapper.set(Type.INT, 0, protocol.getMappingData().getNewBlockStateId(wrapper.get(Type.INT, 0)));
+                    }
+                });
+            }
+        });
+    }
 
-   }
+    public void registerTracker(ClientboundPacketType packetType, EntityType entityType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity ID
+                handler(wrapper -> {
+                    int entityId = wrapper.get(Type.VAR_INT, 0);
+                    wrapper.user().get(entityTrackerClass).addEntity(entityId, entityType);
+                });
+            }
+        });
+    }
 
-   public void mapType(EntityType var1, EntityType var2) {
-      boolean var3 = e();
-      if(this.typeMapping == null) {
-         this.typeMapping = new Int2IntOpenHashMap();
-         this.typeMapping.defaultReturnValue(-1);
-      }
+    public void registerEntityDestroy(ClientboundPacketType packetType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT_ARRAY_PRIMITIVE); // 0 - Entity ids
+                handler(wrapper -> {
+                    EntityTracker entityTracker = wrapper.user().get(entityTrackerClass);
+                    for (int entity : wrapper.get(Type.VAR_INT_ARRAY_PRIMITIVE, 0)) {
+                        entityTracker.removeEntity(entity);
+                    }
+                });
+            }
+        });
+    }
 
-      this.typeMapping.put(var1.getId(), var2.getId());
-   }
+    public void registerMetadataRewriter(ClientboundPacketType packetType, @Nullable Type<List<Metadata>> oldMetaType, Type<List<Metadata>> newMetaType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity ID
+                if (oldMetaType != null) {
+                    map(oldMetaType, newMetaType);
+                } else {
+                    map(newMetaType);
+                }
+                handler(wrapper -> {
+                    int entityId = wrapper.get(Type.VAR_INT, 0);
+                    List<Metadata> metadata = wrapper.get(newMetaType, 0);
+                    handleMetadata(entityId, metadata, wrapper.user());
+                });
+            }
+        });
+    }
 
-   public PacketHandler getTracker() {
-      return this.getTrackerAndRewriter((Type)null);
-   }
+    public void registerMetadataRewriter(ClientboundPacketType packetType, Type<List<Metadata>> metaType) {
+        registerMetadataRewriter(packetType, null, metaType);
+    }
 
-   public PacketHandler getTrackerAndRewriter(@Nullable Type var1) {
-      return this::lambda$getTrackerAndRewriter$0;
-   }
+    public <T extends Enum<T> & EntityType> void mapTypes(EntityType[] oldTypes, Class<T> newTypeClass) {
+        if (typeMapping == null) {
+            typeMapping = new Int2IntOpenHashMap(oldTypes.length, 1F);
+            typeMapping.defaultReturnValue(-1);
+        }
+        for (EntityType oldType : oldTypes) {
+            try {
+                T newType = Enum.valueOf(newTypeClass, oldType.name());
+                typeMapping.put(oldType.getId(), newType.getId());
+            } catch (IllegalArgumentException notFound) {
+                if (!typeMapping.containsKey(oldType.getId())) {
+                    Via.getPlatform().getLogger().warning("Could not find new entity type for " + oldType + "! " +
+                            "Old type: " + oldType.getClass().getEnclosingClass().getCanonicalName() + ", new type: " + newTypeClass.getEnclosingClass().getCanonicalName());
+                }
+            }
+        }
+    }
 
-   public PacketHandler getTrackerAndRewriter(@Nullable Type var1, EntityType var2) {
-      return this::lambda$getTrackerAndRewriter$1;
-   }
+    public void mapType(EntityType oldType, EntityType newType) {
+        if (typeMapping == null) {
+            typeMapping = new Int2IntOpenHashMap();
+            typeMapping.defaultReturnValue(-1);
+        }
+        typeMapping.put(oldType.getId(), newType.getId());
+    }
 
-   public PacketHandler getObjectTracker() {
-      return this::lambda$getObjectTracker$2;
-   }
+    public PacketHandler getTracker() {
+        return getTrackerAndRewriter(null);
+    }
 
-   protected abstract EntityType getTypeFromId(int var1);
+    // ---------------------------------------------------------------------------
+    // Sub 1.14.1 methods
 
-   protected EntityType getObjectTypeFromId(int var1) {
-      return this.getTypeFromId(var1);
-   }
+    /**
+     * Returns a packethandler to track and rewrite an entity.
+     *
+     * @param metaType type of the metadata list
+     * @return handler for tracking and rewriting entities
+     */
+    public PacketHandler getTrackerAndRewriter(@Nullable Type<List<Metadata>> metaType) {
+        return wrapper -> {
+            int entityId = wrapper.get(Type.VAR_INT, 0);
+            int type = wrapper.get(Type.VAR_INT, 1);
 
-   public int getNewEntityId(int var1) {
-      boolean var2 = c();
-      return this.typeMapping != null?this.typeMapping.getOrDefault(var1, var1):var1;
-   }
+            int newType = getNewEntityId(type);
+            if (newType != type) {
+                wrapper.set(Type.VAR_INT, 1, newType);
+            }
 
-   protected abstract void handleMetadata(int var1, @Nullable EntityType var2, Metadata var3, List var4, UserConnection var5) throws Exception;
+            EntityType entType = getTypeFromId(newType);
+            // Register Type ID
+            wrapper.user().get(entityTrackerClass).addEntity(entityId, entType);
 
-   @Nullable
-   protected Metadata getMetaByIndex(int var1, List var2) {
-      e();
-      Iterator var4 = var2.iterator();
-      if(var4.hasNext()) {
-         Metadata var5 = (Metadata)var4.next();
-         if(var5.getId() == var1) {
-            return var5;
-         }
-      }
+            if (metaType != null) {
+                handleMetadata(entityId, wrapper.get(metaType, 0), wrapper.user());
+            }
+        };
+    }
 
-      return null;
-   }
+    public PacketHandler getTrackerAndRewriter(@Nullable Type<List<Metadata>> metaType, EntityType entityType) {
+        return wrapper -> {
+            int entityId = wrapper.get(Type.VAR_INT, 0);
+            // Register Type ID
+            wrapper.user().get(entityTrackerClass).addEntity(entityId, entityType);
 
-   private void lambda$getObjectTracker$2(PacketWrapper var1) throws Exception {
-      int var2 = ((Integer)var1.get(Type.VAR_INT, 0)).intValue();
-      byte var3 = ((Byte)var1.get(Type.BYTE, 0)).byteValue();
-      EntityType var4 = this.getObjectTypeFromId(var3);
-      ((EntityTracker)var1.user().b(this.entityTrackerClass)).addEntity(var2, var4);
-   }
+            if (metaType != null) {
+                handleMetadata(entityId, wrapper.get(metaType, 0), wrapper.user());
+            }
+        };
+    }
 
-   private void lambda$getTrackerAndRewriter$1(EntityType var1, Type var2, PacketWrapper var3) throws Exception {
-      int var4 = ((Integer)var3.get(Type.VAR_INT, 0)).intValue();
-      ((EntityTracker)var3.user().b(this.entityTrackerClass)).addEntity(var4, var1);
-      this.handleMetadata(var4, (List)var3.get(var2, 0), var3.user());
-   }
+    /**
+     * Returns a packethandler to track an object entity.
+     *
+     * @return handler for tracking and rewriting entities
+     */
+    public PacketHandler getObjectTracker() {
+        return wrapper -> {
+            int entityId = wrapper.get(Type.VAR_INT, 0);
+            byte type = wrapper.get(Type.BYTE, 0);
 
-   private void lambda$getTrackerAndRewriter$0(Type var1, PacketWrapper var2) throws Exception {
-      int var3 = ((Integer)var2.get(Type.VAR_INT, 0)).intValue();
-      int var4 = ((Integer)var2.get(Type.VAR_INT, 1)).intValue();
-      int var5 = this.getNewEntityId(var4);
-      if(var5 != var4) {
-         var2.set(Type.VAR_INT, 1, Integer.valueOf(var5));
-      }
+            EntityType entType = getObjectTypeFromId(type);
+            // Register Type ID
+            wrapper.user().get(entityTrackerClass).addEntity(entityId, entType);
+        };
+    }
 
-      EntityType var6 = this.getTypeFromId(var5);
-      ((EntityTracker)var2.user().b(this.entityTrackerClass)).addEntity(var3, var6);
-      this.handleMetadata(var3, (List)var2.get(var1, 0), var2.user());
-   }
+    // ---------------------------------------------------------------------------
 
-   static Class access$000(MetadataRewriter var0) {
-      return var0.entityTrackerClass;
-   }
+    protected abstract EntityType getTypeFromId(int type);
 
-   public static void b(boolean var0) {
-      d = var0;
-   }
+    /**
+     * Returns the entity type from the given id.
+     * From 1.14 and onwards, this is the same exact value as {@link #getTypeFromId(int)}.
+     *
+     * @param type entity type id
+     * @return EntityType from id
+     */
+    protected EntityType getObjectTypeFromId(int type) {
+        return getTypeFromId(type);
+    }
 
-   public static boolean e() {
-      return d;
-   }
+    /**
+     * Returns the mapped entitiy (or the same if it has not changed).
+     *
+     * @param oldId old entity id
+     * @return mapped entity id
+     */
+    public int getNewEntityId(int oldId) {
+        return typeMapping != null ? typeMapping.getOrDefault(oldId, oldId) : oldId;
+    }
 
-   public static boolean c() {
-      boolean var0 = e();
-      return true;
-   }
+    /**
+     * To be overridden to handle metadata.
+     *
+     * @param entityId   entity id
+     * @param type       entity type, or null if not tracked
+     * @param metadata   current metadata
+     * @param metadatas  full, mutable list of metadata
+     * @param connection user connection
+     */
+    protected abstract void handleMetadata(int entityId, @Nullable EntityType type, Metadata metadata, List<Metadata> metadatas, UserConnection connection) throws Exception;
 
-   private static Exception b(Exception var0) {
-      return var0;
-   }
-
-   static {
-      b(true);
-   }
+    @Nullable
+    protected Metadata getMetaByIndex(int index, List<Metadata> metadataList) {
+        for (Metadata metadata : metadataList) {
+            if (metadata.getId() == index) {
+                return metadata;
+            }
+        }
+        return null;
+    }
 }

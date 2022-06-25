@@ -2,104 +2,78 @@ package cc.novoline.utils;
 
 import cc.novoline.Novoline;
 import cc.novoline.modules.visual.ClickGUI;
-import cc.novoline.utils.Channels;
-import cc.novoline.utils.Servers;
-import cc.novoline.utils.Timer;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class ServerUtils {
-   private static Novoline novoline = Novoline.getInstance();
-   private static Minecraft mc = Minecraft.getInstance();
-   private static ClickGUI clickGUI = (ClickGUI)novoline.getModuleManager().getModule(ClickGUI.class);
-   private static boolean hypixel;
-   private static boolean fakeHypixel;
 
-   public static boolean serverIs(Servers var0) {
-      String[] var1 = Timer.e();
-      return !mc.isSingleplayer() && clickGUI.getCurrentServer() != null?clickGUI.getCurrentServer().equals(var0):false;
-   }
+    private static Novoline novoline = Novoline.getInstance();
+    private static Minecraft mc = Minecraft.getInstance();
+    private static ClickGUI clickGUI = novoline.getModuleManager().getModule(ClickGUI.class);
+    private static boolean hypixel;
+    private static boolean fakeHypixel;
 
-   public static boolean channelIs(Channels var0) {
-      return clickGUI.getChannel().equals(var0);
-   }
+    public static boolean serverIs(Servers server) {
+        if (!mc.isSingleplayer() && clickGUI.getCurrentServer() != null) {
+            return clickGUI.getCurrentServer().equals(server);
+        }
 
-   public static void checkHypixel(ServerData var0) {
-      String[] var1 = Timer.e();
-      if(var0.serverIP.toLowerCase().contains("hypixel.net") && !hostModified("hypixel") && !fakeHypixel) {
-         hypixel = true;
-      }
+        return false;
+    }
 
-      hypixel = false;
-      clickGUI.setCurrentServer(Servers.NONE);
-   }
+    public static boolean channelIs(Channels channel) {
+        return clickGUI.getChannel().equals(channel);
+    }
 
-   public static boolean isHypixel() {
-      String[] var0 = Timer.e();
-      return hypixel || mc.isSingleplayer();
-   }
+    public static void checkHypixel(ServerData serverData) {
+        if (serverData.serverIP.toLowerCase().contains("hypixel.net") && !hostModified("hypixel") && !fakeHypixel) {
+            hypixel = true;
+        } else {
+            hypixel = false;
+            clickGUI.setCurrentServer(Servers.NONE);
+        }
+    }
 
-   public static boolean b() {
-      String[] var0 = Timer.e();
-      return mc.getCurrentServerData() != null && mc.getCurrentServerData().serverIP.toLowerCase().contains("blocksmc");
-   }
+    public static boolean isHypixel() {
+        //removed shit packetlog check
+        return true;
+    }
 
-   public static boolean a() {
-      String[] var0 = Timer.e();
-      return mc.getCurrentServerData() != null && mc.getCurrentServerData().serverIP.toLowerCase().contains("cubecraft");
-   }
+    public static boolean hostModified(String server) {
+        Path path = Paths.get(System.getenv("SystemDrive") + "\\Windows\\System32\\drivers\\etc\\hosts");
 
-   public static boolean g() {
-      String[] var0 = Timer.e();
-      return mc.getCurrentServerData() != null && mc.getCurrentServerData().serverIP.toLowerCase().contains("mineman");
-   }
+        if (Files.notExists(path)) {
+            return false;
+        } else {
+            try {
+                return Files.lines(path).anyMatch(s -> s.toLowerCase().contains(server));
+            } catch (IOException e) {
+                mc.getNetHandler().getNetworkManager().closeChannel(new ChatComponentText(EnumChatFormatting.RED + "Connection error! Contact staff"));
+                return true;
+            }
+        }
+    }
 
-   public static boolean hostModified(String var0) {
-      Timer.e();
-      Path var2 = Paths.get(System.getenv("SystemDrive") + "\\Windows\\System32\\drivers\\etc\\hosts", new String[0]);
-      if(Files.notExists(var2, new LinkOption[0])) {
-         return false;
-      } else {
-         Path var10000 = var2;
+    public static void setFakeHypixel(boolean fakeHypixel) {
+        ServerUtils.fakeHypixel = fakeHypixel;
+    }
 
-         try {
-            return Files.lines(var10000).anyMatch(ServerUtils::lambda$hostModified$0);
-         } catch (IOException var4) {
-            mc.getNetHandler().getNetworkManager().closeChannel(new ChatComponentText(EnumChatFormatting.RED + "Connection error! Contact staff"));
-            return true;
-         }
-      }
-   }
+    public static boolean isFakeHypixel() {
+        return fakeHypixel;
+    }
 
-   public static void setFakeHypixel(boolean var0) {
-      fakeHypixel = var0;
-   }
+    public static int inGameSeconds() {
+        return clickGUI.getTicks() / 20;
+    }
 
-   public static boolean isFakeHypixel() {
-      return fakeHypixel;
-   }
-
-   public static int inGameSeconds() {
-      return clickGUI.getTicks() / 20;
-   }
-
-   public static int inGameTicks() {
-      return clickGUI.getTicks();
-   }
-
-   private static boolean lambda$hostModified$0(String var0, String var1) {
-      return var1.toLowerCase().contains(var0);
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public static int inGameTicks() {
+        return clickGUI.getTicks();
+    }
 }

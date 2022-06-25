@@ -1,78 +1,60 @@
 package viaversion.viaversion.api.minecraft;
 
-import net.acE;
-import viaversion.viaversion.api.minecraft.BlockFace;
-
 public class Position {
-   private final int x;
-   private final short y;
-   private final int z;
-   private static String[] c;
+    private final int x;
+    private final short y;
+    private final int z;
 
-   public Position(int var1, short var2, int var3) {
-      this.x = var1;
-      this.y = var2;
-      this.z = var3;
-   }
+    public Position(int x, short y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
 
-   public Position(Position var1) {
-      this(var1.getX(), var1.getY(), var1.getZ());
-   }
+    public Position(Position toCopy) {
+        this(toCopy.getX(), toCopy.getY(), toCopy.getZ());
+    }
 
-   public Position getRelative(BlockFace var1) {
-      return new Position(this.x + var1.getModX(), (short)(this.y + var1.getModY()), this.z + var1.getModZ());
-   }
+    public Position getRelative(BlockFace face) {
+        return new Position(x + face.getModX(), (short) (y + face.getModY()), z + face.getModZ());
+    }
 
-   public int getX() {
-      return this.x;
-   }
+    public int getX() {
+        return x;
+    }
 
-   public short getY() {
-      return this.y;
-   }
+    public short getY() {
+        return y;
+    }
 
-   public int getZ() {
-      return this.z;
-   }
+    public int getZ() {
+        return z;
+    }
 
-   public boolean equals(Object var1) {
-      String[] var2 = b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         Position var3 = (Position)var1;
-         return this.x != var3.x?false:(this.y != var3.y?false:this.z == var3.z);
-      } else {
-         return false;
-      }
-   }
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Position position = (Position) o;
+        if (x != position.x) return false;
+        if (y != position.y) return false;
+        return z == position.z;
+    }
 
-   public int hashCode() {
-      int var1 = this.x;
-      var1 = 31 * var1 + this.y;
-      var1 = 31 * var1 + this.z;
-      return var1;
-   }
+    @Override
+    public int hashCode() {
+        int result = x;
+        result = 31 * result + (int) y;
+        result = 31 * result + z;
+        return result;
+    }
 
-   public String toString() {
-      String[] var1 = b();
-      String var10000 = "Position{x=" + this.x + ", y=" + this.y + ", z=" + this.z + '}';
-      if(acE.b() == null) {
-         b(new String[3]);
-      }
-
-      return var10000;
-   }
-
-   public static void b(String[] var0) {
-      c = var0;
-   }
-
-   public static String[] b() {
-      return c;
-   }
-
-   static {
-      b(new String[1]);
-   }
+    @Override
+    public String toString() {
+        return "Position{" +
+                "x=" + x +
+                ", y=" + y +
+                ", z=" + z +
+                '}';
+    }
 }

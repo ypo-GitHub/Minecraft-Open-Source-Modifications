@@ -1,357 +1,336 @@
 package cc.novoline.gui.screen.click;
 
 import cc.novoline.Novoline;
-import cc.novoline.gui.screen.click.DiscordGUI$1;
-import cc.novoline.gui.screen.click.Module;
-import cc.novoline.gui.screen.click.Scroll;
-import cc.novoline.gui.screen.click.Tab;
+import static cc.novoline.Novoline.getLogger;
 import cc.novoline.gui.screen.config.ConfigMenu;
 import cc.novoline.gui.screen.config.GuiConfig;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
-import cc.novoline.gui.screen.setting.SettingType;
+import static cc.novoline.gui.screen.setting.SettingType.*;
 import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.configurations.ConfigManager;
+import cc.novoline.modules.visual.ClickGUI;
 import cc.novoline.utils.RenderUtils;
+import static cc.novoline.utils.RenderUtils.drawRoundedRect;
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.fonts.impl.Fonts$ICONFONT$ICONFONT_35;
-import cc.novoline.utils.fonts.impl.Fonts$SFTHIN$SFTHIN_16;
+import static cc.novoline.utils.fonts.impl.Fonts.ICONFONT.ICONFONT_35.ICONFONT_35;
+import static cc.novoline.utils.fonts.impl.Fonts.SFTHIN.SFTHIN_16.SFTHIN_16;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.awt.Color;
+import java.awt.*;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
+import static java.nio.file.Files.walk;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 public class DiscordGUI extends GuiScreen {
-   private final Novoline novoline;
-   private int scaling;
-   private static final Timer timerScroll = new Timer();
-   private int yTab = 63;
-   private int xCoordinate = 100;
-   private int yCoordinate = 100;
-   private int width = 190;
-   private int height = 300;
-   private final List tabs;
-   private final List configs;
-   private boolean configsOpened;
-   private int x2;
-   private int y2;
-   private int resX;
-   private int resY;
-   private boolean dragging;
-   private boolean resizing;
 
-   public int sWidth() {
-      return super.width * 2;
-   }
+	private final Novoline novoline;
 
-   public int sHeight() {
-      return super.height * 2;
-   }
+	private int scaling;
+	private static final Timer timerScroll = new Timer();
 
-   public DiscordGUI(@NotNull Novoline var1) {
-      Scroll.b();
-      this.tabs = new ObjectArrayList();
-      this.configs = new CopyOnWriteArrayList();
-      this.novoline = var1;
-      EnumModuleType[] var3 = EnumModuleType.values();
-      int var4 = var3.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         EnumModuleType var6 = var3[var5];
-         this.tabs.add(new Tab(this.novoline, var6, this.yTab));
-         this.yTab += 35;
-         ++var5;
-      }
+	private int yTab = 63;
+	private int xCoordinate = 100;
+	private int yCoordinate = 100;
+	private int width = 190;
+	private int height = 300;
+	private final List<Tab> tabs = new ObjectArrayList<>();
+	private final List<GuiConfig> configs = new CopyOnWriteArrayList<>();
+	private boolean configsOpened;
 
-   }
+	public int sWidth() {
+		return super.width * 2;
+	}
 
-   public void initGui() {
-      super.initGui();
-   }
+	public int sHeight() {
+		return super.height * 2;
+	}
 
-   public void onGuiClosed() {
-      Scroll.b();
-      Iterator var2 = Manager.getSettingList().iterator();
-      if(var2.hasNext()) {
-         Setting var3 = (Setting)var2.next();
-         switch(DiscordGUI$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[var3.getSettingType().ordinal()]) {
-         case 1:
-            var3.setDragging(false);
-         case 2:
-         case 3:
-            var3.setOpened(false);
-         case 4:
-            var3.setTextHovered(false);
-         }
-      }
+	//
 
-   }
+	private int x2;
+	private int y2;
+	private int resX;
+	private int resY;
+	private boolean dragging;
+	private boolean resizing;
 
-   public void drawScreen(int var1, int var2, float var3) {
-      int[] var4 = Scroll.b();
-      if(this.dragging) {
-         this.xCoordinate = this.x2 + var1;
-         this.yCoordinate = this.y2 + var2;
-      }
+	public DiscordGUI(@NotNull Novoline novoline) {
+		this.novoline = novoline;
 
-      if(this.resizing) {
-         if(this.resX + var1 > 190) {
-            this.width = this.resX + var1;
-         }
+		for(EnumModuleType category : EnumModuleType.values()) {
+			tabs.add(new Tab(this.novoline, category, yTab));
+			this.yTab += 35;
+		}
+	}
 
-         if(this.resY + var2 > 300) {
-            this.height = this.resY + var2;
-         }
-      }
+	@Override
+	public void initGui() {
+		super.initGui();
+	}
 
-      boolean var5 = false;
-      RenderUtils.drawRoundedRect((float)this.xCoordinate, (float)(this.yCoordinate - 10), (float)(150 + this.width), (float)(this.yCoordinate + 5), 8.0F, var5?(new Color(22, 23, 26)).getRGB():-14671323);
-      RenderUtils.drawRoundedRect((float)this.xCoordinate, (float)this.yCoordinate, 49.0F, (float)this.height, 9.0F, var5?(new Color(29, 30, 34)).getRGB():-14671323);
-      String var6 = "MATERIALINE";
-      var6 = "NOVOLINE";
-      drawRect(this.xCoordinate, this.yCoordinate, this.xCoordinate + 10, this.yCoordinate + 4, var5?(new Color(29, 30, 34)).getRGB():-14671323);
-      RenderUtils.drawRoundedRect((float)(this.xCoordinate + 45 + 105), (float)this.yCoordinate, (float)this.width, (float)this.height, 4.0F, var5?(new Color(32, 34, 37)).getRGB():-13223618);
-      RenderUtils.drawRoundedRect((float)(this.xCoordinate + 7), (float)(this.yCoordinate + 40), 31.0F, 3.0F, 0.0F, var5?(new Color(22, 23, 26)).getRGB():-13684426);
-      drawRect(this.xCoordinate + 44, this.yCoordinate, this.xCoordinate + 45 + 110, this.yCoordinate + this.height, var5?(new Color(22, 23, 26)).getRGB():-13684426);
-      drawRect(this.xCoordinate + 44, this.yCoordinate + 20, this.xCoordinate + 45 + 105 + this.width, this.yCoordinate + 21, var5?(new Color(17, 18, 20)).getRGB():-14671323);
-      if(!this.isAnyTabSelected() && !this.configsOpened) {
-         int var7 = -9801351;
-         FontRenderer var8 = this.mc.fontRendererObj;
-         var8.drawStringWithShadow("<------------", (float)(this.xCoordinate + 59), (float)(this.yCoordinate + 65), -9801351);
-         var8.drawStringWithShadow("Select one of", (float)(this.xCoordinate + 67), (float)(this.yCoordinate + 75), -9801351);
-         var8.drawStringWithShadow("these", (float)(this.xCoordinate + 85), (float)(this.yCoordinate + 85), -9801351);
-         var8.drawStringWithShadow("-------------", (float)(this.xCoordinate + 59), (float)(this.yCoordinate + 95), -9801351);
-         var8.drawStringWithShadow("Enjoy the Novoline", (float)(this.xCoordinate + 54), (float)(this.yCoordinate + 105), -9801351);
-         var8.drawStringWithShadow("Experience", (float)(this.xCoordinate + 70), (float)(this.yCoordinate + 117), -9801351);
-         var8.drawStringWithShadow("N O V O L I N E", (float)(this.xCoordinate + 64), (float)(this.yCoordinate + 7), -9801351);
-         var8.drawStringWithShadow("Build " + this.novoline.getVersion(), (float)(this.xCoordinate + 45 + 105) + ((float)this.width / 2.0F - (float)var8.d("091019 - B E T A") / 2.0F), (float)(this.yCoordinate + 7), -9801351);
-      }
+	@Override
+	public void onGuiClosed() {
+		for(Setting setting : Manager.getSettingList()) {
+			switch(setting.getSettingType()) {
+				case SLIDER:
+					setting.setDragging(false);
+					break;
 
-      this.tabs.forEach(DiscordGUI::lambda$drawScreen$0);
-      ConfigMenu.drawScreen(var1, var2);
-      RenderUtils.drawFilledCircle((float)(this.xCoordinate + 22), (float)(this.yCoordinate + 20), 15.0F, -13223617);
-      Fonts$ICONFONT$ICONFONT_35.ICONFONT_35.drawString("?", (float)(this.xCoordinate + 14), (float)(this.yCoordinate + 14), -1);
-      if(this.isDiscord(var1, var2)) {
-         RenderUtils.drawRoundedRect((float)(this.xCoordinate - Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.stringWidth("Discord Server") - 12), (float)(this.yCoordinate + 14), (float)(Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.stringWidth("Discord Server") + 7), 10.0F, 5.0F, -13684945);
-         Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.drawString("Discord Server", (float)(this.xCoordinate - Fonts$SFTHIN$SFTHIN_16.SFTHIN_16.stringWidth("Discord Server") - 10), (float)(this.yCoordinate + 16), -1);
-      }
+				case COMBOBOX:
+				case SELECTBOX:
+					setting.setOpened(false);
+					break;
 
-      super.drawScreen(var1, var2, var3);
-   }
+				case TEXTBOX: /* нельзя закрыть гуи, не сняв выделение с текста. но пох, пусть на всякий! */
+					setting.setTextHovered(false);
+					break;
+			}
+		}
+	}
 
-   private boolean isAnyTabSelected() {
-      return this.tabs.stream().anyMatch(Tab::isSelected);
-   }
+	@Override
+	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+		if(dragging) {
+			this.xCoordinate = x2 + mouseX;
+			this.yCoordinate = y2 + mouseY;
+		}
 
-   @Nullable
-   public Tab getSelectedTab() {
-      return (Tab)this.tabs.stream().filter(Tab::isSelected).findAny().orElse((Object)null);
-   }
+		if(resizing) {
+			if(resX + mouseX > 190) this.width = resX + mouseX;
+			if(resY + mouseY > 300) this.height = resY + mouseY;
+		}
 
-   protected void mouseClicked(int var1, int var2, int var3) throws IOException {
-      int[] var4 = Scroll.b();
-      Iterator var5 = this.tabs.iterator();
-      if(var5.hasNext()) {
-         Tab var6 = (Tab)var5.next();
-         if(var6.isHovered(var1, var2)) {
-            Iterator var7 = this.tabs.iterator();
-            if(var7.hasNext()) {
-               Tab var8 = (Tab)var7.next();
-               var8.setSelected(false);
-            }
+		boolean isMaterial = Novoline.getInstance().getModuleManager().getModule(ClickGUI.class).design.equalsIgnoreCase("Material");
+		drawRoundedRect(xCoordinate, yCoordinate - 10, 45 + 105 + width, yCoordinate + 5, 8, isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF202225);
+		drawRoundedRect(xCoordinate, yCoordinate, 49,
+				height, isMaterial ? 9 : 6, isMaterial ? new Color(29, 30, 34).getRGB() : 0xFF202225);
 
-            var6.setSelected(true);
-            this.configsOpened = false;
-         }
-      }
+		String novoline;
 
-      if(this.isHovered(var1, var2)) {
-         this.x2 = this.xCoordinate - var1;
-         this.y2 = this.yCoordinate - var2;
-         this.dragging = true;
-      }
+		if(isMaterial) {
+			// noinspection SpellCheckingInspection
+			novoline = "MATERIALINE";
+		} else {
+			novoline = "NOVOLINE";
+		}
 
-      if(this.isHoveredResize(var1, var2)) {
-         this.resX = this.width - var1;
-         this.resY = this.height - var2;
-         this.resizing = true;
-      }
+		drawRect(xCoordinate, yCoordinate, xCoordinate + 10, yCoordinate + 4, isMaterial ? new Color(29, 30, 34).getRGB() : 0xFF202225);
 
-      if(ConfigMenu.isHovered(var1, var2)) {
-         if(!this.configsOpened) {
-            this.initConfigs();
-         }
+		drawRoundedRect(xCoordinate + 45 + 105, yCoordinate, width,
+				height, 4, isMaterial ? new Color(32, 34, 37).getRGB() : 0xFF36393E);
+		drawRoundedRect(xCoordinate + 7, yCoordinate + 40, 31, 3, 0, isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F3136);
 
-         var5 = this.tabs.iterator();
-         if(var5.hasNext()) {
-            Tab var12 = (Tab)var5.next();
-            var12.setSelected(false);
-         }
+		drawRect(xCoordinate + 44,
+				yCoordinate, xCoordinate + 45 + 110, yCoordinate + height, isMaterial ? new Color(22, 23, 26).getRGB() : 0xFF2F3136);
+		drawRect(xCoordinate + 44, yCoordinate + 20, xCoordinate + 45 + 105 + width, yCoordinate + 21, isMaterial ? new Color(17, 18, 20).getRGB() : 0xFF202225);
 
-         this.configsOpened = true;
-      }
+		if(!isAnyTabSelected() && !configsOpened) {
+			final int color = 0xFF6A7179;
 
-      Tab var11 = this.getSelectedTab();
-      if(var11 != null) {
-         var11.mouseClicked(var1, var2, var3);
-      }
+			FontRenderer fontRenderer = mc.fontRendererObj;
+			fontRenderer.drawStringWithShadow("<------------", xCoordinate + 59, yCoordinate + 65, color);
+			fontRenderer.drawStringWithShadow("Select one of", xCoordinate + 67, yCoordinate + 75, color);
+			fontRenderer.drawStringWithShadow("these", xCoordinate + 85, yCoordinate + 85, color);
+			fontRenderer.drawStringWithShadow("-------------", xCoordinate + 59, yCoordinate + 95, color);
+			fontRenderer.drawStringWithShadow("Enjoy the Novoline", xCoordinate + 54, yCoordinate + 105, color);
+			fontRenderer.drawStringWithShadow("Experience", xCoordinate + 70, yCoordinate + 117, color);
+			fontRenderer.drawStringWithShadow("N O V O L I N E", xCoordinate + 64, yCoordinate + 7, color);
+			fontRenderer.drawStringWithShadow("Build " + this.novoline.getVersion(), xCoordinate + 45 + 105 + (width / 2.0F - fontRenderer.getStringWidth("091019 - B E T A") / 2.0F),
+					yCoordinate + 7, color);
+		}
 
-      if(this.isDiscord(var1, var2)) {
-         try {
-            Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler https://discord.gg/qXHPgHQ");
-         } catch (Exception var9) {
-            ;
-         }
-      }
+		tabs.forEach(tab -> tab.drawScreen(mouseX, mouseY));
 
-      if(this.configsOpened) {
-         ConfigMenu.mouseClicked(var1, var2, var3);
-      }
+		ConfigMenu.drawScreen(mouseX, mouseY);
 
-      super.mouseClicked(var1, var2, var3);
-   }
+		RenderUtils.drawFilledCircle(xCoordinate + 22, yCoordinate + 20, 15, 0xFF36393F);
+		//this.mc.getTextureManager().bindTexture(new ResourceLocation("novoline/clickgui/discord/discord.png"));
+		//drawModalRectWithCustomSizedTexture(this.xCoordinate + 7, this.yCoordinate + 5, 30, 30, 30, 30, 30, 30);
+		ICONFONT_35.drawString("?",xCoordinate + 14,yCoordinate + 14,0xffffffff);
 
-   @Nullable
-   public static Scroll scroll() {
-      Scroll.b();
-      int var1 = Mouse.getDWheel();
-      return var1 > 0?Scroll.UP:(var1 < 0?Scroll.DOWN:null);
-   }
 
-   public void mouseReleased(int var1, int var2, int var3) {
-      int[] var4 = Scroll.b();
-      this.dragging = false;
-      this.resizing = false;
-      this.tabs.stream().filter(Tab::isSelected).findFirst().ifPresent(DiscordGUI::lambda$mouseReleased$1);
-   }
+		if(isDiscord(mouseX, mouseY)) {
+			drawRoundedRect(xCoordinate - SFTHIN_16.stringWidth("Discord Server") - 12, yCoordinate + 14, SFTHIN_16.stringWidth("Discord Server") + 7, 10, 5, 0xFF2F2F2F);
+			SFTHIN_16.drawString("Discord Server", xCoordinate - SFTHIN_16.stringWidth("Discord Server") - 10, yCoordinate + 16, 0xFFFFFFFF);
+		}
 
-   protected void keyTyped(char var1, int var2) {
-      Scroll.b();
-      Tab var4 = this.getSelectedTab();
-      if(var2 == 1 && (var4 == null || var4.getModuleList().stream().noneMatch(Module::isListening)) && Manager.getSettingList().stream().noneMatch(DiscordGUI::lambda$keyTyped$2)) {
-         if(ConfigMenu.isTextHovered) {
-            return;
-         }
+		super.drawScreen(mouseX, mouseY, partialTicks);
+	}
 
-         this.mc.displayGuiScreen((GuiScreen)null);
-         if(this.mc.currentScreen != null) {
-            return;
-         }
+	private boolean isAnyTabSelected() {
+		return tabs.stream().anyMatch(Tab::isSelected);
+	}
 
-         this.mc.setIngameFocus();
-      }
+	public @Nullable Tab getSelectedTab() {
+		return tabs.stream().filter(Tab::isSelected).findAny().orElse(null);
+	}
 
-      if(var4 != null) {
-         var4.keyTyped(var1, var2);
-      }
+	@Override
+	protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+		if(mouseButton == 0) {
+			for(Tab tab : tabs) {
+				if(tab.isHovered(mouseX, mouseY)) {
+					for(Tab other : tabs) {
+						other.setSelected(false);
+					}
 
-      ConfigMenu.keyTyped(var1, var2);
-   }
+					tab.setSelected(true);
+					this.configsOpened = false;
+				}
+			}
 
-   private boolean isHovered(int var1, int var2) {
-      int[] var3 = Scroll.b();
-      return var1 >= this.xCoordinate && var1 <= this.xCoordinate + 45 + 105 + this.width && var2 >= this.yCoordinate - 7 && var2 <= this.yCoordinate + 20;
-   }
+			if(isHovered(mouseX, mouseY)) {
+				this.x2 = xCoordinate - mouseX;
+				this.y2 = yCoordinate - mouseY;
+				this.dragging = true;
+			}
 
-   private boolean isHoveredResize(int var1, int var2) {
-      int[] var3 = Scroll.b();
-      return var1 >= this.xCoordinate + 45 + 105 + this.width - 5 && var1 <= this.xCoordinate + 45 + 105 + this.width && var2 >= this.yCoordinate + this.height - 5 && var2 <= this.yCoordinate + this.height;
-   }
+			if(isHoveredResize(mouseX, mouseY)) {
+				this.resX = width - mouseX;
+				this.resY = height - mouseY;
+				this.resizing = true;
+			}
 
-   private boolean isDiscord(int var1, int var2) {
-      int[] var3 = Scroll.b();
-      return var1 >= this.xCoordinate + 7 && var1 <= this.xCoordinate + 37 && var2 >= this.yCoordinate + 5 && var2 <= this.yCoordinate + 35;
-   }
+			if(ConfigMenu.isHovered(mouseX, mouseY)) {
+				if(!configsOpened) initConfigs();
+				for(Tab tab : tabs) tab.setSelected(false);
 
-   public void initConfigs() {
-      Scroll.b();
-      this.configs.clear();
+				this.configsOpened = true;
+			}
+		}
 
-      List var2;
-      try {
-         String var3 = ConfigManager.getExtension();
-         var2 = (List)Files.walk(this.novoline.getModuleManager().getConfigManager().getConfigsFolder(), new FileVisitOption[0]).filter(DiscordGUI::lambda$initConfigs$3).filter(DiscordGUI::lambda$initConfigs$4).collect(Collectors.toCollection(ObjectArrayList::<init>));
-      } catch (IOException var6) {
-         Novoline.getLogger().error("An I/O error occurred while getting contents of configs folder", var6);
-         return;
-      }
+		Tab selectedTab = getSelectedTab();
+		if(selectedTab != null) selectedTab.mouseClicked(mouseX, mouseY, mouseButton);
 
-      List var10000 = var2;
+		if(isDiscord(mouseX, mouseY)) {
+			try {
+				Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler https://discord.gg/qXHPgHQ");
+			} catch(Exception ignored) {
+			}
+		}
 
-      try {
-         Iterator var7 = var10000.iterator();
-         if(var7.hasNext()) {
-            Path var4 = (Path)var7.next();
-            this.configs.add(GuiConfig.of(var4));
-         }
-      } catch (Throwable var5) {
-         var5.printStackTrace();
-      }
+		if(configsOpened) ConfigMenu.mouseClicked(mouseX, mouseY, mouseButton);
 
-   }
+		super.mouseClicked(mouseX, mouseY, mouseButton);
+	}
 
-   public int getWidth() {
-      return this.width;
-   }
+	public static @Nullable Scroll scroll() {
+		int mouse = Mouse.getDWheel(); // @off
 
-   public int getHeight() {
-      return this.height;
-   }
+        if(mouse > 0)      return Scroll.UP;
+        else if(mouse < 0) return Scroll.DOWN;
+        else               return null;
+    } // @on
 
-   @NotNull
-   public List getConfigs() {
-      return this.configs;
-   }
+	@Override
+	public void mouseReleased(int mouseX, int mouseY, int state) {
+		if(state == 0) {
+			this.dragging = false;
+			this.resizing = false;
+		}
 
-   public boolean isConfigsOpened() {
-      return this.configsOpened;
-   }
+		tabs.stream().filter(Tab::isSelected).findFirst().ifPresent(tab -> tab.mouseReleased(mouseX, mouseY, state));
+	}
 
-   public int getXCoordinate() {
-      return this.xCoordinate;
-   }
+	@Override
+	protected void keyTyped(char typedChar, int keyCode) {
+		Tab selectedTab = getSelectedTab();
 
-   public int getYCoordinate() {
-      return this.yCoordinate;
-   }
+		if(keyCode == Keyboard.KEY_ESCAPE && (selectedTab == null || selectedTab.getModuleList().stream().noneMatch(Module::isListening)) && Manager.getSettingList().stream().noneMatch(setting -> // @off
+				(setting.getSettingType() == SELECTBOX || setting.getSettingType() == COMBOBOX) && setting.isOpened()
+						|| setting.getSettingType() == TEXTBOX && setting.isTextHovered()
+		)) { // @on
+			if(!ConfigMenu.isTextHovered) {
+				mc.displayGuiScreen(null);
 
-   private static boolean lambda$initConfigs$4(String var0, Path var1) {
-      return var1.getFileName().toString().endsWith(var0);
-   }
+				if(mc.currentScreen == null) {
+					mc.setIngameFocus();
+				}
+			}
+		} else {
+			if(selectedTab != null) {
+				selectedTab.keyTyped(typedChar, keyCode);
+			}
 
-   private static boolean lambda$initConfigs$3(Path var0) {
-      return Files.isRegularFile(var0, new LinkOption[0]);
-   }
+			ConfigMenu.keyTyped(typedChar, keyCode);
+		}
+	}
 
-   private static boolean lambda$keyTyped$2(Setting var0) {
-      int[] var1 = Scroll.b();
-      return (var0.getSettingType() == SettingType.SELECTBOX || var0.getSettingType() == SettingType.COMBOBOX) && var0.isOpened() || var0.getSettingType() == SettingType.TEXTBOX && var0.isTextHovered();
-   }
+	private boolean isHovered(int mouseX, int mouseY) {
+		return mouseX >= xCoordinate && mouseX <= xCoordinate + 45 + 105 + width && mouseY >= yCoordinate - 7 && mouseY <= yCoordinate + 20;
+	}
 
-   private static void lambda$mouseReleased$1(int var0, int var1, int var2, Tab var3) {
-      var3.mouseReleased(var0, var1, var2);
-   }
+	private boolean isHoveredResize(int mouseX, int mouseY) {
+		return mouseX >= xCoordinate + 45 + 105 + width - 5 && mouseX <= xCoordinate + 45 + 105 + width && mouseY >= yCoordinate + height - 5 && mouseY <= yCoordinate + height;
+	}
 
-   private static void lambda$drawScreen$0(int var0, int var1, Tab var2) {
-      var2.drawScreen(var0, var1);
-   }
+	private boolean isDiscord(int mouseX, int mouseY) {
+		return mouseX >= xCoordinate + 7 && mouseX <= xCoordinate + 37 && mouseY >= yCoordinate + 5 && mouseY <= yCoordinate + 35;
+	}
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+	/* CONFIG MENU SECTION */
+	public void initConfigs() {
+		configs.clear();
+
+		List<Path> configsPaths;
+
+		try {
+			String extension = ConfigManager.getExtension();
+
+			configsPaths = walk(novoline.getModuleManager().getConfigManager().getConfigsFolder()) //
+					.filter(Files::isRegularFile) //
+					.filter(s -> s.getFileName().toString().endsWith(extension)) //
+					.collect(Collectors.toCollection(ObjectArrayList::new));
+		} catch(IOException e) {
+			getLogger().error("An I/O error occurred while getting contents of configs folder", e);
+			return;
+		}
+
+		try {
+			for (Path configsPath : configsPaths) {
+				configs.add(GuiConfig.of(configsPath));
+			}
+
+		} catch(Throwable t) {
+			t.printStackTrace();
+		}
+	}
+
+	//region Lombok
+	public int getWidth() {
+		return width;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+
+	@NotNull
+	public List<GuiConfig> getConfigs() {
+		return configs;
+	}
+
+	public boolean isConfigsOpened() {
+		return configsOpened;
+	}
+
+	public int getXCoordinate() {
+		return xCoordinate;
+	}
+
+	public int getYCoordinate() {
+		return yCoordinate;
+	}
+	//endregion
+
 }

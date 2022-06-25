@@ -1,8 +1,5 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockFalling;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -15,100 +12,113 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockDragonEgg extends Block {
-   public BlockDragonEgg() {
-      super(Material.dragonEgg, MapColor.blackColor);
-      this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 1.0F, 0.9375F);
-   }
 
-   public void onBlockAdded(World var1, BlockPos var2, IBlockState var3) {
-      var1.scheduleUpdate(var2, this, this.tickRate(var1));
-   }
+    public BlockDragonEgg() {
+        super(Material.dragonEgg, MapColor.blackColor);
+        this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 1.0F, 0.9375F);
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      var1.scheduleUpdate(var2, this, this.tickRate(var1));
-   }
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
+        worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
+    }
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      this.checkFall(var1, var2);
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
+    }
 
-   private void checkFall(World var1, BlockPos var2) {
-      if(BlockFalling.canFallInto(var1, var2.down()) && var2.getY() >= 0) {
-         boolean var3 = true;
-         if(!BlockFalling.fallInstantly && var1.isAreaLoaded(var2.a(-32, -32, -32), var2.a(32, 32, 32))) {
-            var1.spawnEntityInWorld(new EntityFallingBlock(var1, (double)((float)var2.getX() + 0.5F), (double)var2.getY(), (double)((float)var2.getZ() + 0.5F), this.getDefaultState()));
-         } else {
-            var1.setBlockToAir(var2);
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        this.checkFall(worldIn, pos);
+    }
 
-            BlockPos var4;
-            for(var4 = var2; BlockFalling.canFallInto(var1, var4) && var4.getY() > 0; var4 = var4.down()) {
-               ;
+    private void checkFall(World worldIn, BlockPos pos) {
+        if (BlockFalling.canFallInto(worldIn, pos.down()) && pos.getY() >= 0) {
+            final int i = 32;
+
+            if (!BlockFalling.fallInstantly && worldIn.isAreaLoaded(pos.add(-i, -i, -i), pos.add(i, i, i))) {
+                worldIn.spawnEntityInWorld(new EntityFallingBlock(worldIn, (float) pos.getX() + 0.5F, pos.getY(), (float) pos.getZ() + 0.5F, this.getDefaultState()));
+            } else {
+                worldIn.setBlockToAir(pos);
+                BlockPos blockpos;
+
+                for (blockpos = pos; BlockFalling.canFallInto(worldIn, blockpos) && blockpos.getY() > 0; blockpos = blockpos.down()) {
+                }
+
+                if (blockpos.getY() > 0) {
+                    worldIn.setBlockState(blockpos, this.getDefaultState(), 2);
+                }
             }
+        }
+    }
 
-            if(var4.getY() > 0) {
-               var1.setBlockState(var4, this.getDefaultState(), 2);
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        this.teleport(worldIn, pos);
+        return true;
+    }
+
+    public void onBlockClicked(World worldIn, BlockPos pos, EntityPlayer playerIn) {
+        this.teleport(worldIn, pos);
+    }
+
+    private void teleport(World worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
+
+        if (iblockstate.getBlock() == this) {
+            for (int i = 0; i < 1000; ++i) {
+                final BlockPos blockpos = pos.add(worldIn.rand.nextInt(16) - worldIn.rand.nextInt(16), worldIn.rand.nextInt(8) - worldIn.rand.nextInt(8), worldIn.rand.nextInt(16) - worldIn.rand.nextInt(16));
+
+                if (worldIn.getBlockState(blockpos).getBlock().blockMaterial == Material.air) {
+                    if (worldIn.isRemote) {
+                        for (int j = 0; j < 128; ++j) {
+                            final double d0 = worldIn.rand.nextDouble();
+                            final float f = (worldIn.rand.nextFloat() - 0.5F) * 0.2F;
+                            final float f1 = (worldIn.rand.nextFloat() - 0.5F) * 0.2F;
+                            final float f2 = (worldIn.rand.nextFloat() - 0.5F) * 0.2F;
+                            final double d1 = (double) blockpos.getX() + (double) (pos.getX() - blockpos.getX()) * d0 + (worldIn.rand.nextDouble() - 0.5D) * 1.0D + 0.5D;
+                            final double d2 = (double) blockpos.getY() + (double) (pos.getY() - blockpos.getY()) * d0 + worldIn.rand.nextDouble() * 1.0D - 0.5D;
+                            final double d3 = (double) blockpos.getZ() + (double) (pos.getZ() - blockpos.getZ()) * d0 + (worldIn.rand.nextDouble() - 0.5D) * 1.0D + 0.5D;
+                            worldIn.spawnParticle(EnumParticleTypes.PORTAL, d1, d2, d3, f, f1, f2);
+                        }
+                    } else {
+                        worldIn.setBlockState(blockpos, iblockstate, 2);
+                        worldIn.setBlockToAir(pos);
+                    }
+
+                    return;
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    /**
+     * How many world ticks before ticking
+     */
+    public int tickRate(World worldIn) {
+        return 5;
+    }
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      this.teleport(var1, var2);
-      return true;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void onBlockClicked(World var1, BlockPos var2, EntityPlayer var3) {
-      this.teleport(var1, var2);
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   private void teleport(World var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2);
-      if(var3.getBlock() == this) {
-         for(int var4 = 0; var4 < 1000; ++var4) {
-            BlockPos var5 = var2.a(var1.rand.nextInt(16) - var1.rand.nextInt(16), var1.rand.nextInt(8) - var1.rand.nextInt(8), var1.rand.nextInt(16) - var1.rand.nextInt(16));
-            if(var1.getBlockState(var5).getBlock().blockMaterial == Material.air) {
-               if(var1.isRemote) {
-                  for(int var6 = 0; var6 < 128; ++var6) {
-                     double var7 = var1.rand.nextDouble();
-                     float var9 = (var1.rand.nextFloat() - 0.5F) * 0.2F;
-                     float var10 = (var1.rand.nextFloat() - 0.5F) * 0.2F;
-                     float var11 = (var1.rand.nextFloat() - 0.5F) * 0.2F;
-                     double var12 = (double)var5.getX() + (double)(var2.getX() - var5.getX()) * var7 + (var1.rand.nextDouble() - 0.5D) * 1.0D + 0.5D;
-                     double var14 = (double)var5.getY() + (double)(var2.getY() - var5.getY()) * var7 + var1.rand.nextDouble() * 1.0D - 0.5D;
-                     double var16 = (double)var5.getZ() + (double)(var2.getZ() - var5.getZ()) * var7 + (var1.rand.nextDouble() - 0.5D) * 1.0D + 0.5D;
-                     var1.spawnParticle(EnumParticleTypes.PORTAL, var12, var14, var16, (double)var9, (double)var10, (double)var11, new int[0]);
-                  }
-               } else {
-                  var1.setBlockState(var5, var3, 2);
-                  var1.setBlockToAir(var2);
-               }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        return true;
+    }
 
-               return;
-            }
-         }
-      }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return null;
+    }
 
-   }
-
-   public int tickRate(World var1) {
-      return 5;
-   }
-
-   public boolean isOpaqueCube() {
-      return false;
-   }
-
-   public boolean isFullCube() {
-      return false;
-   }
-
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      return true;
-   }
-
-   public Item getItem(World var1, BlockPos var2) {
-      return null;
-   }
 }

@@ -1,11 +1,15 @@
 package cc.novoline.modules.configurations.property;
 
-import cc.novoline.modules.configurations.property.Property;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public interface ImmutableProperty extends Property {
-   String a = "Tried to change immutable property";
+/**
+ * @author xDelsy
+ */
+public interface ImmutableProperty<Type> extends Property<Type> {
 
-   default void set(Object var1) {
-      throw new UnsupportedOperationException(a);
-   }
+    @Override
+	default void set(@Nullable Type value) {
+        throw new UnsupportedOperationException("Tried to change immutable property");
+    }
+
 }

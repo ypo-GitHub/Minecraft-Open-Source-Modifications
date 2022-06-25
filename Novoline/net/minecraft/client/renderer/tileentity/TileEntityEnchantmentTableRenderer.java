@@ -1,60 +1,61 @@
 package net.minecraft.client.renderer.tileentity;
 
-import net.aG4;
 import net.minecraft.client.model.ModelBook;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntityEnchantmentTable;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 
-public class TileEntityEnchantmentTableRenderer extends TileEntitySpecialRenderer {
-   private static final ResourceLocation TEXTURE_BOOK = new ResourceLocation("textures/entity/enchanting_table_book.png");
-   private ModelBook field_147541_c = new ModelBook();
+public class TileEntityEnchantmentTableRenderer extends TileEntitySpecialRenderer<TileEntityEnchantmentTable> {
+    /**
+     * The texture for the book above the enchantment table.
+     */
+    private static final ResourceLocation TEXTURE_BOOK = new ResourceLocation("textures/entity/enchanting_table_book.png");
+    private ModelBook field_147541_c = new ModelBook();
 
-   public void renderTileEntityAt(TileEntityEnchantmentTable var1, double var2, double var4, double var6, float var8, int var9) {
-      GlStateManager.pushMatrix();
-      GlStateManager.translate((float)var2 + 0.5F, (float)var4 + 0.75F, (float)var6 + 0.5F);
-      float var10 = (float)var1.tickCount + var8;
-      GlStateManager.translate(0.0F, 0.1F + MathHelper.sin(var10 * 0.1F) * 0.01F, 0.0F);
+    public void renderTileEntityAt(TileEntityEnchantmentTable te, double x, double y, double z, float partialTicks, int destroyStage) {
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float) x + 0.5F, (float) y + 0.75F, (float) z + 0.5F);
+        float f = (float) te.tickCount + partialTicks;
+        GlStateManager.translate(0.0F, 0.1F + MathHelper.sin(f * 0.1F) * 0.01F, 0.0F);
+        float f1;
 
-      float var11;
-      for(var11 = var1.bookRotation - var1.bookRotationPrev; var11 >= 3.1415927F; var11 -= 6.2831855F) {
-         ;
-      }
+        for (f1 = te.bookRotation - te.bookRotationPrev; f1 >= (float) Math.PI; f1 -= (float) Math.PI * 2F) {
+        }
 
-      while(var11 < -3.1415927F) {
-         var11 += 6.2831855F;
-      }
+        while (f1 < -(float) Math.PI) {
+            f1 += (float) Math.PI * 2F;
+        }
 
-      float var12 = var1.bookRotationPrev + var11 * var8;
-      GlStateManager.rotate(-var12 * 180.0F / 3.1415927F, 0.0F, 1.0F, 0.0F);
-      GlStateManager.rotate(80.0F, 0.0F, 0.0F, 1.0F);
-      this.bindTexture(TEXTURE_BOOK);
-      float var13 = var1.pageFlipPrev + (var1.pageFlip - var1.pageFlipPrev) * var8 + 0.25F;
-      float var14 = var1.pageFlipPrev + (var1.pageFlip - var1.pageFlipPrev) * var8 + 0.75F;
-      var13 = (var13 - (float)MathHelper.truncateDoubleToInt((double)var13)) * 1.6F - 0.3F;
-      var14 = (var14 - (float)MathHelper.truncateDoubleToInt((double)var14)) * 1.6F - 0.3F;
-      if(var13 < 0.0F) {
-         var13 = 0.0F;
-      }
+        float f2 = te.bookRotationPrev + f1 * partialTicks;
+        GlStateManager.rotate(-f2 * 180.0F / (float) Math.PI, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(80.0F, 0.0F, 0.0F, 1.0F);
+        this.bindTexture(TEXTURE_BOOK);
+        float f3 = te.pageFlipPrev + (te.pageFlip - te.pageFlipPrev) * partialTicks + 0.25F;
+        float f4 = te.pageFlipPrev + (te.pageFlip - te.pageFlipPrev) * partialTicks + 0.75F;
+        f3 = (f3 - (float) MathHelper.truncateDoubleToInt((double) f3)) * 1.6F - 0.3F;
+        f4 = (f4 - (float) MathHelper.truncateDoubleToInt((double) f4)) * 1.6F - 0.3F;
 
-      if(var14 < 0.0F) {
-         var14 = 0.0F;
-      }
+        if (f3 < 0.0F) {
+            f3 = 0.0F;
+        }
 
-      if(var13 > 1.0F) {
-         var13 = 1.0F;
-      }
+        if (f4 < 0.0F) {
+            f4 = 0.0F;
+        }
 
-      if(var14 > 1.0F) {
-         var14 = 1.0F;
-      }
+        if (f3 > 1.0F) {
+            f3 = 1.0F;
+        }
 
-      float var15 = var1.bookSpreadPrev + (var1.bookSpread - var1.bookSpreadPrev) * var8;
-      GlStateManager.enableCull();
-      aG4.a(this.field_147541_c, (Entity)null, var10, var13, var14, var15, 0.0F, 0.0625F);
-      GlStateManager.popMatrix();
-   }
+        if (f4 > 1.0F) {
+            f4 = 1.0F;
+        }
+
+        float f5 = te.bookSpreadPrev + (te.bookSpread - te.bookSpreadPrev) * partialTicks;
+        GlStateManager.enableCull();
+        this.field_147541_c.render((Entity) null, f, f3, f4, f5, 0.0F, 0.0625F);
+        GlStateManager.popMatrix();
+    }
 }

@@ -1,22 +1,27 @@
 package net.minecraft.item;
 
 import net.minecraft.block.Block;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
 
 public class ItemCloth extends ItemBlock {
-   public ItemCloth(Block var1) {
-      super(var1);
-      this.setMaxDamage(0);
-      this.setHasSubtypes(true);
-   }
+    public ItemCloth(Block block) {
+        super(block);
+        this.setMaxDamage(0);
+        this.setHasSubtypes(true);
+    }
 
-   public int getMetadata(int var1) {
-      return var1;
-   }
+    /**
+     * Converts the given ItemStack damage value into a metadata value to be placed in the world when this Item is
+     * placed as a Block (mostly used with ItemBlocks).
+     */
+    public int getMetadata(int damage) {
+        return damage;
+    }
 
-   public String getUnlocalizedName(ItemStack var1) {
-      return super.getUnlocalizedName() + "." + EnumDyeColor.byMetadata(var1.getMetadata()).getUnlocalizedName();
-   }
+    /**
+     * Returns the unlocalized name of this item. This version accepts an ItemStack so different stacks can have
+     * different names based on their damage or NBT.
+     */
+    public String getUnlocalizedName(ItemStack stack) {
+        return super.getUnlocalizedName() + "." + EnumDyeColor.byMetadata(stack.getMetadata()).getUnlocalizedName();
+    }
 }

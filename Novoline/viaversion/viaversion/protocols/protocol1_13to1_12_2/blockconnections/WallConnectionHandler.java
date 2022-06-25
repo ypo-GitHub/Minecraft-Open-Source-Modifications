@@ -1,89 +1,63 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.ArrayList;
-import java.util.List;
-import net.abi;
-import net.acE;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.AbstractFenceConnectionHandler;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class WallConnectionHandler extends AbstractFenceConnectionHandler {
-   private static final BlockFace[] BLOCK_FACES = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST};
-   private static final int[] OPPOSITES = new int[]{3, 2, 1, 0};
+    private static final BlockFace[] BLOCK_FACES = {BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST};
+    private static final int[] OPPOSITES = {3, 2, 1, 0};
 
-   static List init() {
-      ArrayList var0 = new ArrayList(2);
-      var0.add((new WallConnectionHandler("cobbleWallConnections")).getInitAction("minecraft:cobblestone_wall"));
-      var0.add((new WallConnectionHandler("cobbleWallConnections")).getInitAction("minecraft:mossy_cobblestone_wall"));
-      return var0;
-   }
+    static List<ConnectionData.ConnectorInitAction> init() {
+        List<ConnectionData.ConnectorInitAction> actions = new ArrayList<>(2);
+        actions.add(new WallConnectionHandler("cobbleWallConnections").getInitAction("minecraft:cobblestone_wall"));
+        actions.add(new WallConnectionHandler("cobbleWallConnections").getInitAction("minecraft:mossy_cobblestone_wall"));
+        return actions;
+    }
 
-   public WallConnectionHandler(String var1) {
-      super(var1);
-   }
 
-   protected byte getStates(WrappedBlockData var1) {
-      abi.b();
-      byte var3 = super.getStates(var1);
-      if(var1.getValue("up").equals("true")) {
-         var3 = (byte)(var3 | 16);
-      }
+    public WallConnectionHandler(String blockConnections) {
+        super(blockConnections);
+    }
 
-      return var3;
-   }
+    @Override
+    protected byte getStates(WrappedBlockData blockData) {
+        byte states = super.getStates(blockData);
+        if (blockData.getValue("up").equals("true")) states |= 16;
+        return states;
+    }
 
-   protected byte getStates(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      byte var5 = super.getStates(var1, var2, var3);
-      if(this.up(var1, var2)) {
-         var5 = (byte)(var5 | 16);
-      }
+    protected byte getStates(UserConnection user, Position position, int blockState) {
+        byte states = super.getStates(user, position, blockState);
+        if (up(user, position)) states |= 16;
+        return states;
+    }
 
-      return var5;
-   }
-
-   public boolean up(UserConnection var1, Position var2) {
-      acE[] var3 = abi.b();
-      if(!this.isWall(this.getBlockData(var1, var2.getRelative(BlockFace.BOTTOM))) && !this.isWall(this.getBlockData(var1, var2.getRelative(BlockFace.TOP)))) {
-         int var4 = this.getBlockFaces(var1, var2);
-         if(var4 != 0 && var4 != 15) {
-            int var5 = 0;
-            if(var5 < BLOCK_FACES.length) {
-               if((var4 & 1 << var5) != 0 && (var4 & 1 << OPPOSITES[var5]) == 0) {
-                  return true;
-               }
-
-               ++var5;
-            }
-
-            return false;
-         } else {
+    public boolean up(UserConnection user, Position position) {
+        if (isWall(getBlockData(user, position.getRelative(BlockFace.BOTTOM))) || isWall(getBlockData(user, position.getRelative(BlockFace.TOP))))
             return true;
-         }
-      } else {
-         return true;
-      }
-   }
+        int blockFaces = getBlockFaces(user, position);
+        if (blockFaces == 0 || blockFaces == 0xF) return true;
+        for (int i = 0; i < BLOCK_FACES.length; i++) {
+            if ((blockFaces & (1 << i)) != 0 && (blockFaces & (1 << OPPOSITES[i])) == 0) return true;
+        }
+        return false;
+    }
 
-   private int getBlockFaces(UserConnection var1, Position var2) {
-      abi.b();
-      int var4 = 0;
-      int var5 = 0;
-      if(var5 < BLOCK_FACES.length) {
-         if(this.isWall(this.getBlockData(var1, var2.getRelative(BLOCK_FACES[var5])))) {
-            var4 |= 1 << var5;
-         }
+    private int getBlockFaces(UserConnection user, Position position) {
+        int blockFaces = 0;
+        for (int i = 0; i < BLOCK_FACES.length; i++) {
+            if (isWall(getBlockData(user, position.getRelative(BLOCK_FACES[i])))) {
+                blockFaces |= 1 << i;
+            }
+        }
+        return blockFaces;
+    }
 
-         ++var5;
-      }
-
-      return var4;
-   }
-
-   private boolean isWall(int var1) {
-      return this.getBlockStates().contains(Integer.valueOf(var1));
-   }
+    private boolean isWall(int id) {
+        return getBlockStates().contains(id);
+    }
 }

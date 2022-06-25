@@ -4,72 +4,85 @@ import com.github.steveice10.opennbt.NBTIO;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import net.acE;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types.Particle;
 import viaversion.viaversion.api.type.Type;
 
-public class CompressedNBTType extends Type {
-   public CompressedNBTType() {
-      super("CompoundTag", CompoundTag.class);
-   }
+public class CompressedNBTType extends Type<CompoundTag> {
 
-   public CompoundTag read(ByteBuf param1) {
-      // $FF: Couldn't be decompiled
-   }
+	public CompressedNBTType() {
+		super("CompoundTag", CompoundTag.class);
+	}
 
-   public void write(ByteBuf var1, CompoundTag var2) throws Exception {
-      acE[] var3 = Particle.b();
-      var1.writeShort(-1);
-      ByteBuf var4 = var1.alloc().buffer();
-      ByteBufOutputStream var5 = new ByteBufOutputStream(var4);
-      DataOutputStream var6 = new DataOutputStream(var5);
-      NBTIO.writeTag(var6, var2);
-      var6.close();
-      byte[] var7 = new byte[var4.readableBytes()];
-      var4.readBytes(var7);
-      var4.release();
-      byte[] var8 = compress(var7);
-      var1.writeShort(var8.length);
-      var1.writeBytes(var8);
-   }
+	@Override
+	public CompoundTag read(ByteBuf buffer) {
+		short length = buffer.readShort();
+		if(length <= 0) {
+			return null;
+		}
 
-   public static byte[] compress(byte[] var0) {
-      ByteArrayOutputStream var1 = new ByteArrayOutputStream();
+		byte[] compressed = new byte[length];
+		buffer.readBytes(compressed);
+		byte[] uncompressed = decompress(compressed);
 
-      try {
-         GZIPOutputStream var2 = new GZIPOutputStream(var1);
-         var2.write(var0);
-         var2.close();
-      } catch (IOException var3) {
-         throw new RuntimeException(var3);
-      }
+		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(uncompressed);
+		DataInputStream dataInputStream = new DataInputStream(byteArrayInputStream);
+		try {
+			return (CompoundTag) NBTIO.readTag((DataInput) dataInputStream);
+		} catch(Throwable throwable) {
+			throwable.printStackTrace();
+		} finally {
+			try {
+				dataInputStream.close();
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
 
-      return var1.toByteArray();
-   }
+	@Override
+	public void write(ByteBuf buffer, CompoundTag nbt) throws Exception {
+		if(nbt == null) {
+			buffer.writeShort(-1);
+		} else {
+			ByteBuf buf = buffer.alloc().buffer();
+			ByteBufOutputStream bytebufStream = new ByteBufOutputStream(buf);
+			DataOutputStream dataOutputStream = new DataOutputStream(bytebufStream);
+			NBTIO.writeTag((DataOutput) dataOutputStream, nbt);
+			dataOutputStream.close();
+			byte[] uncompressed = new byte[buf.readableBytes()];
+			buf.readBytes(uncompressed);
+			buf.release();
+			byte[] compressed = compress(uncompressed);
+			buffer.writeShort(compressed.length);
+			buffer.writeBytes(compressed);
+		}
+	}
 
-   public static byte[] decompress(byte[] var0) {
-      Particle.b();
-      ByteArrayOutputStream var2 = new ByteArrayOutputStream();
+	public static byte[] compress(byte[] content) {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		try {
+			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream);
+			gzipOutputStream.write(content);
+			gzipOutputStream.close();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
+		return byteArrayOutputStream.toByteArray();
+	}
 
-      try {
-         GZIPInputStream var3 = new GZIPInputStream(new ByteArrayInputStream(var0));
-         if(var3.available() > 0) {
-            var2.write(var3.read());
-         }
-      } catch (IOException var4) {
-         throw new RuntimeException(var4);
-      }
-
-      return var2.toByteArray();
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+	public static byte[] decompress(byte[] contentBytes) {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			GZIPInputStream stream = new GZIPInputStream(new ByteArrayInputStream(contentBytes));
+			while(stream.available() > 0) {
+				out.write(stream.read());
+			}
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
+		return out.toByteArray();
+	}
 }

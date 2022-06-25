@@ -1,67 +1,68 @@
 package net.minecraft.client.audio;
 
 import com.google.common.collect.Lists;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import net.minecraft.client.audio.ISoundEventAccessor;
-import net.minecraft.client.audio.SoundCategory;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.audio.SoundPoolEntry;
 import net.minecraft.util.ResourceLocation;
 
-public class SoundEventAccessorComposite implements ISoundEventAccessor {
-   private final List soundPool = Lists.newArrayList();
-   private final Random rnd = new Random();
-   private final ResourceLocation soundLocation;
-   private final SoundCategory category;
-   private double eventPitch;
-   private double eventVolume;
+import java.util.List;
+import java.util.Random;
 
-   public SoundEventAccessorComposite(ResourceLocation var1, double var2, double var4, SoundCategory var6) {
-      this.soundLocation = var1;
-      this.eventVolume = var4;
-      this.eventPitch = var2;
-      this.category = var6;
-   }
+public class SoundEventAccessorComposite implements ISoundEventAccessor<SoundPoolEntry> {
 
-   public int getWeight() {
-      int var1 = 0;
+    private final List<ISoundEventAccessor<SoundPoolEntry>> soundPool = Lists.newArrayList();
+    private final Random rnd = new Random();
+    private final ResourceLocation soundLocation;
+    private final SoundCategory category;
+    private double eventPitch;
+    private double eventVolume;
 
-      for(ISoundEventAccessor var3 : this.soundPool) {
-         var1 += var3.getWeight();
-      }
+    public SoundEventAccessorComposite(ResourceLocation soundLocation, double pitch, double volume, SoundCategory category) {
+        this.soundLocation = soundLocation;
+        this.eventVolume = volume;
+        this.eventPitch = pitch;
+        this.category = category;
+    }
 
-      return var1;
-   }
+    public int getWeight() {
+        int i = 0;
 
-   public SoundPoolEntry cloneEntry() {
-      int var1 = this.getWeight();
-      if(!this.soundPool.isEmpty()) {
-         int var2 = this.rnd.nextInt(var1);
-         Iterator var3 = this.soundPool.iterator();
-         if(var3.hasNext()) {
-            ISoundEventAccessor var4 = (ISoundEventAccessor)var3.next();
-            var2 = var2 - var4.getWeight();
-            SoundPoolEntry var5 = (SoundPoolEntry)var4.cloneEntry();
-            var5.setPitch(var5.getPitch() * this.eventPitch);
-            var5.setVolume(var5.getVolume() * this.eventVolume);
-            return var5;
-         }
-      }
+        for (ISoundEventAccessor<SoundPoolEntry> accessor : this.soundPool) {
+            i += accessor.getWeight();
+        }
 
-      return SoundHandler.missing_sound;
-   }
+        return i;
+    }
 
-   public void addSoundToEventPool(ISoundEventAccessor var1) {
-      this.soundPool.add(var1);
-   }
+    public SoundPoolEntry cloneEntry() {
+        int i = this.getWeight();
 
-   public ResourceLocation getSoundEventLocation() {
-      return this.soundLocation;
-   }
+        if (!this.soundPool.isEmpty() && i != 0) {
+            int j = this.rnd.nextInt(i);
 
-   public SoundCategory getSoundCategory() {
-      return this.category;
-   }
+            for (ISoundEventAccessor<SoundPoolEntry> accessor : this.soundPool) {
+                j -= accessor.getWeight();
+
+                if (j < 0) {
+                    SoundPoolEntry soundpoolentry = accessor.cloneEntry();
+                    soundpoolentry.setPitch(soundpoolentry.getPitch() * this.eventPitch);
+                    soundpoolentry.setVolume(soundpoolentry.getVolume() * this.eventVolume);
+                    return soundpoolentry;
+                }
+            }
+
+        }
+        return SoundHandler.missing_sound;
+    }
+
+    public void addSoundToEventPool(ISoundEventAccessor<SoundPoolEntry> sound) {
+        this.soundPool.add(sound);
+    }
+
+    public ResourceLocation getSoundEventLocation() {
+        return this.soundLocation;
+    }
+
+    public SoundCategory getSoundCategory() {
+        return this.category;
+    }
+
 }

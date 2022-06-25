@@ -1,26 +1,30 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.passive.EntityChicken;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderChicken extends RenderLiving {
-   private static final ResourceLocation chickenTextures = new ResourceLocation("textures/entity/chicken.png");
+public class RenderChicken extends RenderLiving<EntityChicken> {
+    private static final ResourceLocation chickenTextures = new ResourceLocation("textures/entity/chicken.png");
 
-   public RenderChicken(RenderManager var1, ModelBase var2, float var3) {
-      super(var1, var2, var3);
-   }
+    public RenderChicken(RenderManager renderManagerIn, ModelBase modelBaseIn, float shadowSizeIn) {
+        super(renderManagerIn, modelBaseIn, shadowSizeIn);
+    }
 
-   protected ResourceLocation getEntityTexture(EntityChicken var1) {
-      return chickenTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityChicken entity) {
+        return chickenTextures;
+    }
 
-   protected float handleRotationFloat(EntityChicken var1, float var2) {
-      float var3 = var1.field_70888_h + (var1.wingRotation - var1.field_70888_h) * var2;
-      float var4 = var1.field_70884_g + (var1.destPos - var1.field_70884_g) * var2;
-      return (MathHelper.sin(var3) + 1.0F) * var4;
-   }
+    /**
+     * Defines what float the third param in setRotationAngles of ModelBase is
+     */
+    protected float handleRotationFloat(EntityChicken livingBase, float partialTicks) {
+        float f = livingBase.field_70888_h + (livingBase.wingRotation - livingBase.field_70888_h) * partialTicks;
+        float f1 = livingBase.field_70884_g + (livingBase.destPos - livingBase.field_70884_g) * partialTicks;
+        return (MathHelper.sin(f) + 1.0F) * f1;
+    }
 }

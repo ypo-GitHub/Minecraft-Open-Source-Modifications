@@ -2,61 +2,48 @@ package viaversion.viaversion.api.remapper;
 
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.PacketWrapper;
-import viaversion.viaversion.api.remapper.ValueWriter;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.exception.InformativeException;
 
-public abstract class ValueTransformer implements ValueWriter {
-   private final Type inputType;
-   private final Type outputType;
-   private static boolean c;
+public abstract class ValueTransformer<T1, T2> implements ValueWriter<T1> {
+    private final Type<T1> inputType;
+    private final Type<T2> outputType;
 
-   public ValueTransformer(@Nullable Type var1, Type var2) {
-      this.inputType = var1;
-      this.outputType = var2;
-   }
+    public ValueTransformer(@Nullable Type<T1> inputType, Type<T2> outputType) {
+        this.inputType = inputType;
+        this.outputType = outputType;
+    }
 
-   public ValueTransformer(Type var1) {
-      this((Type)null, var1);
-   }
+    public ValueTransformer(Type<T2> outputType) {
+        this(null, outputType);
+    }
 
-   public abstract Object transform(PacketWrapper var1, Object var2) throws Exception;
+    /**
+     * Transform a value from one type to another
+     *
+     * @param wrapper    The current packet
+     * @param inputValue The input value
+     * @return The value to write to the wrapper
+     * @throws Exception Throws exception if it fails to transform a value
+     */
+    public abstract T2 transform(PacketWrapper wrapper, T1 inputValue) throws Exception;
 
-   public void write(PacketWrapper var1, Object var2) throws Exception {
-      try {
-         var1.write(this.outputType, this.transform(var1, var2));
-      } catch (InformativeException var4) {
-         var4.addSource(this.getClass());
-         throw var4;
-      }
-   }
+    @Override
+    public void write(PacketWrapper writer, T1 inputValue) throws Exception {
+        try {
+            writer.write(outputType, transform(writer, inputValue));
+        } catch (InformativeException e) {
+            e.addSource(this.getClass());
+            throw e;
+        }
+    }
 
-   @Nullable
-   public Type getInputType() {
-      return this.inputType;
-   }
+    @Nullable
+    public Type<T1> getInputType() {
+        return inputType;
+    }
 
-   public Type getOutputType() {
-      return this.outputType;
-   }
-
-   public static void b(boolean var0) {
-      c = var0;
-   }
-
-   public static boolean b() {
-      return c;
-   }
-
-   public static boolean a() {
-      boolean var0 = b();
-      return true;
-   }
-
-   static {
-      if(!b()) {
-         b(true);
-      }
-
-   }
+    public Type<T2> getOutputType() {
+        return outputType;
+    }
 }

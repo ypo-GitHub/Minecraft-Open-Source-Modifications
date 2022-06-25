@@ -1,102 +1,97 @@
 package cc.novoline.modules.configurations.property;
 
-import cc.novoline.modules.configurations.property.AbstractProperty;
 import cc.novoline.modules.configurations.property.exception.NumberLimitsException;
 import java.util.Objects;
-import net.acE;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractNumberProperty extends AbstractProperty {
-   protected Number minimum;
-   protected Number maximum;
-   private static int[] e;
+/**
+ * @author xDelsy
+ */
+public abstract class AbstractNumberProperty<Self extends AbstractNumberProperty<Self, Type>, Type extends Number> extends
+        AbstractProperty<Type> {
 
-   protected AbstractNumberProperty(Number var1) {
-      super(var1);
-   }
+    /* fields */
+    protected Type minimum, maximum;
 
-   protected AbstractNumberProperty() {
-   }
+    /* constructors */
+    protected AbstractNumberProperty(Type value) {
+        super(value);
+    }
 
-   public void set(@Nullable Number var1) {
-      int var2 = AbstractProperty.b();
-      if(this.inLimits(var1)) {
-         super.set(var1);
-      }
+    protected AbstractNumberProperty() {
+    }
 
-      throw new NumberLimitsException("Unable to set " + var1 + " (min:" + this.minimum + ", max:" + this.maximum + ")", this);
-   }
+    /* methods */
+    @Override
+    public void set(@Nullable Type value) {
+        if(value == null || inLimits(value)) {
+            super.set(value);
+        } else {
+            throw new NumberLimitsException("Unable to set " + value + " (min:" + minimum + ", max:" + maximum + ")", this);
+        }
+    }
 
-   protected abstract void a(Number var1);
+    protected abstract void add(Type number);
 
-   protected abstract void f(Number var1);
+    protected abstract void subtract(Type number);
 
-   protected abstract boolean greaterThan(Number var1);
+    /**
+     * @return {@code false} if {@code (number == null && value == null) || value <= number}
+     */
+    protected abstract boolean greaterThan(Type number);
 
-   protected abstract boolean lessThan(Number var1);
+    /**
+     * @return {@code false} if {@code number == null || value >= number}
+     */
+    protected abstract boolean lessThan(Type number);
 
-   protected abstract boolean inLimits(@NotNull Number var1);
+    protected abstract boolean inLimits(@NotNull Type number);
 
-   protected boolean greaterOrEquals(Number var1) {
-      int var2 = AbstractProperty.b();
-      return this.greaterThan(var1)?true:(var1 == null && this.value == null?false:Objects.equals(var1, this.value));
-   }
+    protected boolean greaterOrEquals(Type number) {
+        if (greaterThan(number)) {
+            return true;
+        } else if (number == null && value == null) {
+            return false;
+        } else {
+            return Objects.equals(number, value);
+        }
+    }
 
-   protected boolean lessOrEquals(Number var1) {
-      int var2 = AbstractProperty.b();
-      return this.lessThan(var1)?true:(var1 == null?false:Objects.equals(var1, this.value));
-   }
+    protected boolean lessOrEquals(Type number) {
+        if (lessThan(number)) {
+            return true;
+        } else if (number == null) {
+            return false;
+        } else {
+            return Objects.equals(number, value);
+        }
+    }
 
-   public AbstractNumberProperty minimum(@Nullable Number var1) {
-      int var2 = AbstractProperty.a();
-      if(this.value != null && this.lessThan(var1)) {
-         throw new IllegalArgumentException("minimum is greater than current value: " + this.value + ", min: " + var1);
-      } else {
-         this.minimum = var1;
-         AbstractNumberProperty var10000 = this.self();
-         if(acE.b() == null) {
-            ++var2;
-            AbstractProperty.b(var2);
-         }
+    public Self minimum(@Nullable Type minimum) {
+        if (value != null && lessThan(minimum)) throw new IllegalArgumentException(
+                "minimum is greater than current value: " + value + ", min: " + minimum);
 
-         return var10000;
-      }
-   }
+        this.minimum = minimum;
+        return self();
+    }
 
-   public Number getMinimum() {
-      return this.minimum;
-   }
+    public Type getMinimum() {
+        return minimum;
+    }
 
-   public AbstractNumberProperty maximum(@Nullable Number var1) {
-      int var2 = AbstractProperty.b();
-      if(this.value != null && this.greaterThan(var1)) {
-         throw new IllegalArgumentException("current value is greater than maximum: " + this.value + ", max: " + var1);
-      } else {
-         this.maximum = var1;
-         return this.self();
-      }
-   }
+    public Self maximum(@Nullable Type maximum) {
+        if (value != null && greaterThan(maximum)) throw new IllegalArgumentException(
+                "current value is greater than maximum: " + value + ", max: " + maximum);
 
-   public Number getMaximum() {
-      return this.maximum;
-   }
+        this.maximum = maximum;
+        return self();
+    }
 
-   protected abstract AbstractNumberProperty self();
+    public Type getMaximum() {
+        return maximum;
+    }
 
-   public static void a(int[] var0) {
-      e = var0;
-   }
+    protected abstract Self self();
 
-   public static int[] b() {
-      return e;
-   }
-
-   private static NumberLimitsException a(NumberLimitsException var0) {
-      return var0;
-   }
-
-   static {
-      a(new int[3]);
-   }
 }

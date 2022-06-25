@@ -1,29 +1,38 @@
 package viaversion.viaversion.api.minecraft.chunks;
 
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+
 import java.util.ArrayList;
 import java.util.List;
-import net.acE;
-import viaversion.viaversion.api.minecraft.chunks.BaseChunk;
-import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 
 public class Chunk1_8 extends BaseChunk {
-   private boolean unloadPacket;
+    private boolean unloadPacket;
 
-   public Chunk1_8(int var1, int var2, boolean var3, int var4, ChunkSection[] var5, int[] var6, List var7) {
-      super(var1, var2, var3, false, var4, var5, var6, var7);
-   }
+    public Chunk1_8(int x, int z, boolean groundUp, int bitmask, ChunkSection[] sections, int[] biomeData, List<CompoundTag> blockEntities) {
+        super(x, z, groundUp, false, bitmask, sections, biomeData, blockEntities);
+    }
 
-   public Chunk1_8(int var1, int var2) {
-      this(var1, var2, true, 0, new ChunkSection[16], (int[])null, new ArrayList());
-      this.unloadPacket = true;
-   }
+    /**
+     * Chunk unload.
+     *
+     * @param x coord
+     * @param z coord
+     */
+    public Chunk1_8(int x, int z) {
+        this(x, z, true, 0, new ChunkSection[16], null, new ArrayList<>());
+        this.unloadPacket = true;
+    }
 
-   public boolean e() {
-      acE[] var1 = ChunkSection.b();
-      return this.biomeData != null && this.fullChunk;
-   }
+    /**
+     * Does this chunks have biome data
+     *
+     * @return True if the chunks has biome data
+     */
+    public boolean hasBiomeData() {
+        return biomeData != null && fullChunk;
+    }
 
-   public boolean isUnloadPacket() {
-      return this.unloadPacket;
-   }
+    public boolean isUnloadPacket() {
+        return unloadPacket;
+    }
 }

@@ -1,41 +1,41 @@
 package net.minecraft.client.renderer.entity.layers;
 
-import net.asJ;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 
-public class LayerDeadmau5Head implements LayerRenderer {
-   private final RenderPlayer playerRenderer;
+public class LayerDeadmau5Head implements LayerRenderer<AbstractClientPlayer> {
 
-   public LayerDeadmau5Head(RenderPlayer var1) {
-      this.playerRenderer = var1;
-   }
+    private final RenderPlayer playerRenderer;
 
-   public void a(asJ var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      if(var1.getName().equals("deadmau5") && var1.l() && !var1.isInvisible()) {
-         this.playerRenderer.bindTexture(var1.getLocationSkin());
+    public LayerDeadmau5Head(RenderPlayer playerRendererIn) {
+        this.playerRenderer = playerRendererIn;
+    }
 
-         for(int var9 = 0; var9 < 2; ++var9) {
-            float var10 = var1.prevRotationYaw + (var1.rotationYaw - var1.prevRotationYaw) * var4 - (var1.prevRenderYawOffset + (var1.renderYawOffset - var1.prevRenderYawOffset) * var4);
-            float var11 = var1.prevRotationPitch + (var1.rotationPitch - var1.prevRotationPitch) * var4;
-            GlStateManager.pushMatrix();
-            GlStateManager.rotate(var10, 0.0F, 1.0F, 0.0F);
-            GlStateManager.rotate(var11, 1.0F, 0.0F, 0.0F);
-            GlStateManager.translate(0.375F * (float)(var9 * 2 - 1), 0.0F, 0.0F);
-            GlStateManager.translate(0.0F, -0.375F, 0.0F);
-            GlStateManager.rotate(-var11, 1.0F, 0.0F, 0.0F);
-            GlStateManager.rotate(-var10, 0.0F, 1.0F, 0.0F);
-            float var12 = 1.3333334F;
-            GlStateManager.scale(var12, var12, var12);
-            this.playerRenderer.getMainModel().renderDeadmau5Head(0.0625F);
-            GlStateManager.popMatrix();
-         }
-      }
+    public void doRenderLayer(AbstractClientPlayer entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        if (entitylivingbaseIn.getName().equals("deadmau5") && entitylivingbaseIn.hasSkin() && !entitylivingbaseIn.isInvisible()) {
+            this.playerRenderer.bindTexture(entitylivingbaseIn.getLocationSkin());
 
-   }
+            for (int i = 0; i < 2; ++i) {
+                float f = entitylivingbaseIn.prevRotationYaw + (entitylivingbaseIn.rotationYaw - entitylivingbaseIn.prevRotationYaw) * partialTicks - (entitylivingbaseIn.prevRenderYawOffset + (entitylivingbaseIn.renderYawOffset - entitylivingbaseIn.prevRenderYawOffset) * partialTicks);
+                float f1 = entitylivingbaseIn.prevRotationPitch + (entitylivingbaseIn.rotationPitch - entitylivingbaseIn.prevRotationPitch) * partialTicks;
+                GlStateManager.pushMatrix();
+                GlStateManager.rotate(f, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(f1, 1.0F, 0.0F, 0.0F);
+                GlStateManager.translate(0.375F * (float) (i * 2 - 1), 0.0F, 0.0F);
+                GlStateManager.translate(0.0F, -0.375F, 0.0F);
+                GlStateManager.rotate(-f1, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(-f, 0.0F, 1.0F, 0.0F);
+                float f2 = 1.3333334F;
+                GlStateManager.scale(f2, f2, f2);
+                this.playerRenderer.getMainModel().renderDeadmau5Head(0.0625F);
+                GlStateManager.popMatrix();
+            }
+        }
+    }
 
-   public boolean shouldCombineTextures() {
-      return true;
-   }
+    public boolean shouldCombineTextures() {
+        return true;
+    }
+
 }

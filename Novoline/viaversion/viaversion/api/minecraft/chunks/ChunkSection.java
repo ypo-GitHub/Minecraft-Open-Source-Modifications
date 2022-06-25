@@ -5,261 +5,260 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.acE;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.minecraft.chunks.NibbleArray;
 
 public class ChunkSection {
-   public static final int SIZE = 4096;
-   public static final int LIGHT_LENGTH = 2048;
-   private final IntList palette;
-   private final Int2IntMap inversePalette;
-   private final int[] blocks = new int[4096];
-   private NibbleArray blockLight;
-   private NibbleArray skyLight;
-   private int nonAirBlocksCount;
-   private static acE[] f;
 
-   public ChunkSection() {
-      this.blockLight = new NibbleArray(4096);
-      this.palette = new IntArrayList();
-      this.inversePalette = new Int2IntOpenHashMap();
-      this.inversePalette.defaultReturnValue(-1);
-   }
+    /**
+     * Size (dimensions) of blocks in a chunks section.
+     */
+    public static final int SIZE = 16 * 16 * 16; // width * depth * height
+    /**
+     * Length of the sky and block light nibble arrays.
+     */
+    public static final int LIGHT_LENGTH = 16 * 16 * 16 / 2; // size * size * size / 2 (nibble bit count)
+    private final IntList palette;
+    private final Int2IntMap inversePalette;
+    private final int[] blocks;
+    private NibbleArray blockLight;
+    private NibbleArray skyLight;
+    private int nonAirBlocksCount;
 
-   public ChunkSection(int var1) {
-      b();
-      this.blockLight = new NibbleArray(4096);
-      this.palette = new IntArrayList(var1);
-      this.inversePalette = new Int2IntOpenHashMap(var1);
-      this.inversePalette.defaultReturnValue(-1);
-      if(acE.b() == null) {
-         b(new acE[3]);
-      }
+    public ChunkSection() {
+        this.blocks = new int[SIZE];
+        this.blockLight = new NibbleArray(SIZE);
+        palette = new IntArrayList();
+        inversePalette = new Int2IntOpenHashMap();
+        inversePalette.defaultReturnValue(-1);
+    }
 
-   }
+    public ChunkSection(int expectedPaletteLength) {
+        this.blocks = new int[SIZE];
+        this.blockLight = new NibbleArray(SIZE);
 
-   public void setBlock(int var1, int var2, int var3, int var4, int var5) {
-      this.setFlatBlock(index(var1, var2, var3), var4 << 4 | var5 & 15);
-   }
+        // Pre-size the palette array/map
+        palette = new IntArrayList(expectedPaletteLength);
+        inversePalette = new Int2IntOpenHashMap(expectedPaletteLength);
+        inversePalette.defaultReturnValue(-1);
+    }
 
-   public void setFlatBlock(int var1, int var2, int var3, int var4) {
-      this.setFlatBlock(index(var1, var2, var3), var4);
-   }
+    /**
+     * Set a block in the chunks
+     * This method will not update non-air blocks count
+     *
+     * @param x    Block X
+     * @param y    Block Y
+     * @param z    Block Z
+     * @param type The type of the block
+     * @param data The data value of the block
+     */
+    public void setBlock(int x, int y, int z, int type, int data) {
+        setFlatBlock(index(x, y, z), type << 4 | (data & 0xF));
+    }
 
-   public int getBlockId(int var1, int var2, int var3) {
-      return this.getFlatBlock(var1, var2, var3) >> 4;
-   }
+    public void setFlatBlock(int x, int y, int z, int type) {
+        setFlatBlock(index(x, y, z), type);
+    }
 
-   public int getBlockData(int var1, int var2, int var3) {
-      return this.getFlatBlock(var1, var2, var3) & 15;
-   }
+    public int getBlockId(int x, int y, int z) {
+        return getFlatBlock(x, y, z) >> 4;
+    }
 
-   public int getFlatBlock(int var1, int var2, int var3) {
-      int var4 = this.blocks[index(var1, var2, var3)];
-      return this.palette.getInt(var4);
-   }
+    public int getBlockData(int x, int y, int z) {
+        return getFlatBlock(x, y, z) & 0xF;
+    }
 
-   public int getFlatBlock(int var1) {
-      int var2 = this.blocks[var1];
-      return this.palette.getInt(var2);
-   }
+    public int getFlatBlock(int x, int y, int z) {
+        int index = blocks[index(x, y, z)];
+        return palette.getInt(index);
+    }
 
-   public void setBlock(int var1, int var2, int var3) {
-      this.setFlatBlock(var1, var2 << 4 | var3 & 15);
-   }
+    public int getFlatBlock(int idx) {
+        int index = blocks[idx];
+        return palette.getInt(index);
+    }
 
-   public void setPaletteIndex(int var1, int var2) {
-      this.blocks[var1] = var2;
-   }
+    public void setBlock(int idx, int type, int data) {
+        setFlatBlock(idx, type << 4 | (data & 0xF));
+    }
 
-   public int getPaletteIndex(int var1) {
-      return this.blocks[var1];
-   }
+    public void setPaletteIndex(int idx, int index) {
+        blocks[idx] = index;
+    }
 
-   public int getPaletteSize() {
-      return this.palette.size();
-   }
+    public int getPaletteIndex(int idx) {
+        return blocks[idx];
+    }
 
-   public int getPaletteEntry(int var1) {
-      acE[] var2 = b();
-      if(var1 >= 0 && var1 < this.palette.size()) {
-         return this.palette.getInt(var1);
-      } else {
-         throw new IndexOutOfBoundsException();
-      }
-   }
+    public int getPaletteSize() {
+        return palette.size();
+    }
 
-   public void setPaletteEntry(int var1, int var2) {
-      acE[] var3 = b();
-      if(var1 >= 0 && var1 < this.palette.size()) {
-         int var4 = this.palette.set(var1, var2);
-         if(var4 != var2) {
-            this.inversePalette.put(var2, var1);
-            if(this.inversePalette.get(var4) == var1) {
-               this.inversePalette.remove(var4);
-               int var5 = 0;
-               if(var5 < this.palette.size()) {
-                  if(this.palette.getInt(var5) == var4) {
-                     this.inversePalette.put(var4, var5);
-                  }
+    public int getPaletteEntry(int index) {
+        if (index < 0 || index >= palette.size()) throw new IndexOutOfBoundsException();
+        return palette.getInt(index);
+    }
 
-                  ++var5;
-               }
+    public void setPaletteEntry(int index, int id) {
+        if (index < 0 || index >= palette.size()) throw new IndexOutOfBoundsException();
+
+        int oldId = palette.set(index, id);
+        if (oldId == id) return;
+
+        inversePalette.put(id, index);
+        if (inversePalette.get(oldId) == index) {
+            inversePalette.remove(oldId);
+            for (int i = 0; i < palette.size(); i++) {
+                if (palette.getInt(i) == oldId) {
+                    inversePalette.put(oldId, i);
+                    break;
+                }
             }
+        }
+    }
 
-         }
-      } else {
-         throw new IndexOutOfBoundsException();
-      }
-   }
+    public void replacePaletteEntry(int oldId, int newId) {
+        int index = inversePalette.remove(oldId);
+        if (index == -1) return;
 
-   public void replacePaletteEntry(int var1, int var2) {
-      b();
-      int var4 = this.inversePalette.remove(var1);
-      if(var4 != -1) {
-         this.inversePalette.put(var2, var4);
-         int var5 = 0;
-         if(var5 < this.palette.size()) {
-            if(this.palette.getInt(var5) == var1) {
-               this.palette.set(var5, var2);
+        inversePalette.put(newId, index);
+        for (int i = 0; i < palette.size(); i++) {
+            if (palette.getInt(i) == oldId) {
+                palette.set(i, newId);
             }
+        }
+    }
 
-            ++var5;
-         }
+    public void addPaletteEntry(int id) {
+        inversePalette.put(id, palette.size());
+        palette.add(id);
+    }
 
-      }
-   }
+    public void clearPalette() {
+        palette.clear();
+        inversePalette.clear();
+    }
 
-   public void addPaletteEntry(int var1) {
-      this.inversePalette.put(var1, this.palette.size());
-      this.palette.add(var1);
-   }
+    /**
+     * Set a block state in the chunk
+     * This method will not update non-air blocks count
+     *
+     * @param idx Index
+     * @param id  The raw or flat id of the block
+     */
+    public void setFlatBlock(int idx, int id) {
+        int index = inversePalette.get(id);
+        if (index == -1) {
+            index = palette.size();
+            palette.add(id);
+            inversePalette.put(id, index);
+        }
 
-   public void clearPalette() {
-      this.palette.clear();
-      this.inversePalette.clear();
-   }
+        blocks[idx] = index;
+    }
 
-   public void setFlatBlock(int var1, int var2) {
-      b();
-      int var4 = this.inversePalette.get(var2);
-      if(var4 == -1) {
-         var4 = this.palette.size();
-         this.palette.add(var2);
-         this.inversePalette.put(var2, var4);
-      }
+    /**
+     * Set the block light array
+     *
+     * @param data The value to set the block light to
+     */
+    public void setBlockLight(@Nullable byte[] data) {
+        if (data.length != LIGHT_LENGTH) throw new IllegalArgumentException("Data length != " + LIGHT_LENGTH);
+        if (this.blockLight == null) {
+            this.blockLight = new NibbleArray(data);
+        } else {
+            this.blockLight.setHandle(data);
+        }
+    }
 
-      this.blocks[var1] = var4;
-   }
+    /**
+     * Set the sky light array
+     *
+     * @param data The value to set the sky light to
+     */
+    public void setSkyLight(@Nullable byte[] data) {
+        if (data.length != LIGHT_LENGTH) throw new IllegalArgumentException("Data length != " + LIGHT_LENGTH);
+        if (this.skyLight == null) {
+            this.skyLight = new NibbleArray(data);
+        } else {
+            this.skyLight.setHandle(data);
+        }
+    }
 
-   public void setBlockLight(@Nullable byte[] var1) {
-      acE[] var2 = b();
-      if(var1.length != 2048) {
-         throw new IllegalArgumentException("Data length != 2048");
-      } else {
-         if(this.blockLight == null) {
-            this.blockLight = new NibbleArray(var1);
-         }
+    @Nullable
+    public byte[] getBlockLight() {
+        return blockLight == null ? null : blockLight.getHandle();
+    }
 
-         this.blockLight.setHandle(var1);
-      }
-   }
+    @Nullable
+    public NibbleArray getBlockLightNibbleArray() {
+        return blockLight;
+    }
 
-   public void setSkyLight(@Nullable byte[] var1) {
-      acE[] var2 = b();
-      if(var1.length != 2048) {
-         throw new IllegalArgumentException("Data length != 2048");
-      } else {
-         if(this.skyLight == null) {
-            this.skyLight = new NibbleArray(var1);
-         }
+    @Nullable
+    public byte[] getSkyLight() {
+        return skyLight == null ? null : skyLight.getHandle();
+    }
 
-         this.skyLight.setHandle(var1);
-      }
-   }
+    @Nullable
+    public NibbleArray getSkyLightNibbleArray() {
+        return skyLight;
+    }
 
-   @Nullable
-   public byte[] getBlockLight() {
-      acE[] var1 = b();
-      return this.blockLight == null?null:this.blockLight.getHandle();
-   }
+    public void readBlockLight(ByteBuf input) {
+        if (this.blockLight == null) {
+            this.blockLight = new NibbleArray(LIGHT_LENGTH * 2);
+        }
+        input.readBytes(this.blockLight.getHandle());
+    }
 
-   @Nullable
-   public NibbleArray getBlockLightNibbleArray() {
-      return this.blockLight;
-   }
+    public void readSkyLight(ByteBuf input) {
+        if (this.skyLight == null) {
+            this.skyLight = new NibbleArray(LIGHT_LENGTH * 2);
+        }
+        input.readBytes(this.skyLight.getHandle());
+    }
 
-   @Nullable
-   public byte[] getSkyLight() {
-      acE[] var1 = b();
-      return this.skyLight == null?null:this.skyLight.getHandle();
-   }
+    public static int index(int x, int y, int z) {
+        return y << 8 | z << 4 | x;
+    }
 
-   @Nullable
-   public NibbleArray getSkyLightNibbleArray() {
-      return this.skyLight;
-   }
+    /**
+     * Write the block light to a buffer
+     *
+     * @param output The buffer to write to
+     */
+    public void writeBlockLight(ByteBuf output) {
+        output.writeBytes(blockLight.getHandle());
+    }
 
-   public void readBlockLight(ByteBuf var1) {
-      acE[] var2 = b();
-      if(this.blockLight == null) {
-         this.blockLight = new NibbleArray(4096);
-      }
+    /**
+     * Write the sky light to a buffer
+     *
+     * @param output The buffer to write to
+     */
+    public void writeSkyLight(ByteBuf output) {
+        output.writeBytes(skyLight.getHandle());
+    }
 
-      var1.readBytes(this.blockLight.getHandle());
-   }
+    /**
+     * Check if sky light is present
+     *
+     * @return True if skylight is present
+     */
+    public boolean hasSkyLight() {
+        return skyLight != null;
+    }
 
-   public void readSkyLight(ByteBuf var1) {
-      acE[] var2 = b();
-      if(this.skyLight == null) {
-         this.skyLight = new NibbleArray(4096);
-      }
+    public boolean hasBlockLight() {
+        return blockLight != null;
+    }
 
-      var1.readBytes(this.skyLight.getHandle());
-   }
+    public int getNonAirBlocksCount() {
+        return nonAirBlocksCount;
+    }
 
-   public static int index(int var0, int var1, int var2) {
-      return var1 << 8 | var2 << 4 | var0;
-   }
-
-   public void writeBlockLight(ByteBuf var1) {
-      var1.writeBytes(this.blockLight.getHandle());
-   }
-
-   public void writeSkyLight(ByteBuf var1) {
-      var1.writeBytes(this.skyLight.getHandle());
-   }
-
-   public boolean hasSkyLight() {
-      return this.skyLight != null;
-   }
-
-   public boolean hasBlockLight() {
-      return this.blockLight != null;
-   }
-
-   public int getNonAirBlocksCount() {
-      return this.nonAirBlocksCount;
-   }
-
-   public void setNonAirBlocksCount(int var1) {
-      this.nonAirBlocksCount = var1;
-   }
-
-   public static void b(acE[] var0) {
-      f = var0;
-   }
-
-   public static acE[] b() {
-      return f;
-   }
-
-   private static IndexOutOfBoundsException a(IndexOutOfBoundsException var0) {
-      return var0;
-   }
-
-   static {
-      b(new acE[4]);
-   }
+    public void setNonAirBlocksCount(int nonAirBlocksCount) {
+        this.nonAirBlocksCount = nonAirBlocksCount;
+    }
 }

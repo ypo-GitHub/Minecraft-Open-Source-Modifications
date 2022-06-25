@@ -2,212 +2,254 @@ package net.minecraft.entity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRedstoneDiode;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Axis;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
 
 public abstract class EntityHanging extends Entity {
-   private int tickCounter1;
-   protected BlockPos hangingPosition;
-   public EnumFacing facingDirection;
+    private int tickCounter1;
+    protected BlockPos hangingPosition;
 
-   public EntityHanging(World var1) {
-      super(var1);
-      this.setSize(0.5F, 0.5F);
-   }
+    /**
+     * The direction the entity is facing
+     */
+    public EnumFacing facingDirection;
 
-   public EntityHanging(World var1, BlockPos var2) {
-      this(var1);
-      this.hangingPosition = var2;
-   }
+    public EntityHanging(World worldIn) {
+        super(worldIn);
+        this.setSize(0.5F, 0.5F);
+    }
 
-   protected void entityInit() {
-   }
+    public EntityHanging(World worldIn, BlockPos hangingPositionIn) {
+        this(worldIn);
+        this.hangingPosition = hangingPositionIn;
+    }
 
-   protected void updateFacingWithBoundingBox(EnumFacing var1) {
-      Validate.notNull(var1);
-      Validate.isTrue(var1.getAxis().isHorizontal());
-      this.facingDirection = var1;
-      this.prevRotationYaw = this.rotationYaw = (float)(this.facingDirection.getHorizontalIndex() * 90);
-      this.updateBoundingBox();
-   }
+    protected void entityInit() {
+    }
 
-   private void updateBoundingBox() {
-      if(this.facingDirection != null) {
-         double var1 = (double)this.hangingPosition.getX() + 0.5D;
-         double var3 = (double)this.hangingPosition.getY() + 0.5D;
-         double var5 = (double)this.hangingPosition.getZ() + 0.5D;
-         double var7 = 0.46875D;
-         double var9 = this.func_174858_a(this.getWidthPixels());
-         double var11 = this.func_174858_a(this.getHeightPixels());
-         var1 = var1 - (double)this.facingDirection.getFrontOffsetX() * 0.46875D;
-         var5 = var5 - (double)this.facingDirection.getFrontOffsetZ() * 0.46875D;
-         var3 = var3 + var11;
-         EnumFacing var13 = this.facingDirection.rotateYCCW();
-         var1 = var1 + var9 * (double)var13.getFrontOffsetX();
-         var5 = var5 + var9 * (double)var13.getFrontOffsetZ();
-         this.posX = var1;
-         this.posY = var3;
-         this.posZ = var5;
-         double var14 = (double)this.getWidthPixels();
-         double var16 = (double)this.getHeightPixels();
-         double var18 = (double)this.getWidthPixels();
-         if(this.facingDirection.getAxis() == EnumFacing$Axis.Z) {
-            var18 = 1.0D;
-         } else {
-            var14 = 1.0D;
-         }
+    /**
+     * Updates facing and bounding box based on it
+     */
+    protected void updateFacingWithBoundingBox(EnumFacing facingDirectionIn) {
+        Validate.notNull(facingDirectionIn);
+        Validate.isTrue(facingDirectionIn.getAxis().isHorizontal());
+        this.facingDirection = facingDirectionIn;
+        this.prevRotationYaw = this.rotationYaw = (float) (this.facingDirection.getHorizontalIndex() * 90);
+        this.updateBoundingBox();
+    }
 
-         var14 = var14 / 32.0D;
-         var16 = var16 / 32.0D;
-         var18 = var18 / 32.0D;
-         this.setEntityBoundingBox(new AxisAlignedBB(var1 - var14, var3 - var16, var5 - var18, var1 + var14, var3 + var16, var5 + var18));
-      }
+    /**
+     * Updates the entity bounding box based on current facing
+     */
+    private void updateBoundingBox() {
+        if (this.facingDirection != null) {
+            double d0 = (double) this.hangingPosition.getX() + 0.5D;
+            double d1 = (double) this.hangingPosition.getY() + 0.5D;
+            double d2 = (double) this.hangingPosition.getZ() + 0.5D;
+            double d3 = 0.46875D;
+            double d4 = this.func_174858_a(this.getWidthPixels());
+            double d5 = this.func_174858_a(this.getHeightPixels());
+            d0 = d0 - (double) this.facingDirection.getFrontOffsetX() * 0.46875D;
+            d2 = d2 - (double) this.facingDirection.getFrontOffsetZ() * 0.46875D;
+            d1 = d1 + d5;
+            EnumFacing enumfacing = this.facingDirection.rotateYCCW();
+            d0 = d0 + d4 * (double) enumfacing.getFrontOffsetX();
+            d2 = d2 + d4 * (double) enumfacing.getFrontOffsetZ();
+            this.posX = d0;
+            this.posY = d1;
+            this.posZ = d2;
+            double d6 = (double) this.getWidthPixels();
+            double d7 = (double) this.getHeightPixels();
+            double d8 = (double) this.getWidthPixels();
 
-   }
-
-   private double func_174858_a(int var1) {
-      return var1 % 32 == 0?0.5D:0.0D;
-   }
-
-   public void onUpdate() {
-      this.prevPosX = this.posX;
-      this.prevPosY = this.posY;
-      this.prevPosZ = this.posZ;
-      if(this.tickCounter1++ == 100 && !this.worldObj.isRemote) {
-         this.tickCounter1 = 0;
-         if(!this.isDead && !this.onValidSurface()) {
-            this.setDead();
-            this.onBroken((Entity)null);
-         }
-      }
-
-   }
-
-   public boolean onValidSurface() {
-      if(!this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty()) {
-         return false;
-      } else {
-         int var1 = Math.max(1, this.getWidthPixels() / 16);
-         int var2 = Math.max(1, this.getHeightPixels() / 16);
-         BlockPos var3 = this.hangingPosition.offset(this.facingDirection.getOpposite());
-         EnumFacing var4 = this.facingDirection.rotateYCCW();
-
-         for(int var5 = 0; var5 < var1; ++var5) {
-            for(int var6 = 0; var6 < var2; ++var6) {
-               BlockPos var7 = var3.offset(var4, var5).up(var6);
-               Block var8 = this.worldObj.getBlockState(var7).getBlock();
-               if(!var8.getMaterial().isSolid() && !BlockRedstoneDiode.isRedstoneRepeaterBlockID(var8)) {
-                  return false;
-               }
+            if (this.facingDirection.getAxis() == EnumFacing.Axis.Z) {
+                d8 = 1.0D;
+            } else {
+                d6 = 1.0D;
             }
-         }
 
-         for(Entity var10 : this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox())) {
-            if(var10 instanceof EntityHanging) {
-               return false;
+            d6 = d6 / 32.0D;
+            d7 = d7 / 32.0D;
+            d8 = d8 / 32.0D;
+            this.setEntityBoundingBox(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
+        }
+    }
+
+    private double func_174858_a(int p_174858_1_) {
+        return p_174858_1_ % 32 == 0 ? 0.5D : 0.0D;
+    }
+
+    /**
+     * Called to update the entity's position/logic.
+     */
+    public void onUpdate() {
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
+
+        if (this.tickCounter1++ == 100 && !this.worldObj.isRemote) {
+            this.tickCounter1 = 0;
+
+            if (!this.isDead && !this.onValidSurface()) {
+                this.setDead();
+                this.onBroken((Entity) null);
             }
-         }
+        }
+    }
 
-         return true;
-      }
-   }
+    /**
+     * checks to make sure painting can be placed there
+     */
+    public boolean onValidSurface() {
+        if (!this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty()) {
+            return false;
+        } else {
+            int i = Math.max(1, this.getWidthPixels() / 16);
+            int j = Math.max(1, this.getHeightPixels() / 16);
+            BlockPos blockpos = this.hangingPosition.offset(this.facingDirection.getOpposite());
+            EnumFacing enumfacing = this.facingDirection.rotateYCCW();
 
-   public boolean canBeCollidedWith() {
-      return true;
-   }
+            for (int k = 0; k < i; ++k) {
+                for (int l = 0; l < j; ++l) {
+                    BlockPos blockpos1 = blockpos.offset(enumfacing, k).up(l);
+                    Block block = this.worldObj.getBlockState(blockpos1).getBlock();
 
-   public boolean hitByEntity(Entity var1) {
-      return var1 instanceof EntityPlayer && this.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)var1), 0.0F);
-   }
+                    if (!block.getMaterial().isSolid() && !BlockRedstoneDiode.isRedstoneRepeaterBlockID(block)) {
+                        return false;
+                    }
+                }
+            }
 
-   public EnumFacing getHorizontalFacing() {
-      return this.facingDirection;
-   }
+            for (Entity entity : this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox())) {
+                if (entity instanceof EntityHanging) {
+                    return false;
+                }
+            }
 
-   public boolean attackEntityFrom(DamageSource var1, float var2) {
-      if(this.isEntityInvulnerable(var1)) {
-         return false;
-      } else {
-         if(!this.isDead && !this.worldObj.isRemote) {
+            return true;
+        }
+    }
+
+    /**
+     * Returns true if other Entities should be prevented from moving through this Entity.
+     */
+    public boolean canBeCollidedWith() {
+        return true;
+    }
+
+    /**
+     * Called when a player attacks an entity. If this returns true the attack will not happen.
+     */
+    public boolean hitByEntity(Entity entityIn) {
+        return entityIn instanceof EntityPlayer && this.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer) entityIn), 0.0F);
+    }
+
+    public EnumFacing getHorizontalFacing() {
+        return this.facingDirection;
+    }
+
+    /**
+     * Called when the entity is attacked.
+     */
+    public boolean attackEntityFrom(DamageSource source, float amount) {
+        if (this.isEntityInvulnerable(source)) {
+            return false;
+        } else {
+            if (!this.isDead && !this.worldObj.isRemote) {
+                this.setDead();
+                this.setBeenAttacked();
+                this.onBroken(source.getEntity());
+            }
+
+            return true;
+        }
+    }
+
+    /**
+     * Tries to moves the entity by the passed in displacement. Args: x, y, z
+     */
+    public void moveEntity(double x, double y, double z) {
+        if (!this.worldObj.isRemote && !this.isDead && x * x + y * y + z * z > 0.0D) {
             this.setDead();
-            this.setBeenAttacked();
-            this.onBroken(var1.getEntity());
-         }
+            this.onBroken((Entity) null);
+        }
+    }
 
-         return true;
-      }
-   }
+    /**
+     * Adds to the current velocity of the entity. Args: x, y, z
+     */
+    public void addVelocity(double x, double y, double z) {
+        if (!this.worldObj.isRemote && !this.isDead && x * x + y * y + z * z > 0.0D) {
+            this.setDead();
+            this.onBroken((Entity) null);
+        }
+    }
 
-   public void moveEntity(double var1, double var3, double var5) {
-      if(!this.worldObj.isRemote && !this.isDead && var1 * var1 + var3 * var3 + var5 * var5 > 0.0D) {
-         this.setDead();
-         this.onBroken((Entity)null);
-      }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+        tagCompound.setByte("Facing", (byte) this.facingDirection.getHorizontalIndex());
+        tagCompound.setInteger("TileX", this.getHangingPosition().getX());
+        tagCompound.setInteger("TileY", this.getHangingPosition().getY());
+        tagCompound.setInteger("TileZ", this.getHangingPosition().getZ());
+    }
 
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+        this.hangingPosition = new BlockPos(tagCompund.getInteger("TileX"), tagCompund.getInteger("TileY"), tagCompund.getInteger("TileZ"));
+        EnumFacing enumfacing;
 
-   public void addVelocity(double var1, double var3, double var5) {
-      if(!this.worldObj.isRemote && !this.isDead && var1 * var1 + var3 * var3 + var5 * var5 > 0.0D) {
-         this.setDead();
-         this.onBroken((Entity)null);
-      }
+        if (tagCompund.hasKey("Direction", 99)) {
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Direction"));
+            this.hangingPosition = this.hangingPosition.offset(enumfacing);
+        } else if (tagCompund.hasKey("Facing", 99)) {
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Facing"));
+        } else {
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Dir"));
+        }
 
-   }
+        this.updateFacingWithBoundingBox(enumfacing);
+    }
 
-   public void writeEntityToNBT(NBTTagCompound var1) {
-      var1.setByte("Facing", (byte)this.facingDirection.getHorizontalIndex());
-      var1.setInteger("TileX", this.getHangingPosition().getX());
-      var1.setInteger("TileY", this.getHangingPosition().getY());
-      var1.setInteger("TileZ", this.getHangingPosition().getZ());
-   }
+    public abstract int getWidthPixels();
 
-   public void readEntityFromNBT(NBTTagCompound var1) {
-      this.hangingPosition = new BlockPos(var1.getInteger("TileX"), var1.getInteger("TileY"), var1.getInteger("TileZ"));
-      EnumFacing var2;
-      if(var1.hasKey("Direction", 99)) {
-         var2 = EnumFacing.getHorizontal(var1.getByte("Direction"));
-         this.hangingPosition = this.hangingPosition.offset(var2);
-      } else if(var1.hasKey("Facing", 99)) {
-         var2 = EnumFacing.getHorizontal(var1.getByte("Facing"));
-      } else {
-         var2 = EnumFacing.getHorizontal(var1.getByte("Dir"));
-      }
+    public abstract int getHeightPixels();
 
-      this.updateFacingWithBoundingBox(var2);
-   }
+    /**
+     * Called when this entity is broken. Entity parameter may be null.
+     */
+    public abstract void onBroken(Entity brokenEntity);
 
-   public abstract int getWidthPixels();
+    protected boolean shouldSetPosAfterLoading() {
+        return false;
+    }
 
-   public abstract int getHeightPixels();
+    /**
+     * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
+     */
+    public void setPosition(double x, double y, double z) {
+        this.posX = x;
+        this.posY = y;
+        this.posZ = z;
+        BlockPos blockpos = this.hangingPosition;
+        this.hangingPosition = new BlockPos(x, y, z);
 
-   public abstract void onBroken(Entity var1);
+        if (!this.hangingPosition.equals(blockpos)) {
+            this.updateBoundingBox();
+            this.isAirBorne = true;
+        }
+    }
 
-   protected boolean shouldSetPosAfterLoading() {
-      return false;
-   }
-
-   public void setPosition(double var1, double var3, double var5) {
-      this.posX = var1;
-      this.posY = var3;
-      this.posZ = var5;
-      BlockPos var7 = this.hangingPosition;
-      this.hangingPosition = new BlockPos(var1, var3, var5);
-      if(!this.hangingPosition.equals(var7)) {
-         this.updateBoundingBox();
-         this.isAirBorne = true;
-      }
-
-   }
-
-   public BlockPos getHangingPosition() {
-      return this.hangingPosition;
-   }
+    public BlockPos getHangingPosition() {
+        return this.hangingPosition;
+    }
 }

@@ -1,41 +1,51 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.IChatComponent;
 
-public class S47PacketPlayerListHeaderFooter implements Packet {
-   private IChatComponent header;
-   private IChatComponent footer;
+import java.io.IOException;
 
-   public S47PacketPlayerListHeaderFooter() {
-   }
+public class S47PacketPlayerListHeaderFooter implements Packet<INetHandlerPlayClient> {
+    private IChatComponent header;
+    private IChatComponent footer;
 
-   public S47PacketPlayerListHeaderFooter(IChatComponent var1) {
-      this.header = var1;
-   }
+    public S47PacketPlayerListHeaderFooter() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.header = var1.readChatComponent();
-      this.footer = var1.readChatComponent();
-   }
+    public S47PacketPlayerListHeaderFooter(IChatComponent headerIn) {
+        this.header = headerIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeChatComponent(this.header);
-      var1.writeChatComponent(this.footer);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.header = buf.readChatComponent();
+        this.footer = buf.readChatComponent();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handlePlayerListHeaderFooter(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeChatComponent(this.header);
+        buf.writeChatComponent(this.footer);
+    }
 
-   public IChatComponent getHeader() {
-      return this.header;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handlePlayerListHeaderFooter(this);
+    }
 
-   public IChatComponent getFooter() {
-      return this.footer;
-   }
+    public IChatComponent getHeader() {
+        return this.header;
+    }
+
+    public IChatComponent getFooter() {
+        return this.footer;
+    }
 }

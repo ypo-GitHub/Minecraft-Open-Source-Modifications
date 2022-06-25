@@ -4,11 +4,23 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.world.World;
 
 public interface IHopper extends IInventory {
-   World getWorld();
+    /**
+     * Returns the worldObj for this tileEntity.
+     */
+    World getWorld();
 
-   double getXPos();
+    /**
+     * Gets the world X position for this hopper entity.
+     */
+    double getXPos();
 
-   double getYPos();
+    /**
+     * Gets the world Y position for this hopper entity.
+     */
+    double getYPos();
 
-   double getZPos();
+    /**
+     * Gets the world Z position for this hopper entity.
+     */
+    double getZPos();
 }

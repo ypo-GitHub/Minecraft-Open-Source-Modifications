@@ -1,8 +1,8 @@
 package net.optifine;
 
-import net.aTX;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.entity.player.EntityPlayer;
@@ -12,42 +12,63 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class PlayerControllerOF extends aTX {
-   private boolean acting = false;
+public class PlayerControllerOF extends PlayerControllerMP {
 
-   public PlayerControllerOF(Minecraft var1, NetHandlerPlayClient var2) {
-      super(var1, var2);
-   }
+    private boolean acting = false;
 
-   public boolean b(BlockPos var1, EnumFacing var2) {
-      this.acting = true;
-      boolean var3 = super.b(var1, var2);
-      this.acting = false;
-      return var3;
-   }
+    public PlayerControllerOF(Minecraft minecraft,
+                              NetHandlerPlayClient netHandlerPlayClient) {
+        super(minecraft, netHandlerPlayClient);
+    }
 
-   public boolean a(BlockPos var1, EnumFacing var2) {
-      this.acting = true;
-      boolean var3 = super.a(var1, var2);
-      this.acting = false;
-      return var3;
-   }
+    /**
+     * Called when the player is hitting a block with an item.
+     */
+    @Override
+    public boolean clickBlock(BlockPos loc,
+                              EnumFacing face) {
+        this.acting = true;
+        boolean flag = super.clickBlock(loc, face);
+        this.acting = false;
+        return flag;
+    }
 
-   public boolean sendUseItem(EntityPlayer var1, World var2, ItemStack var3) {
-      this.acting = true;
-      boolean var4 = super.sendUseItem(var1, var2, var3);
-      this.acting = false;
-      return var4;
-   }
+    @Override
+    public boolean onPlayerDamageBlock(BlockPos posBlock,
+                                       EnumFacing directionFacing) {
+        this.acting = true;
+        boolean flag = super.onPlayerDamageBlock(posBlock, directionFacing);
+        this.acting = false;
+        return flag;
+    }
 
-   public boolean onPlayerRightClick(EntityPlayerSP var1, WorldClient var2, ItemStack var3, BlockPos var4, EnumFacing var5, Vec3 var6) {
-      this.acting = true;
-      boolean var7 = super.onPlayerRightClick(var1, var2, var3, var4, var5, var6);
-      this.acting = false;
-      return var7;
-   }
+    /**
+     * Notifies the server of things like consuming food, etc...
+     */
+    @Override
+    public boolean sendUseItem(EntityPlayer playerIn,
+                               World worldIn,
+                               ItemStack itemStackIn) {
+        this.acting = true;
+        boolean flag = super.sendUseItem(playerIn, worldIn, itemStackIn);
+        this.acting = false;
+        return flag;
+    }
 
-   public boolean isActing() {
-      return this.acting;
-   }
+    @Override
+    public boolean onPlayerRightClick(EntityPlayerSP player,
+                                      WorldClient world,
+                                      ItemStack heldStack,
+                                      BlockPos hitPos,
+                                      EnumFacing side,
+                                      Vec3 hitVec) {
+        this.acting = true;
+        boolean flag = super.onPlayerRightClick(player, world, heldStack, hitPos, side, hitVec);
+        this.acting = false;
+        return flag;
+    }
+
+    public boolean isActing() {
+        return acting;
+    }
 }

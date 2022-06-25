@@ -1,69 +1,69 @@
 package net.minecraft.client.renderer.entity.layers;
 
-import java.util.Random;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.boss.EntityDragon;
 
-public class LayerEnderDragonDeath implements LayerRenderer {
-   public void doRenderLayer(EntityDragon var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      if(var1.deathTicks > 0) {
-         Tessellator var9 = Tessellator.getInstance();
-         WorldRenderer var10 = var9.getWorldRenderer();
-         RenderHelper.disableStandardItemLighting();
-         float var11 = ((float)var1.deathTicks + var4) / 200.0F;
-         float var12 = 0.0F;
-         if(var11 > 0.8F) {
-            var12 = (var11 - 0.8F) / 0.2F;
-         }
+import java.util.Random;
 
-         Random var13 = new Random(432L);
-         GlStateManager.disableTexture2D();
-         GlStateManager.shadeModel(7425);
-         GlStateManager.enableBlend();
-         GlStateManager.blendFunc(770, 1);
-         GlStateManager.disableAlpha();
-         GlStateManager.enableCull();
-         GlStateManager.depthMask(false);
-         GlStateManager.pushMatrix();
-         GlStateManager.translate(0.0F, -1.0F, -2.0F);
+public class LayerEnderDragonDeath implements LayerRenderer<EntityDragon> {
+    public void doRenderLayer(EntityDragon entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        if (entitylivingbaseIn.deathTicks > 0) {
+            Tessellator tessellator = Tessellator.getInstance();
+            WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+            RenderHelper.disableStandardItemLighting();
+            float f = ((float) entitylivingbaseIn.deathTicks + partialTicks) / 200.0F;
+            float f1 = 0.0F;
 
-         for(int var14 = 0; (float)var14 < (var11 + var11 * var11) / 2.0F * 60.0F; ++var14) {
-            GlStateManager.rotate(var13.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
-            GlStateManager.rotate(var13.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
-            GlStateManager.rotate(var13.nextFloat() * 360.0F, 0.0F, 0.0F, 1.0F);
-            GlStateManager.rotate(var13.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
-            GlStateManager.rotate(var13.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
-            GlStateManager.rotate(var13.nextFloat() * 360.0F + var11 * 90.0F, 0.0F, 0.0F, 1.0F);
-            float var15 = var13.nextFloat() * 20.0F + 5.0F + var12 * 10.0F;
-            float var16 = var13.nextFloat() * 2.0F + 1.0F + var12 * 2.0F;
-            var10.begin(6, DefaultVertexFormats.POSITION_COLOR);
-            var10.pos(0.0D, 0.0D, 0.0D).color(255, 255, 255, (int)(255.0F * (1.0F - var12))).endVertex();
-            var10.pos(-0.866D * (double)var16, (double)var15, (double)(-0.5F * var16)).color(255, 0, 255, 0).endVertex();
-            var10.pos(0.866D * (double)var16, (double)var15, (double)(-0.5F * var16)).color(255, 0, 255, 0).endVertex();
-            var10.pos(0.0D, (double)var15, (double)(1.0F * var16)).color(255, 0, 255, 0).endVertex();
-            var10.pos(-0.866D * (double)var16, (double)var15, (double)(-0.5F * var16)).color(255, 0, 255, 0).endVertex();
-            var9.draw();
-         }
+            if (f > 0.8F) {
+                f1 = (f - 0.8F) / 0.2F;
+            }
 
-         GlStateManager.popMatrix();
-         GlStateManager.depthMask(true);
-         GlStateManager.disableCull();
-         GlStateManager.disableBlend();
-         GlStateManager.shadeModel(7424);
-         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-         GlStateManager.enableTexture2D();
-         GlStateManager.enableAlpha();
-         RenderHelper.enableStandardItemLighting();
-      }
+            Random random = new Random(432L);
+            GlStateManager.disableTexture2D();
+            GlStateManager.shadeModel(7425);
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(770, 1);
+            GlStateManager.disableAlpha();
+            GlStateManager.enableCull();
+            GlStateManager.depthMask(false);
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(0.0F, -1.0F, -2.0F);
 
-   }
+            for (int i = 0; (float) i < (f + f * f) / 2.0F * 60.0F; ++i) {
+                GlStateManager.rotate(random.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(random.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(random.nextFloat() * 360.0F, 0.0F, 0.0F, 1.0F);
+                GlStateManager.rotate(random.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(random.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(random.nextFloat() * 360.0F + f * 90.0F, 0.0F, 0.0F, 1.0F);
+                float f2 = random.nextFloat() * 20.0F + 5.0F + f1 * 10.0F;
+                float f3 = random.nextFloat() * 2.0F + 1.0F + f1 * 2.0F;
+                worldrenderer.begin(6, DefaultVertexFormats.POSITION_COLOR);
+                worldrenderer.pos(0.0D, 0.0D, 0.0D).color(255, 255, 255, (int) (255.0F * (1.0F - f1))).endVertex();
+                worldrenderer.pos(-0.866D * (double) f3, f2, -0.5F * f3).color(255, 0, 255, 0).endVertex();
+                worldrenderer.pos(0.866D * (double) f3, f2, -0.5F * f3).color(255, 0, 255, 0).endVertex();
+                worldrenderer.pos(0.0D, f2, 1.0F * f3).color(255, 0, 255, 0).endVertex();
+                worldrenderer.pos(-0.866D * (double) f3, f2, -0.5F * f3).color(255, 0, 255, 0).endVertex();
+                tessellator.draw();
+            }
 
-   public boolean shouldCombineTextures() {
-      return false;
-   }
+            GlStateManager.popMatrix();
+            GlStateManager.depthMask(true);
+            GlStateManager.disableCull();
+            GlStateManager.disableBlend();
+            GlStateManager.shadeModel(7424);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.enableTexture2D();
+            GlStateManager.enableAlpha();
+            RenderHelper.enableStandardItemLighting();
+        }
+    }
+
+    public boolean shouldCombineTextures() {
+        return false;
+    }
 }

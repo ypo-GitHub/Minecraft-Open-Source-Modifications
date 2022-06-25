@@ -4,58 +4,62 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 
 public class ModelResourceLocation extends ResourceLocation {
-   private final String variant;
+    private final String variant;
 
-   protected ModelResourceLocation(int var1, String... var2) {
-      super(0, new String[]{var2[0], var2[1]});
-      this.variant = StringUtils.isEmpty(var2[2])?"normal":var2[2].toLowerCase();
-   }
+    protected ModelResourceLocation(int p_i46078_1_, String... p_i46078_2_) {
+        super(0, new String[]{p_i46078_2_[0], p_i46078_2_[1]});
+        this.variant = StringUtils.isEmpty(p_i46078_2_[2]) ? "normal" : p_i46078_2_[2].toLowerCase();
+    }
 
-   public ModelResourceLocation(String var1) {
-      this(0, parsePathString(var1));
-   }
+    public ModelResourceLocation(String p_i46079_1_) {
+        this(0, parsePathString(p_i46079_1_));
+    }
 
-   public ModelResourceLocation(ResourceLocation var1, String var2) {
-      this(var1.toString(), var2);
-   }
+    public ModelResourceLocation(ResourceLocation p_i46080_1_, String p_i46080_2_) {
+        this(p_i46080_1_.toString(), p_i46080_2_);
+    }
 
-   public ModelResourceLocation(String var1, String var2) {
-      this(0, parsePathString(var1 + '#' + "normal"));
-   }
+    public ModelResourceLocation(String p_i46081_1_, String p_i46081_2_) {
+        this(0, parsePathString(p_i46081_1_ + '#' + (p_i46081_2_ == null ? "normal" : p_i46081_2_)));
+    }
 
-   protected static String[] parsePathString(String var0) {
-      String[] var1 = new String[]{null, var0, null};
-      int var2 = var0.indexOf(35);
-      String var3 = var0;
-      var1[2] = var0.substring(var2 + 1, var0.length());
-      if(var2 > 1) {
-         var3 = var0.substring(0, var2);
-      }
+    protected static String[] parsePathString(String p_177517_0_) {
+        String[] astring = new String[]{null, p_177517_0_, null};
+        int i = p_177517_0_.indexOf(35);
+        String s = p_177517_0_;
 
-      System.arraycopy(ResourceLocation.splitObjectName(var3), 0, var1, 0, 2);
-      return var1;
-   }
+        if (i >= 0) {
+            astring[2] = p_177517_0_.substring(i + 1, p_177517_0_.length());
 
-   public String getVariant() {
-      return this.variant;
-   }
+            if (i > 1) {
+                s = p_177517_0_.substring(0, i);
+            }
+        }
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(var1 instanceof ModelResourceLocation && super.equals(var1)) {
-         ModelResourceLocation var2 = (ModelResourceLocation)var1;
-         return this.variant.equals(var2.variant);
-      } else {
-         return false;
-      }
-   }
+        System.arraycopy(ResourceLocation.splitObjectName(s), 0, astring, 0, 2);
+        return astring;
+    }
 
-   public int hashCode() {
-      return 31 * super.hashCode() + this.variant.hashCode();
-   }
+    public String getVariant() {
+        return this.variant;
+    }
 
-   public String toString() {
-      return super.toString() + '#' + this.variant;
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
+            return true;
+        } else if (p_equals_1_ instanceof ModelResourceLocation && super.equals(p_equals_1_)) {
+            ModelResourceLocation modelresourcelocation = (ModelResourceLocation) p_equals_1_;
+            return this.variant.equals(modelresourcelocation.variant);
+        } else {
+            return false;
+        }
+    }
+
+    public int hashCode() {
+        return 31 * super.hashCode() + this.variant.hashCode();
+    }
+
+    public String toString() {
+        return super.toString() + '#' + this.variant;
+    }
 }

@@ -1,16 +1,17 @@
 package viaversion.viaversion.api.boss;
 
 public enum BossFlag {
-   DARKEN_SKY(1),
-   PLAY_BOSS_MUSIC(2);
 
-   private final int id;
+    DARKEN_SKY(1),
+    PLAY_BOSS_MUSIC(2);
 
-   private BossFlag(int var3) {
-      this.id = var3;
-   }
+    private final int id;
 
-   public int getId() {
-      return this.id;
-   }
+    BossFlag(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
 }

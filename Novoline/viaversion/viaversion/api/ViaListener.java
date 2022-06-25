@@ -1,41 +1,56 @@
 package viaversion.viaversion.api;
 
-import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.PacketWrapper;
-import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.protocol.Protocol;
+
+import java.util.UUID;
 
 public abstract class ViaListener {
-   private final Class requiredPipeline;
-   private boolean registered;
+    private final Class<? extends Protocol> requiredPipeline;
+    private boolean registered;
 
-   public ViaListener(Class var1) {
-      this.requiredPipeline = var1;
-   }
+    public ViaListener(Class<? extends Protocol> requiredPipeline) {
+        this.requiredPipeline = requiredPipeline;
+    }
 
-   @Nullable
-   protected UserConnection getUserConnection(UUID var1) {
-      return Via.getManager().getConnection(var1);
-   }
+    /**
+     * Get the UserConnection from an UUID
+     *
+     * @param uuid UUID object
+     * @return The UserConnection
+     */
+    @Nullable
+    protected UserConnection getUserConnection(UUID uuid) {
+        return Via.getManager().getConnection(uuid);
+    }
 
-   protected boolean isOnPipe(UUID var1) {
-      PacketWrapper.f();
-      UserConnection var3 = this.getUserConnection(var1);
-      return this.requiredPipeline == null || var3.getProtocolInfo().getPipeline().contains(this.requiredPipeline);
-   }
+    /**
+     * Checks if the UUID is on the selected pipe
+     *
+     * @param uuid UUID Object
+     * @return True if on pipe
+     */
+    protected boolean isOnPipe(UUID uuid) {
+        UserConnection userConnection = getUserConnection(uuid);
+        return userConnection != null &&
+                (requiredPipeline == null || userConnection.getProtocolInfo().getPipeline().contains(requiredPipeline));
+    }
 
-   public abstract void register();
+    /**
+     * Register the event
+     */
+    public abstract void register();
 
-   protected Class getRequiredPipeline() {
-      return this.requiredPipeline;
-   }
+    protected Class<? extends Protocol> getRequiredPipeline() {
+        return requiredPipeline;
+    }
 
-   protected boolean isRegistered() {
-      return this.registered;
-   }
+    protected boolean isRegistered() {
+        return registered;
+    }
 
-   protected void setRegistered(boolean var1) {
-      this.registered = var1;
-   }
+    protected void setRegistered(boolean registered) {
+        this.registered = registered;
+    }
 }

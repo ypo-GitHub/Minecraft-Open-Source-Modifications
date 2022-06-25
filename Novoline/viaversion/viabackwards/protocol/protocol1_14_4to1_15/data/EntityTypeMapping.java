@@ -1,11 +1,12 @@
 package viaversion.viabackwards.protocol.protocol1_14_4to1_15.data;
 
-import net.N0;
-import net.cW;
+import viaversion.viaversion.api.entities.Entity1_14Types;
 
 public class EntityTypeMapping {
-   public static int getOldEntityId(int var0) {
-      String var1 = cW.b();
-      return var0 == 4?N0.PUFFERFISH.getId():(var0 >= 5?var0 - 1:var0);
-   }
+
+    // There's only the bee, so not much to do here
+    public static int getOldEntityId(int entityId) {
+        if (entityId == 4) return Entity1_14Types.EntityType.PUFFERFISH.getId(); // Flying pufferfish!
+        return entityId >= 5 ? entityId - 1 : entityId;
+    }
 }

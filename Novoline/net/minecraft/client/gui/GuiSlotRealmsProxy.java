@@ -1,59 +1,66 @@
 package net.minecraft.client.gui;
 
-import net.aEr;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiSlot;
 import net.minecraft.realms.RealmsScrolledSelectionList;
 
 public class GuiSlotRealmsProxy extends GuiSlot {
-   private final RealmsScrolledSelectionList selectionList;
+    private final RealmsScrolledSelectionList selectionList;
 
-   public GuiSlotRealmsProxy(RealmsScrolledSelectionList var1, int var2, int var3, int var4, int var5, int var6) {
-      super(Minecraft.getInstance(), var2, var3, var4, var5, var6);
-      this.selectionList = var1;
-   }
+    public GuiSlotRealmsProxy(RealmsScrolledSelectionList selectionListIn, int widthIn, int heightIn, int topIn, int bottomIn, int slotHeightIn) {
+        super(Minecraft.getInstance(), widthIn, heightIn, topIn, bottomIn, slotHeightIn);
+        this.selectionList = selectionListIn;
+    }
 
-   protected int getSize() {
-      return this.selectionList.getItemCount();
-   }
+    protected int getSize() {
+        return this.selectionList.getItemCount();
+    }
 
-   protected void elementClicked(int var1, boolean var2, int var3, int var4) {
-      this.selectionList.selectItem(var1, var2, var3, var4);
-   }
+    /**
+     * The element in the slot that was clicked, boolean for whether it was double clicked or not
+     */
+    protected void elementClicked(int slotIndex, boolean isDoubleClick, int mouseX, int mouseY) {
+        this.selectionList.selectItem(slotIndex, isDoubleClick, mouseX, mouseY);
+    }
 
-   protected boolean isSelected(int var1) {
-      return this.selectionList.isSelectedItem(var1);
-   }
+    /**
+     * Returns true if the element passed in is currently selected
+     */
+    protected boolean isSelected(int slotIndex) {
+        return this.selectionList.isSelectedItem(slotIndex);
+    }
 
-   protected void drawBackground() {
-      this.selectionList.renderBackground();
-   }
+    protected void drawBackground() {
+        this.selectionList.renderBackground();
+    }
 
-   protected void drawSlot(int var1, int var2, int var3, int var4, int var5, int var6) {
-      aEr.a(this.selectionList, var1, var2, var3, var4, var5, var6);
-   }
+    protected void drawSlot(int entryID, int p_180791_2_, int p_180791_3_, int p_180791_4_, int mouseXIn, int mouseYIn) {
+        this.selectionList.renderItem(entryID, p_180791_2_, p_180791_3_, p_180791_4_, mouseXIn, mouseYIn);
+    }
 
-   public int func_154338_k() {
-      return super.width;
-   }
+    public int func_154338_k() {
+        return super.width;
+    }
 
-   public int func_154339_l() {
-      return super.mouseY;
-   }
+    public int func_154339_l() {
+        return super.mouseY;
+    }
 
-   public int func_154337_m() {
-      return super.mouseX;
-   }
+    public int func_154337_m() {
+        return super.mouseX;
+    }
 
-   protected int getContentHeight() {
-      return this.selectionList.getMaxPosition();
-   }
+    /**
+     * Return the height of the content being scrolled
+     */
+    protected int getContentHeight() {
+        return this.selectionList.getMaxPosition();
+    }
 
-   protected int getScrollBarX() {
-      return this.selectionList.getScrollbarPosition();
-   }
+    protected int getScrollBarX() {
+        return this.selectionList.getScrollbarPosition();
+    }
 
-   public void handleMouseInput() {
-      super.handleMouseInput();
-   }
+    public void handleMouseInput() {
+        super.handleMouseInput();
+    }
 }

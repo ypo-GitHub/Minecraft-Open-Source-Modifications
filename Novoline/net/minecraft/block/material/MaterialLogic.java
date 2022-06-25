@@ -1,23 +1,31 @@
 package net.minecraft.block.material;
 
-import net.minecraft.block.material.MapColor;
-import net.minecraft.block.material.Material;
-
 public class MaterialLogic extends Material {
-   public MaterialLogic(MapColor var1) {
-      super(var1);
-      this.setAdventureModeExempt();
-   }
 
-   public boolean isSolid() {
-      return false;
-   }
+    public MaterialLogic(MapColor color) {
+        super(color);
+        this.setAdventureModeExempt();
+    }
 
-   public boolean blocksLight() {
-      return false;
-   }
+    /**
+     * Returns true if the block is a considered solid. This is true by default.
+     */
+    public boolean isSolid() {
+        return false;
+    }
 
-   public boolean blocksMovement() {
-      return false;
-   }
+    /**
+     * Will prevent grass from growing on dirt underneath and kill any grass below it if it returns true
+     */
+    public boolean blocksLight() {
+        return false;
+    }
+
+    /**
+     * Returns if this material is considered solid or not
+     */
+    public boolean blocksMovement() {
+        return false;
+    }
+
 }

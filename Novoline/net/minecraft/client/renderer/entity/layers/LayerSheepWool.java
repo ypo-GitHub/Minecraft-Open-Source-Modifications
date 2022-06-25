@@ -3,7 +3,6 @@ package net.minecraft.client.renderer.entity.layers;
 import net.minecraft.client.model.ModelSheep1;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderSheep;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntitySheep;
 import net.minecraft.item.EnumDyeColor;
@@ -12,54 +11,56 @@ import net.optifine.Config;
 import net.optifine.CustomColors;
 
 public class LayerSheepWool implements LayerRenderer {
-   private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/sheep/sheep_fur.png");
-   private final RenderSheep sheepRenderer;
-   private final ModelSheep1 sheepModel = new ModelSheep1();
-   private static final String d = "CL_00002413";
+    private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/sheep/sheep_fur.png");
+    private final RenderSheep sheepRenderer;
+    private final ModelSheep1 sheepModel = new ModelSheep1();
+    private static final String __OBFID = "CL_00002413";
 
-   public LayerSheepWool(RenderSheep var1) {
-      this.sheepRenderer = var1;
-   }
+    public LayerSheepWool(RenderSheep sheepRendererIn) {
+        this.sheepRenderer = sheepRendererIn;
+    }
 
-   public void doRenderLayer(EntitySheep var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      if(!var1.getSheared() && !var1.isInvisible()) {
-         this.sheepRenderer.bindTexture(TEXTURE);
-         if(var1.hasCustomName() && "jeb_".equals(var1.getCustomNameTag())) {
-            boolean var17 = true;
-            int var10 = var1.ticksExisted / 25 + var1.getEntityID();
-            int var11 = EnumDyeColor.values().length;
-            int var12 = var10 % var11;
-            int var13 = (var10 + 1) % var11;
-            float var14 = ((float)(var1.ticksExisted % 25) + var4) / 25.0F;
-            float[] var15 = EntitySheep.func_175513_a(EnumDyeColor.byMetadata(var12));
-            float[] var16 = EntitySheep.func_175513_a(EnumDyeColor.byMetadata(var13));
-            if(Config.isCustomColors()) {
-               var15 = CustomColors.getSheepColors(EnumDyeColor.byMetadata(var12), var15);
-               var16 = CustomColors.getSheepColors(EnumDyeColor.byMetadata(var13), var16);
+    public void doRenderLayer(EntitySheep entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        if (!entitylivingbaseIn.getSheared() && !entitylivingbaseIn.isInvisible()) {
+            this.sheepRenderer.bindTexture(TEXTURE);
+
+            if (entitylivingbaseIn.hasCustomName() && "jeb_".equals(entitylivingbaseIn.getCustomNameTag())) {
+                boolean flag = true;
+                int i = entitylivingbaseIn.ticksExisted / 25 + entitylivingbaseIn.getEntityID();
+                int j = EnumDyeColor.values().length;
+                int k = i % j;
+                int l = (i + 1) % j;
+                float f = ((float) (entitylivingbaseIn.ticksExisted % 25) + partialTicks) / 25.0F;
+                float[] afloat1 = EntitySheep.func_175513_a(EnumDyeColor.byMetadata(k));
+                float[] afloat2 = EntitySheep.func_175513_a(EnumDyeColor.byMetadata(l));
+
+                if (Config.isCustomColors()) {
+                    afloat1 = CustomColors.getSheepColors(EnumDyeColor.byMetadata(k), afloat1);
+                    afloat2 = CustomColors.getSheepColors(EnumDyeColor.byMetadata(l), afloat2);
+                }
+
+                GlStateManager.color(afloat1[0] * (1.0F - f) + afloat2[0] * f, afloat1[1] * (1.0F - f) + afloat2[1] * f, afloat1[2] * (1.0F - f) + afloat2[2] * f);
+            } else {
+                float[] afloat = EntitySheep.func_175513_a(entitylivingbaseIn.getFleeceColor());
+
+                if (Config.isCustomColors()) {
+                    afloat = CustomColors.getSheepColors(entitylivingbaseIn.getFleeceColor(), afloat);
+                }
+
+                GlStateManager.color(afloat[0], afloat[1], afloat[2]);
             }
 
-            GlStateManager.color(var15[0] * (1.0F - var14) + var16[0] * var14, var15[1] * (1.0F - var14) + var16[1] * var14, var15[2] * (1.0F - var14) + var16[2] * var14);
-         } else {
-            float[] var9 = EntitySheep.func_175513_a(var1.getFleeceColor());
-            if(Config.isCustomColors()) {
-               var9 = CustomColors.getSheepColors(var1.getFleeceColor(), var9);
-            }
+            this.sheepModel.setModelAttributes(this.sheepRenderer.getMainModel());
+            this.sheepModel.setLivingAnimations(entitylivingbaseIn, p_177141_2_, p_177141_3_, partialTicks);
+            this.sheepModel.render(entitylivingbaseIn, p_177141_2_, p_177141_3_, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+        }
+    }
 
-            GlStateManager.color(var9[0], var9[1], var9[2]);
-         }
+    public boolean shouldCombineTextures() {
+        return true;
+    }
 
-         this.sheepModel.setModelAttributes(this.sheepRenderer.getMainModel());
-         this.sheepModel.setLivingAnimations(var1, var2, var3, var4);
-         this.sheepModel.render(var1, var2, var3, var5, var6, var7, var8);
-      }
-
-   }
-
-   public boolean shouldCombineTextures() {
-      return true;
-   }
-
-   public void doRenderLayer(EntityLivingBase var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      this.doRenderLayer((EntitySheep)var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        this.doRenderLayer((EntitySheep) entitylivingbaseIn, p_177141_2_, p_177141_3_, partialTicks, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+    }
 }

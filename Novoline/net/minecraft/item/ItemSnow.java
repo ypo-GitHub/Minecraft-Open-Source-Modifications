@@ -4,53 +4,61 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockSnow;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class ItemSnow extends ItemBlock {
-   public ItemSnow(Block var1) {
-      super(var1);
-      this.setMaxDamage(0);
-      this.setHasSubtypes(true);
-   }
+    public ItemSnow(Block block) {
+        super(block);
+        this.setMaxDamage(0);
+        this.setHasSubtypes(true);
+    }
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var1.stackSize == 0) {
-         return false;
-      } else if(!var2.a(var4, var5, var1)) {
-         return false;
-      } else {
-         IBlockState var9 = var3.getBlockState(var4);
-         Block var10 = var9.getBlock();
-         BlockPos var11 = var4;
-         if((var5 != EnumFacing.UP || var10 != this.block) && !var10.isReplaceable(var3, var4)) {
-            var11 = var4.offset(var5);
-            var9 = var3.getBlockState(var11);
-            var10 = var9.getBlock();
-         }
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (stack.stackSize == 0) {
+            return false;
+        } else if (!playerIn.canPlayerEdit(pos, side, stack)) {
+            return false;
+        } else {
+            IBlockState iblockstate = worldIn.getBlockState(pos);
+            Block block = iblockstate.getBlock();
+            BlockPos blockpos = pos;
 
-         if(var10 == this.block) {
-            int var12 = ((Integer)var9.getValue(BlockSnow.P)).intValue();
-            if(var12 <= 7) {
-               IBlockState var13 = var9.withProperty(BlockSnow.P, Integer.valueOf(var12 + 1));
-               AxisAlignedBB var14 = this.block.getCollisionBoundingBox(var3, var11, var13);
-               if(var3.checkNoEntityCollision(var14) && var3.setBlockState(var11, var13, 2)) {
-                  var3.playSoundEffect((double)((float)var11.getX() + 0.5F), (double)((float)var11.getY() + 0.5F), (double)((float)var11.getZ() + 0.5F), this.block.stepSound.getPlaceSound(), (this.block.stepSound.getVolume() + 1.0F) / 2.0F, this.block.stepSound.getFrequency() * 0.8F);
-                  --var1.stackSize;
-                  return true;
-               }
+            if ((side != EnumFacing.UP || block != this.block) && !block.isReplaceable(worldIn, pos)) {
+                blockpos = pos.offset(side);
+                iblockstate = worldIn.getBlockState(blockpos);
+                block = iblockstate.getBlock();
             }
-         }
 
-         return super.onItemUse(var1, var2, var3, var11, var5, var6, var7, var8);
-      }
-   }
+            if (block == this.block) {
+                int i = (Integer) iblockstate.getValue(BlockSnow.LAYERS);
 
-   public int getMetadata(int var1) {
-      return var1;
-   }
+                if (i <= 7) {
+                    IBlockState iblockstate1 = iblockstate.withProperty(BlockSnow.LAYERS, i + 1);
+                    AxisAlignedBB axisalignedbb = this.block.getCollisionBoundingBox(worldIn, blockpos, iblockstate1);
+
+                    if (axisalignedbb != null && worldIn.checkNoEntityCollision(axisalignedbb) && worldIn.setBlockState(blockpos, iblockstate1, 2)) {
+                        worldIn.playSoundEffect((double) ((float) blockpos.getX() + 0.5F), (double) ((float) blockpos.getY() + 0.5F), (double) ((float) blockpos.getZ() + 0.5F), this.block.stepSound.getPlaceSound(), (this.block.stepSound.getVolume() + 1.0F) / 2.0F, this.block.stepSound.getFrequency() * 0.8F);
+                        --stack.stackSize;
+                        return true;
+                    }
+                }
+            }
+
+            return super.onItemUse(stack, playerIn, worldIn, blockpos, side, hitX, hitY, hitZ);
+        }
+    }
+
+    /**
+     * Converts the given ItemStack damage value into a metadata value to be placed in the world when this Item is
+     * placed as a Block (mostly used with ItemBlocks).
+     */
+    public int getMetadata(int damage) {
+        return damage;
+    }
 }

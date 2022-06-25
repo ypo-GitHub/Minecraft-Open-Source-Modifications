@@ -1,112 +1,80 @@
 package cc.novoline.modules;
 
 import cc.novoline.Novoline;
-import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.EnumModuleType;
-import cc.novoline.modules.ModuleArrayMap;
-import cc.novoline.modules.ModuleManager$ModuleCreator;
 import cc.novoline.modules.binds.BindManager;
 import cc.novoline.modules.configurations.ConfigManager;
 import cc.novoline.modules.configurations.holder.CreatingModuleHolder;
-import cc.novoline.modules.configurations.holder.ModuleHolder;
 import cc.novoline.modules.exceptions.UnregisteredModuleException;
 import cc.novoline.utils.java.Checks;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Predicate;
-import net.acE;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public final class ModuleManager {
-   private final Novoline novoline;
-   private final ConfigManager configManager;
-   private final ModuleArrayMap moduleManager;
-   private final BindManager bindManager;
-   private final List abstractModules;
 
-   public ModuleManager(@NotNull Novoline var1, int var2) {
-      AbstractModule.d();
-      this.moduleManager = new ModuleArrayMap();
-      this.abstractModules = new CopyOnWriteArrayList();
-      this.novoline = var1;
-      this.configManager = new ConfigManager(this, var2);
-      this.bindManager = new BindManager(this, var2);
-      if(acE.b() == null) {
-         AbstractModule.b(new int[5]);
-      }
+    /* fields */
+    private final Novoline novoline;
+    private final ConfigManager configManager;
+    private final ModuleArrayMap moduleManager = new ModuleArrayMap();
+    private final BindManager bindManager;
 
-   }
+    private final List<AbstractModule> abstractModules = new CopyOnWriteArrayList<>();
 
-   @NotNull
-   public AbstractModule getModule(Class var1) {
-      return this.moduleManager.getByClass(var1);
-   }
+    /* constructors */
+    public ModuleManager(@NotNull Novoline novoline, int configVersion) {
+        this.novoline = novoline;
+        this.configManager = new ConfigManager(this, configVersion);
+        this.bindManager = new BindManager(this, configVersion);
+    }
 
-   @Nullable
-   public AbstractModule getByNameIgnoreCase(String var1) {
-      return this.moduleManager.getByNameIgnoreCase(var1);
-   }
+    /* methods */
+    public <Module extends AbstractModule> @NotNull Module getModule(Class<? extends Module> moduleClass) {
+        return moduleManager.getByClass(moduleClass);
+    }
 
-   @NotNull
-   public List getModuleListByCategory(EnumModuleType var1) {
-      return this.moduleManager.getByCategory(var1);
-   }
+    public <Module extends AbstractModule> @Nullable Module getByNameIgnoreCase(String name) {
+        return moduleManager.getByNameIgnoreCase(name);
+    }
 
-   public void a(AbstractModule var1) {
-      this.moduleManager.values().removeIf(ModuleManager::lambda$removeByModule$0);
-   }
+    public @NotNull List<AbstractModule> getModuleListByCategory(EnumModuleType enumModuleType) {
+        return moduleManager.getByCategory(enumModuleType);
+    }
 
-   public void a(@NotNull String var1, @NotNull ModuleManager$ModuleCreator var2, boolean var3) {
-      AbstractModule.d();
-      Checks.notBlank(var1, "name");
-      CreatingModuleHolder var5 = CreatingModuleHolder.of(this, var1, var2);
-      if(this.isRegistered(var5.getTypeToken().getRawType())) {
-         throw new IllegalStateException("module may not be registered twice as holder " + var5.getName() + " exists");
-      } else {
-         this.moduleManager.put(var1, var5);
-      }
-   }
+    @SuppressWarnings("unchecked")
+    public <Module extends AbstractModule> void register(@NotNull String name, @NotNull ModuleCreator<Module> moduleCreator) {
+        Checks.notBlank(name, "name");
 
-   public boolean isRegistered(@NotNull Class var1) {
-      try {
-         this.moduleManager.getByClass(var1);
-         return true;
-      } catch (UnregisteredModuleException var3) {
-         return false;
-      }
-   }
+        CreatingModuleHolder<Module> holder = CreatingModuleHolder.of(this, name, moduleCreator);
 
-   @NotNull
-   public Novoline getNovoline() {
-      return this.novoline;
-   }
+        if (isRegistered((Class<? extends Module>) holder.getTypeToken().getRawType())) {
+            throw new IllegalStateException("module may not be registered twice");
+        }
 
-   @NotNull
-   public ConfigManager getConfigManager() {
-      return this.configManager;
-   }
+        moduleManager.put(name, holder);
+    }
 
-   @NotNull
-   public BindManager getBindManager() {
-      return this.bindManager;
-   }
+    public boolean isRegistered(@NotNull Class<? extends AbstractModule> moduleClass) {
+        try {
+            moduleManager.getByClass(moduleClass);
+            return true;
+        } catch (UnregisteredModuleException e) {
+            return false;
+        }
+    }
 
-   @NotNull
-   public ModuleArrayMap getModuleManager() {
-      return this.moduleManager;
-   }
+    //region Lombok
+    public @NotNull Novoline getNovoline() { return novoline; }
+    public @NotNull ConfigManager getConfigManager() { return configManager; }
+    public @NotNull BindManager getBindManager() { return bindManager; }
+    public @NotNull ModuleArrayMap getModuleManager() { return moduleManager; }
+    public @NotNull List<AbstractModule> getAbstractModules() { return abstractModules; }
+    //endregion
 
-   @NotNull
-   public List getAbstractModules() {
-      return this.abstractModules;
-   }
+    @FunctionalInterface
+    public interface ModuleCreator<Module extends AbstractModule> {
 
-   private static boolean lambda$removeByModule$0(AbstractModule var0, ModuleHolder var1) {
-      return var1.getModule() == var0;
-   }
-
-   private static IllegalStateException a(IllegalStateException var0) {
-      return var0;
-   }
+        @NotNull Module create(@NotNull ModuleManager moduleManager);
+    }
 }

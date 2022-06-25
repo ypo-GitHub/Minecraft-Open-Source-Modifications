@@ -4,128 +4,124 @@ import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.util.Map;
-import net.ayd;
-import net.ln;
+import viaversion.viabackwards.api.BackwardsProtocol;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viabackwards.api.data.VBMappingDataLoader;
-import viaversion.viabackwards.api.data.VBMappings;
 import viaversion.viaversion.api.data.MappingData;
 import viaversion.viaversion.api.data.Mappings;
+import viaversion.viaversion.api.protocol.Protocol;
 import viaversion.viaversion.api.protocol.ProtocolRegistry;
 
 public class BackwardsMappings extends MappingData {
-   private final Class vvProtocolClass;
-   private Int2ObjectMap backwardsItemMappings;
-   private Map backwardsSoundMappings;
-   private static String o;
 
-   public BackwardsMappings(String var1, String var2, @Nullable Class var3) {
-      this(var1, var2, var3, false);
-   }
+    private final Class<? extends Protocol> vvProtocolClass;
+    private Int2ObjectMap<MappedItem> backwardsItemMappings;
+    private Map<String, String> backwardsSoundMappings;
 
-   public BackwardsMappings(String var1, String var2, @Nullable Class var3, boolean var4) {
-      super(var1, var2, var4);
-      Preconditions.checkArgument(!var3.isAssignableFrom(ayd.class));
-      this.vvProtocolClass = var3;
-      this.loadItems = false;
-   }
+    public BackwardsMappings(String oldVersion, String newVersion, @Nullable Class<? extends Protocol> vvProtocolClass) {
+        this(oldVersion, newVersion, vvProtocolClass, false);
+    }
 
-   protected void loadExtras(JsonObject var1, JsonObject var2, @Nullable JsonObject var3) {
-      String var4 = b();
-      if(var3 != null) {
-         JsonObject var5 = var3.getAsJsonObject("items");
-         if(var5 != null) {
-            this.backwardsItemMappings = VBMappingDataLoader.loadItemMappings(var1.getAsJsonObject("items"), var2.getAsJsonObject("items"), var5);
-         }
+    public BackwardsMappings(String oldVersion, String newVersion, @Nullable Class<? extends Protocol> vvProtocolClass, boolean hasDiffFile) {
+        super(oldVersion, newVersion, hasDiffFile);
+        Preconditions.checkArgument(vvProtocolClass == null || !vvProtocolClass.isAssignableFrom(BackwardsProtocol.class));
+        this.vvProtocolClass = vvProtocolClass;
+        // Just re-use ViaVersion's item id map
+        loadItems = false;
+    }
 
-         JsonObject var6 = var3.getAsJsonObject("sounds");
-         this.backwardsSoundMappings = VBMappingDataLoader.objectToMap(var6);
-      }
+    @Override
+    protected void loadExtras(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings) {
+        if (diffMappings != null) {
+            JsonObject diffItems = diffMappings.getAsJsonObject("items");
+            if (diffItems != null) {
+                backwardsItemMappings = VBMappingDataLoader.loadItemMappings(oldMappings.getAsJsonObject("items"), newMappings.getAsJsonObject("items"), diffItems);
+            }
 
-      if(this.vvProtocolClass != null) {
-         this.itemMappings = ProtocolRegistry.getProtocol(this.vvProtocolClass).getMappingData().getItemMappings().inverse();
-      }
+            JsonObject diffSounds = diffMappings.getAsJsonObject("sounds");
+            if (diffSounds != null) {
+                backwardsSoundMappings = VBMappingDataLoader.objectToMap(diffSounds);
+            }
+        }
 
-      this.loadVBExtras(var1, var2);
-   }
+        // Just re-use ViaVersion's item id map
+        if (vvProtocolClass != null) {
+            itemMappings = ProtocolRegistry.getProtocol(vvProtocolClass).getMappingData().getItemMappings().inverse();
+        }
 
-   @Nullable
-   protected Mappings loadFromArray(JsonObject var1, JsonObject var2, @Nullable JsonObject var3, String var4) {
-      String var5 = b();
-      if(var1.has(var4) && var2.has(var4)) {
-         JsonObject var6 = var3 != null?var3.getAsJsonObject(var4):null;
-         return new VBMappings(var1.getAsJsonArray(var4), var2.getAsJsonArray(var4), var6, this.shouldWarnOnMissing(var4));
-      } else {
-         return null;
-      }
-   }
+        loadVBExtras(oldMappings, newMappings);
+    }
 
-   @Nullable
-   protected Mappings loadFromObject(JsonObject var1, JsonObject var2, @Nullable JsonObject var3, String var4) {
-      String var5 = b();
-      if(var1.has(var4) && var2.has(var4)) {
-         JsonObject var6 = var3 != null?var3.getAsJsonObject(var4):null;
-         return new VBMappings(var1.getAsJsonObject(var4), var2.getAsJsonObject(var4), var6, this.shouldWarnOnMissing(var4));
-      } else {
-         return null;
-      }
-   }
+    @Override
+    @Nullable
+    protected Mappings loadFromArray(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings, String key) {
+        if (!oldMappings.has(key) || !newMappings.has(key)) return null;
 
-   protected JsonObject loadDiffFile() {
-      return VBMappingDataLoader.loadFromDataDir("mapping-" + this.newVersion + "to" + this.oldVersion + ".json");
-   }
+        JsonObject diff = diffMappings != null ? diffMappings.getAsJsonObject(key) : null;
+        return new VBMappings(oldMappings.getAsJsonArray(key), newMappings.getAsJsonArray(key), diff, shouldWarnOnMissing(key));
+    }
 
-   protected void loadVBExtras(JsonObject var1, JsonObject var2) {
-   }
+    @Override
+    @Nullable
+    protected Mappings loadFromObject(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings, String key) {
+        if(!oldMappings.has(key) || !newMappings.has(key)) return null;
 
-   protected boolean shouldWarnOnMissing(String var1) {
-      String var2 = b();
-      return !var1.equals("blocks") && !var1.equals("statistics");
-   }
+        JsonObject diff = diffMappings != null ? diffMappings.getAsJsonObject(key) : null;
+        return new VBMappings(oldMappings.getAsJsonObject(key), newMappings.getAsJsonObject(key), diff, shouldWarnOnMissing(key));
+    }
 
-   public int getNewItemId(int var1) {
-      return this.itemMappings.get(var1);
-   }
+    @Override
+    protected JsonObject loadDiffFile() {
+        return VBMappingDataLoader.loadFromDataDir("mapping-" + newVersion + "to" + oldVersion + ".json");
+    }
 
-   public int getNewBlockId(int var1) {
-      return this.blockMappings.getNewId(var1);
-   }
+    /**
+     * To be overridden.
+     */
+    protected void loadVBExtras(JsonObject oldMappings, JsonObject newMappings) {
+    }
 
-   public int getOldItemId(int var1) {
-      return this.checkValidity(var1, this.itemMappings.inverse().get(var1), "item");
-   }
+    protected boolean shouldWarnOnMissing(String key) {
+        return !key.equals("blocks") && !key.equals("statistics");
+    }
 
-   @Nullable
-   public ln a(int var1) {
-      String var2 = b();
-      return this.backwardsItemMappings != null?(ln)this.backwardsItemMappings.get(var1):null;
-   }
+    /**
+     * @see #getMappedItem(int) for custom backwards mappings
+     */
+    @Override
+    public int getNewItemId(int id) {
+        // Don't warn on missing here
+        return this.itemMappings.get(id);
+    }
 
-   @Nullable
-   public String getMappedNamedSound(String var1) {
-      String var2 = b();
-      return this.backwardsSoundMappings != null?(String)this.backwardsSoundMappings.get(var1):null;
-   }
+    @Override
+    public int getNewBlockId(int id) {
+        // Don't warn on missing here
+        return this.blockMappings.getNewId(id);
+    }
 
-   @Nullable
-   public Int2ObjectMap getBackwardsItemMappings() {
-      return this.backwardsItemMappings;
-   }
+    @Override
+    public int getOldItemId(final int id) {
+        // Warn on missing
+        return checkValidity(id, this.itemMappings.inverse().get(id), "item");
+    }
 
-   @Nullable
-   public Map getBackwardsSoundMappings() {
-      return this.backwardsSoundMappings;
-   }
+    @Nullable
+    public MappedItem getMappedItem(int id) {
+        return backwardsItemMappings != null ? backwardsItemMappings.get(id) : null;
+    }
 
-   public static void b(String var0) {
-      o = var0;
-   }
+    @Nullable
+    public String getMappedNamedSound(String id) {
+        return backwardsSoundMappings != null ? backwardsSoundMappings.get(id) : null;
+    }
 
-   public static String b() {
-      return o;
-   }
+    @Nullable
+    public Int2ObjectMap<MappedItem> getBackwardsItemMappings() {
+        return backwardsItemMappings;
+    }
 
-   static {
-      b((String)null);
-   }
+    @Nullable
+    public Map<String, String> getBackwardsSoundMappings() {
+        return backwardsSoundMappings;
+    }
 }

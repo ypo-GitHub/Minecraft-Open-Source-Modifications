@@ -1,22 +1,27 @@
 package cc.novoline.modules.configurations.property.exception;
 
 import cc.novoline.modules.configurations.property.Property;
-import cc.novoline.modules.configurations.property.exception.PropertyException;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
+/**
+ * @author xDelsy
+ */
 public final class UnacceptableValueException extends PropertyException {
-   public UnacceptableValueException(Property var1) {
-      super(var1);
-   }
 
-   public UnacceptableValueException(String var1, Property var2) {
-      super(var1, var2);
-   }
+    public UnacceptableValueException(@NonNull Property<?> property) {
+        super(property);
+    }
 
-   public UnacceptableValueException(String var1, Throwable var2, Property var3) {
-      super(var1, var2, var3);
-   }
+    public UnacceptableValueException(String message, @NonNull Property<?> property) {
+        super(message, property);
+    }
 
-   public UnacceptableValueException(Throwable var1, Property var2) {
-      super(var1, var2);
-   }
+    public UnacceptableValueException(String message, Throwable cause, @NonNull Property<?> property) {
+        super(message, cause, property);
+    }
+
+    public UnacceptableValueException(Throwable cause, @NonNull Property<?> property) {
+        super(cause, property);
+    }
+
 }

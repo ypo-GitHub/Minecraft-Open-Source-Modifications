@@ -1,33 +1,47 @@
 package net.minecraft.world.gen;
 
-import java.util.Random;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkProvider;
 
+import java.util.Random;
+
 public class MapGenBase {
-   protected int range = 8;
-   protected Random rand = new Random();
-   protected World worldObj;
+    /**
+     * The number of Chunks to gen-check in any given direction.
+     */
+    protected int range = 8;
 
-   public void generate(IChunkProvider var1, World var2, int var3, int var4, ChunkPrimer var5) {
-      int var6 = this.range;
-      this.worldObj = var2;
-      this.rand.setSeed(var2.getSeed());
-      long var7 = this.rand.nextLong();
-      long var9 = this.rand.nextLong();
+    /**
+     * The RNG used by the MapGen classes.
+     */
+    protected Random rand = new Random();
 
-      for(int var11 = var3 - var6; var11 <= var3 + var6; ++var11) {
-         for(int var12 = var4 - var6; var12 <= var4 + var6; ++var12) {
-            long var13 = (long)var11 * var7;
-            long var15 = (long)var12 * var9;
-            this.rand.setSeed(var13 ^ var15 ^ var2.getSeed());
-            this.recursiveGenerate(var2, var11, var12, var3, var4, var5);
-         }
-      }
+    /**
+     * This world object.
+     */
+    protected World worldObj;
 
-   }
+    public void generate(IChunkProvider chunkProviderIn, World worldIn, int x, int z, ChunkPrimer chunkPrimerIn) {
+        int i = this.range;
+        this.worldObj = worldIn;
+        this.rand.setSeed(worldIn.getSeed());
+        long j = this.rand.nextLong();
+        long k = this.rand.nextLong();
 
-   protected void recursiveGenerate(World var1, int var2, int var3, int var4, int var5, ChunkPrimer var6) {
-   }
+        for (int l = x - i; l <= x + i; ++l) {
+            for (int i1 = z - i; i1 <= z + i; ++i1) {
+                long j1 = (long) l * j;
+                long k1 = (long) i1 * k;
+                this.rand.setSeed(j1 ^ k1 ^ worldIn.getSeed());
+                this.recursiveGenerate(worldIn, l, i1, x, z, chunkPrimerIn);
+            }
+        }
+    }
+
+    /**
+     * Recursively called by generate()
+     */
+    protected void recursiveGenerate(World worldIn, int chunkX, int chunkZ, int p_180701_4_, int p_180701_5_, ChunkPrimer chunkPrimerIn) {
+    }
 }

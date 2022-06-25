@@ -3,83 +3,117 @@ package net.minecraft.util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.IllegalFormatException;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
 
 public class StringTranslate {
-   private static final Pattern numericVariablePattern = Pattern.compile("%(\\d+\\$)?[\\d\\.]*[df]");
-   private static final Splitter equalSignSplitter = Splitter.on('=').limit(2);
-   private static StringTranslate instance = new StringTranslate();
-   private final Map languageList = Maps.newHashMap();
-   private long lastUpdateTimeInMilliseconds;
+    /**
+     * Pattern that matches numeric variable placeholders in a resource string, such as "%d", "%3$d", "%.2f"
+     */
+    private static final Pattern numericVariablePattern = Pattern.compile("%(\\d+\\$)?[\\d\\.]*[df]");
 
-   public StringTranslate() {
-      try {
-         InputStream var1 = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
+    /**
+     * A Splitter that splits a string on the first "=".  For example, "a=b=c" would split into ["a", "b=c"].
+     */
+    private static final Splitter equalSignSplitter = Splitter.on('=').limit(2);
 
-         for(String var3 : IOUtils.readLines(var1, Charsets.UTF_8)) {
-            if(!var3.isEmpty() && var3.charAt(0) != 35) {
-               String[] var4 = (String[])Iterables.toArray(equalSignSplitter.split(var3), String.class);
-               if(var4.length == 2) {
-                  String var5 = var4[0];
-                  String var6 = numericVariablePattern.matcher(var4[1]).replaceAll("%$1s");
-                  this.languageList.put(var5, var6);
-               }
+    /**
+     * Is the private singleton instance of StringTranslate.
+     */
+    private static StringTranslate instance = new StringTranslate();
+    private final Map<String, String> languageList = Maps.newHashMap();
+
+    /**
+     * The time, in milliseconds since epoch, that this instance was last updated
+     */
+    private long lastUpdateTimeInMilliseconds;
+
+    public StringTranslate() {
+        try {
+            InputStream inputstream = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
+
+            for (String s : IOUtils.readLines(inputstream, Charsets.UTF_8)) {
+                if (!s.isEmpty() && s.charAt(0) != 35) {
+                    String[] astring = Iterables.toArray(equalSignSplitter.split(s), String.class);
+
+                    if (astring != null && astring.length == 2) {
+                        String s1 = astring[0];
+                        String s2 = numericVariablePattern.matcher(astring[1]).replaceAll("%$1s");
+                        this.languageList.put(s1, s2);
+                    }
+                }
             }
-         }
 
-         this.lastUpdateTimeInMilliseconds = System.currentTimeMillis();
-      } catch (IOException var7) {
-         ;
-      }
+            this.lastUpdateTimeInMilliseconds = System.currentTimeMillis();
+        } catch (IOException var7) {
+        }
+    }
 
-   }
+    /**
+     * Return the StringTranslate singleton instance
+     */
+    static StringTranslate getInstance() {
+        return instance;
+    }
 
-   static StringTranslate getInstance() {
-      return instance;
-   }
+    /**
+     * Replaces all the current instance's translations with the ones that are passed in.
+     */
 
-   public static synchronized void replaceWith(Map var0) {
-      instance.languageList.clear();
-      instance.languageList.putAll(var0);
-      instance.lastUpdateTimeInMilliseconds = System.currentTimeMillis();
-   }
+    public static synchronized void replaceWith(Map<String, String> p_135063_0_) {
+        instance.languageList.clear();
+        instance.languageList.putAll(p_135063_0_);
+        instance.lastUpdateTimeInMilliseconds = System.currentTimeMillis();
+    }
 
-   public synchronized String translateKey(String var1) {
-      return this.tryTranslateKey(var1);
-   }
+    /**
+     * Translate a key to current language.
+     */
 
-   public synchronized String translateKeyFormat(String var1, Object... var2) {
-      String var3 = this.tryTranslateKey(var1);
-      String var10000 = var3;
-      Object[] var10001 = var2;
+    public synchronized String translateKey(String key) {
+        return this.tryTranslateKey(key);
+    }
 
-      try {
-         return String.format(var10000, var10001);
-      } catch (IllegalFormatException var5) {
-         return "Format error: " + var3;
-      }
-   }
+    /**
+     * Translate a key to current language applying String.format()
+     */
 
-   private String tryTranslateKey(String var1) {
-      String var2 = (String)this.languageList.get(var1);
-      return var1;
-   }
+    public synchronized String translateKeyFormat(String key, Object... format) {
+        String s = this.tryTranslateKey(key);
 
-   public synchronized boolean isKeyTranslated(String var1) {
-      return this.languageList.containsKey(var1);
-   }
+        try {
+            return String.format(s, format);
+        } catch (IllegalFormatException var5) {
+            return "Format error: " + s;
+        }
+    }
 
-   public long getLastUpdateTimeInMilliseconds() {
-      return this.lastUpdateTimeInMilliseconds;
-   }
+    /**
+     * Tries to look up a translation for the given key; spits back the key if no result was found.
+     */
+    private String tryTranslateKey(String key) {
+        String s = this.languageList.get(key);
+        return s == null ? key : s;
+    }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    /**
+     * Returns true if the passed key is in the translation table.
+     */
+
+    public synchronized boolean isKeyTranslated(String key) {
+        return this.languageList.containsKey(key);
+    }
+
+    /**
+     * Gets the time, in milliseconds since epoch, that this instance was last updated
+     */
+    public long getLastUpdateTimeInMilliseconds() {
+        return this.lastUpdateTimeInMilliseconds;
+    }
 }

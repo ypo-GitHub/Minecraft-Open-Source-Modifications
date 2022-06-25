@@ -2,126 +2,171 @@ package net.minecraft.client.gui;
 
 import cc.novoline.utils.ColorUtils;
 import cc.novoline.utils.RenderUtils;
-import cc.novoline.utils.fonts.impl.Fonts$SFTHIN$SFTHIN_19;
-import java.awt.Color;
-import net.aHv;
+import static cc.novoline.utils.fonts.impl.Fonts.SFTHIN.SFTHIN_19.SFTHIN_19;
+import java.awt.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 public class GuiButton extends Gui {
-   protected static final ResourceLocation buttonTextures = new ResourceLocation("textures/gui/widgets.png");
-   public double xPosition;
-   public double yPosition;
-   public String displayString;
-   public int id;
-   public boolean enabled;
-   public boolean visible;
-   protected int width;
-   protected int height;
-   protected boolean hovered;
 
-   public GuiButton(int var1, int var2, int var3, String var4) {
-      this(var1, var2, var3, 200, 20, var4);
-   }
+    protected static final ResourceLocation buttonTextures = new ResourceLocation("textures/gui/widgets.png");
+    /**
+     * The x position of this control.
+     */
+    public double xPosition;
+    /**
+     * The y position of this control.
+     */
+    public double yPosition;
+    /**
+     * The string displayed on this control.
+     */
+    public String displayString;
+    public int id;
+    /**
+     * True if this control is enabled, false to disable.
+     */
+    public boolean enabled;
+    /**
+     * Hides the button completely if false.
+     */
+    public boolean visible;
+    /**
+     * Button width in pixels
+     */
+    protected int width;
+    /**
+     * Button height in pixels
+     */
+    protected int height;
+    protected boolean hovered;
 
-   public GuiButton(int var1, int var2, int var3, int var4, int var5, String var6) {
-      this.enabled = true;
-      this.visible = true;
-      this.id = var1;
-      this.xPosition = (double)var2;
-      this.yPosition = (double)var3;
-      this.width = var4;
-      this.height = var5;
-      this.displayString = var6;
-   }
+    public GuiButton(int buttonId, int x, int y, String buttonText) {
+        this(buttonId, x, y, 200, 20, buttonText);
+    }
 
-   protected int getHoverState(boolean var1) {
-      byte var2 = 1;
-      if(!this.enabled) {
-         var2 = 0;
-      } else {
-         var2 = 2;
-      }
+    public GuiButton(int buttonId, int x, int y, int widthIn, int heightIn, String buttonText) {
+        this.enabled = true;
+        this.visible = true;
+        this.id = buttonId;
+        this.xPosition = x;
+        this.yPosition = y;
+        this.width = widthIn;
+        this.height = heightIn;
+        this.displayString = buttonText;
+    }
 
-      return var2;
-   }
+    /**
+     * Returns 0 if the button is disabled, 1 if the mouse is NOT hovering over this button and 2 if it IS hovering over
+     * this button.
+     */
+    protected int getHoverState(boolean mouseOver) {
+        int i = 1;
 
-   public void drawButton(Minecraft var1, int var2, int var3) {
-      if(this.visible) {
-         FontRenderer var4 = var1.fontRendererObj;
-         var1.getTextureManager().bindTexture(buttonTextures);
-         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-         this.hovered = (double)var2 >= this.xPosition && (double)var3 >= this.yPosition && (double)var2 < this.xPosition + (double)this.width && (double)var3 < this.yPosition + (double)this.height;
-         int var5 = this.getHoverState(this.hovered);
-         GlStateManager.enableBlend();
-         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-         GlStateManager.blendFunc(770, 771);
-         int var6 = this.hovered?-13684945:-13684426;
-         int var7 = ColorUtils.getColor(0, 0, 0, this.hovered?140:180);
-         if(var1.currentScreen instanceof aHv) {
-            RenderUtils.drawRoundedRect((float)((int)this.xPosition), (float)((int)this.yPosition + 1), (float)this.width, 17.0F, 8.0F, (new Color(36, 36, 36, 255)).getRGB());
-         } else {
-            this.drawTexturedModalRect((int)this.xPosition, (int)this.yPosition, 0, 46 + var5 * 20, this.width / 2, this.height);
-            this.drawTexturedModalRect((int)this.xPosition + this.width / 2, (int)this.yPosition, 200 - this.width / 2, 46 + var5 * 20, this.width / 2, this.height);
-         }
+        if (!this.enabled) {
+            i = 0;
+        } else if (mouseOver) {
+            i = 2;
+        }
 
-         this.mouseDragged(var1, var2, var3);
-         int var8;
-         if(this.hovered && this.enabled) {
-            var8 = -2631816;
-         } else {
-            var8 = -2631721;
-         }
+        return i;
+    }
 
-         if(var1.currentScreen instanceof aHv) {
-            Fonts$SFTHIN$SFTHIN_19.SFTHIN_19.drawCenteredString(this.displayString, (float)((int)this.xPosition) + (float)this.width / 2.0F + 0.5F, (float)((int)this.yPosition) + (float)(this.height - 6) / 2.0F, var8, true);
-         } else {
-            this.drawCenteredString(var4, this.displayString, (int)(this.xPosition + (double)(this.width / 2) + 0.5D), (int)this.yPosition + (this.height - 8) / 2, var8);
-         }
-      }
+    /**
+     * Draws this button to the screen.
+     */
+    public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+        if (this.visible) {
+            final FontRenderer fontRenderer = mc.fontRendererObj;
 
-   }
+            mc.getTextureManager().bindTexture(buttonTextures);
 
-   protected void mouseDragged(Minecraft var1, int var2, int var3) {
-   }
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
-   public void mouseReleased(int var1, int var2) {
-   }
+            this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+            final int i = getHoverState(this.hovered);
 
-   public boolean mousePressed(Minecraft var1, int var2, int var3) {
-      return this.enabled && this.visible && (double)var2 >= this.xPosition && (double)var3 >= this.yPosition && (double)var2 < this.xPosition + (double)this.width && (double)var3 < this.yPosition + (double)this.height;
-   }
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+            GlStateManager.blendFunc(770, 771);
 
-   public boolean isMouseOver() {
-      return this.hovered;
-   }
+            final int rColor = this.hovered ? 0xFF2F2F2F : 0xFF2F3136;
+            final int bColor = ColorUtils.getColor(0, 0, 0, this.hovered ? 140 : 180);
 
-   public void drawButtonForegroundLayer(int var1, int var2) {
-   }
+            if (mc.currentScreen instanceof GuiMainMenu) {
+                RenderUtils.drawRoundedRect((int) this.xPosition, (int) this.yPosition + 1, this.width, 17, 8.0F, new Color(36, 36, 36, 255).getRGB());
+            } else {
+                drawTexturedModalRect((int) this.xPosition, (int) this.yPosition, 0, 46 + i * 20, this.width / 2, this.height);
+                drawTexturedModalRect((int) this.xPosition + this.width / 2, (int) this.yPosition, 200 - this.width / 2, 46 + i * 20, this.width / 2, this.height);
+            }
 
-   public void playPressSound(@NotNull SoundHandler var1) {
-      var1.playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
-   }
+            mouseDragged(mc, mouseX, mouseY);
+            final int textColor;
 
-   public int getButtonWidth() {
-      return this.width;
-   }
+            if (this.hovered && this.enabled) {
+                textColor = 0xFFD7D778;
+            } else {
+                textColor = 0xFFD7D7D7;
+            }
 
-   public void setWidth(int var1) {
-      this.width = var1;
-   }
+            if (mc.currentScreen instanceof GuiMainMenu) {
+                SFTHIN_19.drawCenteredString(this.displayString, (int) this.xPosition + this.width / 2F + 0.5F, (int) this.yPosition + (this.height - 6) / 2F, textColor, true);
+            } else {
+                this.drawCenteredString(fontRenderer, this.displayString, (int) (this.xPosition + this.width / 2 + 0.5), (int) this.yPosition + (this.height - 8) / 2, textColor);
+            }
+        }
+    }
 
-   public void setDisplayString(String var1) {
-      this.displayString = var1;
-   }
+    /**
+     * Fired when the mouse button is dragged. Equivalent of MouseListener.mouseDragged(MouseEvent e).
+     */
+    protected void mouseDragged(Minecraft mc, int mouseX, int mouseY) {
+    }
 
-   public String getDisplayString() {
-      return this.displayString;
-   }
+    /**
+     * Fired when the mouse button is released. Equivalent of MouseListener.mouseReleased(MouseEvent e).
+     */
+    public void mouseReleased(int mouseX, int mouseY) {
+    }
+
+    /**
+     * Returns true if the mouse has been pressed on this control. Equivalent of MouseListener.mousePressed(MouseEvent e).
+     */
+    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
+        return this.enabled && this.visible && mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+    }
+
+    /**
+     * Whether the mouse cursor is currently over the button.
+     */
+    public boolean isMouseOver() {
+        return this.hovered;
+    }
+
+    public void drawButtonForegroundLayer(int mouseX, int mouseY) {
+    }
+
+    public void playPressSound(@NotNull SoundHandler soundHandler) {
+        soundHandler.playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
+    }
+
+    public int getButtonWidth() {
+        return this.width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setDisplayString(String displayString) {
+        this.displayString = displayString;
+    }
+
+    public String getDisplayString() {
+        return displayString;
+    }
 }

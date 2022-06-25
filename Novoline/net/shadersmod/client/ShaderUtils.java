@@ -1,47 +1,54 @@
 package net.shadersmod.client;
 
-import net.shadersmod.client.ShaderOption;
-import net.shadersmod.client.ShaderProfile;
+import net.optifine.Config;
 
 public class ShaderUtils {
-   public static ShaderOption getShaderOption(String var0, ShaderOption[] var1) {
-      String[] var2 = ShaderOption.p();
-      if(var1 != null) {
-         int var4 = var1.length;
-         int var5 = 0;
-         if(var5 < var4) {
-            ShaderOption var6 = var1[var5];
-            if(var6.getName().equals(var0)) {
-               return var6;
+    public static ShaderOption getShaderOption(String name, ShaderOption[] opts) {
+        if (opts != null) {
+            for (ShaderOption shaderoption : opts) {
+                if (shaderoption.getName().equals(name)) {
+                    return shaderoption;
+                }
             }
 
-            ++var5;
-         }
-      }
+        }
+        return null;
+    }
 
-      return null;
-   }
-
-   public static ShaderProfile detectProfile(ShaderProfile[] var0, ShaderOption[] var1, boolean var2) {
-      String[] var3 = ShaderOption.p();
-      if(var0 != null) {
-         int var5 = var0.length;
-         int var6 = 0;
-         if(var6 < var5) {
-            ShaderProfile var7 = var0[var6];
-            if(matchProfile(var7, var1, var2)) {
-               return var7;
+    public static ShaderProfile detectProfile(ShaderProfile[] profs, ShaderOption[] opts, boolean def) {
+        if (profs != null) {
+            for (ShaderProfile shaderprofile : profs) {
+                if (matchProfile(shaderprofile, opts, def)) {
+                    return shaderprofile;
+                }
             }
 
-            ++var6;
-         }
-      }
+        }
+        return null;
+    }
 
-      return null;
-   }
+    public static boolean matchProfile(ShaderProfile prof, ShaderOption[] opts, boolean def) {
+        if (prof == null) {
+            return false;
+        } else if (opts == null) {
+            return false;
+        } else {
+            String[] astring = prof.getOptions();
 
-   public static boolean matchProfile(ShaderProfile var0, ShaderOption[] var1, boolean var2) {
-      String[] var3 = ShaderOption.p();
-      return false;
-   }
+            for (String s : astring) {
+                ShaderOption shaderoption = getShaderOption(s, opts);
+
+                if (shaderoption != null) {
+                    String s1 = def ? shaderoption.getValueDefault() : shaderoption.getValue();
+                    String s2 = prof.getValue(s);
+
+                    if (!Config.equals(s1, s2)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
 }

@@ -1,112 +1,117 @@
 package cc.novoline.modules.combat;
 
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.LoadWorldEvent;
-import cc.novoline.events.events.PacketDirection;
 import cc.novoline.events.events.PacketEvent;
 import cc.novoline.events.events.TickUpdateEvent;
-import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
 import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.combat.KillAura;
 import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.BooleanProperty;
 import cc.novoline.modules.configurations.property.object.IntProperty;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
+import cc.novoline.modules.exploits.Blink;
+import cc.novoline.modules.move.Speed;
+import cc.novoline.utils.DebugUtil;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.network.play.server.S27PacketExplosion;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.lwjgl.input.Keyboard;
+
+import java.util.concurrent.ThreadLocalRandom;
+
+import static cc.novoline.gui.screen.setting.Manager.put;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.booleanFalse;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.createInt;
 
 public final class Velocity extends AbstractModule {
-   int z;
-   @Property("horizontal")
-   private final IntProperty horizontal = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(0)).minimum(Integer.valueOf(-100))).maximum(Integer.valueOf(100));
-   @Property("vertical")
-   private final IntProperty vertical = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(0)).minimum(Integer.valueOf(0))).maximum(Integer.valueOf(100));
-   @Property("chance")
-   private final IntProperty chance = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(100)).minimum(Integer.valueOf(0))).maximum(Integer.valueOf(100));
-   @Property("skip")
-   private final BooleanProperty alerts = PropertyFactory.booleanFalse();
 
-   public Velocity(ModuleManager var1) {
-      super(var1, "Velocity", "Velocity", 0, EnumModuleType.COMBAT, "Don\'t take knockback");
-      Manager.put(new Setting("VEL_HOR", "Horizontal", SettingType.SLIDER, this, this.horizontal, 5.0D));
-      Manager.put(new Setting("VEL_VER", "Vertical", SettingType.SLIDER, this, this.vertical, 5.0D));
-      Manager.put(new Setting("VEL_CHANCE", "Chance", SettingType.SLIDER, this, this.chance, 5.0D));
-      Manager.put(new Setting("VEL_SKIP", "Skip", SettingType.CHECKBOX, this, this.alerts));
-   }
+    /* properties @off */
+    @Property("alerts")
+    private final BooleanProperty alerts = booleanFalse();
+    @Property("horizontal")
+    private final IntProperty horizontal = createInt(0).minimum(0).maximum(100);
+    @Property("vertical")
+    private final IntProperty vertical = createInt(0).minimum(0).maximum(100);
+    @Property("chance")
+    private final IntProperty chance = createInt(100).minimum(0).maximum(100);
 
-   @EventTarget
-   private void b(PacketEvent var1) {
-      int[] var2 = KillAura.Q();
-      if(var1.getDirection().equals(PacketDirection.INCOMING) && Math.random() <= (double)(((Integer)this.chance.get()).intValue() / 100)) {
-         this.a(var1, ((Integer)this.horizontal.get()).intValue(), ((Integer)this.vertical.get()).intValue());
-      }
+    /* constructors @on */
+    public Velocity(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "Velocity", "Velocity", Keyboard.KEY_NONE, EnumModuleType.COMBAT, "Don't take knockback");
+        put(new Setting("ALERTS", "Alerts", SettingType.CHECKBOX, this, alerts));
+        put(new Setting("VEL_HOR", "Horizontal", SettingType.SLIDER, this, horizontal, 5));
+        put(new Setting("VEL_VER", "Vertical", SettingType.SLIDER, this, vertical, 5));
+        put(new Setting("VEL_CHANCE", "Chance", SettingType.SLIDER, this, chance, 5));
+    }
 
-   }
+    /* methods */
+    public boolean shouldCancel() {
+        return isEnabled(Blink.class) || horizontal.get().equals(0) && vertical.get().equals(0) || isEnabled(Speed.class);
+    }
 
-   public void a(PacketEvent var1, int var2, int var3) {
-      int[] var4 = KillAura.Q();
-      if(var1.getPacket() instanceof S12PacketEntityVelocity) {
-         S12PacketEntityVelocity var5 = (S12PacketEntityVelocity)var1.getPacket();
-         if(var5.getEntityID() == this.mc.player.getEntityID()) {
-            ++this.z;
-            if(!((Boolean)this.alerts.get()).booleanValue() || this.z % 2 == 0) {
-               double var6 = (double)(var5.getMotionX() * var2 / 100);
-               double var8 = (double)(var5.getMotionY() * var3 / 100);
-               double var10 = (double)(var5.getMotionZ() * var2 / 100);
-               if(var2 != 0) {
-                  this.mc.player.motionX = var6 / 8000.0D;
-                  this.mc.player.motionZ = var10 / 8000.0D;
-               }
+    @EventTarget
+    private void onVelocity(PacketEvent event) {
+        if (event.getState().equals(PacketEvent.State.INCOMING)) {
+            if (event.getPacket() instanceof S12PacketEntityVelocity) {
+                S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
 
-               if(var3 != 0) {
-                  this.mc.player.motionY = var8 / 8000.0D;
-               }
+                if (packet.getEntityID() == mc.player.getEntityID()) {
+                    if (!shouldCancel()) {
+                        if (Math.random() <= chance.get() / 100) {
+                            packet.setMotionX(packet.getMotionX() * horizontal.get() / 100);
+                            packet.setMotionY(packet.getMotionY() * vertical.get() / 100);
+                            packet.setMotionZ(packet.getMotionZ() * horizontal.get() / 100);
+                        } else {
+                            packet.setMotionX(packet.getMotionX());
+                            packet.setMotionY(packet.getMotionY());
+                            packet.setMotionZ(packet.getMotionZ());
+                        }
 
-               var1.setCancelled(true);
+                    } else {
+                        event.setCancelled(true);
+                    }
+
+                    if (alerts.get()) {
+                        DebugUtil.log("Velocity", String.valueOf(ThreadLocalRandom.current().nextInt(1000, 10000)));
+                    }
+                }
             }
-         }
-      }
+        }
+    }
 
-      if(var1.getPacket() instanceof S27PacketExplosion) {
-         S27PacketExplosion var12 = (S27PacketExplosion)var1.getPacket();
-         if(!((Boolean)this.alerts.get()).booleanValue() || this.z % 2 == 0) {
-            double var13 = (double)(var12.getMotionX() * (float)var2 / 100.0F);
-            double var14 = (double)(var12.getMotionY() * (float)var3 / 100.0F);
-            double var15 = (double)(var12.getMotionZ() * (float)var2 / 100.0F);
-            if(var2 != 0) {
-               this.mc.player.motionX += var13;
-               this.mc.player.motionZ += var15;
+    @EventTarget
+    private void onExplosion(PacketEvent event) {
+        if (event.getState().equals(PacketEvent.State.INCOMING)) {
+            if (shouldCancel() && event.getPacket() instanceof S27PacketExplosion) {
+                event.setCancelled(true);
             }
+        }
+    }
 
-            if(var3 != 0) {
-               this.mc.player.motionY += var14;
+    public void handleExplosion(Minecraft gameController, S27PacketExplosion packet) {
+        if (!shouldCancel()) {
+            if (Math.random() <= chance.get() / 100) {
+                gameController.player.motionX += packet.getMotionX() * horizontal.get() / 100;
+                gameController.player.motionY += packet.getMotionY() * vertical.get() / 100;
+                gameController.player.motionZ += packet.getMotionZ() * horizontal.get() / 100;
+            } else {
+                gameController.player.motionX += packet.getMotionX();
+                gameController.player.motionY += packet.getMotionY();
+                gameController.player.motionZ += packet.getMotionZ();
             }
+        }
+    }
 
-            var1.setCancelled(true);
-         }
-      }
+    @EventTarget
+    public void onUpdate(TickUpdateEvent event) {
+        setSuffix(horizontal.get() + ".0%" + " " + vertical.get() + ".0%");
+    }
 
-   }
-
-   @EventTarget
-   public void onUpdate(TickUpdateEvent var1) {
-      this.setSuffix(this.horizontal.get() + ".0% " + this.vertical.get() + ".0%");
-   }
-
-   @EventTarget
-   public void a(LoadWorldEvent var1) {
-      this.z = 0;
-   }
-
-   public void onEnable() {
-      this.setSuffix(this.horizontal.get() + ".0% " + this.vertical.get() + ".0%");
-   }
-
-   public void onDisable() {
-      this.z = 0;
-   }
+    @Override
+    public void onEnable() {
+        setSuffix(horizontal.get() + ".0%" + " " + vertical.get() + ".0%");
+    }
 }

@@ -1,136 +1,143 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.entity.player.PlayerAbilities;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 import net.minecraft.network.play.server.S39PacketPlayerAbilities;
 
-public class C13PacketPlayerAbilities implements Packet {
-   private boolean disabledDamage;
-   private boolean flying;
-   private boolean allowFlying;
-   private boolean creativeMode;
-   private float flySpeed;
-   private float walkSpeed;
+import java.io.IOException;
 
-   public C13PacketPlayerAbilities() {
-   }
+public class C13PacketPlayerAbilities implements Packet<INetHandlerPlayServer> {
 
-   public C13PacketPlayerAbilities(PlayerAbilities var1) {
-      this.setDisabledDamage(var1.isDisabledDamage());
-      this.setFlying(var1.isFlying());
-      this.setAllowFlying(var1.isAllowFlying());
-      this.setCreativeMode(var1.isCreative());
-      this.setFlySpeed(var1.getFlySpeed());
-      this.setWalkSpeed(var1.getWalkSpeed());
-   }
+    private boolean disabledDamage, flying, allowFlying, creativeMode;
+    private float flySpeed;
+    private float walkSpeed;
 
-   public C13PacketPlayerAbilities(S39PacketPlayerAbilities var1) {
-      this.setDisabledDamage(var1.isDisabledDamage());
-      this.setFlying(var1.isFlying());
-      this.setAllowFlying(var1.isAllowFlying());
-      this.setCreativeMode(var1.isCreative());
-      this.setFlySpeed(var1.getFlySpeed());
-      this.setWalkSpeed(var1.getWalkSpeed());
-   }
+    public C13PacketPlayerAbilities() {
+    }
 
-   public C13PacketPlayerAbilities(float var1, float var2, boolean var3, boolean var4, boolean var5, boolean var6) {
-      this.setFlying(var3);
-      this.setAllowFlying(var4);
-      this.setCreativeMode(var5);
-      this.setDisabledDamage(var6);
-      this.setFlySpeed(var1);
-      this.setWalkSpeed(var2);
-   }
+    public C13PacketPlayerAbilities(PlayerAbilities capabilities) {
+        this.setDisabledDamage(capabilities.isDisabledDamage());
+        this.setFlying(capabilities.isFlying());
+        this.setAllowFlying(capabilities.isAllowFlying());
+        this.setCreativeMode(capabilities.isCreative());
+        this.setFlySpeed(capabilities.getFlySpeed());
+        this.setWalkSpeed(capabilities.getWalkSpeed());
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      byte var2 = var1.readByte();
-      this.setDisabledDamage((var2 & 1) > 0);
-      this.setFlying((var2 & 2) > 0);
-      this.setAllowFlying((var2 & 4) > 0);
-      this.setCreativeMode((var2 & 8) > 0);
-      this.setFlySpeed(var1.readFloat());
-      this.setWalkSpeed(var1.readFloat());
-   }
+    public C13PacketPlayerAbilities(S39PacketPlayerAbilities packetIn) {
+        this.setDisabledDamage(packetIn.isDisabledDamage());
+        this.setFlying(packetIn.isFlying());
+        this.setAllowFlying(packetIn.isAllowFlying());
+        this.setCreativeMode(packetIn.isCreative());
+        this.setFlySpeed(packetIn.getFlySpeed());
+        this.setWalkSpeed(packetIn.getWalkSpeed());
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      byte var2 = 0;
-      if(this.isDisabledDamage()) {
-         var2 = (byte)(var2 | 1);
-      }
+    public C13PacketPlayerAbilities(float flySpeed, float walkSpeed, boolean flying, boolean allowFlying, boolean creativeMode, boolean invulnerable) {
+        this.setFlying(flying);
+        this.setAllowFlying(allowFlying);
+        this.setCreativeMode(creativeMode);
+        this.setDisabledDamage(invulnerable);
+        this.setFlySpeed(flySpeed);
+        this.setWalkSpeed(walkSpeed);
+    }
 
-      if(this.isFlying()) {
-         var2 = (byte)(var2 | 2);
-      }
 
-      if(this.isAllowFlying()) {
-         var2 = (byte)(var2 | 4);
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        byte b0 = buf.readByte();
+        this.setDisabledDamage((b0 & 1) > 0);
+        this.setFlying((b0 & 2) > 0);
+        this.setAllowFlying((b0 & 4) > 0);
+        this.setCreativeMode((b0 & 8) > 0);
+        this.setFlySpeed(buf.readFloat());
+        this.setWalkSpeed(buf.readFloat());
+    }
 
-      if(this.isCreativeMode()) {
-         var2 = (byte)(var2 | 8);
-      }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        byte b0 = 0;
 
-      var1.writeByte(var2);
-      var1.writeFloat(this.flySpeed);
-      var1.writeFloat(this.walkSpeed);
-   }
+        if (this.isDisabledDamage()) {
+            b0 = (byte) (b0 | 1);
+        }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processPlayerAbilities(this);
-   }
+        if (this.isFlying()) {
+            b0 = (byte) (b0 | 2);
+        }
 
-   public void setDisabledDamage(boolean var1) {
-      this.disabledDamage = var1;
-   }
+        if (this.isAllowFlying()) {
+            b0 = (byte) (b0 | 4);
+        }
 
-   public void setFlying(boolean var1) {
-      this.flying = var1;
-   }
+        if (this.isCreativeMode()) {
+            b0 = (byte) (b0 | 8);
+        }
 
-   public void setAllowFlying(boolean var1) {
-      this.allowFlying = var1;
-   }
+        buf.writeByte(b0);
+        buf.writeFloat(this.flySpeed);
+        buf.writeFloat(this.walkSpeed);
+    }
 
-   public void setCreativeMode(boolean var1) {
-      this.creativeMode = var1;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processPlayerAbilities(this);
+    }
 
-   public void setFlySpeed(float var1) {
-      this.flySpeed = var1;
-   }
+    public void setDisabledDamage(boolean disabledDamage) {
+        this.disabledDamage = disabledDamage;
+    }
 
-   public void setWalkSpeed(float var1) {
-      this.walkSpeed = var1;
-   }
+    public void setFlying(boolean flying) {
+        this.flying = flying;
+    }
 
-   public boolean isDisabledDamage() {
-      return this.disabledDamage;
-   }
+    public void setAllowFlying(boolean allowFlying) {
+        this.allowFlying = allowFlying;
+    }
 
-   public boolean isFlying() {
-      return this.flying;
-   }
+    public void setCreativeMode(boolean creativeMode) {
+        this.creativeMode = creativeMode;
+    }
 
-   public boolean isAllowFlying() {
-      return this.allowFlying;
-   }
+    public void setFlySpeed(float flySpeed) {
+        this.flySpeed = flySpeed;
+    }
 
-   public boolean isCreativeMode() {
-      return this.creativeMode;
-   }
+    public void setWalkSpeed(float walkSpeed) {
+        this.walkSpeed = walkSpeed;
+    }
 
-   public float getFlySpeed() {
-      return this.flySpeed;
-   }
+    public boolean isDisabledDamage() {
+        return disabledDamage;
+    }
 
-   public float getWalkSpeed() {
-      return this.walkSpeed;
-   }
+    public boolean isFlying() {
+        return flying;
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public boolean isAllowFlying() {
+        return allowFlying;
+    }
+
+    public boolean isCreativeMode() {
+        return creativeMode;
+    }
+
+    public float getFlySpeed() {
+        return flySpeed;
+    }
+
+    public float getWalkSpeed() {
+        return walkSpeed;
+    }
+
 }

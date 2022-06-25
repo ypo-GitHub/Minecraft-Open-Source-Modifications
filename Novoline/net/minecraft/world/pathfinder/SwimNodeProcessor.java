@@ -4,61 +4,78 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.pathfinding.PathPoint;
-import net.minecraft.util.BlockPos$MutableBlockPos;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.pathfinder.NodeProcessor;
 
 public class SwimNodeProcessor extends NodeProcessor {
-   public void initProcessor(IBlockAccess var1, Entity var2) {
-      super.initProcessor(var1, var2);
-   }
 
-   public void postProcess() {
-      super.postProcess();
-   }
+    public void initProcessor(IBlockAccess iblockaccessIn, Entity entityIn) {
+        super.initProcessor(iblockaccessIn, entityIn);
+    }
 
-   public PathPoint getPathPointTo(Entity var1) {
-      return this.openPoint(MathHelper.floor_double(var1.getEntityBoundingBox().minX), MathHelper.floor_double(var1.getEntityBoundingBox().minY + 0.5D), MathHelper.floor_double(var1.getEntityBoundingBox().minZ));
-   }
+    /**
+     * This method is called when all nodes have been processed and PathEntity is created.
+     * {@link net.minecraft.world.pathfinder.WalkNodeProcessor WalkNodeProcessor} uses this to change its field {@link
+     * net.minecraft.world.pathfinder.WalkNodeProcessor#avoidsWater avoidsWater}
+     */
+    public void postProcess() {
+        super.postProcess();
+    }
 
-   public PathPoint getPathPointToCoords(Entity var1, double var2, double var4, double var6) {
-      return this.openPoint(MathHelper.floor_double(var2 - (double)(var1.width / 2.0F)), MathHelper.floor_double(var4 + 0.5D), MathHelper.floor_double(var6 - (double)(var1.width / 2.0F)));
-   }
+    /**
+     * Returns given entity's position as PathPoint
+     */
+    public PathPoint getPathPointTo(Entity entityIn) {
+        return this.openPoint(MathHelper.floor_double(entityIn.getEntityBoundingBox().minX), MathHelper.floor_double(entityIn.getEntityBoundingBox().minY + 0.5D), MathHelper.floor_double(entityIn.getEntityBoundingBox().minZ));
+    }
 
-   public int findPathOptions(PathPoint[] var1, Entity var2, PathPoint var3, PathPoint var4, float var5) {
-      int var6 = 0;
+    /**
+     * Returns PathPoint for given coordinates
+     */
+    public PathPoint getPathPointToCoords(Entity entityIn, double x, double y, double target) {
+        return this.openPoint(MathHelper.floor_double(x - (double) (entityIn.width / 2.0F)), MathHelper.floor_double(y + 0.5D), MathHelper.floor_double(target - (double) (entityIn.width / 2.0F)));
+    }
 
-      for(EnumFacing var10 : EnumFacing.values()) {
-         PathPoint var11 = this.getSafePoint(var2, var3.xCoord + var10.getFrontOffsetX(), var3.yCoord + var10.getFrontOffsetY(), var3.zCoord + var10.getFrontOffsetZ());
-         if(!var11.visited && var11.distanceTo(var4) < var5) {
-            var1[var6++] = var11;
-         }
-      }
+    public int findPathOptions(PathPoint[] pathOptions, Entity entityIn, PathPoint currentPoint, PathPoint targetPoint, float maxDistance) {
+        int i = 0;
 
-      return var6;
-   }
+        for (EnumFacing enumfacing : EnumFacing.values()) {
+            PathPoint pathpoint = this.getSafePoint(entityIn, currentPoint.xCoord + enumfacing.getFrontOffsetX(), currentPoint.yCoord + enumfacing.getFrontOffsetY(), currentPoint.zCoord + enumfacing.getFrontOffsetZ());
 
-   private PathPoint getSafePoint(Entity var1, int var2, int var3, int var4) {
-      int var5 = this.func_176186_b(var1, var2, var3, var4);
-      return var5 == -1?this.openPoint(var2, var3, var4):null;
-   }
-
-   private int func_176186_b(Entity var1, int var2, int var3, int var4) {
-      BlockPos$MutableBlockPos var5 = new BlockPos$MutableBlockPos();
-
-      for(int var6 = var2; var6 < var2 + this.entitySizeX; ++var6) {
-         for(int var7 = var3; var7 < var3 + this.entitySizeY; ++var7) {
-            for(int var8 = var4; var8 < var4 + this.entitySizeZ; ++var8) {
-               Block var9 = this.blockaccess.getBlockState(var5.func_181079_c(var6, var7, var8)).getBlock();
-               if(var9.getMaterial() != Material.water) {
-                  return 0;
-               }
+            if (pathpoint != null && !pathpoint.visited && pathpoint.distanceTo(targetPoint) < maxDistance) {
+                pathOptions[i++] = pathpoint;
             }
-         }
-      }
+        }
 
-      return -1;
-   }
+        return i;
+    }
+
+    /**
+     * Returns a point that the entity can safely move to
+     */
+    private PathPoint getSafePoint(Entity entityIn, int x, int y, int z) {
+        int i = this.func_176186_b(entityIn, x, y, z);
+        return i == -1 ? this.openPoint(x, y, z) : null;
+    }
+
+    private int func_176186_b(Entity entityIn, int x, int y, int z) {
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+
+        for (int i = x; i < x + this.entitySizeX; ++i) {
+            for (int j = y; j < y + this.entitySizeY; ++j) {
+                for (int k = z; k < z + this.entitySizeZ; ++k) {
+                    Block block = this.blockaccess.getBlockState(blockpos$mutableblockpos.func_181079_c(i, j, k)).getBlock();
+
+                    if (block.getMaterial() != Material.water) {
+                        return 0;
+                    }
+                }
+            }
+        }
+
+        return -1;
+    }
+
 }

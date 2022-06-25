@@ -1,6 +1,5 @@
 package net.minecraft.client.model;
 
-import net.minecraft.client.model.PositionTextureVertex;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -9,59 +8,66 @@ import net.optifine.Config;
 import net.shadersmod.client.SVertexFormat;
 
 public class TexturedQuad {
-   public PositionTextureVertex[] vertexPositions;
-   public int nVertices;
-   private boolean invertNormal;
 
-   public TexturedQuad(PositionTextureVertex[] var1) {
-      this.vertexPositions = var1;
-      this.nVertices = var1.length;
-   }
+    public PositionTextureVertex[] vertexPositions;
+    public int nVertices;
+    private boolean invertNormal;
 
-   public TexturedQuad(PositionTextureVertex[] var1, int var2, int var3, int var4, int var5, float var6, float var7) {
-      this(var1);
-      float var8 = 0.0F / var6;
-      float var9 = 0.0F / var7;
-      var1[0] = var1[0].setTexturePosition((float)var4 / var6 - var8, (float)var3 / var7 + var9);
-      var1[1] = var1[1].setTexturePosition((float)var2 / var6 + var8, (float)var3 / var7 + var9);
-      var1[2] = var1[2].setTexturePosition((float)var2 / var6 + var8, (float)var5 / var7 - var9);
-      var1[3] = var1[3].setTexturePosition((float)var4 / var6 - var8, (float)var5 / var7 - var9);
-   }
+    public TexturedQuad(PositionTextureVertex[] vertices) {
+        this.vertexPositions = vertices;
+        this.nVertices = vertices.length;
+    }
 
-   public void flipFace() {
-      PositionTextureVertex[] var1 = new PositionTextureVertex[this.vertexPositions.length];
+    public TexturedQuad(PositionTextureVertex[] vertices, int texcoordU1, int texcoordV1, int texcoordU2, int texcoordV2, float textureWidth, float textureHeight) {
+        this(vertices);
+        final float f = 0.0F / textureWidth;
+        final float f1 = 0.0F / textureHeight;
+        vertices[0] = vertices[0].setTexturePosition((float) texcoordU2 / textureWidth - f, (float) texcoordV1 / textureHeight + f1);
+        vertices[1] = vertices[1].setTexturePosition((float) texcoordU1 / textureWidth + f, (float) texcoordV1 / textureHeight + f1);
+        vertices[2] = vertices[2].setTexturePosition((float) texcoordU1 / textureWidth + f, (float) texcoordV2 / textureHeight - f1);
+        vertices[3] = vertices[3].setTexturePosition((float) texcoordU2 / textureWidth - f, (float) texcoordV2 / textureHeight - f1);
+    }
 
-      for(int var2 = 0; var2 < this.vertexPositions.length; ++var2) {
-         var1[var2] = this.vertexPositions[this.vertexPositions.length - var2 - 1];
-      }
+    public void flipFace() {
+        final PositionTextureVertex[] apositiontexturevertex = new PositionTextureVertex[this.vertexPositions.length];
 
-      this.vertexPositions = var1;
-   }
+        for (int i = 0; i < this.vertexPositions.length; ++i) {
+            apositiontexturevertex[i] = this.vertexPositions[this.vertexPositions.length - i - 1];
+        }
 
-   public void draw(WorldRenderer var1, float var2) {
-      Vec3 var3 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[0].vector3D);
-      Vec3 var4 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[2].vector3D);
-      Vec3 var5 = var4.crossProduct(var3).normalize();
-      float var6 = (float)var5.xCoord;
-      float var7 = (float)var5.yCoord;
-      float var8 = (float)var5.zCoord;
-      if(this.invertNormal) {
-         var6 = -var6;
-         var7 = -var7;
-         var8 = -var8;
-      }
+        this.vertexPositions = apositiontexturevertex;
+    }
 
-      if(Config.isShaders()) {
-         var1.begin(7, SVertexFormat.defVertexFormatTextured);
-      } else {
-         var1.begin(7, DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL);
-      }
+    /**
+     * Draw this primitive. This is typically called only once as the generated drawing instructions are saved by the
+     * renderer and reused later.
+     */
+    public void draw(WorldRenderer renderer, float scale) {
+        final Vec3 vec3 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[0].vector3D);
+        final Vec3 vec31 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[2].vector3D);
+        final Vec3 vec32 = vec31.crossProduct(vec3).normalize();
+        float f = (float) vec32.xCoord;
+        float f1 = (float) vec32.yCoord;
+        float f2 = (float) vec32.zCoord;
 
-      for(int var9 = 0; var9 < 4; ++var9) {
-         PositionTextureVertex var10 = this.vertexPositions[var9];
-         var1.pos(var10.vector3D.xCoord * (double)var2, var10.vector3D.yCoord * (double)var2, var10.vector3D.zCoord * (double)var2).tex((double)var10.texturePositionX, (double)var10.texturePositionY).normal(var6, var7, var8).endVertex();
-      }
+        if (this.invertNormal) {
+            f = -f;
+            f1 = -f1;
+            f2 = -f2;
+        }
 
-      Tessellator.getInstance().draw();
-   }
+        if (Config.isShaders()) {
+            renderer.begin(7, SVertexFormat.defVertexFormatTextured);
+        } else {
+            renderer.begin(7, DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL);
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            final PositionTextureVertex positiontexturevertex = this.vertexPositions[i];
+            renderer.pos(positiontexturevertex.vector3D.xCoord * (double) scale, positiontexturevertex.vector3D.yCoord * (double) scale, positiontexturevertex.vector3D.zCoord * (double) scale).tex(positiontexturevertex.texturePositionX, positiontexturevertex.texturePositionY).normal(f, f1, f2).endVertex();
+        }
+
+        Tessellator.getInstance().draw();
+    }
+
 }

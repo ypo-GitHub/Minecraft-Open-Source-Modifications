@@ -1,31 +1,33 @@
 package net.optifine;
 
-import net.acE;
-import net.optifine.MatchBlock;
+public class RangeInt
+{
+    private int min;
+    private int max;
 
-public class RangeInt {
-   private int min;
-   private int max;
+    public RangeInt(int p_i80_1_, int p_i80_2_)
+    {
+        this.min = Math.min(p_i80_1_, p_i80_2_);
+        this.max = Math.max(p_i80_1_, p_i80_2_);
+    }
 
-   public RangeInt(int var1, int var2) {
-      this.min = Math.min(var1, var2);
-      this.max = Math.max(var1, var2);
-   }
+    public boolean isInRange(int p_isInRange_1_)
+    {
+        return p_isInRange_1_ < this.min ? false : p_isInRange_1_ <= this.max;
+    }
 
-   public boolean isInRange(int var1) {
-      acE[] var2 = MatchBlock.b();
-      return var1 < this.min?false:var1 <= this.max;
-   }
+    public int getMin()
+    {
+        return this.min;
+    }
 
-   public int getMin() {
-      return this.min;
-   }
+    public int getMax()
+    {
+        return this.max;
+    }
 
-   public int getMax() {
-      return this.max;
-   }
-
-   public String toString() {
-      return "min: " + this.min + ", max: " + this.max;
-   }
+    public String toString()
+    {
+        return "min: " + this.min + ", max: " + this.max;
+    }
 }

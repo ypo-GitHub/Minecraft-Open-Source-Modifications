@@ -1,22 +1,20 @@
 package net.shadersmod.client;
 
 import java.io.InputStream;
-import net.shadersmod.client.IShaderPack;
-import net.shadersmod.client.Shaders;
 
 public class ShaderPackNone implements IShaderPack {
-   public void close() {
-   }
+    public void close() {
+    }
 
-   public InputStream getResourceAsStream(String var1) {
-      return null;
-   }
+    public InputStream getResourceAsStream(String resName) {
+        return null;
+    }
 
-   public boolean hasDirectory(String var1) {
-      return false;
-   }
+    public boolean hasDirectory(String name) {
+        return false;
+    }
 
-   public String getName() {
-      return Shaders.packNameNone;
-   }
+    public String getName() {
+        return Shaders.packNameNone;
+    }
 }

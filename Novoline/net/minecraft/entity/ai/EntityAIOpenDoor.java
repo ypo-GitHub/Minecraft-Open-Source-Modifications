@@ -1,36 +1,53 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.ai.EntityAIDoorInteract;
 
 public class EntityAIOpenDoor extends EntityAIDoorInteract {
-   boolean closeDoor;
-   int closeDoorTemporisation;
+    /**
+     * If the entity close the door
+     */
+    boolean closeDoor;
 
-   public EntityAIOpenDoor(EntityLiving var1, boolean var2) {
-      super(var1);
-      this.theEntity = var1;
-      this.closeDoor = var2;
-   }
+    /**
+     * The temporisation before the entity close the door (in ticks, always 20 = 1 second)
+     */
+    int closeDoorTemporisation;
 
-   public boolean continueExecuting() {
-      return this.closeDoor && this.closeDoorTemporisation > 0 && super.continueExecuting();
-   }
+    public EntityAIOpenDoor(EntityLiving entitylivingIn, boolean shouldClose) {
+        super(entitylivingIn);
+        this.theEntity = entitylivingIn;
+        this.closeDoor = shouldClose;
+    }
 
-   public void startExecuting() {
-      this.closeDoorTemporisation = 20;
-      this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, true);
-   }
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return this.closeDoor && this.closeDoorTemporisation > 0 && super.continueExecuting();
+    }
 
-   public void resetTask() {
-      if(this.closeDoor) {
-         this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, false);
-      }
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.closeDoorTemporisation = 20;
+        this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, true);
+    }
 
-   }
+    /**
+     * Resets the task
+     */
+    public void resetTask() {
+        if (this.closeDoor) {
+            this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, false);
+        }
+    }
 
-   public void updateTask() {
-      --this.closeDoorTemporisation;
-      super.updateTask();
-   }
+    /**
+     * Updates the task
+     */
+    public void updateTask() {
+        --this.closeDoorTemporisation;
+        super.updateTask();
+    }
 }

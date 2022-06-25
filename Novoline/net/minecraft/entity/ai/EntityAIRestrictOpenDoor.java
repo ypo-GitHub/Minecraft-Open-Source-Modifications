@@ -1,53 +1,70 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.pathfinding.PathNavigateGround;
 import net.minecraft.util.BlockPos;
 import net.minecraft.village.Village;
 import net.minecraft.village.VillageDoorInfo;
 
 public class EntityAIRestrictOpenDoor extends EntityAIBase {
-   private EntityCreature entityObj;
-   private VillageDoorInfo b;
+    private EntityCreature entityObj;
+    private VillageDoorInfo frontDoor;
 
-   public EntityAIRestrictOpenDoor(EntityCreature var1) {
-      this.entityObj = var1;
-      if(!(var1.getNavigator() instanceof PathNavigateGround)) {
-         throw new IllegalArgumentException("Unsupported mob type for RestrictOpenDoorGoal");
-      }
-   }
+    public EntityAIRestrictOpenDoor(EntityCreature creatureIn) {
+        this.entityObj = creatureIn;
 
-   public boolean shouldExecute() {
-      if(this.entityObj.worldObj.isDaytime()) {
-         return false;
-      } else {
-         BlockPos var1 = new BlockPos(this.entityObj);
-         Village var2 = this.entityObj.worldObj.getVillageCollection().getNearestVillage(var1, 16);
-         return false;
-      }
-   }
+        if (!(creatureIn.getNavigator() instanceof PathNavigateGround)) {
+            throw new IllegalArgumentException("Unsupported mob type for RestrictOpenDoorGoal");
+        }
+    }
 
-   public boolean continueExecuting() {
-      return !this.entityObj.worldObj.isDaytime() && !this.b.getIsDetachedFromVillageFlag() && this.b.func_179850_c(new BlockPos(this.entityObj));
-   }
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (this.entityObj.worldObj.isDaytime()) {
+            return false;
+        } else {
+            BlockPos blockpos = new BlockPos(this.entityObj);
+            Village village = this.entityObj.worldObj.getVillageCollection().getNearestVillage(blockpos, 16);
 
-   public void startExecuting() {
-      ((PathNavigateGround)this.entityObj.getNavigator()).setBreakDoors(false);
-      ((PathNavigateGround)this.entityObj.getNavigator()).setEnterDoors(false);
-   }
+            if (village == null) {
+                return false;
+            } else {
+                this.frontDoor = village.getNearestDoor(blockpos);
+                return this.frontDoor != null && (double) this.frontDoor.getDistanceToInsideBlockSq(blockpos) < 2.25D;
+            }
+        }
+    }
 
-   public void resetTask() {
-      ((PathNavigateGround)this.entityObj.getNavigator()).setBreakDoors(true);
-      ((PathNavigateGround)this.entityObj.getNavigator()).setEnterDoors(true);
-      this.b = null;
-   }
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return !this.entityObj.worldObj.isDaytime() && (!this.frontDoor.getIsDetachedFromVillageFlag() && this.frontDoor.func_179850_c(new BlockPos(this.entityObj)));
+    }
 
-   public void updateTask() {
-      this.b.incrementDoorOpeningRestrictionCounter();
-   }
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        ((PathNavigateGround) this.entityObj.getNavigator()).setBreakDoors(false);
+        ((PathNavigateGround) this.entityObj.getNavigator()).setEnterDoors(false);
+    }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+    /**
+     * Resets the task
+     */
+    public void resetTask() {
+        ((PathNavigateGround) this.entityObj.getNavigator()).setBreakDoors(true);
+        ((PathNavigateGround) this.entityObj.getNavigator()).setEnterDoors(true);
+        this.frontDoor = null;
+    }
+
+    /**
+     * Updates the task
+     */
+    public void updateTask() {
+        this.frontDoor.incrementDoorOpeningRestrictionCounter();
+    }
 }

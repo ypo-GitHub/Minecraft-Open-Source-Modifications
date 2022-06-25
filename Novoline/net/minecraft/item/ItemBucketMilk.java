@@ -3,41 +3,51 @@ package net.minecraft.item;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
 import net.minecraft.world.World;
 
 public class ItemBucketMilk extends Item {
-   public ItemBucketMilk() {
-      this.setMaxStackSize(1);
-      this.setCreativeTab(CreativeTabs.tabMisc);
-   }
+    public ItemBucketMilk() {
+        this.setMaxStackSize(1);
+        this.setCreativeTab(CreativeTabs.tabMisc);
+    }
 
-   public ItemStack onItemUseFinish(ItemStack var1, World var2, EntityPlayer var3) {
-      if(!var3.abilities.isCreative()) {
-         --var1.stackSize;
-      }
+    /**
+     * Called when the player finishes using this Item (E.g. finishes eating.). Not called when the player stops using
+     * the Item before the action is complete.
+     */
+    public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityPlayer playerIn) {
+        if (!playerIn.abilities.isCreative()) {
+            --stack.stackSize;
+        }
 
-      if(!var2.isRemote) {
-         var3.clearActivePotions();
-      }
+        if (!worldIn.isRemote) {
+            playerIn.clearActivePotions();
+        }
 
-      var3.triggerAchievement(StatList.objectUseStats[Item.b(this)]);
-      return var1.stackSize <= 0?new ItemStack(Items.bucket):var1;
-   }
+        playerIn.triggerAchievement(StatList.objectUseStats[Item.getIdFromItem(this)]);
+        return stack.stackSize <= 0 ? new ItemStack(Items.bucket) : stack;
+    }
 
-   public int getMaxItemUseDuration(ItemStack var1) {
-      return 32;
-   }
+    /**
+     * How long it takes to use or consume an item
+     */
+    public int getMaxItemUseDuration(ItemStack stack) {
+        return 32;
+    }
 
-   public EnumAction getItemUseAction(ItemStack var1) {
-      return EnumAction.DRINK;
-   }
+    /**
+     * returns the action that specifies what animation to play when the items is being used
+     */
+    public EnumAction getItemUseAction(ItemStack stack) {
+        return EnumAction.DRINK;
+    }
 
-   public ItemStack onItemRightClick(ItemStack var1, World var2, EntityPlayer var3) {
-      var3.setItemInUse(var1, this.getMaxItemUseDuration(var1));
-      return var1;
-   }
+    /**
+     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
+     */
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn) {
+        playerIn.setItemInUse(itemStackIn, this.getMaxItemUseDuration(itemStackIn));
+        return itemStackIn;
+    }
 }

@@ -1,74 +1,116 @@
+/*
+ * Copyright (c) 2016 Matsv
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package viaversion.viabackwards.protocol.protocol1_9_4to1_10;
 
-import net.Wx;
-import net.agN;
-import net.aq1;
-import net.aqR;
-import net.ayd;
-import net.cA;
-import net.cQ;
-import net.cT;
-import net.rL;
+import viaversion.viabackwards.api.BackwardsProtocol;
 import viaversion.viabackwards.api.data.BackwardsMappings;
+import viaversion.viabackwards.api.entities.storage.EntityTracker;
 import viaversion.viabackwards.api.rewriters.SoundRewriter;
-import viaversion.viabackwards.protocol.protocol1_9_4to1_10.Protocol1_9_4To1_10$1;
-import viaversion.viabackwards.protocol.protocol1_9_4to1_10.Protocol1_9_4To1_10$2;
-import viaversion.viabackwards.protocol.protocol1_9_4to1_10.Protocol1_9_4To1_10$3;
-import viaversion.viabackwards.protocol.protocol1_9_4to1_10.Protocol1_9_4To1_10$4;
+import viaversion.viabackwards.protocol.protocol1_9_4to1_10.packets.BlockItemPackets1_10;
+import viaversion.viabackwards.protocol.protocol1_9_4to1_10.packets.EntityPackets1_10;
+import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.remapper.ValueTransformer;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.ClientboundPackets1_9_3;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.ServerboundPackets1_9_3;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.storage.ClientWorld;
 
-public class Protocol1_9_4To1_10 extends ayd {
-   public static final BackwardsMappings MAPPINGS = new BackwardsMappings("1.10", "1.9.4", (Class)null, true);
-   private static final ValueTransformer TO_OLD_PITCH = new Protocol1_9_4To1_10$1(Type.UNSIGNED_BYTE);
-   private aq1 k;
-   private aqR l;
+public class Protocol1_9_4To1_10 extends BackwardsProtocol<ClientboundPackets1_9_3, ClientboundPackets1_9_3, ServerboundPackets1_9_3, ServerboundPackets1_9_3> {
 
-   public Protocol1_9_4To1_10() {
-      super(agN.class, agN.class, Wx.class, Wx.class);
-   }
+    public static final BackwardsMappings MAPPINGS = new BackwardsMappings("1.10", "1.9.4", null, true);
+    private static final ValueTransformer<Float, Short> TO_OLD_PITCH = new ValueTransformer<Float, Short>(Type.UNSIGNED_BYTE) {
+        public Short transform(PacketWrapper packetWrapper, Float inputValue) throws Exception {
+            return (short) Math.round(inputValue * 63.5F);
+        }
+    };
+    private EntityPackets1_10 entityPackets; // Required for the item rewriter
+    private BlockItemPackets1_10 blockItemPackets;
 
-   protected void registerPackets() {
-      rL.a();
-      (this.k = new aq1(this)).f();
-      (this.l = new aqR(this)).f();
-      SoundRewriter var2 = new SoundRewriter(this);
-      this.a(agN.NAMED_SOUND, new Protocol1_9_4To1_10$2(this, var2));
-      this.a(agN.SOUND, new Protocol1_9_4To1_10$3(this, var2));
-      this.a(Wx.RESOURCE_PACK_STATUS, new Protocol1_9_4To1_10$4(this));
-   }
+    public Protocol1_9_4To1_10() {
+        super(ClientboundPackets1_9_3.class, ClientboundPackets1_9_3.class, ServerboundPackets1_9_3.class, ServerboundPackets1_9_3.class);
+    }
 
-   public void init(UserConnection var1) {
-      boolean var2 = rL.a();
-      if(!var1.has(cT.class)) {
-         var1.a((cA)(new cT(var1)));
-      }
+    protected void registerPackets() {
+        (entityPackets = new EntityPackets1_10(this)).register();
+        (blockItemPackets = new BlockItemPackets1_10(this)).register();
 
-      if(!var1.has(cQ.class)) {
-         var1.a((cA)(new cQ(var1)));
-      }
+        SoundRewriter soundRewriter = new SoundRewriter(this);
+        registerOutgoing(ClientboundPackets1_9_3.NAMED_SOUND, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.STRING); // 0 - Sound name
+                map(Type.VAR_INT); // 1 - Sound Category
+                map(Type.INT); // 2 - x
+                map(Type.INT); // 3 - y
+                map(Type.INT); // 4 - z
+                map(Type.FLOAT); // 5 - Volume
+                map(Type.FLOAT, TO_OLD_PITCH); // 6 - Pitch
+                handler(soundRewriter.getNamedSoundHandler());
+            }
+        });
+        registerOutgoing(ClientboundPackets1_9_3.SOUND, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Sound name
+                map(Type.VAR_INT); // 1 - Sound Category
+                map(Type.INT); // 2 - x
+                map(Type.INT); // 3 - y
+                map(Type.INT); // 4 - z
+                map(Type.FLOAT); // 5 - Volume
+                map(Type.FLOAT, TO_OLD_PITCH); // 6 - Pitch
+                handler(soundRewriter.getSoundHandler());
+            }
+        });
 
-      ((cQ)var1.b(cQ.class)).b(this);
-   }
+        registerIncoming(ServerboundPackets1_9_3.RESOURCE_PACK_STATUS, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.STRING, Type.NOTHING); // 0 - Hash
+                map(Type.VAR_INT); // 1 - Result
+            }
+        });
+    }
 
-   public aq1 b() {
-      return this.k;
-   }
+    public void init(UserConnection user) {
+        // Register ClientWorld
+        if (!user.has(ClientWorld.class)) {
+            user.put(new ClientWorld(user));
+        }
 
-   public aqR c() {
-      return this.l;
-   }
+        // Register EntityTracker if it doesn't exist yet.
+        if (!user.has(EntityTracker.class)) {
+            user.put(new EntityTracker(user));
+        }
 
-   public BackwardsMappings getMappingData() {
-      return MAPPINGS;
-   }
+        // Init protocol in EntityTracker
+        user.get(EntityTracker.class).initProtocol(this);
+    }
 
-   public boolean hasMappingDataToLoad() {
-      return true;
-   }
+    public EntityPackets1_10 getEntityPackets() {
+        return entityPackets;
+    }
 
-   static ValueTransformer access$000() {
-      return TO_OLD_PITCH;
-   }
+    public BlockItemPackets1_10 getBlockItemPackets() {
+        return blockItemPackets;
+    }
+
+    @Override
+    public BackwardsMappings getMappingData() {
+        return MAPPINGS;
+    }
+
+    @Override
+    public boolean hasMappingDataToLoad() {
+        return true;
+    }
 }

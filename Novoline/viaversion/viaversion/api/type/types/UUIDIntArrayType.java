@@ -1,36 +1,45 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import java.util.UUID;
 import viaversion.viaversion.api.type.Type;
 
-public class UUIDIntArrayType extends Type {
-   public UUIDIntArrayType() {
-      super("UUID", UUID.class);
-   }
+import java.util.UUID;
 
-   public UUID read(ByteBuf var1) {
-      int[] var2 = new int[]{var1.readInt(), var1.readInt(), var1.readInt(), var1.readInt()};
-      return uuidFromIntArray(var2);
-   }
+public class UUIDIntArrayType extends Type<UUID> {
 
-   public void write(ByteBuf var1, UUID var2) {
-      int[] var3 = uuidToIntArray(var2);
-      var1.writeInt(var3[0]);
-      var1.writeInt(var3[1]);
-      var1.writeInt(var3[2]);
-      var1.writeInt(var3[3]);
-   }
+    public UUIDIntArrayType() {
+        super("UUID", UUID.class);
+    }
 
-   public static UUID uuidFromIntArray(int[] var0) {
-      return new UUID((long)var0[0] << 32 | (long)var0[1] & 4294967295L, (long)var0[2] << 32 | (long)var0[3] & 4294967295L);
-   }
+    @Override
+    public UUID read(ByteBuf buffer) {
+        int[] ints = {
+                buffer.readInt(),
+                buffer.readInt(),
+                buffer.readInt(),
+                buffer.readInt()
+        };
+        return uuidFromIntArray(ints);
+    }
 
-   public static int[] uuidToIntArray(UUID var0) {
-      return bitsToIntArray(var0.getMostSignificantBits(), var0.getLeastSignificantBits());
-   }
+    @Override
+    public void write(ByteBuf buffer, UUID object) {
+        int[] ints = uuidToIntArray(object);
+        buffer.writeInt(ints[0]);
+        buffer.writeInt(ints[1]);
+        buffer.writeInt(ints[2]);
+        buffer.writeInt(ints[3]);
+    }
 
-   public static int[] bitsToIntArray(long var0, long var2) {
-      return new int[]{(int)(var0 >> 32), (int)var0, (int)(var2 >> 32), (int)var2};
-   }
+    public static UUID uuidFromIntArray(int[] ints) {
+        return new UUID((long) ints[0] << 32 | ((long) ints[1] & 0xFFFFFFFFL), (long) ints[2] << 32 | ((long) ints[3] & 0xFFFFFFFFL));
+    }
+
+    public static int[] uuidToIntArray(UUID uuid) {
+        return bitsToIntArray(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+    }
+
+    public static int[] bitsToIntArray(long long1, long long2) {
+        return new int[]{(int) (long1 >> 32), (int) long1, (int) (long2 >> 32), (int) long2};
+    }
 }

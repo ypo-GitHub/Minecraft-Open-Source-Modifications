@@ -1,22 +1,22 @@
 package viaversion.viabackwards.api.entities.storage;
 
-import viaversion.viabackwards.api.entities.storage.EntityData;
-
 public class EntityObjectData extends EntityData {
-   private final boolean isObject;
-   private final int objectData;
+    private final boolean isObject;
+    private final int objectData;
 
-   public EntityObjectData(int var1, boolean var2, int var3, int var4) {
-      super(var1, var3);
-      this.isObject = var2;
-      this.objectData = var4;
-   }
+    public EntityObjectData(int id, boolean isObject, int replacementId, int objectData) {
+        super(id, replacementId);
+        this.isObject = isObject;
+        this.objectData = objectData;
+    }
 
-   public boolean isObject() {
-      return this.isObject;
-   }
+    @Override
+    public boolean isObject() {
+        return isObject;
+    }
 
-   public int getObjectData() {
-      return this.objectData;
-   }
+    @Override
+    public int getObjectData() {
+        return objectData;
+    }
 }

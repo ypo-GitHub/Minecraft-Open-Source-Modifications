@@ -1,42 +1,53 @@
 package net.minecraft.world.biome;
 
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.BlockPos$MutableBlockPos;
 import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.biome.BiomeColorHelper$1;
-import net.minecraft.world.biome.BiomeColorHelper$2;
-import net.minecraft.world.biome.BiomeColorHelper$3;
-import net.minecraft.world.biome.BiomeColorHelper$ColorResolver;
 
 public class BiomeColorHelper {
-   private static final BiomeColorHelper$ColorResolver field_180291_a = new BiomeColorHelper$1();
-   private static final BiomeColorHelper$ColorResolver field_180289_b = new BiomeColorHelper$2();
-   private static final BiomeColorHelper$ColorResolver field_180290_c = new BiomeColorHelper$3();
+    private static final BiomeColorHelper.ColorResolver field_180291_a = new BiomeColorHelper.ColorResolver() {
+        public int getColorAtPos(BiomeGenBase p_180283_1_, BlockPos blockPosition) {
+            return p_180283_1_.getGrassColorAtPos(blockPosition);
+        }
+    };
+    private static final BiomeColorHelper.ColorResolver field_180289_b = new BiomeColorHelper.ColorResolver() {
+        public int getColorAtPos(BiomeGenBase p_180283_1_, BlockPos blockPosition) {
+            return p_180283_1_.getFoliageColorAtPos(blockPosition);
+        }
+    };
+    private static final BiomeColorHelper.ColorResolver field_180290_c = new BiomeColorHelper.ColorResolver() {
+        public int getColorAtPos(BiomeGenBase p_180283_1_, BlockPos blockPosition) {
+            return p_180283_1_.waterColorMultiplier;
+        }
+    };
 
-   private static int func_180285_a(IBlockAccess var0, BlockPos var1, BiomeColorHelper$ColorResolver var2) {
-      int var3 = 0;
-      int var4 = 0;
-      int var5 = 0;
+    private static int func_180285_a(IBlockAccess p_180285_0_, BlockPos p_180285_1_, BiomeColorHelper.ColorResolver p_180285_2_) {
+        int i = 0;
+        int j = 0;
+        int k = 0;
 
-      for(BlockPos$MutableBlockPos var7 : BlockPos.getAllInBoxMutable(var1.a(-1, 0, -1), var1.a(1, 0, 1))) {
-         int var8 = var2.getColorAtPos(var0.getBiomeGenForCoords(var7), var7);
-         var3 += (var8 & 16711680) >> 16;
-         var4 += (var8 & '\uff00') >> 8;
-         var5 += var8 & 255;
-      }
+        for (BlockPos.MutableBlockPos blockpos$mutableblockpos : BlockPos.getAllInBoxMutable(p_180285_1_.add(-1, 0, -1), p_180285_1_.add(1, 0, 1))) {
+            int l = p_180285_2_.getColorAtPos(p_180285_0_.getBiomeGenForCoords(blockpos$mutableblockpos), blockpos$mutableblockpos);
+            i += (l & 16711680) >> 16;
+            j += (l & 65280) >> 8;
+            k += l & 255;
+        }
 
-      return (var3 / 9 & 255) << 16 | (var4 / 9 & 255) << 8 | var5 / 9 & 255;
-   }
+        return (i / 9 & 255) << 16 | (j / 9 & 255) << 8 | k / 9 & 255;
+    }
 
-   public static int getGrassColorAtPos(IBlockAccess var0, BlockPos var1) {
-      return func_180285_a(var0, var1, field_180291_a);
-   }
+    public static int getGrassColorAtPos(IBlockAccess p_180286_0_, BlockPos p_180286_1_) {
+        return func_180285_a(p_180286_0_, p_180286_1_, field_180291_a);
+    }
 
-   public static int getFoliageColorAtPos(IBlockAccess var0, BlockPos var1) {
-      return func_180285_a(var0, var1, field_180289_b);
-   }
+    public static int getFoliageColorAtPos(IBlockAccess p_180287_0_, BlockPos p_180287_1_) {
+        return func_180285_a(p_180287_0_, p_180287_1_, field_180289_b);
+    }
 
-   public static int getWaterColorAtPos(IBlockAccess var0, BlockPos var1) {
-      return func_180285_a(var0, var1, field_180290_c);
-   }
+    public static int getWaterColorAtPos(IBlockAccess p_180288_0_, BlockPos p_180288_1_) {
+        return func_180285_a(p_180288_0_, p_180288_1_, field_180290_c);
+    }
+
+    interface ColorResolver {
+        int getColorAtPos(BiomeGenBase p_180283_1_, BlockPos blockPosition);
+    }
 }

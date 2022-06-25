@@ -1,29 +1,30 @@
 package viaversion.viaversion.api.minecraft;
 
 public enum Environment {
-   NORMAL(0),
-   NETHER(-1),
-   END(1);
 
-   private final int id;
+    NORMAL(0),
+    NETHER(-1),
+    END(1);
 
-   private Environment(int var3) {
-      this.id = var3;
-   }
+    private final int id;
 
-   public int getId() {
-      return this.id;
-   }
+    Environment(int id) {
+        this.id = id;
+    }
 
-   public static Environment getEnvironmentById(int var0) {
-      switch(var0) {
-      case -1:
-      default:
-         return NETHER;
-      case 0:
-         return NORMAL;
-      case 1:
-         return END;
-      }
-   }
+    public int getId() {
+        return id;
+    }
+
+    public static Environment getEnvironmentById(int id) {
+        switch (id) {
+            default:
+            case -1:
+                return NETHER;
+            case 0:
+                return NORMAL;
+            case 1:
+                return END;
+        }
+    }
 }

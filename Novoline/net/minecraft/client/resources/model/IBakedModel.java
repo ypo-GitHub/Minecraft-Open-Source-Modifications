@@ -1,22 +1,24 @@
 package net.minecraft.client.resources.model;
 
-import java.util.List;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.EnumFacing;
 
+import java.util.List;
+
 public interface IBakedModel {
-   List getFaceQuads(EnumFacing var1);
+    List<BakedQuad> getFaceQuads(EnumFacing p_177551_1_);
 
-   List getGeneralQuads();
+    List<BakedQuad> getGeneralQuads();
 
-   boolean isAmbientOcclusion();
+    boolean isAmbientOcclusion();
 
-   boolean isGui3d();
+    boolean isGui3d();
 
-   boolean isBuiltInRenderer();
+    boolean isBuiltInRenderer();
 
-   TextureAtlasSprite getParticleTexture();
+    TextureAtlasSprite getParticleTexture();
 
-   ItemCameraTransforms getItemCameraTransforms();
+    ItemCameraTransforms getItemCameraTransforms();
 }

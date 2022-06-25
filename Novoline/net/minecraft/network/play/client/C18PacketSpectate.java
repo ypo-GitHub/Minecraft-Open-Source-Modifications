@@ -1,44 +1,52 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
-import java.util.UUID;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 import net.minecraft.world.WorldServer;
 
-public class C18PacketSpectate implements Packet {
-   private UUID id;
+import java.io.IOException;
+import java.util.UUID;
 
-   public UUID a() {
-      return this.id;
-   }
+public class C18PacketSpectate implements Packet<INetHandlerPlayServer> {
 
-   public void a(UUID var1) {
-      this.id = var1;
-   }
+    public C18PacketSpectate setId(UUID id) {
+        this.id = id;
+        return this;
+    }
 
-   public C18PacketSpectate() {
-   }
+    private UUID id;
 
-   public C18PacketSpectate(UUID var1) {
-      this.id = var1;
-   }
+    public C18PacketSpectate() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.id = var1.readUuid();
-   }
+    public C18PacketSpectate(UUID id) {
+        this.id = id;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeUuid(this.id);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.id = buf.readUuid();
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.handleSpectate(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeUuid(this.id);
+    }
 
-   public Entity getEntity(WorldServer var1) {
-      return var1.getEntityFromUuid(this.id);
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.handleSpectate(this);
+    }
+
+    public Entity getEntity(WorldServer worldIn) {
+        return worldIn.getEntityFromUuid(this.id);
+    }
 }

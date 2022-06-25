@@ -1,3 +1,26 @@
+/*
+ * This file is part of adventure, licensed under the MIT License.
+ *
+ * Copyright (c) 2017-2020 KyoriPowered
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package viaversion.viaversion.api.minecraft.nbt;
 
 import com.github.steveice10.opennbt.tag.builtin.ByteArrayTag;
@@ -13,249 +36,221 @@ import com.github.steveice10.opennbt.tag.builtin.LongTag;
 import com.github.steveice10.opennbt.tag.builtin.ShortTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
+
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Iterator;
-import net.aPX;
-import viaversion.viaversion.api.minecraft.nbt.Tokens;
 
-final class TagStringWriter implements AutoCloseable {
-   private final Appendable out;
-   private final String c = "  ";
-   private int level;
-   private boolean needsSeparator;
+/**
+ * See https://github.com/KyoriPowered/adventure.
+ */
+/* package */ final class TagStringWriter implements AutoCloseable {
+    private final Appendable out;
+    private final String indent = "  "; // TODO: pretty-printing
+    private int level;
+    /**
+     * Whether a {@link Tokens#VALUE_SEPARATOR} needs to be printed before the beginning of the next object.
+     */
+    private boolean needsSeparator;
 
-   public TagStringWriter(Appendable var1) {
-      this.out = var1;
-   }
+    public TagStringWriter(Appendable out) {
+        this.out = out;
+    }
 
-   public TagStringWriter writeTag(Tag var1) throws IOException {
-      String var2 = aPX.b();
-      if(var1 instanceof CompoundTag) {
-         return this.writeCompound((CompoundTag)var1);
-      } else if(var1 instanceof ListTag) {
-         return this.writeList((ListTag)var1);
-      } else if(var1 instanceof ByteArrayTag) {
-         return this.writeByteArray((ByteArrayTag)var1);
-      } else if(var1 instanceof IntArrayTag) {
-         return this.writeIntArray((IntArrayTag)var1);
-      } else if(var1 instanceof LongArrayTag) {
-         return this.writeLongArray((LongArrayTag)var1);
-      } else if(var1 instanceof StringTag) {
-         return this.value(((StringTag)var1).getValue(), '\u0000');
-      } else if(var1 instanceof ByteTag) {
-         return this.value(Byte.toString(((ByteTag)var1).getValue().byteValue()), 'B');
-      } else if(var1 instanceof ShortTag) {
-         return this.value(Short.toString(((ShortTag)var1).getValue().shortValue()), 'S');
-      } else if(var1 instanceof IntTag) {
-         return this.value(Integer.toString(((IntTag)var1).getValue().intValue()), 'I');
-      } else if(var1 instanceof LongTag) {
-         return this.value(Long.toString(((LongTag)var1).getValue().longValue()), 'L');
-      } else if(var1 instanceof FloatTag) {
-         return this.value(Float.toString(((FloatTag)var1).getValue().floatValue()), 'F');
-      } else if(var1 instanceof DoubleTag) {
-         return this.value(Double.toString(((DoubleTag)var1).getValue().doubleValue()), 'D');
-      } else {
-         throw new IOException("Unknown tag type: " + var1.getClass().getCanonicalName());
-      }
-   }
+    // NBT-specific
 
-   private TagStringWriter writeCompound(CompoundTag var1) throws IOException {
-      aPX.b();
-      this.beginCompound();
-      Iterator var3 = var1.iterator();
-      if(var3.hasNext()) {
-         Tag var4 = (Tag)var3.next();
-         this.key(var4.getName());
-         this.writeTag(var4);
-      }
+    public TagStringWriter writeTag(Tag tag) throws IOException {
+        if (tag instanceof CompoundTag) {
+            return writeCompound((CompoundTag) tag);
+        } else if (tag instanceof ListTag) {
+            return writeList((ListTag) tag);
+        } else if (tag instanceof ByteArrayTag) {
+            return writeByteArray((ByteArrayTag) tag);
+        } else if (tag instanceof IntArrayTag) {
+            return writeIntArray((IntArrayTag) tag);
+        } else if (tag instanceof LongArrayTag) {
+            return writeLongArray((LongArrayTag) tag);
+        } else if (tag instanceof StringTag) {
+            return value(((StringTag) tag).getValue(), Tokens.EOF);
+        } else if (tag instanceof ByteTag) {
+            return value(Byte.toString(((ByteTag) tag).getValue()), Tokens.TYPE_BYTE);
+        } else if (tag instanceof ShortTag) {
+            return value(Short.toString(((ShortTag) tag).getValue()), Tokens.TYPE_SHORT);
+        } else if (tag instanceof IntTag) {
+            return value(Integer.toString(((IntTag) tag).getValue()), Tokens.TYPE_INT);
+        } else if (tag instanceof LongTag) {
+            return value(Long.toString(((LongTag) tag).getValue()), Tokens.TYPE_LONG);
+        } else if (tag instanceof FloatTag) {
+            return value(Float.toString(((FloatTag) tag).getValue()), Tokens.TYPE_FLOAT);
+        } else if (tag instanceof DoubleTag) {
+            return value(Double.toString(((DoubleTag) tag).getValue()), Tokens.TYPE_DOUBLE);
+        } else {
+            throw new IOException("Unknown tag type: " + tag.getClass().getCanonicalName());
+            // unknown!
+        }
+    }
 
-      this.endCompound();
-      return this;
-   }
+    private TagStringWriter writeCompound(CompoundTag tag) throws IOException {
+        beginCompound();
+        for (Tag t : tag) {
+            key(t.getName());
+            writeTag(t);
+        }
+        endCompound();
+        return this;
+    }
 
-   private TagStringWriter writeList(ListTag var1) throws IOException {
-      this.beginList();
-      aPX.b();
-      Iterator var3 = var1.iterator();
-      if(var3.hasNext()) {
-         Tag var4 = (Tag)var3.next();
-         this.printAndResetSeparator();
-         this.writeTag(var4);
-      }
+    private TagStringWriter writeList(ListTag tag) throws IOException {
+        beginList();
+        for (Tag el : tag) {
+            printAndResetSeparator();
+            writeTag(el);
+        }
+        endList();
+        return this;
+    }
 
-      this.endList();
-      return this;
-   }
+    private TagStringWriter writeByteArray(ByteArrayTag tag) throws IOException {
+        beginArray(Tokens.TYPE_BYTE);
 
-   private TagStringWriter writeByteArray(ByteArrayTag var1) throws IOException {
-      aPX.b();
-      this.beginArray('B');
-      byte[] var3 = var1.getValue();
-      int var4 = 0;
-      int var5 = var3.length;
-      if(var4 < var5) {
-         this.printAndResetSeparator();
-         this.value(Byte.toString(var3[var4]), 'B');
-         ++var4;
-      }
+        byte[] value = tag.getValue();
+        for (int i = 0, length = value.length; i < length; i++) {
+            printAndResetSeparator();
+            value(Byte.toString(value[i]), Tokens.TYPE_BYTE);
+        }
+        endArray();
+        return this;
+    }
 
-      this.endArray();
-      return this;
-   }
+    private TagStringWriter writeIntArray(IntArrayTag tag) throws IOException {
+        beginArray(Tokens.TYPE_INT);
 
-   private TagStringWriter writeIntArray(IntArrayTag var1) throws IOException {
-      aPX.b();
-      this.beginArray('I');
-      int[] var3 = var1.getValue();
-      int var4 = 0;
-      int var5 = var3.length;
-      if(var4 < var5) {
-         this.printAndResetSeparator();
-         this.value(Integer.toString(var3[var4]), 'I');
-         ++var4;
-      }
+        int[] value = tag.getValue();
+        for (int i = 0, length = value.length; i < length; i++) {
+            printAndResetSeparator();
+            value(Integer.toString(value[i]), Tokens.TYPE_INT);
+        }
+        endArray();
+        return this;
+    }
 
-      this.endArray();
-      return this;
-   }
+    private TagStringWriter writeLongArray(LongArrayTag tag) throws IOException {
+        beginArray(Tokens.TYPE_LONG);
 
-   private TagStringWriter writeLongArray(LongArrayTag var1) throws IOException {
-      this.beginArray('L');
-      long[] var3 = var1.getValue();
-      aPX.b();
-      int var4 = 0;
-      int var5 = var3.length;
-      if(var4 < var5) {
-         this.printAndResetSeparator();
-         this.value(Long.toString(var3[var4]), 'L');
-         ++var4;
-      }
+        long[] value = tag.getValue();
+        for (int i = 0, length = value.length; i < length; i++) {
+            printAndResetSeparator();
+            value(Long.toString(value[i]), Tokens.TYPE_LONG);
+        }
+        endArray();
+        return this;
+    }
 
-      this.endArray();
-      return this;
-   }
+    // Value types
 
-   public TagStringWriter beginCompound() throws IOException {
-      this.printAndResetSeparator();
-      ++this.level;
-      this.out.append('{');
-      return this;
-   }
+    public TagStringWriter beginCompound() throws IOException {
+        printAndResetSeparator();
+        this.level++;
+        out.append(Tokens.COMPOUND_BEGIN);
+        return this;
+    }
 
-   public TagStringWriter endCompound() throws IOException {
-      this.out.append('}');
-      --this.level;
-      this.needsSeparator = true;
-      return this;
-   }
+    public TagStringWriter endCompound() throws IOException {
+        out.append(Tokens.COMPOUND_END);
+        this.level--;
+        this.needsSeparator = true;
+        return this;
+    }
 
-   public TagStringWriter key(String var1) throws IOException {
-      this.printAndResetSeparator();
-      this.writeMaybeQuoted(var1, false);
-      this.out.append(':');
-      return this;
-   }
+    public TagStringWriter key(String key) throws IOException {
+        printAndResetSeparator();
+        writeMaybeQuoted(key, false);
+        out.append(Tokens.COMPOUND_KEY_TERMINATOR); // TODO: spacing/pretty-printing
+        return this;
+    }
 
-   public TagStringWriter value(String var1, char var2) throws IOException {
-      String var3 = aPX.b();
-      if(var2 == 0) {
-         this.writeMaybeQuoted(var1, true);
-      }
-
-      this.out.append(var1);
-      if(var2 != 73) {
-         this.out.append(var2);
-      }
-
-      this.needsSeparator = true;
-      return this;
-   }
-
-   public TagStringWriter beginList() throws IOException {
-      this.printAndResetSeparator();
-      ++this.level;
-      this.out.append('[');
-      return this;
-   }
-
-   public TagStringWriter endList() throws IOException {
-      this.out.append(']');
-      --this.level;
-      this.needsSeparator = true;
-      return this;
-   }
-
-   private TagStringWriter beginArray(char var1) throws IOException {
-      this.beginList().out.append(var1).append(';');
-      return this;
-   }
-
-   private TagStringWriter endArray() throws IOException {
-      return this.endList();
-   }
-
-   private void writeMaybeQuoted(String var1, boolean var2) throws IOException {
-      String var3 = aPX.b();
-      if(!var2) {
-         int var4 = 0;
-         if(var4 < var1.length()) {
-            if(!Tokens.id(var1.charAt(var4))) {
-               var2 = true;
+    public TagStringWriter value(String value, char valueType) throws IOException {
+        if (valueType == Tokens.EOF) { // string doesn't have its type
+            writeMaybeQuoted(value, true);
+        } else {
+            out.append(value);
+            if (valueType != Tokens.TYPE_INT) {
+                out.append(valueType);
             }
+        }
+        this.needsSeparator = true;
+        return this;
+    }
 
-            ++var4;
-         }
-      }
+    public TagStringWriter beginList() throws IOException {
+        printAndResetSeparator();
+        this.level++;
+        out.append(Tokens.ARRAY_BEGIN);
+        return this;
+    }
 
-      if(var2) {
-         this.out.append('\"');
-         this.out.append(escape(var1, '\"'));
-         this.out.append('\"');
-      }
+    public TagStringWriter endList() throws IOException {
+        out.append(Tokens.ARRAY_END);
+        this.level--;
+        this.needsSeparator = true;
+        return this;
+    }
 
-      this.out.append(var1);
-   }
+    private TagStringWriter beginArray(char type) throws IOException {
+        beginList()
+                .out.append(type)
+                .append(Tokens.ARRAY_SIGNATURE_SEPARATOR);
+        return this;
+    }
 
-   private static String escape(String var0, char var1) {
-      aPX.b();
-      StringBuilder var3 = new StringBuilder(var0.length());
-      int var4 = 0;
-      if(var4 < var0.length()) {
-         char var5 = var0.charAt(var4);
-         if(var5 == var1 || var5 == 92) {
-            var3.append('\\');
-         }
+    private TagStringWriter endArray() throws IOException {
+        return endList();
+    }
 
-         var3.append(var5);
-         ++var4;
-      }
+    private void writeMaybeQuoted(String content, boolean requireQuotes) throws IOException {
+        if (!requireQuotes) {
+            for (int i = 0; i < content.length(); ++i) {
+                if (!Tokens.id(content.charAt(i))) {
+                    requireQuotes = true;
+                    break;
+                }
+            }
+        }
+        if (requireQuotes) { // TODO: single quotes
+            out.append(Tokens.DOUBLE_QUOTE);
+            out.append(escape(content, Tokens.DOUBLE_QUOTE));
+            out.append(Tokens.DOUBLE_QUOTE);
+        } else {
+            out.append(content);
+        }
+    }
 
-      return var3.toString();
-   }
+    private static String escape(String content, char quoteChar) {
+        StringBuilder output = new StringBuilder(content.length());
+        for (int i = 0; i < content.length(); ++i) {
+            char c = content.charAt(i);
+            if (c == quoteChar || c == '\\') {
+                output.append(Tokens.ESCAPE_MARKER);
+            }
+            output.append(c);
+        }
+        return output.toString();
+    }
 
-   private void printAndResetSeparator() throws IOException {
-      String var1 = aPX.b();
-      if(this.needsSeparator) {
-         this.out.append(',');
-         this.needsSeparator = false;
-      }
+    private void printAndResetSeparator() throws IOException {
+        if (needsSeparator) {
+            out.append(Tokens.VALUE_SEPARATOR);
+            this.needsSeparator = false;
+        }
+    }
 
-   }
 
-   public void close() throws IOException {
-      String var1 = aPX.b();
-      if(this.level != 0) {
-         throw new IllegalStateException("Document finished with unbalanced start and end objects");
-      } else {
-         if(this.out instanceof Writer) {
-            ((Writer)this.out).flush();
-         }
-
-      }
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    @Override
+    public void close() throws IOException {
+        if (level != 0) {
+            throw new IllegalStateException("Document finished with unbalanced start and end objects");
+        }
+        if (out instanceof Writer) {
+            ((Writer) out).flush();
+        }
+    }
 }

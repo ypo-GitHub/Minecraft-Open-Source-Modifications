@@ -1,10 +1,6 @@
 package net.minecraft.block;
 
-import java.util.List;
-import java.util.Random;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -19,86 +15,153 @@ import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Random;
+
 public class BlockPane extends Block {
-   public static final PropertyBool NORTH = PropertyBool.create("north");
-   public static final PropertyBool EAST = PropertyBool.create("east");
-   public static final PropertyBool SOUTH = PropertyBool.create("south");
-   public static final PropertyBool WEST = PropertyBool.create("west");
-   private final boolean canDrop;
 
-   protected BlockPane(Material var1, boolean var2) {
-      super(var1);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, Boolean.FALSE).withProperty(EAST, Boolean.FALSE).withProperty(SOUTH, Boolean.FALSE).withProperty(WEST, Boolean.FALSE));
-      this.canDrop = var2;
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
+    public static final PropertyBool NORTH = PropertyBool.create("north");
+    public static final PropertyBool EAST = PropertyBool.create("east");
+    public static final PropertyBool SOUTH = PropertyBool.create("south");
+    public static final PropertyBool WEST = PropertyBool.create("west");
+    private final boolean canDrop;
 
-   public IBlockState getActualState(IBlockState var1, IBlockAccess var2, BlockPos var3) {
-      return var1.withProperty(NORTH, Boolean.valueOf(this.canPaneConnectToBlock(var2.getBlockState(var3.north()).getBlock()))).withProperty(SOUTH, Boolean.valueOf(this.canPaneConnectToBlock(var2.getBlockState(var3.south()).getBlock()))).withProperty(WEST, Boolean.valueOf(this.canPaneConnectToBlock(var2.getBlockState(var3.west()).getBlock()))).withProperty(EAST, Boolean.valueOf(this.canPaneConnectToBlock(var2.getBlockState(var3.east()).getBlock())));
-   }
+    protected BlockPane(Material materialIn, boolean canDrop) {
+        super(materialIn);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(NORTH, Boolean.FALSE).withProperty(EAST, Boolean.FALSE).withProperty(SOUTH, Boolean.FALSE).withProperty(WEST, Boolean.FALSE));
+        this.canDrop = canDrop;
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return !this.canDrop?null:super.getItemDropped(var1, var2, var3);
-   }
+    /**
+     * Get the actual Block state of this Block at the given position. This applies properties not visible in the
+     * metadata, such as fence connections.
+     */
+    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
+        return state.withProperty(NORTH, this.canPaneConnectToBlock(worldIn.getBlockState(pos.north()).getBlock())).withProperty(SOUTH, this.canPaneConnectToBlock(worldIn.getBlockState(pos.south()).getBlock())).withProperty(WEST, this.canPaneConnectToBlock(worldIn.getBlockState(pos.west()).getBlock())).withProperty(EAST, this.canPaneConnectToBlock(worldIn.getBlockState(pos.east()).getBlock()));
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return !this.canDrop ? null : super.getItemDropped(state, rand, fortune);
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      return var1.getBlockState(var2).getBlock() != this && super.shouldSideBeRendered(var1, var2, var3);
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public void addCollisionBoxesToList(World var1, BlockPos var2, IBlockState var3, AxisAlignedBB var4, List var5, Entity var6) {
-      boolean var7 = this.canPaneConnectToBlock(var1.getBlockState(var2.north()).getBlock());
-      boolean var8 = this.canPaneConnectToBlock(var1.getBlockState(var2.south()).getBlock());
-      boolean var9 = this.canPaneConnectToBlock(var1.getBlockState(var2.west()).getBlock());
-      boolean var10 = this.canPaneConnectToBlock(var1.getBlockState(var2.east()).getBlock());
-      this.setBlockBounds(0.0F, 0.0F, 0.4375F, 0.5F, 1.0F, 0.5625F);
-      super.addCollisionBoxesToList(var1, var2, var3, var4, var5, var6);
-      this.setBlockBounds(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 0.5F);
-      super.addCollisionBoxesToList(var1, var2, var3, var4, var5, var6);
-   }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        return worldIn.getBlockState(pos).getBlock() != this && super.shouldSideBeRendered(worldIn, pos, side);
+    }
 
-   public void setBlockBoundsForItemRender() {
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-   }
+    /**
+     * Add all collision boxes of this Block to the list that intersect with the given mask.
+     */
+    public void addCollisionBoxesToList(World worldIn, BlockPos pos, IBlockState state, AxisAlignedBB mask, List<AxisAlignedBB> list, Entity collidingEntity) {
+        final boolean flag = this.canPaneConnectToBlock(worldIn.getBlockState(pos.north()).getBlock());
+        final boolean flag1 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.south()).getBlock());
+        final boolean flag2 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.west()).getBlock());
+        final boolean flag3 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.east()).getBlock());
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      float var3 = 0.4375F;
-      float var4 = 0.5625F;
-      float var5 = 0.4375F;
-      float var6 = 0.5625F;
-      boolean var7 = this.canPaneConnectToBlock(var1.getBlockState(var2.north()).getBlock());
-      boolean var8 = this.canPaneConnectToBlock(var1.getBlockState(var2.south()).getBlock());
-      boolean var9 = this.canPaneConnectToBlock(var1.getBlockState(var2.west()).getBlock());
-      boolean var10 = this.canPaneConnectToBlock(var1.getBlockState(var2.east()).getBlock());
-      var3 = 0.0F;
-      var5 = 0.0F;
-      this.setBlockBounds(var3, 0.0F, var5, var4, 1.0F, var6);
-   }
+        if ((!flag2 || !flag3) && (flag2 || flag3 || flag || flag1)) {
+            if (flag2) {
+                this.setBlockBounds(0.0F, 0.0F, 0.4375F, 0.5F, 1.0F, 0.5625F);
+                super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+            } else if (flag3) {
+                this.setBlockBounds(0.5F, 0.0F, 0.4375F, 1.0F, 1.0F, 0.5625F);
+                super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+            }
+        } else {
+            this.setBlockBounds(0.0F, 0.0F, 0.4375F, 1.0F, 1.0F, 0.5625F);
+            super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+        }
 
-   public final boolean canPaneConnectToBlock(Block var1) {
-      return var1.isFullBlock() || var1 == this || var1 == Blocks.glass || var1 == Blocks.stained_glass || var1 == Blocks.stained_glass_pane || var1 instanceof BlockPane;
-   }
+        if ((!flag || !flag1) && (flag2 || flag3 || flag || flag1)) {
+            if (flag) {
+                this.setBlockBounds(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 0.5F);
+                super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+            } else if (flag1) {
+                this.setBlockBounds(0.4375F, 0.0F, 0.5F, 0.5625F, 1.0F, 1.0F);
+                super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+            }
+        } else {
+            this.setBlockBounds(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 1.0F);
+            super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+        }
+    }
 
-   protected boolean canSilkHarvest() {
-      return true;
-   }
+    /**
+     * Sets the block's bounds for rendering it as an item
+     */
+    public void setBlockBoundsForItemRender() {
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT_MIPPED;
-   }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        float f = 0.4375F;
+        float f1 = 0.5625F;
+        float f2 = 0.4375F;
+        float f3 = 0.5625F;
+        final boolean flag = this.canPaneConnectToBlock(worldIn.getBlockState(pos.north()).getBlock());
+        final boolean flag1 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.south()).getBlock());
+        final boolean flag2 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.west()).getBlock());
+        final boolean flag3 = this.canPaneConnectToBlock(worldIn.getBlockState(pos.east()).getBlock());
 
-   public int getMetaFromState(IBlockState var1) {
-      return 0;
-   }
+        if ((!flag2 || !flag3) && (flag2 || flag3 || flag || flag1)) {
+            if (flag2) {
+                f = 0.0F;
+            } else if (flag3) {
+                f1 = 1.0F;
+            }
+        } else {
+            f = 0.0F;
+            f1 = 1.0F;
+        }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{NORTH, EAST, WEST, SOUTH});
-   }
+        if ((!flag || !flag1) && (flag2 || flag3 || flag || flag1)) {
+            if (flag) {
+                f2 = 0.0F;
+            } else if (flag1) {
+                f3 = 1.0F;
+            }
+        } else {
+            f2 = 0.0F;
+            f3 = 1.0F;
+        }
+
+        this.setBlockBounds(f, 0.0F, f2, f1, 1.0F, f3);
+    }
+
+    public final boolean canPaneConnectToBlock(Block blockIn) {
+        return blockIn.isFullBlock() || blockIn == this || blockIn == Blocks.glass || blockIn == Blocks.stained_glass || blockIn == Blocks.stained_glass_pane || blockIn instanceof BlockPane;
+    }
+
+    protected boolean canSilkHarvest() {
+        return true;
+    }
+
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT_MIPPED;
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return 0;
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, NORTH, EAST, WEST, SOUTH);
+    }
+
 }

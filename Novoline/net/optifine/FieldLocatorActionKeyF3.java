@@ -3,46 +3,52 @@ package net.optifine;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
-import net.optifine.Config;
-import net.optifine.IFieldLocator;
-import net.optifine.MatchBlock;
-import net.optifine.ReflectorRaw;
 
-public class FieldLocatorActionKeyF3 implements IFieldLocator {
-   public Field getField() {
-      Class var2 = Minecraft.class;
-      MatchBlock.b();
-      Field var3 = this.getFieldRenderChunksMany();
-      if(var3 == null) {
-         Config.log("(Reflector) Field not present: " + var2.getName() + ".actionKeyF3 (field renderChunksMany not found)");
-         return null;
-      } else {
-         Field var4 = ReflectorRaw.getFieldAfter(Minecraft.class, var3, Boolean.TYPE, 0);
-         if(var4 == null) {
-            Config.log("(Reflector) Field not present: " + var2.getName() + ".actionKeyF3");
+public class FieldLocatorActionKeyF3 implements IFieldLocator
+{
+    public Field getField()
+    {
+        Class oclass = Minecraft.class;
+        Field field = this.getFieldRenderChunksMany();
+
+        if (field == null)
+        {
+            Config.log("(Reflector) Field not present: " + oclass.getName() + ".actionKeyF3 (field renderChunksMany not found)");
             return null;
-         } else {
-            return var4;
-         }
-      }
-   }
+        }
+        else
+        {
+            Field field1 = ReflectorRaw.getFieldAfter(Minecraft.class, field, Boolean.TYPE, 0);
 
-   private Field getFieldRenderChunksMany() {
-      Minecraft var2 = Minecraft.getInstance();
-      boolean var3 = var2.renderChunksMany;
-      Field[] var4 = Minecraft.class.getDeclaredFields();
-      var2.renderChunksMany = true;
-      Field[] var5 = ReflectorRaw.getFields(var2, var4, Boolean.TYPE, Boolean.TRUE);
-      var2.renderChunksMany = false;
-      Field[] var6 = ReflectorRaw.getFields(var2, var4, Boolean.TYPE, Boolean.FALSE);
-      var2.renderChunksMany = var3;
-      HashSet var7 = new HashSet(Arrays.asList(var5));
-      MatchBlock.b();
-      HashSet var8 = new HashSet(Arrays.asList(var6));
-      HashSet var9 = new HashSet(var7);
-      var9.retainAll(var8);
-      Field[] var10 = (Field[])((Field[])((Field[])var9.toArray(new Field[var9.size()])));
-      return var10.length != 1?null:var10[0];
-   }
+            if (field1 == null)
+            {
+                Config.log("(Reflector) Field not present: " + oclass.getName() + ".actionKeyF3");
+                return null;
+            }
+            else
+            {
+                return field1;
+            }
+        }
+    }
+
+    private Field getFieldRenderChunksMany()
+    {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean flag = minecraft.renderChunksMany;
+        Field[] afield = Minecraft.class.getDeclaredFields();
+        minecraft.renderChunksMany = true;
+        Field[] afield1 = ReflectorRaw.getFields(minecraft, afield, Boolean.TYPE, Boolean.TRUE);
+        minecraft.renderChunksMany = false;
+        Field[] afield2 = ReflectorRaw.getFields(minecraft, afield, Boolean.TYPE, Boolean.FALSE);
+        minecraft.renderChunksMany = flag;
+        Set<Field> set = new HashSet(Arrays.asList(afield1));
+        Set<Field> set1 = new HashSet(Arrays.asList(afield2));
+        Set<Field> set2 = new HashSet(set);
+        set2.retainAll(set1);
+        Field[] afield3 = (Field[])((Field[])set2.toArray(new Field[set2.size()]));
+        return afield3.length != 1 ? null : afield3[0];
+    }
 }

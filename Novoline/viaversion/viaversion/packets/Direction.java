@@ -1,6 +1,13 @@
 package viaversion.viaversion.packets;
 
 public enum Direction {
-   OUTGOING,
-   INCOMING;
+
+    /**
+     * Outgoing server packets sent to the client.
+     */
+    OUTGOING,
+    /**
+     * Incoming server packets send by the client to the server.
+     */
+    INCOMING
 }

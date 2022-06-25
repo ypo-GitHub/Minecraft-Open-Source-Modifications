@@ -1,41 +1,51 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class C11PacketEnchantItem implements Packet {
-   private int windowId;
-   private int button;
+import java.io.IOException;
 
-   public C11PacketEnchantItem() {
-   }
+public class C11PacketEnchantItem implements Packet<INetHandlerPlayServer> {
+    private int windowId;
+    private int button;
 
-   public C11PacketEnchantItem(int var1, int var2) {
-      this.windowId = var1;
-      this.button = var2;
-   }
+    public C11PacketEnchantItem() {
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processEnchantItem(this);
-   }
+    public C11PacketEnchantItem(int windowId, int button) {
+        this.windowId = windowId;
+        this.button = button;
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readByte();
-      this.button = var1.readByte();
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processEnchantItem(this);
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-      var1.writeByte(this.button);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readByte();
+        this.button = buf.readByte();
+    }
 
-   public int getWindowId() {
-      return this.windowId;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+        buf.writeByte(this.button);
+    }
 
-   public int getButton() {
-      return this.button;
-   }
+    public int getWindowId() {
+        return this.windowId;
+    }
+
+    public int getButton() {
+        return this.button;
+    }
 }

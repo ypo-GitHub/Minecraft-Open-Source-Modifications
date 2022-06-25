@@ -1,292 +1,234 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
-import io.netty.buffer.ByteBuf;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import net.Dk;
-import net.aRi;
-import net.acE;
-import net.cA;
-import net.t4;
+import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.Protocol1_7_6_10TO1_8;
+import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.metadata.MetadataRewriter;
 import viaversion.viarewind.replacement.EntityReplacement;
 import viaversion.viarewind.utils.PacketUtil;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.data.ExternalJoinGameListener;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.entities.Entity1_10Types;
 import viaversion.viaversion.api.minecraft.item.Item;
+import viaversion.viaversion.api.minecraft.metadata.Metadata;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.types.version.Types1_8;
 
-public class EntityTracker extends cA implements ExternalJoinGameListener {
-   private final Map clientEntityTypes = new ConcurrentHashMap();
-   private final Map metadataBuffer = new ConcurrentHashMap();
-   private final Map vehicles;
-   private final Map entityReplacements;
-   private final Map playersByEntityId;
-   private final Map playersByUniqueId;
-   private final Map playerEquipment;
-   private int f;
-   private int playerId;
-   private int spectating;
-   private int c;
-   private static String n;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-   public EntityTracker(UserConnection var1) {
-      super(var1);
-      b();
-      this.vehicles = new ConcurrentHashMap();
-      this.entityReplacements = new ConcurrentHashMap();
-      this.playersByEntityId = new HashMap();
-      this.playersByUniqueId = new HashMap();
-      this.playerEquipment = new HashMap();
-      this.f = 0;
-      this.playerId = -1;
-      this.spectating = -1;
-      this.c = 0;
-      if(acE.b() == null) {
-         b("SLmDAb");
-      }
+public class EntityTracker extends StoredObject implements ExternalJoinGameListener {
+	private final Map<Integer, Entity1_10Types.EntityType> clientEntityTypes = new ConcurrentHashMap();
+	private final Map<Integer, List<Metadata>> metadataBuffer = new ConcurrentHashMap();
+	private final Map<Integer, Integer> vehicles = new ConcurrentHashMap<>();
+	private final Map<Integer, EntityReplacement> entityReplacements = new ConcurrentHashMap<>();
+	private final Map<Integer, UUID> playersByEntityId = new HashMap<>();
+	private final Map<UUID, Integer> playersByUniqueId = new HashMap<>();
+	private final Map<UUID, Item[]> playerEquipment = new HashMap<>();
+	private int gamemode = 0;
+	private int playerId = -1;
+	private int spectating = -1;
+	private int dimension = 0;
 
-   }
+	public EntityTracker(UserConnection user) {
+		super(user);
+	}
 
-   public void removeEntity(int var1) {
-      b();
-      this.clientEntityTypes.remove(Integer.valueOf(var1));
-      if(this.entityReplacements.containsKey(Integer.valueOf(var1))) {
-         ((EntityReplacement)this.entityReplacements.remove(Integer.valueOf(var1))).despawn();
-      }
+	public void removeEntity(int entityId) {
+		clientEntityTypes.remove(entityId);
+		if (entityReplacements.containsKey(entityId)) {
+			entityReplacements.remove(entityId).despawn();
+		}
+		if (playersByEntityId.containsKey(entityId)) {
+			playersByUniqueId.remove(playersByEntityId.remove(entityId));
+		}
+	}
 
-      if(this.playersByEntityId.containsKey(Integer.valueOf(var1))) {
-         this.playersByUniqueId.remove(this.playersByEntityId.remove(Integer.valueOf(var1)));
-      }
+	public void addPlayer(Integer entityId, UUID uuid) {
+		playersByUniqueId.put(uuid, entityId);
+		playersByEntityId.put(entityId, uuid);
+	}
 
-   }
+	public UUID getPlayerUUID(int entityId) {
+		return playersByEntityId.get(entityId);
+	}
 
-   public void addPlayer(Integer var1, UUID var2) {
-      this.playersByUniqueId.put(var2, var1);
-      this.playersByEntityId.put(var1, var2);
-   }
+	public int getPlayerEntityId(UUID uuid) {
+		return playersByUniqueId.getOrDefault(uuid, -1);
+	}
 
-   public UUID getPlayerUUID(int var1) {
-      return (UUID)this.playersByEntityId.get(Integer.valueOf(var1));
-   }
+	public Item[] getPlayerEquipment(UUID uuid) {
+		return playerEquipment.get(uuid);
+	}
 
-   public int getPlayerEntityId(UUID var1) {
-      return ((Integer)this.playersByUniqueId.getOrDefault(var1, Integer.valueOf(-1))).intValue();
-   }
+	public void setPlayerEquipment(UUID uuid, Item[] equipment) {
+		playerEquipment.put(uuid, equipment);
+	}
 
-   public Item[] getPlayerEquipment(UUID var1) {
-      return (Item[])this.playerEquipment.get(var1);
-   }
+	public Map<Integer, Entity1_10Types.EntityType> getClientEntityTypes() {
+		return this.clientEntityTypes;
+	}
 
-   public void setPlayerEquipment(UUID var1, Item[] var2) {
-      this.playerEquipment.put(var1, var2);
-   }
+	public void addMetadataToBuffer(int entityID, List<Metadata> metadataList) {
+		if (this.metadataBuffer.containsKey(entityID)) {
+			this.metadataBuffer.get(entityID).addAll(metadataList);
+		} else if (!metadataList.isEmpty()) {
+			this.metadataBuffer.put(entityID, metadataList);
+		}
+	}
 
-   public Map getClientEntityTypes() {
-      return this.clientEntityTypes;
-   }
+	public void addEntityReplacement(EntityReplacement entityReplacement) {
+		entityReplacements.put(entityReplacement.getEntityId(), entityReplacement);
+	}
 
-   public void addMetadataToBuffer(int var1, List var2) {
-      String var3 = b();
-      if(this.metadataBuffer.containsKey(Integer.valueOf(var1))) {
-         ((List)this.metadataBuffer.get(Integer.valueOf(var1))).addAll(var2);
-      }
+	public EntityReplacement getEntityReplacement(int entityId) {
+		return entityReplacements.get(entityId);
+	}
 
-      if(!var2.isEmpty()) {
-         this.metadataBuffer.put(Integer.valueOf(var1), var2);
-      }
+	public List<Metadata> getBufferedMetadata(int entityId) {
+		return metadataBuffer.get(entityId);
+	}
 
-   }
+	public void sendMetadataBuffer(int entityId) {
+		if (!this.metadataBuffer.containsKey(entityId)) return;
+		if (entityReplacements.containsKey(entityId)) {
+			entityReplacements.get(entityId).updateMetadata(this.metadataBuffer.remove(entityId));
+		} else {
+			Entity1_10Types.EntityType type = this.getClientEntityTypes().get(entityId);
+			PacketWrapper wrapper = new PacketWrapper(0x1C, null, this.getUser());
+			wrapper.write(Type.VAR_INT, entityId);
+			wrapper.write(Types1_8.METADATA_LIST, this.metadataBuffer.get(entityId));
+			MetadataRewriter.transform(type, this.metadataBuffer.get(entityId));
+			if (!this.metadataBuffer.get(entityId).isEmpty()) {
+				PacketUtil.sendPacket(wrapper, Protocol1_7_6_10TO1_8.class);
+			}
 
-   public void addEntityReplacement(EntityReplacement var1) {
-      this.entityReplacements.put(Integer.valueOf(var1.getEntityId()), var1);
-   }
+			this.metadataBuffer.remove(entityId);
+		}
+	}
 
-   public EntityReplacement getEntityReplacement(int var1) {
-      return (EntityReplacement)this.entityReplacements.get(Integer.valueOf(var1));
-   }
+	public int getVehicle(int passengerId) {
+		for (Map.Entry<Integer, Integer> vehicle : vehicles.entrySet()) {
+			if (vehicle.getValue()==passengerId) return vehicle.getValue();
+		}
+		return -1;
+	}
 
-   public List getBufferedMetadata(int var1) {
-      return (List)this.metadataBuffer.get(Integer.valueOf(var1));
-   }
+	public int getPassenger(int vehicleId) {
+		return vehicles.getOrDefault(vehicleId, -1);
+	}
 
-   public void sendMetadataBuffer(int var1) {
-      String var2 = b();
-      if(this.metadataBuffer.containsKey(Integer.valueOf(var1))) {
-         if(this.entityReplacements.containsKey(Integer.valueOf(var1))) {
-            ((EntityReplacement)this.entityReplacements.get(Integer.valueOf(var1))).updateMetadata((List)this.metadataBuffer.remove(Integer.valueOf(var1)));
-         }
+	public void setPassenger(int vehicleId, int passengerId) {
+		if (vehicleId==this.spectating && this.spectating!=this.playerId) {
+			try {
+				PacketWrapper sneakPacket = new PacketWrapper(0x0B, null, getUser());
+				sneakPacket.write(Type.VAR_INT, playerId);
+				sneakPacket.write(Type.VAR_INT, 0);  //Start sneaking
+				sneakPacket.write(Type.VAR_INT, 0);  //Action Parameter
 
-         t4 var3 = (t4)this.getClientEntityTypes().get(Integer.valueOf(var1));
-         PacketWrapper var4 = new PacketWrapper(28, (ByteBuf)null, this.d());
-         var4.write(Type.VAR_INT, Integer.valueOf(var1));
-         var4.write(Types1_8.METADATA_LIST, this.metadataBuffer.get(Integer.valueOf(var1)));
-         Dk.a(var3, (List)this.metadataBuffer.get(Integer.valueOf(var1)));
-         if(!((List)this.metadataBuffer.get(Integer.valueOf(var1))).isEmpty()) {
-            PacketUtil.sendPacket(var4, aRi.class);
-         }
+				PacketWrapper unsneakPacket = new PacketWrapper(0x0B, null, getUser());
+				unsneakPacket.write(Type.VAR_INT, playerId);
+				unsneakPacket.write(Type.VAR_INT, 1);  //Stop sneaking
+				unsneakPacket.write(Type.VAR_INT, 0);  //Action Parameter
 
-         this.metadataBuffer.remove(Integer.valueOf(var1));
-      }
-   }
+				PacketUtil.sendToServer(sneakPacket, Protocol1_7_6_10TO1_8.class, true, true);
 
-   public int getVehicle(int var1) {
-      b();
-      Iterator var3 = this.vehicles.entrySet().iterator();
-      if(var3.hasNext()) {
-         Entry var4 = (Entry)var3.next();
-         if(((Integer)var4.getValue()).intValue() == var1) {
-            return ((Integer)var4.getValue()).intValue();
-         }
-      }
+				setSpectating(playerId);
+			} catch (Exception ex) {ex.printStackTrace();}
+		}
+		if (vehicleId==-1) {
+			int oldVehicleId = getVehicle(passengerId);
+			vehicles.remove(oldVehicleId);
+		} else if (passengerId==-1) {
+			vehicles.remove(vehicleId);
+		} else {
+			vehicles.put(vehicleId, passengerId);
+		}
+	}
 
-      return -1;
-   }
+	public int getSpectating() {
+		return spectating;
+	}
 
-   public int getPassenger(int var1) {
-      return ((Integer)this.vehicles.getOrDefault(Integer.valueOf(var1), Integer.valueOf(-1))).intValue();
-   }
+	public boolean setSpectating(int spectating) {
+		if (spectating!=this.playerId && getPassenger(spectating)!=-1) {
 
-   public void setPassenger(int var1, int var2) {
-      String var3 = b();
-      if(var1 == this.spectating && this.spectating != this.playerId) {
-         try {
-            PacketWrapper var4 = new PacketWrapper(11, (ByteBuf)null, this.d());
-            var4.write(Type.VAR_INT, Integer.valueOf(this.playerId));
-            var4.write(Type.VAR_INT, Integer.valueOf(0));
-            var4.write(Type.VAR_INT, Integer.valueOf(0));
-            PacketWrapper var5 = new PacketWrapper(11, (ByteBuf)null, this.d());
-            var5.write(Type.VAR_INT, Integer.valueOf(this.playerId));
-            var5.write(Type.VAR_INT, Integer.valueOf(1));
-            var5.write(Type.VAR_INT, Integer.valueOf(0));
-            PacketUtil.sendToServer(var4, aRi.class, true, true);
-            this.setSpectating(this.playerId);
-         } catch (Exception var6) {
-            var6.printStackTrace();
-         }
-      }
+			PacketWrapper sneakPacket = new PacketWrapper(0x0B, null, getUser());
+			sneakPacket.write(Type.VAR_INT, playerId);
+			sneakPacket.write(Type.VAR_INT, 0);  //Start sneaking
+			sneakPacket.write(Type.VAR_INT, 0);  //Action Parameter
 
-      if(var1 == -1) {
-         int var7 = this.getVehicle(var2);
-         this.vehicles.remove(Integer.valueOf(var7));
-      }
+			PacketWrapper unsneakPacket = new PacketWrapper(0x0B, null, getUser());
+			unsneakPacket.write(Type.VAR_INT, playerId);
+			unsneakPacket.write(Type.VAR_INT, 1);  //Stop sneaking
+			unsneakPacket.write(Type.VAR_INT, 0);  //Action Parameter
 
-      if(var2 == -1) {
-         this.vehicles.remove(Integer.valueOf(var1));
-      }
+			PacketUtil.sendToServer(sneakPacket, Protocol1_7_6_10TO1_8.class, true, true);
 
-      this.vehicles.put(Integer.valueOf(var1), Integer.valueOf(var2));
-   }
+			setSpectating(this.playerId);
+			return false;  //Entity has Passenger
+		}
 
-   public int getSpectating() {
-      return this.spectating;
-   }
+		if (this.spectating!=spectating && this.spectating!=this.playerId) {
+			PacketWrapper unmount = new PacketWrapper(0x1B, null, this.getUser());
+			unmount.write(Type.INT, this.playerId);
+			unmount.write(Type.INT, -1);
+			unmount.write(Type.BOOLEAN, false);
+			PacketUtil.sendPacket(unmount, Protocol1_7_6_10TO1_8.class);
+		}
+		this.spectating = spectating;
+		if (spectating!=this.playerId) {
+			PacketWrapper mount = new PacketWrapper(0x1B, null, this.getUser());
+			mount.write(Type.INT, this.playerId);
+			mount.write(Type.INT, this.spectating);
+			mount.write(Type.BOOLEAN, false);
+			PacketUtil.sendPacket(mount, Protocol1_7_6_10TO1_8.class);
+		}
+		return true;
+	}
 
-   public boolean setSpectating(int var1) {
-      String var2 = b();
-      if(var1 != this.playerId && this.getPassenger(var1) != -1) {
-         PacketWrapper var6 = new PacketWrapper(11, (ByteBuf)null, this.d());
-         var6.write(Type.VAR_INT, Integer.valueOf(this.playerId));
-         var6.write(Type.VAR_INT, Integer.valueOf(0));
-         var6.write(Type.VAR_INT, Integer.valueOf(0));
-         PacketWrapper var4 = new PacketWrapper(11, (ByteBuf)null, this.d());
-         var4.write(Type.VAR_INT, Integer.valueOf(this.playerId));
-         var4.write(Type.VAR_INT, Integer.valueOf(1));
-         var4.write(Type.VAR_INT, Integer.valueOf(0));
-         PacketUtil.sendToServer(var6, aRi.class, true, true);
-         this.setSpectating(this.playerId);
-         return false;
-      } else {
-         if(this.spectating != var1 && this.spectating != this.playerId) {
-            PacketWrapper var3 = new PacketWrapper(27, (ByteBuf)null, this.d());
-            var3.write(Type.INT, Integer.valueOf(this.playerId));
-            var3.write(Type.INT, Integer.valueOf(-1));
-            var3.write(Type.BOOLEAN, Boolean.valueOf(false));
-            PacketUtil.sendPacket(var3, aRi.class);
-         }
+	public int getGamemode() {
+		return gamemode;
+	}
 
-         this.spectating = var1;
-         if(var1 != this.playerId) {
-            PacketWrapper var5 = new PacketWrapper(27, (ByteBuf)null, this.d());
-            var5.write(Type.INT, Integer.valueOf(this.playerId));
-            var5.write(Type.INT, Integer.valueOf(this.spectating));
-            var5.write(Type.BOOLEAN, Boolean.valueOf(false));
-            PacketUtil.sendPacket(var5, aRi.class);
-         }
+	public void setGamemode(int gamemode) {
+		this.gamemode = gamemode;
+	}
 
-         return true;
-      }
-   }
+	public int getPlayerId() {
+		return playerId;
+	}
 
-   public int a() {
-      return this.f;
-   }
+	public void setPlayerId(int playerId) {
+		if (this.playerId!=-1) throw new IllegalStateException("playerId was already set!");
+		this.playerId = this.spectating = playerId;
+	}
 
-   public void k(int var1) {
-      this.f = var1;
-   }
+	public void clearEntities() {
+		clientEntityTypes.clear();
+		entityReplacements.clear();
+		vehicles.clear();
+		metadataBuffer.clear();
+	}
 
-   public int getPlayerId() {
-      return this.playerId;
-   }
+	public int getDimension() {
+		return dimension;
+	}
 
-   public void setPlayerId(int var1) {
-      String var2 = b();
-      if(this.playerId != -1) {
-         throw new IllegalStateException("playerId was already set!");
-      } else {
-         this.playerId = this.spectating = var1;
-      }
-   }
+	public void setDimension(int dimension) {
+		this.dimension = dimension;
+	}
 
-   public void clearEntities() {
-      this.clientEntityTypes.clear();
-      this.entityReplacements.clear();
-      this.vehicles.clear();
-      this.metadataBuffer.clear();
-   }
-
-   public int f() {
-      return this.c;
-   }
-
-   public void c(int var1) {
-      this.c = var1;
-   }
-
-   public void onExternalJoinGame(int var1) {
-      String var2 = b();
-      if(this.spectating == this.playerId) {
-         this.spectating = var1;
-      }
-
-      this.clientEntityTypes.remove(Integer.valueOf(this.playerId));
-      this.playerId = var1;
-      this.clientEntityTypes.put(Integer.valueOf(this.playerId), t4.ENTITY_HUMAN);
-   }
-
-   public static void b(String var0) {
-      n = var0;
-   }
-
-   public static String b() {
-      return n;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
-
-   static {
-      if(b() == null) {
-         b("vOaim");
-      }
-
-   }
+	@Override
+	public void onExternalJoinGame(int playerEntityId) {
+		if (this.spectating == this.playerId) {
+			this.spectating = playerEntityId;
+		}
+		clientEntityTypes.remove(this.playerId);
+		this.playerId = playerEntityId;
+		clientEntityTypes.put(this.playerId, Entity1_10Types.EntityType.ENTITY_HUMAN);
+	}
 }

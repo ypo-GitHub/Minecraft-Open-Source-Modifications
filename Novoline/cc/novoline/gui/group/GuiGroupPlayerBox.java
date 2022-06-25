@@ -1,31 +1,34 @@
 package cc.novoline.gui.group;
 
-import cc.novoline.gui.group.GroupSupplierLine;
-import cc.novoline.gui.group.GuiRoundedGroupWithLines;
 import cc.novoline.gui.screen.alt.repository.Alt;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 
-public class GuiGroupPlayerBox extends GuiRoundedGroupWithLines {
-   private final Predicate shouldRender = GuiGroupPlayerBox::lambda$new$0;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
-   public GuiGroupPlayerBox(int var1, int var2, int var3, int var4, Supplier var5) {
-      super("Alt Info", var1, var2, var3, var4, 15, var5);
-   }
+/**
+ * @author xDelsy
+ */
+public class GuiGroupPlayerBox extends GuiRoundedGroupWithLines<Alt> {
 
-   public void drawGroup(Minecraft var1, int var2, int var3) {
-      GroupSupplierLine.b();
-      this.superDrawGroup(var1, var2, var3);
-      Alt var5 = (Alt)this.supplier.get();
-      if(this.shouldRender.test(var5)) {
-         this.drawLines();
-      }
+    /* methods */
+    private final Predicate<Alt> shouldRender = alt -> alt != null && alt.getPlayer() != null;
 
-   }
+    /* constructors */
+    public GuiGroupPlayerBox(int xPosition, int yPosition, int width, int height, Supplier<Alt> supplier) {
+        super("Alt Info", xPosition, yPosition, width, height, 15, supplier);
+    }
 
-   private static boolean lambda$new$0(Alt var0) {
-      String var1 = GroupSupplierLine.b();
-      return var0 != null && var0.getPlayer() != null;
-   }
+    /* methods */
+    @Override
+    public void drawGroup(Minecraft mc, int mouseX, int mouseY) {
+        superDrawGroup(mc, mouseX, mouseY);
+
+        final Alt alt = this.supplier.get();
+
+        if (this.shouldRender.test(alt)) {
+            drawLines();
+        }
+    }
+
 }

@@ -1,5 +1,8 @@
 package net.minecraft.world.storage;
 
 public interface IThreadedFileIO {
-   boolean writeNextIO();
+    /**
+     * Returns a boolean stating if the write was unsuccessful.
+     */
+    boolean writeNextIO();
 }

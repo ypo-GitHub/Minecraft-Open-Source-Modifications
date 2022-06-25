@@ -1,47 +1,61 @@
 package net.minecraft.client.gui;
 
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.IProgressUpdate;
 
 public class GuiScreenWorking extends GuiScreen implements IProgressUpdate {
-   private String field_146591_a = "";
-   private String field_146589_f = "";
-   private int progress;
-   private boolean doneWorking;
+    private String field_146591_a = "";
+    private String field_146589_f = "";
+    private int progress;
+    private boolean doneWorking;
 
-   public void displaySavingString(String var1) {
-      this.resetProgressAndMessage(var1);
-   }
+    /**
+     * Shows the 'Saving level' string.
+     */
+    public void displaySavingString(String message) {
+        this.resetProgressAndMessage(message);
+    }
 
-   public void resetProgressAndMessage(String var1) {
-      this.field_146591_a = var1;
-      this.displayLoadingString("Working...");
-   }
+    /**
+     * this string, followed by "working..." and then the "% complete" are the 3 lines shown. This resets progress to 0,
+     * and the WorkingString to "working...".
+     */
+    public void resetProgressAndMessage(String message) {
+        this.field_146591_a = message;
+        this.displayLoadingString("Working...");
+    }
 
-   public void displayLoadingString(String var1) {
-      this.field_146589_f = var1;
-      this.setLoadingProgress(0);
-   }
+    /**
+     * Displays a string on the loading screen supposed to indicate what is being done currently.
+     */
+    public void displayLoadingString(String message) {
+        this.field_146589_f = message;
+        this.setLoadingProgress(0);
+    }
 
-   public void setLoadingProgress(int var1) {
-      this.progress = var1;
-   }
+    /**
+     * Updates the progress bar on the loading screen to the specified amount. Args: loadProgress
+     */
+    public void setLoadingProgress(int progress) {
+        this.progress = progress;
+    }
 
-   public void setDoneWorking() {
-      this.doneWorking = true;
-   }
+    public void setDoneWorking() {
+        this.doneWorking = true;
+    }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      if(this.doneWorking) {
-         if(!this.mc.func_181540_al()) {
-            this.mc.displayGuiScreen((GuiScreen)null);
-         }
-      } else {
-         this.drawDefaultBackground();
-         this.drawCenteredString(this.fontRendererObj, this.field_146591_a, this.width / 2, 70, 16777215);
-         this.drawCenteredString(this.fontRendererObj, this.field_146589_f + " " + this.progress + "%", this.width / 2, 90, 16777215);
-         super.drawScreen(var1, var2, var3);
-      }
-
-   }
+    /**
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
+     */
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        if (this.doneWorking) {
+            if (!this.mc.func_181540_al()) {
+                this.mc.displayGuiScreen((GuiScreen) null);
+            }
+        } else {
+            this.drawDefaultBackground();
+            this.drawCenteredString(this.fontRendererObj, this.field_146591_a, this.width / 2, 70, 16777215);
+            this.drawCenteredString(this.fontRendererObj, this.field_146589_f + " " + this.progress + "%", this.width / 2, 90, 16777215);
+            super.drawScreen(mouseX, mouseY, partialTicks);
+        }
+    }
 }

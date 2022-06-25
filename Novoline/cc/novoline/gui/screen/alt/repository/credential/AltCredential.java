@@ -6,66 +6,49 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public class AltCredential {
-   private final String login;
-   private final String password;
-   private static boolean b;
 
-   public AltCredential(@NotNull String var1, @Nullable String var2) {
-      b();
-      Checks.notBlank(var1, "login");
-      this.login = var1.trim();
-      this.password = StringUtils.isNotBlank(var2)?var2:null;
-   }
+	private final String login;
+	private final String password;
 
-   @NotNull
-   public String getLogin() {
-      return this.login;
-   }
+	public AltCredential(@NotNull String login, @Nullable String password) {
+		Checks.notBlank(login, "login");
 
-   @Nullable
-   public String getPassword() {
-      return this.password;
-   }
+		this.login = login.trim();
+		this.password = StringUtils.isNotBlank(password) ? password : null;
+	}
 
-   public boolean equals(Object var1) {
-      boolean var2 = b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         AltCredential var3 = (AltCredential)var1;
-         return this.login.equals(var3.login) && Objects.equals(this.password, var3.password);
-      } else {
-         return false;
-      }
-   }
+	//region Lombok
+	@NotNull
+	public String getLogin() {
+		return login;
+	}
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{this.login, this.password});
-   }
+	@Nullable
+	public String getPassword() {
+		return password;
+	}
 
-   public String toString() {
-      boolean var1 = b();
-      return this.login + (this.password != null?":" + this.password:"");
-   }
+	@Override
+	public boolean equals(Object o) {
+		if(this == o) return true;
+		if(o == null || getClass() != o.getClass()) return false;
+		AltCredential that = (AltCredential) o;
+		return login.equals(that.login) && Objects.equals(password, that.password);
+	}
 
-   public static void b(boolean var0) {
-      b = var0;
-   }
+	@Override
+	public int hashCode() {
+		return Objects.hash(login, password);
+	}
 
-   public static boolean b() {
-      return b;
-   }
+	@Override
+	public String toString() {
+		return login + (password != null ? ":" + password : "");
+	}
+	//endregion
 
-   public static boolean d() {
-      boolean var0 = b();
-      return true;
-   }
-
-   static {
-      if(!d()) {
-         b(true);
-      }
-
-   }
 }

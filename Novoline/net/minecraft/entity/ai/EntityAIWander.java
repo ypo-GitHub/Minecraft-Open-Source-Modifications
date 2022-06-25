@@ -1,58 +1,80 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.ai.EntityAIBase;
-import net.minecraft.entity.ai.RandomPositionGenerator;
 import net.minecraft.util.Vec3;
 
 public class EntityAIWander extends EntityAIBase {
-   private EntityCreature entity;
-   private double c;
-   private double d;
-   private double h;
-   private double speed;
-   private int executionChance;
-   private boolean mustUpdate;
+    private EntityCreature entity;
+    private double xPosition;
+    private double yPosition;
+    private double zPosition;
+    private double speed;
+    private int executionChance;
+    private boolean mustUpdate;
 
-   public EntityAIWander(EntityCreature var1, double var2) {
-      this(var1, var2, 120);
-   }
+    public EntityAIWander(EntityCreature creatureIn, double speedIn) {
+        this(creatureIn, speedIn, 120);
+    }
 
-   public EntityAIWander(EntityCreature var1, double var2, int var4) {
-      this.entity = var1;
-      this.speed = var2;
-      this.executionChance = var4;
-      this.setMutexBits(1);
-   }
+    public EntityAIWander(EntityCreature creatureIn, double speedIn, int chance) {
+        this.entity = creatureIn;
+        this.speed = speedIn;
+        this.executionChance = chance;
+        this.setMutexBits(1);
+    }
 
-   public boolean shouldExecute() {
-      if(!this.mustUpdate) {
-         if(this.entity.getAge() >= 100) {
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (!this.mustUpdate) {
+            if (this.entity.getAge() >= 100) {
+                return false;
+            }
+
+            if (this.entity.getRNG().nextInt(this.executionChance) != 0) {
+                return false;
+            }
+        }
+
+        Vec3 vec3 = RandomPositionGenerator.findRandomTarget(this.entity, 10, 7);
+
+        if (vec3 == null) {
             return false;
-         }
+        } else {
+            this.xPosition = vec3.xCoord;
+            this.yPosition = vec3.yCoord;
+            this.zPosition = vec3.zCoord;
+            this.mustUpdate = false;
+            return true;
+        }
+    }
 
-         if(this.entity.getRNG().nextInt(this.executionChance) != 0) {
-            return false;
-         }
-      }
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return !this.entity.getNavigator().noPath();
+    }
 
-      Vec3 var1 = RandomPositionGenerator.findRandomTarget(this.entity, 10, 7);
-      return false;
-   }
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.entity.getNavigator().tryMoveToXYZ(this.xPosition, this.yPosition, this.zPosition, this.speed);
+    }
 
-   public boolean continueExecuting() {
-      return !this.entity.getNavigator().noPath();
-   }
+    /**
+     * Makes task to bypass chance
+     */
+    public void makeUpdate() {
+        this.mustUpdate = true;
+    }
 
-   public void startExecuting() {
-      this.entity.getNavigator().tryMoveToXYZ(this.c, this.d, this.h, this.speed);
-   }
-
-   public void makeUpdate() {
-      this.mustUpdate = true;
-   }
-
-   public void setExecutionChance(int var1) {
-      this.executionChance = var1;
-   }
+    /**
+     * Changes task random possibility for execution
+     */
+    public void setExecutionChance(int newchance) {
+        this.executionChance = newchance;
+    }
 }

@@ -1,55 +1,62 @@
 package net.minecraft.client.model;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityMagmaCube;
 
 public class ModelMagmaCube extends ModelBase {
-   ModelRenderer[] segments = new ModelRenderer[8];
-   ModelRenderer core;
 
-   public ModelMagmaCube() {
-      for(int var1 = 0; var1 < this.segments.length; ++var1) {
-         byte var2 = 0;
-         int var3 = var1;
-         if(var1 == 2) {
-            var2 = 24;
-            var3 = 10;
-         } else if(var1 == 3) {
-            var2 = 24;
-            var3 = 19;
-         }
+    ModelRenderer[] segments = new ModelRenderer[8];
+    ModelRenderer core;
 
-         this.segments[var1] = new ModelRenderer(this, var2, var3);
-         this.segments[var1].addBox(-4.0F, (float)(16 + var1), -4.0F, 8, 1, 8);
-      }
+    public ModelMagmaCube() {
+        for (int i = 0; i < this.segments.length; ++i) {
+            int j = 0;
+            int k = i;
 
-      this.core = new ModelRenderer(this, 0, 16);
-      this.core.addBox(-2.0F, 18.0F, -2.0F, 4, 4, 4);
-   }
+            if (i == 2) {
+                j = 24;
+                k = 10;
+            } else if (i == 3) {
+                j = 24;
+                k = 19;
+            }
 
-   public void setLivingAnimations(EntityLivingBase var1, float var2, float var3, float var4) {
-      EntityMagmaCube var5 = (EntityMagmaCube)var1;
-      float var6 = var5.prevSquishFactor + (var5.squishFactor - var5.prevSquishFactor) * var4;
-      if(var6 < 0.0F) {
-         var6 = 0.0F;
-      }
+            this.segments[i] = new ModelRenderer(this, j, k);
+            this.segments[i].addBox(-4.0F, (float) (16 + i), -4.0F, 8, 1, 8);
+        }
 
-      for(int var7 = 0; var7 < this.segments.length; ++var7) {
-         this.segments[var7].rotationPointY = (float)(-(4 - var7)) * var6 * 1.7F;
-      }
+        this.core = new ModelRenderer(this, 0, 16);
+        this.core.addBox(-2.0F, 18.0F, -2.0F, 4, 4, 4);
+    }
 
-   }
+    /**
+     * Used for easily adding entity-dependent animations. The second and third float params here are the same second
+     * and third as in the setRotationAngles method.
+     */
+    public void setLivingAnimations(EntityLivingBase entityLivingBase, float p_78086_2_, float p_78086_3_, float partialTickTime) {
+        final EntityMagmaCube entitymagmacube = (EntityMagmaCube) entityLivingBase;
+        float f = entitymagmacube.prevSquishFactor + (entitymagmacube.squishFactor - entitymagmacube.prevSquishFactor) * partialTickTime;
 
-   public void render(Entity var1, float var2, float var3, float var4, float var5, float var6, float var7) {
-      this.setRotationAngles(var2, var3, var4, var5, var6, var7, var1);
-      this.core.render(var7);
+        if (f < 0.0F) {
+            f = 0.0F;
+        }
 
-      for(ModelRenderer var11 : this.segments) {
-         var11.render(var7);
-      }
+        for (int i = 0; i < this.segments.length; ++i) {
+            this.segments[i].rotationPointY = (float) -(4 - i) * f * 1.7F;
+        }
+    }
 
-   }
+    /**
+     * Sets the models various rotation angles then renders the model.
+     */
+    public void render(Entity entity, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float scale) {
+        this.setRotationAngles(p_78088_2_, p_78088_3_, p_78088_4_, p_78088_5_, p_78088_6_, scale, entity);
+        this.core.render(scale);
+
+        for (ModelRenderer segment : this.segments) {
+            segment.render(scale);
+        }
+    }
+
 }

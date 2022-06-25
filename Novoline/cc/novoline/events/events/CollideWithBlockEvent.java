@@ -6,37 +6,39 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 
 public class CollideWithBlockEvent extends CancellableEvent {
-   public AxisAlignedBB boundingBox;
-   private Block block;
-   private BlockPos blockPos;
 
-   public CollideWithBlockEvent(Block var1, BlockPos var2, AxisAlignedBB var3) {
-      this.block = var1;
-      this.blockPos = var2;
-      this.boundingBox = var3;
-   }
+    public AxisAlignedBB boundingBox;
+    private Block block;
+    private BlockPos blockPos;
 
-   public Block getBlock() {
-      return this.block;
-   }
+    public CollideWithBlockEvent(Block block, BlockPos pos, AxisAlignedBB boundingBox) {
+        this.block = block;
+        this.blockPos = pos;
+        this.boundingBox = boundingBox;
+    }
 
-   public void setBlock(Block var1) {
-      this.block = var1;
-   }
+    public Block getBlock() {
+        return this.block;
+    }
 
-   public BlockPos getPos() {
-      return this.blockPos;
-   }
+    public void setBlock(Block block) {
+        this.block = block;
+    }
 
-   public AxisAlignedBB getBoundingBox() {
-      return this.boundingBox;
-   }
+    public BlockPos getPos() {
+        return this.blockPos;
+    }
 
-   public void setBoundingBox(AxisAlignedBB var1) {
-      this.boundingBox = var1;
-   }
+    public AxisAlignedBB getBoundingBox() {
+        return this.boundingBox;
+    }
 
-   public void setBlockPos(BlockPos var1) {
-      this.blockPos = var1;
-   }
+    public void setBoundingBox(AxisAlignedBB boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
+    public void setBlockPos(BlockPos blockPos) {
+        this.blockPos = blockPos;
+    }
+
 }

@@ -1,96 +1,97 @@
+/*
+ * Copyright (c) 2016 Matsv
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package viaversion.viabackwards.protocol.protocol1_12_2to1_13.storage;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import net.cA;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.Position;
 
-public class BackwardsBlockStorage extends cA {
-   private static final IntSet WHITELIST = new IntOpenHashSet(779);
-   private final Map blocks = new ConcurrentHashMap();
-   private static boolean d;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-   public BackwardsBlockStorage(UserConnection var1) {
-      super(var1);
-   }
+public class BackwardsBlockStorage extends StoredObject {
+    // This BlockStorage is very exclusive (;
+    private static final IntSet WHITELIST = new IntOpenHashSet(779);
 
-   public void checkAndStore(Position var1, int var2) {
-      boolean var3 = e();
-      if(!WHITELIST.contains(var2)) {
-         this.blocks.remove(var1);
-      } else {
-         this.blocks.put(var1, Integer.valueOf(var2));
-      }
-   }
+    static {
+        // Flower pots
+        for (int i = 5265; i <= 5286; i++) {
+            WHITELIST.add(i);
+        }
 
-   public boolean isWelcome(int var1) {
-      return WHITELIST.contains(var1);
-   }
+        // Add those beds
+        for (int i = 0; i < (16 * 16); i++) {
+            WHITELIST.add(748 + i);
+        }
 
-   public Integer get(Position var1) {
-      return (Integer)this.blocks.get(var1);
-   }
+        // Add the banners
+        for (int i = 6854; i <= 7173; i++) {
+            WHITELIST.add(i);
+        }
 
-   public int remove(Position var1) {
-      return ((Integer)this.blocks.remove(var1)).intValue();
-   }
+        // Spawner
+        WHITELIST.add(1647);
 
-   public void clear() {
-      this.blocks.clear();
-   }
+        // Skulls
+        for (int i = 5447; i <= 5566; i++) {
+            WHITELIST.add(i);
+        }
 
-   public Map getBlocks() {
-      return this.blocks;
-   }
+        // pistons
+        for (int i = 1028; i <= 1039; i++) {
+            WHITELIST.add(i);
+        }
+        for (int i = 1047; i <= 1082; i++) {
+            WHITELIST.add(i);
+        }
+        for (int i = 1099; i <= 1110; i++) {
+            WHITELIST.add(i);
+        }
+    }
 
-   static {
-      a(false);
+    private final Map<Position, Integer> blocks = new ConcurrentHashMap<>();
 
-      for(int var0 = 5265; var0 <= 5286; ++var0) {
-         WHITELIST.add(var0);
-      }
+    public BackwardsBlockStorage(UserConnection user) {
+        super(user);
+    }
 
-      for(int var1 = 0; var1 < 256; ++var1) {
-         WHITELIST.add(748 + var1);
-      }
+    public void checkAndStore(Position position, int block) {
+        if (!WHITELIST.contains(block)) {
+            // Remove if not whitelisted
+            blocks.remove(position);
+            return;
+        }
 
-      for(int var2 = 6854; var2 <= 7173; ++var2) {
-         WHITELIST.add(var2);
-      }
+        blocks.put(position, block);
+    }
 
-      WHITELIST.add(1647);
+    public boolean isWelcome(int block) {
+        return WHITELIST.contains(block);
+    }
 
-      for(int var3 = 5447; var3 <= 5566; ++var3) {
-         WHITELIST.add(var3);
-      }
+    public Integer get(Position position) {
+        return blocks.get(position);
+    }
 
-      for(int var4 = 1028; var4 <= 1039; ++var4) {
-         WHITELIST.add(var4);
-      }
+    public int remove(Position position) {
+        return blocks.remove(position);
+    }
 
-      for(int var5 = 1047; var5 <= 1082; ++var5) {
-         WHITELIST.add(var5);
-      }
+    public void clear() {
+        blocks.clear();
+    }
 
-      for(int var6 = 1099; var6 <= 1110; ++var6) {
-         WHITELIST.add(var6);
-      }
-
-   }
-
-   public static void a(boolean var0) {
-      d = var0;
-   }
-
-   public static boolean d() {
-      return d;
-   }
-
-   public static boolean e() {
-      boolean var0 = d();
-      return true;
-   }
+    public Map<Position, Integer> getBlocks() {
+        return blocks;
+    }
 }

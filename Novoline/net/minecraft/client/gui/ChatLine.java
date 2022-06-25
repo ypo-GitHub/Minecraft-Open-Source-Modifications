@@ -3,25 +3,32 @@ package net.minecraft.client.gui;
 import net.minecraft.util.IChatComponent;
 
 public class ChatLine {
-   private final int updateCounterCreated;
-   private final IChatComponent lineString;
-   private final int chatLineID;
+    /**
+     * GUI Update Counter value this Line was created at
+     */
+    private final int updateCounterCreated;
+    private final IChatComponent lineString;
 
-   public ChatLine(int var1, IChatComponent var2, int var3) {
-      this.lineString = var2;
-      this.updateCounterCreated = var1;
-      this.chatLineID = var3;
-   }
+    /**
+     * int value to refer to existing Chat Lines, can be 0 which means unreferrable
+     */
+    private final int chatLineID;
 
-   public IChatComponent getChatComponent() {
-      return this.lineString;
-   }
+    public ChatLine(int p_i45000_1_, IChatComponent p_i45000_2_, int p_i45000_3_) {
+        this.lineString = p_i45000_2_;
+        this.updateCounterCreated = p_i45000_1_;
+        this.chatLineID = p_i45000_3_;
+    }
 
-   public int getUpdatedCounter() {
-      return this.updateCounterCreated;
-   }
+    public IChatComponent getChatComponent() {
+        return this.lineString;
+    }
 
-   public int getChatLineID() {
-      return this.chatLineID;
-   }
+    public int getUpdatedCounter() {
+        return this.updateCounterCreated;
+    }
+
+    public int getChatLineID() {
+        return this.chatLineID;
+    }
 }

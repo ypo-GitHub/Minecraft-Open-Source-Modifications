@@ -1,513 +1,725 @@
 package net.optifine;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
-import net.acE;
-import net.optifine.MatchBlock;
 
-public class StrUtils {
-   public static boolean equalsMask(String var0, String var1, char var2, char var3) {
-      acE[] var4 = MatchBlock.b();
-      if(var1 != null && var0 != null) {
-         if(var1.indexOf(var2) < 0) {
-            return var1.indexOf(var3) < 0?var1.equals(var0):equalsMaskSingle(var0, var1, var3);
-         } else {
-            ArrayList var5 = new ArrayList();
-            String var6 = "" + var2;
-            if(var1.startsWith(var6)) {
-               var5.add("");
+public class StrUtils
+{
+    public static boolean equalsMask(String p_equalsMask_0_, String p_equalsMask_1_, char p_equalsMask_2_, char p_equalsMask_3_)
+    {
+        if (p_equalsMask_1_ != null && p_equalsMask_0_ != null)
+        {
+            if (p_equalsMask_1_.indexOf(p_equalsMask_2_) < 0)
+            {
+                return p_equalsMask_1_.indexOf(p_equalsMask_3_) < 0 ? p_equalsMask_1_.equals(p_equalsMask_0_) : equalsMaskSingle(p_equalsMask_0_, p_equalsMask_1_, p_equalsMask_3_);
             }
+            else
+            {
+                List list = new ArrayList();
+                String s = "" + p_equalsMask_2_;
 
-            StringTokenizer var7 = new StringTokenizer(var1, var6);
-            if(var7.hasMoreElements()) {
-               var5.add(var7.nextToken());
-            }
+                if (p_equalsMask_1_.startsWith(s))
+                {
+                    list.add("");
+                }
 
-            if(var1.endsWith(var6)) {
-               var5.add("");
-            }
+                StringTokenizer stringtokenizer = new StringTokenizer(p_equalsMask_1_, s);
 
-            String var8 = (String)var5.get(0);
-            if(!startsWithMaskSingle(var0, var8, var3)) {
-               return false;
-            } else {
-               String var9 = (String)var5.get(var5.size() - 1);
-               if(!endsWithMaskSingle(var0, var9, var3)) {
-                  return false;
-               } else {
-                  byte var10 = 0;
-                  int var11 = 0;
-                  if(var11 < var5.size()) {
-                     String var12 = (String)var5.get(var11);
-                     if(var12.length() > 0) {
-                        int var13 = indexOfMaskSingle(var0, var12, var10, var3);
-                        if(var13 < 0) {
-                           return false;
+                while (stringtokenizer.hasMoreElements())
+                {
+                    list.add(stringtokenizer.nextToken());
+                }
+
+                if (p_equalsMask_1_.endsWith(s))
+                {
+                    list.add("");
+                }
+
+                String s1 = (String)list.get(0);
+
+                if (!startsWithMaskSingle(p_equalsMask_0_, s1, p_equalsMask_3_))
+                {
+                    return false;
+                }
+                else
+                {
+                    String s2 = (String)list.get(list.size() - 1);
+
+                    if (!endsWithMaskSingle(p_equalsMask_0_, s2, p_equalsMask_3_))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        int i = 0;
+
+                        for (int j = 0; j < ((List)list).size(); ++j)
+                        {
+                            String s3 = (String)list.get(j);
+
+                            if (s3.length() > 0)
+                            {
+                                int k = indexOfMaskSingle(p_equalsMask_0_, s3, i, p_equalsMask_3_);
+
+                                if (k < 0)
+                                {
+                                    return false;
+                                }
+
+                                i = k + s3.length();
+                            }
                         }
 
-                        int var10000 = var13 + var12.length();
-                     }
-
-                     ++var11;
-                  }
-
-                  return true;
-               }
+                        return true;
+                    }
+                }
             }
-         }
-      } else {
-         return var1 == var0;
-      }
-   }
+        }
+        else
+        {
+            return p_equalsMask_1_ == p_equalsMask_0_;
+        }
+    }
 
-   private static boolean equalsMaskSingle(String var0, String var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var0.length() != var1.length()) {
-            return false;
-         } else {
-            int var4 = 0;
-            if(var4 < var1.length()) {
-               char var5 = var1.charAt(var4);
-               if(var5 != var2 && var0.charAt(var4) != var5) {
-                  return false;
-               }
-
-               ++var4;
+    private static boolean equalsMaskSingle(String p_equalsMaskSingle_0_, String p_equalsMaskSingle_1_, char p_equalsMaskSingle_2_)
+    {
+        if (p_equalsMaskSingle_0_ != null && p_equalsMaskSingle_1_ != null)
+        {
+            if (p_equalsMaskSingle_0_.length() != p_equalsMaskSingle_1_.length())
+            {
+                return false;
             }
+            else
+            {
+                for (int i = 0; i < p_equalsMaskSingle_1_.length(); ++i)
+                {
+                    char c0 = p_equalsMaskSingle_1_.charAt(i);
 
-            return true;
-         }
-      } else {
-         return var0 == var1;
-      }
-   }
+                    if (c0 != p_equalsMaskSingle_2_ && p_equalsMaskSingle_0_.charAt(i) != c0)
+                    {
+                        return false;
+                    }
+                }
 
-   private static int indexOfMaskSingle(String var0, String var1, int var2, char var3) {
-      acE[] var4 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var2 >= 0 && var2 <= var0.length()) {
-            if(var0.length() < var2 + var1.length()) {
-               return -1;
-            } else {
-               if(var2 + var1.length() <= var0.length()) {
-                  String var6 = var0.substring(var2, var2 + var1.length());
-                  if(equalsMaskSingle(var6, var1, var3)) {
-                     return var2;
-                  }
-
-                  int var5 = var2 + 1;
-               }
-
-               return -1;
+                return true;
             }
-         } else {
+        }
+        else
+        {
+            return p_equalsMaskSingle_0_ == p_equalsMaskSingle_1_;
+        }
+    }
+
+    private static int indexOfMaskSingle(String p_indexOfMaskSingle_0_, String p_indexOfMaskSingle_1_, int p_indexOfMaskSingle_2_, char p_indexOfMaskSingle_3_)
+    {
+        if (p_indexOfMaskSingle_0_ != null && p_indexOfMaskSingle_1_ != null)
+        {
+            if (p_indexOfMaskSingle_2_ >= 0 && p_indexOfMaskSingle_2_ <= p_indexOfMaskSingle_0_.length())
+            {
+                if (p_indexOfMaskSingle_0_.length() < p_indexOfMaskSingle_2_ + p_indexOfMaskSingle_1_.length())
+                {
+                    return -1;
+                }
+                else
+                {
+                    for (int i = p_indexOfMaskSingle_2_; i + p_indexOfMaskSingle_1_.length() <= p_indexOfMaskSingle_0_.length(); ++i)
+                    {
+                        String s = p_indexOfMaskSingle_0_.substring(i, i + p_indexOfMaskSingle_1_.length());
+
+                        if (equalsMaskSingle(s, p_indexOfMaskSingle_1_, p_indexOfMaskSingle_3_))
+                        {
+                            return i;
+                        }
+                    }
+
+                    return -1;
+                }
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else
+        {
             return -1;
-         }
-      } else {
-         return -1;
-      }
-   }
+        }
+    }
 
-   private static boolean endsWithMaskSingle(String var0, String var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var0.length() < var1.length()) {
-            return false;
-         } else {
-            String var4 = var0.substring(var0.length() - var1.length(), var0.length());
-            return equalsMaskSingle(var4, var1, var2);
-         }
-      } else {
-         return var0 == var1;
-      }
-   }
-
-   private static boolean startsWithMaskSingle(String var0, String var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var0.length() < var1.length()) {
-            return false;
-         } else {
-            String var4 = var0.substring(0, var1.length());
-            return equalsMaskSingle(var4, var1, var2);
-         }
-      } else {
-         return var0 == var1;
-      }
-   }
-
-   public static boolean equalsMask(String var0, String[] var1, char var2) {
-      MatchBlock.b();
-      int var4 = 0;
-      if(var4 < var1.length) {
-         String var5 = var1[var4];
-         if(equalsMask(var0, var5, var2)) {
-            return true;
-         }
-
-         ++var4;
-      }
-
-      return false;
-   }
-
-   public static boolean equalsMask(String var0, String var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var1 != null && var0 != null) {
-         if(var1.indexOf(var2) < 0) {
-            return var1.equals(var0);
-         } else {
-            ArrayList var4 = new ArrayList();
-            String var5 = "" + var2;
-            if(var1.startsWith(var5)) {
-               var4.add("");
+    private static boolean endsWithMaskSingle(String p_endsWithMaskSingle_0_, String p_endsWithMaskSingle_1_, char p_endsWithMaskSingle_2_)
+    {
+        if (p_endsWithMaskSingle_0_ != null && p_endsWithMaskSingle_1_ != null)
+        {
+            if (p_endsWithMaskSingle_0_.length() < p_endsWithMaskSingle_1_.length())
+            {
+                return false;
             }
-
-            StringTokenizer var6 = new StringTokenizer(var1, var5);
-            if(var6.hasMoreElements()) {
-               var4.add(var6.nextToken());
+            else
+            {
+                String s = p_endsWithMaskSingle_0_.substring(p_endsWithMaskSingle_0_.length() - p_endsWithMaskSingle_1_.length(), p_endsWithMaskSingle_0_.length());
+                return equalsMaskSingle(s, p_endsWithMaskSingle_1_, p_endsWithMaskSingle_2_);
             }
+        }
+        else
+        {
+            return p_endsWithMaskSingle_0_ == p_endsWithMaskSingle_1_;
+        }
+    }
 
-            if(var1.endsWith(var5)) {
-               var4.add("");
+    private static boolean startsWithMaskSingle(String p_startsWithMaskSingle_0_, String p_startsWithMaskSingle_1_, char p_startsWithMaskSingle_2_)
+    {
+        if (p_startsWithMaskSingle_0_ != null && p_startsWithMaskSingle_1_ != null)
+        {
+            if (p_startsWithMaskSingle_0_.length() < p_startsWithMaskSingle_1_.length())
+            {
+                return false;
             }
+            else
+            {
+                String s = p_startsWithMaskSingle_0_.substring(0, p_startsWithMaskSingle_1_.length());
+                return equalsMaskSingle(s, p_startsWithMaskSingle_1_, p_startsWithMaskSingle_2_);
+            }
+        }
+        else
+        {
+            return p_startsWithMaskSingle_0_ == p_startsWithMaskSingle_1_;
+        }
+    }
 
-            String var7 = (String)var4.get(0);
-            if(!var0.startsWith(var7)) {
-               return false;
-            } else {
-               String var8 = (String)var4.get(var4.size() - 1);
-               if(!var0.endsWith(var8)) {
-                  return false;
-               } else {
-                  byte var9 = 0;
-                  int var10 = 0;
-                  if(var10 < var4.size()) {
-                     String var11 = (String)var4.get(var10);
-                     if(var11.length() > 0) {
-                        int var12 = var0.indexOf(var11, var9);
-                        if(var12 < 0) {
-                           return false;
+    public static boolean equalsMask(String p_equalsMask_0_, String[] p_equalsMask_1_, char p_equalsMask_2_)
+    {
+        for (int i = 0; i < p_equalsMask_1_.length; ++i)
+        {
+            String s = p_equalsMask_1_[i];
+
+            if (equalsMask(p_equalsMask_0_, s, p_equalsMask_2_))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean equalsMask(String p_equalsMask_0_, String p_equalsMask_1_, char p_equalsMask_2_)
+    {
+        if (p_equalsMask_1_ != null && p_equalsMask_0_ != null)
+        {
+            if (p_equalsMask_1_.indexOf(p_equalsMask_2_) < 0)
+            {
+                return p_equalsMask_1_.equals(p_equalsMask_0_);
+            }
+            else
+            {
+                List list = new ArrayList();
+                String s = "" + p_equalsMask_2_;
+
+                if (p_equalsMask_1_.startsWith(s))
+                {
+                    list.add("");
+                }
+
+                StringTokenizer stringtokenizer = new StringTokenizer(p_equalsMask_1_, s);
+
+                while (stringtokenizer.hasMoreElements())
+                {
+                    list.add(stringtokenizer.nextToken());
+                }
+
+                if (p_equalsMask_1_.endsWith(s))
+                {
+                    list.add("");
+                }
+
+                String s1 = (String)list.get(0);
+
+                if (!p_equalsMask_0_.startsWith(s1))
+                {
+                    return false;
+                }
+                else
+                {
+                    String s2 = (String)list.get(list.size() - 1);
+
+                    if (!p_equalsMask_0_.endsWith(s2))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        int i = 0;
+
+                        for (int j = 0; j < ((List)list).size(); ++j)
+                        {
+                            String s3 = (String)list.get(j);
+
+                            if (s3.length() > 0)
+                            {
+                                int k = p_equalsMask_0_.indexOf(s3, i);
+
+                                if (k < 0)
+                                {
+                                    return false;
+                                }
+
+                                i = k + s3.length();
+                            }
                         }
 
-                        int var10000 = var12 + var11.length();
-                     }
-
-                     ++var10;
-                  }
-
-                  return true;
-               }
+                        return true;
+                    }
+                }
             }
-         }
-      } else {
-         return var1 == var0;
-      }
-   }
+        }
+        else
+        {
+            return p_equalsMask_1_ == p_equalsMask_0_;
+        }
+    }
 
-   public static String[] split(String var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      return var0 != null && var0.length() > 0?new String[]{var0}:new String[0];
-   }
+    public static String[] split(String p_split_0_, String p_split_1_)
+    {
+        if (p_split_0_ != null && p_split_0_.length() > 0)
+        {
+            if (p_split_1_ == null)
+            {
+                return new String[] {p_split_0_};
+            }
+            else
+            {
+                List list = new ArrayList();
+                int i = 0;
 
-   private static boolean a(char var0, String var1) {
-      MatchBlock.b();
-      int var3 = 0;
-      if(var3 < var1.length()) {
-         if(var1.charAt(var3) == var0) {
-            return true;
-         }
+                for (int j = 0; j < p_split_0_.length(); ++j)
+                {
+                    char c0 = p_split_0_.charAt(j);
 
-         ++var3;
-      }
+                    if (equals(c0, p_split_1_))
+                    {
+                        list.add(p_split_0_.substring(i, j));
+                        i = j + 1;
+                    }
+                }
 
-      return false;
-   }
+                list.add(p_split_0_.substring(i, p_split_0_.length()));
+                return (String[])((String[])list.toArray(new String[list.size()]));
+            }
+        }
+        else
+        {
+            return new String[0];
+        }
+    }
 
-   public static boolean equalsTrim(String var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 != null) {
-         var0 = var0.trim();
-      }
+    private static boolean equals(char p_equals_0_, String p_equals_1_)
+    {
+        for (int i = 0; i < p_equals_1_.length(); ++i)
+        {
+            if (p_equals_1_.charAt(i) == p_equals_0_)
+            {
+                return true;
+            }
+        }
 
-      if(var1 != null) {
-         var1 = var1.trim();
-      }
+        return false;
+    }
 
-      return equals(var0, var1);
-   }
+    public static boolean equalsTrim(String p_equalsTrim_0_, String p_equalsTrim_1_)
+    {
+        if (p_equalsTrim_0_ != null)
+        {
+            p_equalsTrim_0_ = p_equalsTrim_0_.trim();
+        }
 
-   public static boolean isEmpty(String var0) {
-      acE[] var1 = MatchBlock.b();
-      return var0 == null?true:var0.trim().length() <= 0;
-   }
+        if (p_equalsTrim_1_ != null)
+        {
+            p_equalsTrim_1_ = p_equalsTrim_1_.trim();
+        }
 
-   public static String stringInc(String var0) {
-      MatchBlock.b();
-      int var2 = parseInt(var0, -1);
-      if(var2 == -1) {
-         return "";
-      } else {
-         ++var2;
-         String var3 = "" + var2;
-         return var3.length() > var0.length()?"":fillLeft("" + var2, var0.length(), '0');
-      }
-   }
+        return equals(p_equalsTrim_0_, p_equalsTrim_1_);
+    }
 
-   public static int parseInt(String var0, int var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 == null) {
-         return var1;
-      } else {
-         String var10000 = var0;
+    public static boolean isEmpty(String p_isEmpty_0_)
+    {
+        return p_isEmpty_0_ == null ? true : p_isEmpty_0_.trim().length() <= 0;
+    }
 
-         try {
-            return Integer.parseInt(var10000);
-         } catch (NumberFormatException var4) {
-            return var1;
-         }
-      }
-   }
+    public static String stringInc(String p_stringInc_0_)
+    {
+        int i = parseInt(p_stringInc_0_, -1);
 
-   public static boolean isFilled(String var0) {
-      acE[] var1 = MatchBlock.b();
-      return !isEmpty(var0);
-   }
+        if (i == -1)
+        {
+            return "";
+        }
+        else
+        {
+            ++i;
+            String s = "" + i;
+            return s.length() > p_stringInc_0_.length() ? "" : fillLeft("" + i, p_stringInc_0_.length(), '0');
+        }
+    }
 
-   public static String addIfNotContains(String var0, String var1) {
-      MatchBlock.b();
-      int var3 = 0;
-      if(var3 < var1.length()) {
-         if(var0.indexOf(var1.charAt(var3)) < 0) {
-            var0 = var0 + var1.charAt(var3);
-         }
+    public static int parseInt(String p_parseInt_0_, int p_parseInt_1_)
+    {
+        if (p_parseInt_0_ == null)
+        {
+            return p_parseInt_1_;
+        }
+        else
+        {
+            try
+            {
+                return Integer.parseInt(p_parseInt_0_);
+            }
+            catch (NumberFormatException var3)
+            {
+                return p_parseInt_1_;
+            }
+        }
+    }
 
-         ++var3;
-      }
+    public static boolean isFilled(String p_isFilled_0_)
+    {
+        return !isEmpty(p_isFilled_0_);
+    }
 
-      return var0;
-   }
+    public static String addIfNotContains(String p_addIfNotContains_0_, String p_addIfNotContains_1_)
+    {
+        for (int i = 0; i < p_addIfNotContains_1_.length(); ++i)
+        {
+            if (p_addIfNotContains_0_.indexOf(p_addIfNotContains_1_.charAt(i)) < 0)
+            {
+                p_addIfNotContains_0_ = p_addIfNotContains_0_ + p_addIfNotContains_1_.charAt(i);
+            }
+        }
 
-   public static String fillLeft(String var0, int var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 == null) {
-         var0 = "";
-      }
+        return p_addIfNotContains_0_;
+    }
 
-      if(var0.length() >= var1) {
-         return var0;
-      } else {
-         StringBuffer var4 = new StringBuffer(var0);
-         if(var4.length() < var1) {
-            var4.insert(0, var2);
-         }
+    public static String fillLeft(String p_fillLeft_0_, int p_fillLeft_1_, char p_fillLeft_2_)
+    {
+        if (p_fillLeft_0_ == null)
+        {
+            p_fillLeft_0_ = "";
+        }
 
-         return var4.toString();
-      }
-   }
+        if (p_fillLeft_0_.length() >= p_fillLeft_1_)
+        {
+            return p_fillLeft_0_;
+        }
+        else
+        {
+            StringBuffer stringbuffer = new StringBuffer(p_fillLeft_0_);
 
-   public static String fillRight(String var0, int var1, char var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 == null) {
-         var0 = "";
-      }
-
-      if(var0.length() >= var1) {
-         return var0;
-      } else {
-         StringBuffer var4 = new StringBuffer(var0);
-         if(var4.length() < var1) {
-            var4.append(var2);
-         }
-
-         return var4.toString();
-      }
-   }
-
-   public static boolean equals(Object var0, Object var1) {
-      acE[] var2 = MatchBlock.b();
-      return var0 == var1?true:(var0 != null && var0.equals(var1)?true:var1 != null && var1.equals(var0));
-   }
-
-   public static boolean b(String var0, String[] var1) {
-      acE[] var2 = MatchBlock.b();
-      return false;
-   }
-
-   public static boolean c(String var0, String[] var1) {
-      acE[] var2 = MatchBlock.b();
-      return false;
-   }
-
-   public static String removePrefix(String var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var0.startsWith(var1)) {
-            var0 = var0.substring(var1.length());
-         }
-
-         return var0;
-      } else {
-         return var0;
-      }
-   }
-
-   public static String removeSuffix(String var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var0.endsWith(var1)) {
-            var0 = var0.substring(0, var0.length() - var1.length());
-         }
-
-         return var0;
-      } else {
-         return var0;
-      }
-   }
-
-   public static String replaceSuffix(String var0, String var1, String var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 != null && var1 != null) {
-         if(var2 == null) {
-            var2 = "";
-         }
-
-         if(var0.endsWith(var1)) {
-            var0 = var0.substring(0, var0.length() - var1.length());
-         }
-
-         return var0 + var2;
-      } else {
-         return var0;
-      }
-   }
-
-   public static int findPrefix(String[] var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      int var3 = 0;
-      if(var3 < var0.length) {
-         String var4 = var0[var3];
-         if(var4.startsWith(var1)) {
-            return var3;
-         }
-
-         ++var3;
-      }
-
-      return -1;
-   }
-
-   public static int findSuffix(String[] var0, String var1) {
-      acE[] var2 = MatchBlock.b();
-      int var3 = 0;
-      if(var3 < var0.length) {
-         String var4 = var0[var3];
-         if(var4.endsWith(var1)) {
-            return var3;
-         }
-
-         ++var3;
-      }
-
-      return -1;
-   }
-
-   public static String[] remove(String[] var0, int var1, int var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 == null) {
-         return var0;
-      } else if(var2 > 0 && var1 < var0.length) {
-         if(var1 >= var2) {
-            return var0;
-         } else {
-            ArrayList var4 = new ArrayList(var0.length);
-            int var5 = 0;
-            if(var5 < var0.length) {
-               String var6 = var0[var5];
-               if(var5 < var1 || var5 >= var2) {
-                  var4.add(var6);
-               }
-
-               ++var5;
+            while (stringbuffer.length() < p_fillLeft_1_)
+            {
+                stringbuffer.insert(0, (char)p_fillLeft_2_);
             }
 
-            String[] var8 = (String[])((String[])var4.toArray(new String[var4.size()]));
-            return var8;
-         }
-      } else {
-         return var0;
-      }
-   }
+            return stringbuffer.toString();
+        }
+    }
 
-   public static String removeSuffix(String var0, String[] var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 != null) {
-         int var3 = var0.length();
-         int var4 = 0;
-         if(var4 < var1.length) {
-            String var5 = var1[var4];
-            var0 = removeSuffix(var0, var5);
-            if(var0.length() != var3) {
-               ;
+    public static String fillRight(String p_fillRight_0_, int p_fillRight_1_, char p_fillRight_2_)
+    {
+        if (p_fillRight_0_ == null)
+        {
+            p_fillRight_0_ = "";
+        }
+
+        if (p_fillRight_0_.length() >= p_fillRight_1_)
+        {
+            return p_fillRight_0_;
+        }
+        else
+        {
+            StringBuffer stringbuffer = new StringBuffer(p_fillRight_0_);
+
+            while (stringbuffer.length() < p_fillRight_1_)
+            {
+                stringbuffer.append(p_fillRight_2_);
             }
 
-            ++var4;
-         }
+            return stringbuffer.toString();
+        }
+    }
 
-         return var0;
-      } else {
-         return var0;
-      }
-   }
+    public static boolean equals(Object p_equals_0_, Object p_equals_1_)
+    {
+        return p_equals_0_ == p_equals_1_ ? true : (p_equals_0_ != null && p_equals_0_.equals(p_equals_1_) ? true : p_equals_1_ != null && p_equals_1_.equals(p_equals_0_));
+    }
 
-   public static String removePrefix(String var0, String[] var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0 != null) {
-         int var3 = var0.length();
-         int var4 = 0;
-         if(var4 < var1.length) {
-            String var5 = var1[var4];
-            var0 = removePrefix(var0, var5);
-            if(var0.length() != var3) {
-               ;
+    public static boolean startsWith(String p_startsWith_0_, String[] p_startsWith_1_)
+    {
+        if (p_startsWith_0_ == null)
+        {
+            return false;
+        }
+        else if (p_startsWith_1_ == null)
+        {
+            return false;
+        }
+        else
+        {
+            for (int i = 0; i < p_startsWith_1_.length; ++i)
+            {
+                String s = p_startsWith_1_[i];
+
+                if (p_startsWith_0_.startsWith(s))
+                {
+                    return true;
+                }
             }
 
-            ++var4;
-         }
+            return false;
+        }
+    }
 
-         return var0;
-      } else {
-         return var0;
-      }
-   }
+    public static boolean endsWith(String p_endsWith_0_, String[] p_endsWith_1_)
+    {
+        if (p_endsWith_0_ == null)
+        {
+            return false;
+        }
+        else if (p_endsWith_1_ == null)
+        {
+            return false;
+        }
+        else
+        {
+            for (int i = 0; i < p_endsWith_1_.length; ++i)
+            {
+                String s = p_endsWith_1_[i];
 
-   public static String removePrefixSuffix(String var0, String[] var1, String[] var2) {
-      var0 = removePrefix(var0, var1);
-      var0 = removeSuffix(var0, var2);
-      return var0;
-   }
+                if (p_endsWith_0_.endsWith(s))
+                {
+                    return true;
+                }
+            }
 
-   public static String removePrefixSuffix(String var0, String var1, String var2) {
-      return removePrefixSuffix(var0, new String[]{var1}, new String[]{var2});
-   }
+            return false;
+        }
+    }
 
-   public static String getSegment(String var0, String var1, String var2) {
-      acE[] var3 = MatchBlock.b();
-      if(var0 != null && var1 != null && var2 != null) {
-         int var4 = var0.indexOf(var1);
-         if(var4 < 0) {
+    public static String removePrefix(String p_removePrefix_0_, String p_removePrefix_1_)
+    {
+        if (p_removePrefix_0_ != null && p_removePrefix_1_ != null)
+        {
+            if (p_removePrefix_0_.startsWith(p_removePrefix_1_))
+            {
+                p_removePrefix_0_ = p_removePrefix_0_.substring(p_removePrefix_1_.length());
+            }
+
+            return p_removePrefix_0_;
+        }
+        else
+        {
+            return p_removePrefix_0_;
+        }
+    }
+
+    public static String removeSuffix(String p_removeSuffix_0_, String p_removeSuffix_1_)
+    {
+        if (p_removeSuffix_0_ != null && p_removeSuffix_1_ != null)
+        {
+            if (p_removeSuffix_0_.endsWith(p_removeSuffix_1_))
+            {
+                p_removeSuffix_0_ = p_removeSuffix_0_.substring(0, p_removeSuffix_0_.length() - p_removeSuffix_1_.length());
+            }
+
+            return p_removeSuffix_0_;
+        }
+        else
+        {
+            return p_removeSuffix_0_;
+        }
+    }
+
+    public static String replaceSuffix(String p_replaceSuffix_0_, String p_replaceSuffix_1_, String p_replaceSuffix_2_)
+    {
+        if (p_replaceSuffix_0_ != null && p_replaceSuffix_1_ != null)
+        {
+            if (p_replaceSuffix_2_ == null)
+            {
+                p_replaceSuffix_2_ = "";
+            }
+
+            if (p_replaceSuffix_0_.endsWith(p_replaceSuffix_1_))
+            {
+                p_replaceSuffix_0_ = p_replaceSuffix_0_.substring(0, p_replaceSuffix_0_.length() - p_replaceSuffix_1_.length());
+            }
+
+            return p_replaceSuffix_0_ + p_replaceSuffix_2_;
+        }
+        else
+        {
+            return p_replaceSuffix_0_;
+        }
+    }
+
+    public static int findPrefix(String[] p_findPrefix_0_, String p_findPrefix_1_)
+    {
+        if (p_findPrefix_0_ != null && p_findPrefix_1_ != null)
+        {
+            for (int i = 0; i < p_findPrefix_0_.length; ++i)
+            {
+                String s = p_findPrefix_0_[i];
+
+                if (s.startsWith(p_findPrefix_1_))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    public static int findSuffix(String[] p_findSuffix_0_, String p_findSuffix_1_)
+    {
+        if (p_findSuffix_0_ != null && p_findSuffix_1_ != null)
+        {
+            for (int i = 0; i < p_findSuffix_0_.length; ++i)
+            {
+                String s = p_findSuffix_0_[i];
+
+                if (s.endsWith(p_findSuffix_1_))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    public static String[] remove(String[] p_remove_0_, int p_remove_1_, int p_remove_2_)
+    {
+        if (p_remove_0_ == null)
+        {
+            return p_remove_0_;
+        }
+        else if (p_remove_2_ > 0 && p_remove_1_ < p_remove_0_.length)
+        {
+            if (p_remove_1_ >= p_remove_2_)
+            {
+                return p_remove_0_;
+            }
+            else
+            {
+                List<String> list = new ArrayList(p_remove_0_.length);
+
+                for (int i = 0; i < p_remove_0_.length; ++i)
+                {
+                    String s = p_remove_0_[i];
+
+                    if (i < p_remove_1_ || i >= p_remove_2_)
+                    {
+                        list.add(s);
+                    }
+                }
+
+                String[] astring = (String[])list.toArray(new String[list.size()]);
+                return astring;
+            }
+        }
+        else
+        {
+            return p_remove_0_;
+        }
+    }
+
+    public static String removeSuffix(String p_removeSuffix_0_, String[] p_removeSuffix_1_)
+    {
+        if (p_removeSuffix_0_ != null && p_removeSuffix_1_ != null)
+        {
+            int i = p_removeSuffix_0_.length();
+
+            for (int j = 0; j < p_removeSuffix_1_.length; ++j)
+            {
+                String s = p_removeSuffix_1_[j];
+                p_removeSuffix_0_ = removeSuffix(p_removeSuffix_0_, s);
+
+                if (p_removeSuffix_0_.length() != i)
+                {
+                    break;
+                }
+            }
+
+            return p_removeSuffix_0_;
+        }
+        else
+        {
+            return p_removeSuffix_0_;
+        }
+    }
+
+    public static String removePrefix(String p_removePrefix_0_, String[] p_removePrefix_1_)
+    {
+        if (p_removePrefix_0_ != null && p_removePrefix_1_ != null)
+        {
+            int i = p_removePrefix_0_.length();
+
+            for (int j = 0; j < p_removePrefix_1_.length; ++j)
+            {
+                String s = p_removePrefix_1_[j];
+                p_removePrefix_0_ = removePrefix(p_removePrefix_0_, s);
+
+                if (p_removePrefix_0_.length() != i)
+                {
+                    break;
+                }
+            }
+
+            return p_removePrefix_0_;
+        }
+        else
+        {
+            return p_removePrefix_0_;
+        }
+    }
+
+    public static String removePrefixSuffix(String p_removePrefixSuffix_0_, String[] p_removePrefixSuffix_1_, String[] p_removePrefixSuffix_2_)
+    {
+        p_removePrefixSuffix_0_ = removePrefix(p_removePrefixSuffix_0_, p_removePrefixSuffix_1_);
+        p_removePrefixSuffix_0_ = removeSuffix(p_removePrefixSuffix_0_, p_removePrefixSuffix_2_);
+        return p_removePrefixSuffix_0_;
+    }
+
+    public static String removePrefixSuffix(String p_removePrefixSuffix_0_, String p_removePrefixSuffix_1_, String p_removePrefixSuffix_2_)
+    {
+        return removePrefixSuffix(p_removePrefixSuffix_0_, new String[] {p_removePrefixSuffix_1_}, new String[] {p_removePrefixSuffix_2_});
+    }
+
+    public static String getSegment(String p_getSegment_0_, String p_getSegment_1_, String p_getSegment_2_)
+    {
+        if (p_getSegment_0_ != null && p_getSegment_1_ != null && p_getSegment_2_ != null)
+        {
+            int i = p_getSegment_0_.indexOf(p_getSegment_1_);
+
+            if (i < 0)
+            {
+                return null;
+            }
+            else
+            {
+                int j = p_getSegment_0_.indexOf(p_getSegment_2_, i);
+                return j < 0 ? null : p_getSegment_0_.substring(i, j + p_getSegment_2_.length());
+            }
+        }
+        else
+        {
             return null;
-         } else {
-            int var5 = var0.indexOf(var2, var4);
-            return null;
-         }
-      } else {
-         return null;
-      }
-   }
-
-   private static NumberFormatException a(NumberFormatException var0) {
-      return var0;
-   }
+        }
+    }
 }

@@ -1,46 +1,52 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenSand extends WorldGenerator {
-   private Block block;
-   private int radius;
+    private Block block;
 
-   public WorldGenSand(Block var1, int var2) {
-      this.block = var1;
-      this.radius = var2;
-   }
+    /**
+     * The maximum radius used when generating a patch of blocks.
+     */
+    private int radius;
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      if(var1.getBlockState(var3).getBlock().getMaterial() != Material.water) {
-         return false;
-      } else {
-         int var4 = var2.nextInt(this.radius - 2) + 2;
-         byte var5 = 2;
+    public WorldGenSand(Block p_i45462_1_, int p_i45462_2_) {
+        this.block = p_i45462_1_;
+        this.radius = p_i45462_2_;
+    }
 
-         for(int var6 = var3.getX() - var4; var6 <= var3.getX() + var4; ++var6) {
-            for(int var7 = var3.getZ() - var4; var7 <= var3.getZ() + var4; ++var7) {
-               int var8 = var6 - var3.getX();
-               int var9 = var7 - var3.getZ();
-               if(var8 * var8 + var9 * var9 <= var4 * var4) {
-                  for(int var10 = var3.getY() - var5; var10 <= var3.getY() + var5; ++var10) {
-                     BlockPos var11 = new BlockPos(var6, var10, var7);
-                     Block var12 = var1.getBlockState(var11).getBlock();
-                     if(var12 == Blocks.dirt || var12 == Blocks.grass) {
-                        var1.setBlockState(var11, this.block.getDefaultState(), 2);
-                     }
-                  }
-               }
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.water) {
+            return false;
+        } else {
+            int i = rand.nextInt(this.radius - 2) + 2;
+            int j = 2;
+
+            for (int k = position.getX() - i; k <= position.getX() + i; ++k) {
+                for (int l = position.getZ() - i; l <= position.getZ() + i; ++l) {
+                    int i1 = k - position.getX();
+                    int j1 = l - position.getZ();
+
+                    if (i1 * i1 + j1 * j1 <= i * i) {
+                        for (int k1 = position.getY() - j; k1 <= position.getY() + j; ++k1) {
+                            BlockPos blockpos = new BlockPos(k, k1, l);
+                            Block block = worldIn.getBlockState(blockpos).getBlock();
+
+                            if (block == Blocks.dirt || block == Blocks.grass) {
+                                worldIn.setBlockState(blockpos, this.block.getDefaultState(), 2);
+                            }
+                        }
+                    }
+                }
             }
-         }
 
-         return true;
-      }
-   }
+            return true;
+        }
+    }
 }

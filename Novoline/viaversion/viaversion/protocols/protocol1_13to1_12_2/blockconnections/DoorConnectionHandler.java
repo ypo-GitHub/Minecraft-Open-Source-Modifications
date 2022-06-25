@@ -1,75 +1,123 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import net.abi;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.DoorConnectionHandler$DoorData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-public class DoorConnectionHandler extends abi {
-   private static final Map doorDataMap = new HashMap();
-   private static final Map connectedStates = new HashMap();
+import java.util.*;
 
-   static ConnectionData$ConnectorInitAction init() {
-      LinkedList var0 = new LinkedList();
-      var0.add("minecraft:oak_door");
-      var0.add("minecraft:birch_door");
-      var0.add("minecraft:jungle_door");
-      var0.add("minecraft:dark_oak_door");
-      var0.add("minecraft:acacia_door");
-      var0.add("minecraft:spruce_door");
-      var0.add("minecraft:iron_door");
-      DoorConnectionHandler var1 = new DoorConnectionHandler();
-      return DoorConnectionHandler::lambda$init$0;
-   }
+public class DoorConnectionHandler extends ConnectionHandler {
+    private static final Map<Integer, DoorData> doorDataMap = new HashMap<>();
+    private static final Map<Short, Integer> connectedStates = new HashMap<>();
 
-   private static short getStates(DoorConnectionHandler$DoorData var0) {
-      abi.b();
-      short var2 = 0;
-      if(var0.isLower()) {
-         var2 = (short)(var2 | 1);
-      }
+    static ConnectionData.ConnectorInitAction init() {
+        final List<String> baseDoors = new LinkedList<>();
+        baseDoors.add("minecraft:oak_door");
+        baseDoors.add("minecraft:birch_door");
+        baseDoors.add("minecraft:jungle_door");
+        baseDoors.add("minecraft:dark_oak_door");
+        baseDoors.add("minecraft:acacia_door");
+        baseDoors.add("minecraft:spruce_door");
+        baseDoors.add("minecraft:iron_door");
 
-      if(var0.isOpen()) {
-         var2 = (short)(var2 | 2);
-      }
+        final DoorConnectionHandler connectionHandler = new DoorConnectionHandler();
+        return blockData -> {
+            int type = baseDoors.indexOf(blockData.getMinecraftKey());
+            if (type == -1) return;
 
-      if(var0.isPowered()) {
-         var2 = (short)(var2 | 4);
-      }
+            int id = blockData.getSavedBlockStateId();
 
-      if(var0.isRightHinge()) {
-         var2 = (short)(var2 | 8);
-      }
+            DoorData doorData = new DoorData(
+                    blockData.getValue("half").equals("lower"),
+                    blockData.getValue("hinge").equals("right"),
+                    blockData.getValue("powered").equals("true"),
+                    blockData.getValue("open").equals("true"),
+                    BlockFace.valueOf(blockData.getValue("facing").toUpperCase(Locale.ROOT)),
+                    type
+            );
 
-      var2 = (short)(var2 | var0.getFacing().ordinal() << 4);
-      var2 = (short)(var2 | (var0.getType() & 7) << 6);
-      return var2;
-   }
+            doorDataMap.put(id, doorData);
 
-   public int connect(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      DoorConnectionHandler$DoorData var5 = (DoorConnectionHandler$DoorData)doorDataMap.get(Integer.valueOf(var3));
-      return var3;
-   }
+            connectedStates.put(getStates(doorData), id);
 
-   private static void lambda$init$0(List var0, DoorConnectionHandler var1, WrappedBlockData var2) {
-      abi.b();
-      int var4 = var0.indexOf(var2.getMinecraftKey());
-      if(var4 != -1) {
-         int var5 = var2.getSavedBlockStateId();
-         DoorConnectionHandler$DoorData var6 = new DoorConnectionHandler$DoorData(var2.getValue("half").equals("lower"), var2.getValue("hinge").equals("right"), var2.getValue("powered").equals("true"), var2.getValue("open").equals("true"), BlockFace.valueOf(var2.getValue("facing").toUpperCase(Locale.ROOT)), var4);
-         doorDataMap.put(Integer.valueOf(var5), var6);
-         connectedStates.put(Short.valueOf(getStates(var6)), Integer.valueOf(var5));
-         ConnectionData.connectionHandlerMap.put(var5, var1);
-      }
-   }
+            ConnectionData.connectionHandlerMap.put(id, connectionHandler);
+        };
+    }
+
+    private static short getStates(DoorData doorData) {
+        short s = 0;
+        if (doorData.isLower()) s |= 1;
+        if (doorData.isOpen()) s |= 2;
+        if (doorData.isPowered()) s |= 4;
+        if (doorData.isRightHinge()) s |= 8;
+        s |= doorData.getFacing().ordinal() << 4;
+        s |= (doorData.getType() & 0x7) << 6;
+        return s;
+    }
+
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        DoorData doorData = doorDataMap.get(blockState);
+        if (doorData == null) return blockState;
+        short s = 0;
+        s |= (doorData.getType() & 0x7) << 6;
+        if (doorData.isLower()) {
+            DoorData upperHalf = doorDataMap.get(getBlockData(user, position.getRelative(BlockFace.TOP)));
+            if (upperHalf == null) return blockState;
+            s |= 1;
+            if (doorData.isOpen()) s |= 2;
+            if (upperHalf.isPowered()) s |= 4;
+            if (upperHalf.isRightHinge()) s |= 8;
+            s |= doorData.getFacing().ordinal() << 4;
+        } else {
+            DoorData lowerHalf = doorDataMap.get(getBlockData(user, position.getRelative(BlockFace.BOTTOM)));
+            if (lowerHalf == null) return blockState;
+            if (lowerHalf.isOpen()) s |= 2;
+            if (doorData.isPowered()) s |= 4;
+            if (doorData.isRightHinge()) s |= 8;
+            s |= lowerHalf.getFacing().ordinal() << 4;
+        }
+
+        Integer newBlockState = connectedStates.get(s);
+        return newBlockState == null ? blockState : newBlockState;
+    }
+
+    private static final class DoorData {
+        private final boolean lower, rightHinge, powered, open;
+        private final BlockFace facing;
+        private final int type;
+
+        private DoorData(boolean lower, boolean rightHinge, boolean powered, boolean open, BlockFace facing, int type) {
+            this.lower = lower;
+            this.rightHinge = rightHinge;
+            this.powered = powered;
+            this.open = open;
+            this.facing = facing;
+            this.type = type;
+        }
+
+        public boolean isLower() {
+            return lower;
+        }
+
+        public boolean isRightHinge() {
+            return rightHinge;
+        }
+
+        public boolean isPowered() {
+            return powered;
+        }
+
+        public boolean isOpen() {
+            return open;
+        }
+
+        public BlockFace getFacing() {
+            return facing;
+        }
+
+        public int getType() {
+            return type;
+        }
+    }
 }

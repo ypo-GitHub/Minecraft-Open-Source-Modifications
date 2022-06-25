@@ -1,162 +1,180 @@
 package net.optifine;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
-import net.acE;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.client.renderer.chunk.RenderChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.BlockPos$MutableBlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
-import net.optifine.Config;
-import net.optifine.DynamicLights;
-import net.optifine.MatchBlock;
+import net.minecraft.world.World;
 
-public class DynamicLight {
-   private Entity entity = null;
-   private double offsetY = 0.0D;
-   private double lastPosX = -2.147483648E9D;
-   private double lastPosY = -2.147483648E9D;
-   private double lastPosZ = -2.147483648E9D;
-   private int lastLightLevel = 0;
-   private boolean underwater = false;
-   private long timeCheckMs = 0L;
-   private Set setLitChunkPos = new HashSet();
-   private BlockPos$MutableBlockPos blockPosMutable = new BlockPos$MutableBlockPos();
+public class DynamicLight
+{
+    private Entity entity = null;
+    private double offsetY = 0.0D;
+    private double lastPosX = -2.147483648E9D;
+    private double lastPosY = -2.147483648E9D;
+    private double lastPosZ = -2.147483648E9D;
+    private int lastLightLevel = 0;
+    private boolean underwater = false;
+    private long timeCheckMs = 0L;
+    private Set<BlockPos> setLitChunkPos = new HashSet();
+    private BlockPos.MutableBlockPos blockPosMutable = new BlockPos.MutableBlockPos();
 
-   public DynamicLight(Entity var1) {
-      this.entity = var1;
-      this.offsetY = (double)var1.getEyeHeight();
-   }
+    public DynamicLight(Entity p_i36_1_)
+    {
+        this.entity = p_i36_1_;
+        this.offsetY = (double)p_i36_1_.getEyeHeight();
+    }
 
-   public void update(RenderGlobal var1) {
-      acE[] var2 = MatchBlock.b();
-      if(Config.aO()) {
-         long var3 = System.currentTimeMillis();
-         if(var3 < this.timeCheckMs + 500L) {
-            return;
-         }
+    public void update(RenderGlobal p_update_1_)
+    {
+        if (Config.isDynamicLightsFast())
+        {
+            long i = System.currentTimeMillis();
 
-         this.timeCheckMs = var3;
-      }
+            if (i < this.timeCheckMs + 500L)
+            {
+                return;
+            }
 
-      double var32 = this.entity.posX - 0.5D;
-      double var5 = this.entity.posY - 0.5D + this.offsetY;
-      double var7 = this.entity.posZ - 0.5D;
-      int var9 = DynamicLights.getLightLevel(this.entity);
-      double var10 = var32 - this.lastPosX;
-      double var12 = var5 - this.lastPosY;
-      double var14 = var7 - this.lastPosZ;
-      double var16 = 0.1D;
-      if(Math.abs(var10) > var16 || Math.abs(var12) > var16 || Math.abs(var14) > var16 || this.lastLightLevel != var9) {
-         this.lastPosX = var32;
-         this.lastPosY = var5;
-         this.lastPosZ = var7;
-         this.lastLightLevel = var9;
-         this.underwater = false;
-         WorldClient var18 = var1.getWorld();
-         if(var18 != null) {
-            this.blockPosMutable.func_181079_c(MathHelper.floor_double(var32), MathHelper.floor_double(var5), MathHelper.floor_double(var7));
-            IBlockState var19 = var18.getBlockState(this.blockPosMutable);
-            Block var20 = var19.getBlock();
-            this.underwater = var20 == Blocks.water;
-         }
+            this.timeCheckMs = i;
+        }
 
-         HashSet var33 = new HashSet();
-         EnumFacing var34 = (MathHelper.floor_double(var32) & 15) >= 8?EnumFacing.EAST:EnumFacing.WEST;
-         EnumFacing var21 = (MathHelper.floor_double(var5) & 15) >= 8?EnumFacing.UP:EnumFacing.DOWN;
-         EnumFacing var22 = (MathHelper.floor_double(var7) & 15) >= 8?EnumFacing.SOUTH:EnumFacing.NORTH;
-         BlockPos var23 = new BlockPos(var32, var5, var7);
-         RenderChunk var24 = var1.getRenderChunk(var23);
-         RenderChunk var25 = var1.a(var24, var34);
-         RenderChunk var26 = var1.a(var24, var22);
-         RenderChunk var27 = var1.a(var25, var22);
-         RenderChunk var28 = var1.a(var24, var21);
-         RenderChunk var29 = var1.a(var28, var34);
-         RenderChunk var30 = var1.a(var28, var22);
-         RenderChunk var31 = var1.a(var29, var22);
-         this.updateChunkLight(var24, this.setLitChunkPos, var33);
-         this.updateChunkLight(var25, this.setLitChunkPos, var33);
-         this.updateChunkLight(var26, this.setLitChunkPos, var33);
-         this.updateChunkLight(var27, this.setLitChunkPos, var33);
-         this.updateChunkLight(var28, this.setLitChunkPos, var33);
-         this.updateChunkLight(var29, this.setLitChunkPos, var33);
-         this.updateChunkLight(var30, this.setLitChunkPos, var33);
-         this.updateChunkLight(var31, this.setLitChunkPos, var33);
-         this.updateLitChunks(var1);
-         this.setLitChunkPos = var33;
-      }
+        double d6 = this.entity.posX - 0.5D;
+        double d0 = this.entity.posY - 0.5D + this.offsetY;
+        double d1 = this.entity.posZ - 0.5D;
+        int j = DynamicLights.getLightLevel(this.entity);
+        double d2 = d6 - this.lastPosX;
+        double d3 = d0 - this.lastPosY;
+        double d4 = d1 - this.lastPosZ;
+        double d5 = 0.1D;
 
-   }
+        if (Math.abs(d2) > d5 || Math.abs(d3) > d5 || Math.abs(d4) > d5 || this.lastLightLevel != j)
+        {
+            this.lastPosX = d6;
+            this.lastPosY = d0;
+            this.lastPosZ = d1;
+            this.lastLightLevel = j;
+            this.underwater = false;
+            World world = p_update_1_.getWorld();
 
-   private void updateChunkLight(RenderChunk var1, Set var2, Set var3) {
-      acE[] var4 = MatchBlock.b();
-      if(var1 != null) {
-         CompiledChunk var5 = var1.getCompiledChunk();
-         if(var5 != null && !var5.isEmpty()) {
-            var1.setNeedsUpdate(true);
-         }
+            if (world != null)
+            {
+                this.blockPosMutable.func_181079_c(MathHelper.floor_double(d6), MathHelper.floor_double(d0), MathHelper.floor_double(d1));
+                IBlockState iblockstate = world.getBlockState(this.blockPosMutable);
+                Block block = iblockstate.getBlock();
+                this.underwater = block == Blocks.water;
+            }
 
-         BlockPos var6 = var1.getPosition();
-         if(var2 != null) {
-            var2.remove(var6);
-         }
+            Set<BlockPos> set = new HashSet();
 
-         if(var3 != null) {
-            var3.add(var6);
-         }
-      }
+            if (j > 0)
+            {
+                EnumFacing enumfacing2 = (MathHelper.floor_double(d6) & 15) >= 8 ? EnumFacing.EAST : EnumFacing.WEST;
+                EnumFacing enumfacing = (MathHelper.floor_double(d0) & 15) >= 8 ? EnumFacing.UP : EnumFacing.DOWN;
+                EnumFacing enumfacing1 = (MathHelper.floor_double(d1) & 15) >= 8 ? EnumFacing.SOUTH : EnumFacing.NORTH;
+                BlockPos blockpos = new BlockPos(d6, d0, d1);
+                RenderChunk renderchunk = p_update_1_.getRenderChunk(blockpos);
+                RenderChunk renderchunk1 = p_update_1_.getRenderChunk(renderchunk, enumfacing2);
+                RenderChunk renderchunk2 = p_update_1_.getRenderChunk(renderchunk, enumfacing1);
+                RenderChunk renderchunk3 = p_update_1_.getRenderChunk(renderchunk1, enumfacing1);
+                RenderChunk renderchunk4 = p_update_1_.getRenderChunk(renderchunk, enumfacing);
+                RenderChunk renderchunk5 = p_update_1_.getRenderChunk(renderchunk4, enumfacing2);
+                RenderChunk renderchunk6 = p_update_1_.getRenderChunk(renderchunk4, enumfacing1);
+                RenderChunk renderchunk7 = p_update_1_.getRenderChunk(renderchunk5, enumfacing1);
+                this.updateChunkLight(renderchunk, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk1, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk2, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk3, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk4, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk5, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk6, this.setLitChunkPos, set);
+                this.updateChunkLight(renderchunk7, this.setLitChunkPos, set);
+            }
 
-   }
+            this.updateLitChunks(p_update_1_);
+            this.setLitChunkPos = set;
+        }
+    }
 
-   public void updateLitChunks(RenderGlobal var1) {
-      MatchBlock.b();
-      Iterator var3 = this.setLitChunkPos.iterator();
-      if(var3.hasNext()) {
-         BlockPos var4 = (BlockPos)var3.next();
-         RenderChunk var5 = var1.getRenderChunk(var4);
-         this.updateChunkLight(var5, (Set)null, (Set)null);
-      }
+    private void updateChunkLight(RenderChunk p_updateChunkLight_1_, Set<BlockPos> p_updateChunkLight_2_, Set<BlockPos> p_updateChunkLight_3_)
+    {
+        if (p_updateChunkLight_1_ != null)
+        {
+            CompiledChunk compiledchunk = p_updateChunkLight_1_.getCompiledChunk();
 
-   }
+            if (compiledchunk != null && !compiledchunk.isEmpty())
+            {
+                p_updateChunkLight_1_.setNeedsUpdate(true);
+            }
 
-   public Entity getEntity() {
-      return this.entity;
-   }
+            BlockPos blockpos = p_updateChunkLight_1_.getPosition();
 
-   public double getLastPosX() {
-      return this.lastPosX;
-   }
+            if (p_updateChunkLight_2_ != null)
+            {
+                p_updateChunkLight_2_.remove(blockpos);
+            }
 
-   public double getLastPosY() {
-      return this.lastPosY;
-   }
+            if (p_updateChunkLight_3_ != null)
+            {
+                p_updateChunkLight_3_.add(blockpos);
+            }
+        }
+    }
 
-   public double getLastPosZ() {
-      return this.lastPosZ;
-   }
+    public void updateLitChunks(RenderGlobal p_updateLitChunks_1_)
+    {
+        for (BlockPos blockpos : this.setLitChunkPos)
+        {
+            RenderChunk renderchunk = p_updateLitChunks_1_.getRenderChunk(blockpos);
+            this.updateChunkLight(renderchunk, (Set<BlockPos>)null, (Set<BlockPos>)null);
+        }
+    }
 
-   public int getLastLightLevel() {
-      return this.lastLightLevel;
-   }
+    public Entity getEntity()
+    {
+        return this.entity;
+    }
 
-   public boolean isUnderwater() {
-      return this.underwater;
-   }
+    public double getLastPosX()
+    {
+        return this.lastPosX;
+    }
 
-   public double getOffsetY() {
-      return this.offsetY;
-   }
+    public double getLastPosY()
+    {
+        return this.lastPosY;
+    }
 
-   public String toString() {
-      return "Entity: " + this.entity + ", offsetY: " + this.offsetY;
-   }
+    public double getLastPosZ()
+    {
+        return this.lastPosZ;
+    }
+
+    public int getLastLightLevel()
+    {
+        return this.lastLightLevel;
+    }
+
+    public boolean isUnderwater()
+    {
+        return this.underwater;
+    }
+
+    public double getOffsetY()
+    {
+        return this.offsetY;
+    }
+
+    public String toString()
+    {
+        return "Entity: " + this.entity + ", offsetY: " + this.offsetY;
+    }
 }

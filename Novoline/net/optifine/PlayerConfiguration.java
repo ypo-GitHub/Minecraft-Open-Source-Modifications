@@ -1,42 +1,42 @@
 package net.optifine;
 
-import net.acE;
-import net.asJ;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelBiped;
-import net.optifine.Config;
-import net.optifine.MatchBlock;
-import net.optifine.PlayerItemModel;
 
-public class PlayerConfiguration {
-   private PlayerItemModel[] playerItemModels = new PlayerItemModel[0];
-   private boolean initialized = false;
+public class PlayerConfiguration
+{
+    private PlayerItemModel[] playerItemModels = new PlayerItemModel[0];
+    private boolean initialized = false;
 
-   public void a(ModelBiped var1, asJ var2, float var3, float var4) {
-      acE[] var5 = MatchBlock.b();
-      if(this.initialized) {
-         int var6 = 0;
-         if(var6 < this.playerItemModels.length) {
-            PlayerItemModel var7 = this.playerItemModels[var6];
-            var7.a(var1, var2, var3, var4);
-            ++var6;
-         }
-      }
+    public void renderPlayerItems(ModelBiped p_renderPlayerItems_1_, AbstractClientPlayer p_renderPlayerItems_2_, float p_renderPlayerItems_3_, float p_renderPlayerItems_4_)
+    {
+        if (this.initialized)
+        {
+            for (int i = 0; i < this.playerItemModels.length; ++i)
+            {
+                PlayerItemModel playeritemmodel = this.playerItemModels[i];
+                playeritemmodel.render(p_renderPlayerItems_1_, p_renderPlayerItems_2_, p_renderPlayerItems_3_, p_renderPlayerItems_4_);
+            }
+        }
+    }
 
-   }
+    public boolean isInitialized()
+    {
+        return this.initialized;
+    }
 
-   public boolean isInitialized() {
-      return this.initialized;
-   }
+    public void setInitialized(boolean p_setInitialized_1_)
+    {
+        this.initialized = p_setInitialized_1_;
+    }
 
-   public void setInitialized(boolean var1) {
-      this.initialized = var1;
-   }
+    public PlayerItemModel[] getPlayerItemModels()
+    {
+        return this.playerItemModels;
+    }
 
-   public PlayerItemModel[] getPlayerItemModels() {
-      return this.playerItemModels;
-   }
-
-   public void addPlayerItemModel(PlayerItemModel var1) {
-      this.playerItemModels = (PlayerItemModel[])((PlayerItemModel[])((PlayerItemModel[])Config.addObjectToArray(this.playerItemModels, var1)));
-   }
+    public void addPlayerItemModel(PlayerItemModel p_addPlayerItemModel_1_)
+    {
+        this.playerItemModels = (PlayerItemModel[])((PlayerItemModel[])Config.addObjectToArray(this.playerItemModels, p_addPlayerItemModel_1_));
+    }
 }

@@ -1,95 +1,150 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
-import java.util.Set;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
-import net.minecraft.network.play.server.S08PacketPlayerPosLook$EnumFlags;
 
-public class S08PacketPlayerPosLook implements Packet {
-   private double x;
-   private double y;
-   private double z;
-   private float yaw;
-   private float pitch;
-   public Set field_179835_f;
+import java.io.IOException;
+import java.util.EnumSet;
+import java.util.Set;
 
-   public S08PacketPlayerPosLook() {
-   }
+public class S08PacketPlayerPosLook implements Packet<INetHandlerPlayClient> {
 
-   public S08PacketPlayerPosLook(double var1, double var3, double var5, float var7, float var8, Set var9) {
-      this.x = var1;
-      this.y = var3;
-      this.z = var5;
-      this.yaw = var7;
-      this.pitch = var8;
-      this.field_179835_f = var9;
-   }
+    private double x;
+    private double y;
+    private double z;
+    private float yaw;
+    private float pitch;
+    public Set<S08PacketPlayerPosLook.EnumFlags> field_179835_f;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.x = var1.readDouble();
-      this.y = var1.readDouble();
-      this.z = var1.readDouble();
-      this.yaw = var1.readFloat();
-      this.pitch = var1.readFloat();
-      this.field_179835_f = S08PacketPlayerPosLook$EnumFlags.func_180053_a(var1.readUnsignedByte());
-   }
+    public S08PacketPlayerPosLook() {
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeDouble(this.x);
-      var1.writeDouble(this.y);
-      var1.writeDouble(this.z);
-      var1.writeFloat(this.yaw);
-      var1.writeFloat(this.pitch);
-      var1.writeByte(S08PacketPlayerPosLook$EnumFlags.func_180056_a(this.field_179835_f));
-   }
+    public S08PacketPlayerPosLook(double xIn, double yIn, double zIn, float yawIn, float pitchIn, Set<S08PacketPlayerPosLook.EnumFlags> p_i45993_9_) {
+        this.x = xIn;
+        this.y = yIn;
+        this.z = zIn;
+        this.yaw = yawIn;
+        this.pitch = pitchIn;
+        this.field_179835_f = p_i45993_9_;
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handlePlayerPosLook(this);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.x = buf.readDouble();
+        this.y = buf.readDouble();
+        this.z = buf.readDouble();
+        this.yaw = buf.readFloat();
+        this.pitch = buf.readFloat();
+        this.field_179835_f = S08PacketPlayerPosLook.EnumFlags.func_180053_a(buf.readUnsignedByte());
+    }
 
-   public double getX() {
-      return this.x;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeDouble(this.x);
+        buf.writeDouble(this.y);
+        buf.writeDouble(this.z);
+        buf.writeFloat(this.yaw);
+        buf.writeFloat(this.pitch);
+        buf.writeByte(S08PacketPlayerPosLook.EnumFlags.func_180056_a(this.field_179835_f));
+    }
 
-   public double getY() {
-      return this.y;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handlePlayerPosLook(this);
+    }
 
-   public double getZ() {
-      return this.z;
-   }
+    public double getX() {
+        return this.x;
+    }
 
-   public float getYaw() {
-      return this.yaw;
-   }
+    public double getY() {
+        return this.y;
+    }
 
-   public void setYaw(float var1) {
-      this.yaw = var1;
-   }
+    public double getZ() {
+        return this.z;
+    }
 
-   public float getPitch() {
-      return this.pitch;
-   }
+    public float getYaw() {
+        return this.yaw;
+    }
 
-   public void setPitch(float var1) {
-      this.pitch = var1;
-   }
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
+    }
 
-   public void setX(double var1) {
-      this.x = var1;
-   }
+    public float getPitch() {
+        return this.pitch;
+    }
 
-   public void setY(double var1) {
-      this.y = var1;
-   }
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
 
-   public void setZ(double var1) {
-      this.z = var1;
-   }
+    public void setX(double x) {
+        this.x = x;
+    }
 
-   public Set func_179834_f() {
-      return this.field_179835_f;
-   }
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public Set<S08PacketPlayerPosLook.EnumFlags> func_179834_f() {
+        return this.field_179835_f;
+    }
+
+    public enum EnumFlags {
+        X(0),
+        Y(1),
+        Z(2),
+        Y_ROT(3),
+        X_ROT(4);
+
+        private int field_180058_f;
+
+        EnumFlags(int p_i45992_3_) {
+            this.field_180058_f = p_i45992_3_;
+        }
+
+        public static Set<S08PacketPlayerPosLook.EnumFlags> func_180053_a(int p_180053_0_) {
+            Set<S08PacketPlayerPosLook.EnumFlags> set = EnumSet.noneOf(S08PacketPlayerPosLook.EnumFlags.class);
+
+            for (S08PacketPlayerPosLook.EnumFlags s08packetplayerposlook$enumflags : values()) {
+                if (s08packetplayerposlook$enumflags.func_180054_b(p_180053_0_)) {
+                    set.add(s08packetplayerposlook$enumflags);
+                }
+            }
+
+            return set;
+        }
+
+        public static int func_180056_a(Set<S08PacketPlayerPosLook.EnumFlags> p_180056_0_) {
+            int i = 0;
+
+            for (S08PacketPlayerPosLook.EnumFlags s08packetplayerposlook$enumflags : p_180056_0_) {
+                i |= s08packetplayerposlook$enumflags.func_180055_a();
+            }
+
+            return i;
+        }
+
+        private int func_180055_a() {
+            return 1 << this.field_180058_f;
+        }
+
+        private boolean func_180054_b(int p_180054_1_) {
+            return (p_180054_1_ & this.func_180055_a()) == this.func_180055_a();
+        }
+    }
 }

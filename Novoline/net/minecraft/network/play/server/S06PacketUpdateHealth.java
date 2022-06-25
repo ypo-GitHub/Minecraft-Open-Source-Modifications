@@ -1,61 +1,72 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S06PacketUpdateHealth implements Packet {
-   private float health;
-   private int foodLevel;
-   private float saturationLevel;
+import java.io.IOException;
 
-   public S06PacketUpdateHealth() {
-   }
+public class S06PacketUpdateHealth implements Packet<INetHandlerPlayClient> {
 
-   public S06PacketUpdateHealth(float var1, int var2, float var3) {
-      this.health = var1;
-      this.foodLevel = var2;
-      this.saturationLevel = var3;
-   }
+    private float health;
+    private int foodLevel;
+    private float saturationLevel;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.health = var1.readFloat();
-      this.foodLevel = var1.readVarIntFromBuffer();
-      this.saturationLevel = var1.readFloat();
-   }
+    public S06PacketUpdateHealth() {
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeFloat(this.health);
-      var1.writeVarIntToBuffer(this.foodLevel);
-      var1.writeFloat(this.saturationLevel);
-   }
+    public S06PacketUpdateHealth(float healthIn, int foodLevelIn, float saturationIn) {
+        this.health = healthIn;
+        this.foodLevel = foodLevelIn;
+        this.saturationLevel = saturationIn;
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleUpdateHealth(this);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.health = buf.readFloat();
+        this.foodLevel = buf.readVarIntFromBuffer();
+        this.saturationLevel = buf.readFloat();
+    }
 
-   public float getHealth() {
-      return this.health;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeFloat(this.health);
+        buf.writeVarIntToBuffer(this.foodLevel);
+        buf.writeFloat(this.saturationLevel);
+    }
 
-   public int getFoodLevel() {
-      return this.foodLevel;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleUpdateHealth(this);
+    }
 
-   public float getSaturationLevel() {
-      return this.saturationLevel;
-   }
+    public float getHealth() {
+        return this.health;
+    }
 
-   public void setHealth(float var1) {
-      this.health = var1;
-   }
+    public int getFoodLevel() {
+        return this.foodLevel;
+    }
 
-   public void setFoodLevel(int var1) {
-      this.foodLevel = var1;
-   }
+    public float getSaturationLevel() {
+        return this.saturationLevel;
+    }
 
-   public void setSaturationLevel(float var1) {
-      this.saturationLevel = var1;
-   }
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public void setFoodLevel(int foodLevel) {
+        this.foodLevel = foodLevel;
+    }
+
+    public void setSaturationLevel(float saturationLevel) {
+        this.saturationLevel = saturationLevel;
+    }
 }

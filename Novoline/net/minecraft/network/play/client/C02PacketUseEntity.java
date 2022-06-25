@@ -1,77 +1,88 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
-import net.minecraft.network.play.client.C02PacketUseEntity$Action;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class C02PacketUseEntity implements Packet {
-   private int entityId;
-   private C02PacketUseEntity$Action action;
-   private Vec3 hitVec;
+import java.io.IOException;
 
-   public C02PacketUseEntity() {
-   }
+public class C02PacketUseEntity implements Packet<INetHandlerPlayServer> {
+    private int entityId;
+    private C02PacketUseEntity.Action action;
+    private Vec3 hitVec;
 
-   public C02PacketUseEntity(Entity var1, C02PacketUseEntity$Action var2) {
-      this.entityId = var1.getEntityID();
-      this.action = var2;
-   }
+    public C02PacketUseEntity() {
+    }
 
-   public C02PacketUseEntity(Entity var1, Vec3 var2) {
-      this(var1, C02PacketUseEntity$Action.INTERACT_AT);
-      this.hitVec = var2;
-   }
+    public C02PacketUseEntity(Entity entity, C02PacketUseEntity.Action action) {
+        this.entityId = entity.getEntityID();
+        this.action = action;
+    }
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+    public C02PacketUseEntity(Entity entity, Vec3 hitVec) {
+        this(entity, C02PacketUseEntity.Action.INTERACT_AT);
+        this.hitVec = hitVec;
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readVarIntFromBuffer();
-      this.action = (C02PacketUseEntity$Action)var1.readEnumValue(C02PacketUseEntity$Action.class);
-      if(this.action == C02PacketUseEntity$Action.INTERACT_AT) {
-         this.hitVec = new Vec3((double)var1.readFloat(), (double)var1.readFloat(), (double)var1.readFloat());
-      }
+    public int getEntityId() {
+        return entityId;
+    }
 
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.action = buf.readEnumValue(Action.class);
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityId);
-      var1.writeEnumValue(this.action);
-      if(this.action == C02PacketUseEntity$Action.INTERACT_AT) {
-         var1.writeFloat((float)this.hitVec.xCoord);
-         var1.writeFloat((float)this.hitVec.yCoord);
-         var1.writeFloat((float)this.hitVec.zCoord);
-      }
+        if (this.action == C02PacketUseEntity.Action.INTERACT_AT) {
+            this.hitVec = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
+        }
+    }
 
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeEnumValue(this.action);
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processUseEntity(this);
-   }
+        if (this.action == C02PacketUseEntity.Action.INTERACT_AT) {
+            buf.writeFloat((float) this.hitVec.xCoord);
+            buf.writeFloat((float) this.hitVec.yCoord);
+            buf.writeFloat((float) this.hitVec.zCoord);
+        }
+    }
 
-   public Entity getEntityFromWorld(World var1) {
-      return var1.getEntityByID(this.entityId);
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processUseEntity(this);
+    }
 
-   public C02PacketUseEntity$Action getAction() {
-      return this.action;
-   }
+    public Entity getEntityFromWorld(World worldIn) {
+        return worldIn.getEntityByID(this.entityId);
+    }
 
-   public Vec3 getHitVec() {
-      return this.hitVec;
-   }
+    public C02PacketUseEntity.Action getAction() {
+        return this.action;
+    }
 
-   public void setEntityId(int var1) {
-      this.entityId = var1;
-   }
+    public Vec3 getHitVec() {
+        return this.hitVec;
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public enum Action {
+        INTERACT,
+        ATTACK,
+        INTERACT_AT
+    }
+
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
 }

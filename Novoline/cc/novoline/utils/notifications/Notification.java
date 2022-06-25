@@ -1,96 +1,94 @@
 package cc.novoline.utils.notifications;
 
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.notifications.NotificationType;
-import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.util.MathHelper;
 
 public final class Notification {
-   private final NotificationType notificationType;
-   private final String message;
-   final Timer timer = new Timer();
-   boolean extending;
-   public final int delay;
-   private String callReason;
-   public double x;
-   public double y;
-   public int e;
 
-   Notification(String var1, int var2, NotificationType var3) {
-      this.message = var1;
-      this.notificationType = var3;
-      this.x = 0.0D;
-      this.y = 50.0D;
-      this.delay = var2;
-      this.extending = false;
-      this.e = ThreadLocalRandom.current().nextInt(0, 360);
-   }
+    /* fields */
+    private final NotificationType notificationType;
+    private final String message;
 
-   Notification(String var1, String var2, int var3, NotificationType var4) {
-      this.message = var2;
-      this.notificationType = var4;
-      this.x = 0.0D;
-      NotificationType.b();
-      this.y = 50.0D;
-      this.delay = var3;
-      this.extending = false;
-      this.callReason = var1;
-      this.e = ThreadLocalRandom.current().nextInt(0, 360);
-   }
+    final Timer timer = new Timer();
+    boolean extending;
+    public final int delay;
+    private String callReason;
+    public double x, y;
 
-   public NotificationType getType() {
-      return this.notificationType;
-   }
+    /* constructors */
+    Notification(String message, int delay, NotificationType notificationType) {
+        this.message = message;
+        this.notificationType = notificationType;
+        this.x = 0;
+        this.y = 50;
+        this.delay = delay;
+        this.extending = false;
+    }
 
-   public String getMessage() {
-      return this.message;
-   }
+    Notification(String callReason, String message, int delay, NotificationType notificationType) {
+        this.message = message;
+        this.notificationType = notificationType;
+        this.x = 0;
+        this.y = 50;
+        this.delay = delay;
+        this.extending = false;
+        this.callReason = callReason;
+    }
 
-   public Timer getTimer() {
-      return this.timer;
-   }
+    /* methods */
+    //region Lombok
+    public NotificationType getType() {
+        return this.notificationType;
+    }
 
-   public int getDelay() {
-      return this.delay;
-   }
+    public String getMessage() {
+        return this.message;
+    }
 
-   public double getX() {
-      return this.x;
-   }
+    public Timer getTimer() {
+        return timer;
+    }
 
-   public double getY() {
-      return this.y;
-   }
+    public int getDelay() {
+        return delay;
+    }
 
-   public NotificationType getNotificationType() {
-      return this.notificationType;
-   }
+    public double getX() {
+        return x;
+    }
 
-   public boolean isExtending() {
-      return this.extending;
-   }
+    public double getY() {
+        return y;
+    }
 
-   public void setExtending(boolean var1) {
-      this.extending = var1;
-   }
+    public NotificationType getNotificationType() {
+        return notificationType;
+    }
 
-   public void setX(double var1) {
-      this.x = var1;
-   }
+    public boolean isExtending() {
+        return extending;
+    }
 
-   public void setY(double var1) {
-      this.y = var1;
-   }
+    public void setExtending(boolean extending) {
+        this.extending = extending;
+    }
 
-   public double getCount() {
-      return (double)MathHelper.clamp_float((float)(this.getTimer().getCurrentMS() - this.getTimer().getLastMS()), 0.0F, (float)this.getDelay());
-   }
+    public void setX(double x) {
+        this.x = x;
+    }
 
-   public String getCallReason() {
-      return this.callReason;
-   }
+    public void setY(double y) {
+        this.y = y;
+    }
 
-   public int i() {
-      return this.e;
-   }
+    public double getCount() {
+        return MathHelper.clamp_float(getTimer().getCurrentMS() - getTimer().getLastMS(), 0, (float) getDelay());
+    }
+
+    public String getCallReason() {
+        return callReason;
+    }
+
+    //endregion
+
 }

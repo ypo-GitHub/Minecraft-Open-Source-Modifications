@@ -1,38 +1,53 @@
 package net.minecraft.server.integrated;
 
 import com.mojang.authlib.GameProfile;
-import java.net.SocketAddress;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.management.ServerConfigurationManager;
 
+import java.net.SocketAddress;
+
 public class IntegratedPlayerList extends ServerConfigurationManager {
-   private NBTTagCompound hostPlayerData;
 
-   public IntegratedPlayerList(IntegratedServer var1) {
-      super(var1);
-      this.setViewDistance(10);
-   }
+    /**
+     * Holds the NBT data for the host player's save file, so this can be written to level.dat.
+     */
+    private NBTTagCompound hostPlayerData;
 
-   protected void writePlayerData(EntityPlayerMP var1) {
-      if(var1.getName().equals(this.getServerInstance().getServerOwner())) {
-         this.hostPlayerData = new NBTTagCompound();
-         var1.writeToNBT(this.hostPlayerData);
-      }
+    public IntegratedPlayerList(IntegratedServer integratedServer) {
+        super(integratedServer);
+        this.setViewDistance(10);
+    }
 
-      super.writePlayerData(var1);
-   }
+    /**
+     * also stores the NBTTags if this is an intergratedPlayerList
+     */
+    protected void writePlayerData(EntityPlayerMP playerIn) {
+        if (playerIn.getName().equals(this.getServerInstance().getServerOwner())) {
+            this.hostPlayerData = new NBTTagCompound();
 
-   public String allowUserToConnect(SocketAddress var1, GameProfile var2) {
-      return var2.getName().equalsIgnoreCase(this.getServerInstance().getServerOwner()) && this.getPlayerByUsername(var2.getName()) != null?"That name is already taken.":super.allowUserToConnect(var1, var2);
-   }
+            playerIn.writeToNBT(this.hostPlayerData);
+        }
 
-   public IntegratedServer getServerInstance() {
-      return (IntegratedServer)super.getServerInstance();
-   }
+        super.writePlayerData(playerIn);
+    }
 
-   public NBTTagCompound getHostPlayerData() {
-      return this.hostPlayerData;
-   }
+    /**
+     * checks ban-lists, then white-lists, then space for the server. Returns null on success, or an error message
+     */
+    public String allowUserToConnect(SocketAddress address, GameProfile profile) {
+        return profile.getName().equalsIgnoreCase(this.getServerInstance().getServerOwner()) && this.getPlayerByUsername(profile.getName()) != null ? "That name is already taken." : super.allowUserToConnect(address, profile);
+    }
+
+    public IntegratedServer getServerInstance() {
+        return (IntegratedServer) super.getServerInstance();
+    }
+
+    /**
+     * On integrated servers, returns the host's player data to be written to level.dat.
+     */
+    public NBTTagCompound getHostPlayerData() {
+        return this.hostPlayerData;
+    }
+
 }

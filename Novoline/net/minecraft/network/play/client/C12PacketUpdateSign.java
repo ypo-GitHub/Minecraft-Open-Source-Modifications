@@ -1,57 +1,64 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.IChatComponent;
-import net.minecraft.util.IChatComponent$Serializer;
 
-public class C12PacketUpdateSign implements Packet {
-   private BlockPos pos;
-   private IChatComponent[] lines;
+import java.io.IOException;
 
-   public C12PacketUpdateSign() {
-   }
+public class C12PacketUpdateSign implements Packet<INetHandlerPlayServer> {
+    private BlockPos pos;
+    private IChatComponent[] lines;
 
-   public C12PacketUpdateSign(BlockPos var1, IChatComponent[] var2) {
-      this.pos = var1;
-      this.lines = new IChatComponent[]{var2[0], var2[1], var2[2], var2[3]};
-   }
+    public C12PacketUpdateSign() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.pos = var1.readBlockPos();
-      this.lines = new IChatComponent[4];
+    public C12PacketUpdateSign(BlockPos pos, IChatComponent[] lines) {
+        this.pos = pos;
+        this.lines = new IChatComponent[]{lines[0], lines[1], lines[2], lines[3]};
+    }
 
-      for(int var2 = 0; var2 < 4; ++var2) {
-         String var3 = var1.a(384);
-         IChatComponent var4 = IChatComponent$Serializer.jsonToComponent(var3);
-         this.lines[var2] = var4;
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.pos = buf.readBlockPos();
+        this.lines = new IChatComponent[4];
 
-   }
+        for (int i = 0; i < 4; ++i) {
+            String s = buf.readStringFromBuffer(384);
+            IChatComponent ichatcomponent = IChatComponent.Serializer.jsonToComponent(s);
+            this.lines[i] = ichatcomponent;
+        }
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeBlockPos(this.pos);
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeBlockPos(this.pos);
 
-      for(int var2 = 0; var2 < 4; ++var2) {
-         IChatComponent var3 = this.lines[var2];
-         String var4 = IChatComponent$Serializer.componentToJson(var3);
-         var1.writeString(var4);
-      }
+        for (int i = 0; i < 4; ++i) {
+            IChatComponent ichatcomponent = this.lines[i];
+            String s = IChatComponent.Serializer.componentToJson(ichatcomponent);
+            buf.writeString(s);
+        }
+    }
 
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processUpdateSign(this);
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processUpdateSign(this);
-   }
+    public BlockPos getPosition() {
+        return this.pos;
+    }
 
-   public BlockPos getPosition() {
-      return this.pos;
-   }
-
-   public IChatComponent[] getLines() {
-      return this.lines;
-   }
+    public IChatComponent[] getLines() {
+        return this.lines;
+    }
 }

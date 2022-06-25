@@ -2,84 +2,147 @@ package cc.novoline.modules.configurations.holder;
 
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.ModuleManager$ModuleCreator;
-import cc.novoline.modules.configurations.annotation.Property;
-import cc.novoline.modules.configurations.holder.ModuleHolder;
-import cc.novoline.modules.configurations.property.mapper.PropertyMapper;
+import cc.novoline.modules.ModuleManager.ModuleCreator;
+import cc.novoline.modules.configurations.property.Property;
+import cc.novoline.modules.configurations.property.object.BooleanProperty;
 import cc.novoline.utils.java.Checks;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.function.BiFunction;
-import net.ahS;
-import net.ahu;
 
-public final class CreatingModuleHolder extends ModuleHolder {
-   private final ModuleManager moduleManager;
-   private final ModuleManager$ModuleCreator creator;
-   private final Map fields;
+import static cc.novoline.modules.configurations.property.mapper.PropertyMapper.mapPropertyPath;
 
-   private CreatingModuleHolder(ModuleManager var1, String var2, ModuleManager$ModuleCreator var3) {
-      super(var2, var3.create(var1));
-      this.moduleManager = var1;
-      this.creator = var3;
-      this.fields = this.collectFields();
-   }
+/**
+ * @author xDelsy
+ */
+public final class CreatingModuleHolder<Module extends AbstractModule> extends ModuleHolder<Module> {
 
-   public static CreatingModuleHolder of(ModuleManager var0, String var1, ModuleManager$ModuleCreator var2) {
-      Checks.notNull(var0, "module manager");
-      Checks.notBlank(var1, "name");
-      Checks.notNull(var2, "module creator");
-      return new CreatingModuleHolder(var0, var1, var2);
-   }
+    /* fields */
+    @NonNull
+    private final ModuleManager moduleManager;
+    @NonNull
+    private final ModuleCreator<Module> creator;
 
-   private Map collectFields() {
-      Object2ObjectArrayMap var2 = new Object2ObjectArrayMap();
-      ModuleHolder.d();
-      Class var3 = this.module.getClass();
-      Field[] var4 = AbstractModule.class.getDeclaredFields();
-      int var5 = var4.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         Field var7 = var4[var6];
-         this.collectField(var2, var7, CreatingModuleHolder::lambda$collectFields$0);
-         ++var6;
-      }
+    @NonNull
+    private final Map<@NonNull String, @NonNull PropertyFieldData> fields;
 
-      var4 = var3.getDeclaredFields();
-      var5 = var4.length;
-      var6 = 0;
-      if(var6 < var5) {
-         Field var13 = var4[var6];
-         this.collectField(var2, var13, CreatingModuleHolder::lambda$collectFields$1);
-         ++var6;
-      }
+    /* constructors */
+    private CreatingModuleHolder(@NonNull ModuleManager moduleManager, @NonNull String name,
+                                 @NonNull ModuleCreator<Module> creator) {
+        super(name, creator.create(moduleManager));
+        this.moduleManager = moduleManager;
+        this.creator = creator;
+        this.fields = collectFields();
+    }
 
-      return var2;
-   }
+    @NonNull
+    public static <Module extends AbstractModule> CreatingModuleHolder<Module> of(@NonNull ModuleManager moduleManager,
+                                                                                  @NonNull String name,
+                                                                                  @NonNull ModuleCreator<Module> creator) {
+        Checks.notNull(moduleManager, "module manager");
+        Checks.notBlank(name, "name");
+        Checks.notNull(creator, "module creator");
 
-   private void collectField(Map var1, Field var2, BiFunction var3) {
-      ModuleHolder.d();
-      Property var5 = (Property)var2.getAnnotation(Property.class);
-      var2.setAccessible(true);
-      String var6 = PropertyMapper.mapPropertyPath(var2, var5);
-      ahu var7 = (ahu)var3.apply(var6, var2);
-      var1.put(var6, var7);
-   }
+        return new CreatingModuleHolder<>(moduleManager, name, creator);
+    }
 
-   public AbstractModule createNew() {
-      return this.creator.create(this.moduleManager);
-   }
+    /* methods */
+    @NonNull
+    private Map<@NonNull String, @NonNull PropertyFieldData> collectFields() {
+        final Map<@NonNull String, @NonNull PropertyFieldData> fields = new Object2ObjectArrayMap<>();
+        final Class<? extends AbstractModule> moduleClass = this.module.getClass();
 
-   public Map getFields() {
-      return this.fields;
-   }
+        for (final Field field : AbstractModule.class.getDeclaredFields()) {
+            collectField(fields, field, (s, field1) -> {
+                if (s.equalsIgnoreCase("enabled")) {
+                    return new EnabledPropertyFieldData(s, field1);
+                } else {
+                    return new PropertyFieldData(s, field1);
+                }
+            });
+        }
 
-   private static ahu lambda$collectFields$1(String var0, Field var1) {
-      return new ahu(var0, var1);
-   }
+        for (final Field field : moduleClass.getDeclaredFields()) {
+            collectField(fields, field, PropertyFieldData::new);
+        }
 
-   private static ahu lambda$collectFields$0(String var0, Field var1) {
-      return (ahu)(var0.equalsIgnoreCase("enabled")?new ahS(var0, var1):new ahu(var0, var1));
-   }
+        return fields;
+    }
+
+    private void collectField(Map<@NonNull String, @NonNull PropertyFieldData> fields, @NonNull Field field,
+                              @NonNull BiFunction<String, Field, PropertyFieldData> constructor) {
+        final cc.novoline.modules.configurations.annotation.Property annotation = field
+                .getAnnotation(cc.novoline.modules.configurations.annotation.Property.class);
+
+        if (annotation != null) {
+            field.setAccessible(true);
+
+            final String path = mapPropertyPath(field, annotation);
+            final PropertyFieldData data = constructor.apply(path, field);
+
+            fields.put(path, data);
+        }
+    }
+
+    @NonNull
+    public Module createNew() {
+        return this.creator.create(this.moduleManager);
+    }
+
+    @NonNull
+    public Map<@NonNull String, @NonNull PropertyFieldData> getFields() {
+        return this.fields;
+    }
+
+    public static class PropertyFieldData {
+
+        @NonNull
+        protected final String name;
+        @NonNull
+        protected final Field field;
+
+        /* constructors */
+        private PropertyFieldData(@NonNull String name, @NonNull Field field) {
+            this.name = name;
+            this.field = field;
+        }
+
+        /* methods */
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        public void copyValue(@NonNull AbstractModule src, @NonNull AbstractModule dest,
+                              boolean disable) throws IllegalAccessException {
+            Checks.check(dest.getClass().isAssignableFrom(src.getClass()),
+                    "cannot copy value of property from different modules");
+
+            final Property srcProperty = (Property) this.field.get(src);
+            final Property destProperty = (Property) this.field.get(dest);
+
+            destProperty.set(srcProperty.get());
+        }
+
+    }
+
+    public static class EnabledPropertyFieldData extends PropertyFieldData {
+
+        private EnabledPropertyFieldData(@NonNull String name, @NonNull Field field) {
+            super(name, field);
+        }
+
+        @Override
+        public void copyValue(@NonNull AbstractModule src, @NonNull AbstractModule dest,
+                              boolean disable) throws IllegalAccessException {
+            Checks.check(dest.getClass().isAssignableFrom(src.getClass()),
+                    "cannot copy value of property from different modules");
+
+            final BooleanProperty srcProperty = (BooleanProperty) this.field.get(src);
+            final BooleanProperty destProperty = (BooleanProperty) this.field.get(dest);
+
+            dest.setEnabled(srcProperty.get());
+        }
+
+    }
+
 }

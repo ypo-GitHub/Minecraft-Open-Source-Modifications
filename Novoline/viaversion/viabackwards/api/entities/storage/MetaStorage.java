@@ -1,77 +1,75 @@
+/*
+ * Copyright (c) 2016 Matsv
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package viaversion.viabackwards.api.entities.storage;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Predicate;
-import net.cQ;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.minecraft.metadata.Metadata;
 
+import java.util.List;
+
 public class MetaStorage {
-   private List metaDataList;
+    private List<Metadata> metaDataList;
 
-   public MetaStorage(List var1) {
-      this.metaDataList = var1;
-   }
+    public MetaStorage(List<Metadata> metaDataList) {
+        this.metaDataList = metaDataList;
+    }
 
-   public boolean has(Metadata var1) {
-      return this.metaDataList.contains(var1);
-   }
+    public boolean has(Metadata data) {
+        return this.metaDataList.contains(data);
+    }
 
-   public void delete(Metadata var1) {
-      this.metaDataList.remove(var1);
-   }
+    public void delete(Metadata data) {
+        this.metaDataList.remove(data);
+    }
 
-   public void delete(int var1) {
-      this.metaDataList.removeIf(MetaStorage::lambda$delete$0);
-   }
+    public void delete(int index) {
+        metaDataList.removeIf(meta -> meta.getId() == index);
+    }
 
-   public void add(Metadata var1) {
-      this.metaDataList.add(var1);
-   }
+    public void add(Metadata data) {
+        this.metaDataList.add(data);
+    }
 
-   @Nullable
-   public Metadata get(int var1) {
-      cQ.d();
-      Iterator var3 = this.metaDataList.iterator();
-      if(var3.hasNext()) {
-         Metadata var4 = (Metadata)var3.next();
-         if(var1 == var4.getId()) {
-            return var4;
-         }
-      }
+    @Nullable
+    public Metadata get(int index) {
+        for (Metadata meta : this.metaDataList) {
+            if (index == meta.getId()) {
+                return meta;
+            }
+        }
+        return null;
+    }
 
-      return null;
-   }
+    public Metadata getOrDefault(int index, Metadata data) {
+        return getOrDefault(index, false, data);
+    }
 
-   public Metadata getOrDefault(int var1, Metadata var2) {
-      return this.getOrDefault(var1, false, var2);
-   }
+    public Metadata getOrDefault(int index, boolean removeIfExists, Metadata data) {
+        Metadata existingData = get(index);
+        if (removeIfExists && existingData != null) {
+            delete(existingData);
+        }
+        return existingData != null ? existingData : data;
+    }
 
-   public Metadata getOrDefault(int var1, boolean var2, Metadata var3) {
-      cQ.a();
-      Metadata var5 = this.get(var1);
-      if(var5 != null) {
-         this.delete(var5);
-      }
+    public List<Metadata> getMetaDataList() {
+        return metaDataList;
+    }
 
-      return var5 != null?var5:var3;
-   }
+    public void setMetaDataList(List<Metadata> metaDataList) {
+        this.metaDataList = metaDataList;
+    }
 
-   public List getMetaDataList() {
-      return this.metaDataList;
-   }
-
-   public void setMetaDataList(List var1) {
-      this.metaDataList = var1;
-   }
-
-   public String toString() {
-      return "MetaStorage{metaDataList=" + this.metaDataList + '}';
-   }
-
-   private static boolean lambda$delete$0(int var0, Metadata var1) {
-      boolean var2 = cQ.a();
-      return var1.getId() == var0;
-   }
+    @Override
+    public String toString() {
+        return "MetaStorage{" + "metaDataList=" + metaDataList + '}';
+    }
 }

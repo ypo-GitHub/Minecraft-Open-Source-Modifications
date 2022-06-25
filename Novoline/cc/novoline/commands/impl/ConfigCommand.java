@@ -7,279 +7,192 @@ import cc.novoline.modules.exceptions.OutdatedConfigException;
 import cc.novoline.modules.exceptions.ReadConfigException;
 import cc.novoline.utils.messages.MessageFactory;
 import cc.novoline.utils.messages.TextMessage;
-import cc.novoline.utils.notifications.NotificationType;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
-import net.Uj;
-import net.X9;
-import net.a_E;
-import net.minecraft.util.EnumChatFormatting;
+
+import static cc.novoline.utils.messages.MessageFactory.text;
+import static cc.novoline.utils.messages.MessageFactory.usage;
+import static cc.novoline.utils.notifications.NotificationType.ERROR;
+import static cc.novoline.utils.notifications.NotificationType.SUCCESS;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.minecraft.util.EnumChatFormatting.*;
+
 
 public final class ConfigCommand extends NovoCommand {
-   public static String j = "";
 
-   public ConfigCommand(Novoline var1) {
-      super(var1, "config", "Manages configs stuff", (Iterable)Arrays.asList(new String[]{"cfg", "conf", "configs", "configure", "configuration"}));
-   }
+    /* constructors */
+    public ConfigCommand(@NonNull Novoline novoline) {
+        super(novoline, "config", "Manages configs stuff", Arrays.asList("cfg", "conf", "configs", "configure", "configuration"));
+    }
 
-   public void process(String[] var1) {
-      int[] var2 = a_E.b();
-      if(var1.length < 1) {
-         this.a("Configs help:", ".configs", new Uj[]{MessageFactory.a("list", "shows all configs"), MessageFactory.a("load (name)", "loads a config"), MessageFactory.a("save (name)", "saves a config"), MessageFactory.a("delete (name)", "removes a config")});
-      } else {
-         ConfigManager var3 = this.novoline.getModuleManager().getConfigManager();
-         String var4 = var1[0].toLowerCase();
-         byte var6 = -1;
-         switch(var4.hashCode()) {
-         case 1427818632:
-            if(!var4.equals("download")) {
-               break;
-            }
-
-            var6 = 0;
-         case -838595071:
-            if(!var4.equals("upload")) {
-               break;
-            }
-
-            var6 = 1;
-         case -934610812:
-            if(!var4.equals("remove")) {
-               break;
-            }
-
-            var6 = 2;
-         case 3237038:
-            if(!var4.equals("info")) {
-               break;
-            }
-
-            var6 = 3;
-         case 3327206:
-            if(!var4.equals("load")) {
-               break;
-            }
-
-            var6 = 4;
-         case 3522941:
-            if(!var4.equals("save")) {
-               break;
-            }
-
-            var6 = 5;
-         case -1335458389:
-            if(!var4.equals("delete")) {
-               break;
-            }
-
-            var6 = 6;
-         case 3322014:
-            if(var4.equals("list")) {
-               var6 = 7;
-            }
-         }
-
-         switch(var6) {
-         case 0:
-         case 1:
-         case 2:
-         case 3:
-         case 4:
-         case 5:
-         case 6:
-            if(var1.length < 2) {
-               this.send("Usage: .config " + var4 + " <name>", EnumChatFormatting.RED);
-               return;
-            } else {
-               String var10 = var1[1];
-               byte var9 = -1;
-               switch(var4.hashCode()) {
-               case 3327206:
-                  if(!var4.equals("load")) {
-                     break;
-                  }
-
-                  var9 = 0;
-               case 3522941:
-                  if(!var4.equals("save")) {
-                     break;
-                  }
-
-                  var9 = 1;
-               case -1335458389:
-                  if(var4.equals("delete")) {
-                     var9 = 2;
-                  }
-               }
-
-               switch(var9) {
-               case 0:
-                  loadConfig(var3, var10);
-                  return;
-               case 1:
-                  saveConfig(var3, var10);
-                  return;
-               case 2:
-                  deleteConfig(var3, var10);
-                  return;
-               default:
-                  return;
-               }
-            }
-         case 7:
-            List var7 = var3.getConfigs();
-            TextMessage var8 = MessageFactory.text("List of configs:");
-            if(var7.isEmpty()) {
-               var8.append(" (empty)", EnumChatFormatting.RED);
-            }
-
-            this.send(var8, true);
-            var7.forEach(this::lambda$process$8);
+    /* methods */
+    @SuppressWarnings("unchecked")
+    @Override
+    public void process(String[] args) {
+        if (args.length < 1) {
+            sendHelp( // @off
+                    "Configs help:", ".configs",
+                    usage("list", "shows all configs"),
+                    usage("load (name)", "loads a config"),
+                    usage("save (name)", "saves a config"),
+                    usage("delete (name)", "removes a config"),
+                    usage("onlinelist [self]", "lists online configs"),
+                    usage("download (name)", "downloads an online config"),
+                    usage("upload (name)", "uploads or updates a config that you own (max 5)"),
+                    usage("info (name)", "shows online config info"),
+                    usage("remove (name)", "removes an online config")
+            ); //@on
             return;
-         default:
-            this.notifyError("Unknown command: " + var1[0]);
-         }
-      }
-   }
+        }
 
-   public static void loadConfig(ConfigManager var0, String var1) {
-      int[] var2 = a_E.b();
-      if(var1.trim().isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2000, NotificationType.ERROR);
-      } else {
-         Throwable var3;
-         try {
-            ConfigManager var10000 = var0;
-            String var10001 = var1;
-            boolean var10002 = true;
+        final ConfigManager configManager = this.novoline.getModuleManager().getConfigManager();
+        final String command = args[0].toLowerCase();
 
-            try {
-               var10000.load(var10001, var10002);
-               Novoline.getInstance().getNotificationManager().pop("Loaded config " + var1 + "!", 2000, NotificationType.SUCCESS);
-               j = var1;
-               return;
-            } catch (Throwable var4) {
-               var3 = var4;
+        switch (command) {
+            case "download":
+            case "upload":
+            case "remove":
+            case "info":
+
+            case "load":
+            case "save":
+            case "delete": {
+                if (args.length < 2) {
+                    send("Usage: .config " + command + " <name>", RED);
+                    return;
+                }
+
+                final String configName = args[1];
+
+                switch (command) {
+                    case "load": {
+                        loadConfig(configManager, configName);
+                        return;
+                    }
+                    case "save": {
+                        saveConfig(configManager, configName);
+                        return;
+                    }
+                    case "delete": {
+                        deleteConfig(configManager, configName);
+                        return;
+                    }
+
+                }
+
+                return;
             }
-         } catch (FileNotFoundException var5) {
-            Novoline.getInstance().getNotificationManager().pop("Config not found!", 2000, NotificationType.ERROR);
-            return;
-         } catch (IOException var6) {
-            Novoline.getLogger().warn("An I/O error occurred while reading config!", var6);
-            Novoline.getInstance().getNotificationManager().pop("Cannot read config!", 2000, NotificationType.ERROR);
-            return;
-         } catch (X9 var7) {
-            Novoline.getLogger().warn("An error occurred while deserializing config!", var7);
-            Novoline.getInstance().getNotificationManager().pop("Cannot load config!", 2000, NotificationType.ERROR);
-            return;
-         } catch (OutdatedConfigException var8) {
-            Novoline.getInstance().getNotificationManager().pop("Config is outdated!", 2000, NotificationType.ERROR);
-            return;
-         }
 
-         Novoline.getLogger().warn("An unexpected error occurred while loading config!", var3);
-         Novoline.getInstance().getNotificationManager().pop("Cannot load config!", 2000, NotificationType.ERROR);
-      }
-   }
+            case "list": {
+                final List<@NonNull String> configs = configManager.getConfigs();
 
-   public static void saveConfig(ConfigManager var0, String var1) {
-      int[] var2 = a_E.b();
-      if(var1.trim().isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2000, NotificationType.ERROR);
-      } else {
-         Throwable var3;
-         try {
-            ConfigManager var10000 = var0;
-            String var10001 = var1;
+                final TextMessage text = text("List of configs:");
+                if (configs.isEmpty()) text.append(" (empty)", RED);
 
-            try {
-               var10000.save(var10001);
-               Novoline.getInstance().getNotificationManager().pop("Saved config " + var1 + "!", 2000, NotificationType.SUCCESS);
-               return;
-            } catch (Throwable var4) {
-               var3 = var4;
+                send(text, true);
+                configs.forEach(name -> send(text("> ", GRAY).append(name, GREEN)));
+
+                return;
             }
-         } catch (ReadConfigException var5) {
-            Novoline.getLogger().warn("An I/O error occurred while reading config!", var5);
-            Novoline.getInstance().getNotificationManager().pop("Cannot read config!", 2000, NotificationType.ERROR);
-            return;
-         } catch (IOException var6) {
-            Novoline.getLogger().warn("An I/O error occurred while saving config!", var6);
-            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2000, NotificationType.ERROR);
-            return;
-         } catch (X9 var7) {
-            Novoline.getLogger().warn("An I/O error occurred while serializing config!", var7);
-            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2000, NotificationType.ERROR);
-            return;
-         }
 
-         Novoline.getLogger().warn("An unexpected error occurred while saving config!", var3);
-         Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2000, NotificationType.ERROR);
-      }
-   }
-
-   public static String saveToString(ConfigManager var0, String var1) {
-      int[] var2 = a_E.b();
-      if(var1.trim().isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2000, NotificationType.ERROR);
-         return null;
-      } else {
-         ConfigManager var10000 = var0;
-         String var10001 = var1;
-
-         try {
-            return var10000.saveToString(var10001);
-         } catch (IOException var4) {
-            Novoline.getLogger().warn("An I/O error occurred while saving config!", var4);
-            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2000, NotificationType.ERROR);
-         } catch (X9 var5) {
-            Novoline.getLogger().warn("An I/O error occurred while serializing config!", var5);
-            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2000, NotificationType.ERROR);
-         }
-
-         return null;
-      }
-   }
-
-   public static void deleteConfig(ConfigManager var0, String var1) {
-      int[] var2 = a_E.b();
-      if(var1.trim().isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2000, NotificationType.ERROR);
-      } else {
-         Throwable var3;
-         try {
-            ConfigManager var10000 = var0;
-            String var10001 = var1;
-
-            try {
-               var10000.delete(var10001);
-               Novoline.getInstance().getNotificationManager().pop("Deleted config " + var1 + "!", 2000, NotificationType.SUCCESS);
-               return;
-            } catch (Throwable var4) {
-               var3 = var4;
+            default: {
+                notifyError("Unknown command: " + args[0]);
             }
-         } catch (FileNotFoundException var5) {
-            Novoline.getInstance().getNotificationManager().pop("Config not found!", 2000, NotificationType.ERROR);
+        }
+    }
+
+    public static void loadConfig(@NonNull ConfigManager configManager, @NonNull String name) {
+        if (name.trim().isEmpty()) {
+            Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2_000, ERROR);
             return;
-         } catch (IOException var6) {
-            Novoline.getLogger().error("An I/O error occurred while deleting config!", var6);
-            Novoline.getInstance().getNotificationManager().pop("Cannot delete config!", 2000, NotificationType.ERROR);
+        }
+
+        try {
+            configManager.load(name, true);
+            Novoline.getInstance().getNotificationManager().pop("Loaded config " + name + "!", 2_000, SUCCESS);
+        } catch (FileNotFoundException e) {
+            Novoline.getInstance().getNotificationManager().pop("Config not found!", 2_000, ERROR);
+        } catch (IOException e) {
+            Novoline.getLogger().warn("An I/O error occurred while reading config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot read config!", 2_000, ERROR);
+        } catch (ObjectMappingException e) {
+            Novoline.getLogger().warn("An error occurred while deserializing config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot load config!", 2_000, ERROR);
+        } catch (OutdatedConfigException e) {
+            Novoline.getInstance().getNotificationManager().pop("Config is outdated!", 2_000, ERROR);
+        } catch (Throwable e) {
+            Novoline.getLogger().warn("An unexpected error occurred while loading config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot load config!", 2_000, ERROR);
+        }
+    }
+
+    public static void saveConfig(@NonNull ConfigManager configManager, @NonNull String name) {
+        if (name.trim().isEmpty()) {
+            Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2_000, ERROR);
             return;
-         }
+        }
 
-         Novoline.getLogger().warn("An unexpected error occurred while deleting config!", var3);
-         Novoline.getInstance().getNotificationManager().pop("Cannot delete config!", 2000, NotificationType.ERROR);
-      }
-   }
+        try {
+            configManager.save(name);
+            Novoline.getInstance().getNotificationManager().pop("Saved config " + name + "!", 2_000, SUCCESS);
+        } catch (ReadConfigException e) {
+            Novoline.getLogger().warn("An I/O error occurred while reading config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot read config!", 2_000, ERROR);
+        } catch (IOException e) {
+            Novoline.getLogger().warn("An I/O error occurred while saving config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2_000, ERROR);
+        } catch (ObjectMappingException e) {
+            Novoline.getLogger().warn("An I/O error occurred while serializing config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2_000, ERROR);
+        } catch (Throwable t) {
+            Novoline.getLogger().warn("An unexpected error occurred while saving config!", t);
+            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2_000, ERROR);
+        }
+    }
 
-   private void lambda$process$8(String var1) {
-      this.send(MessageFactory.text("> ", EnumChatFormatting.GRAY).append(var1, EnumChatFormatting.GREEN));
-   }
+    public static String saveToString(@NonNull ConfigManager configManager, @NonNull String name) {
+        if (name.trim().isEmpty()) {
+            Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2_000, ERROR);
+            return null;
+        }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        try {
+            return configManager.saveToString(name);
+        } catch (IOException e) {
+            Novoline.getLogger().warn("An I/O error occurred while saving config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2_000, ERROR);
+        } catch (ObjectMappingException e) {
+            Novoline.getLogger().warn("An I/O error occurred while serializing config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot save config!", 2_000, ERROR);
+        }
+
+        return null;
+    }
+
+    public static void deleteConfig(@NonNull ConfigManager configManager, @NonNull String name) {
+        if (name.trim().isEmpty()) {
+            Novoline.getInstance().getNotificationManager().pop("Name may not be blank!", 2_000, ERROR);
+            return;
+        }
+
+        try {
+            configManager.delete(name);
+            Novoline.getInstance().getNotificationManager().pop("Deleted config " + name + "!", 2_000, SUCCESS);
+        } catch (FileNotFoundException e) {
+            Novoline.getInstance().getNotificationManager().pop("Config not found!", 2_000, ERROR);
+        } catch (IOException e) {
+            Novoline.getLogger().error("An I/O error occurred while deleting config!", e);
+            Novoline.getInstance().getNotificationManager().pop("Cannot delete config!", 2_000, ERROR);
+        } catch (Throwable t) {
+            Novoline.getLogger().warn("An unexpected error occurred while deleting config!", t);
+            Novoline.getInstance().getNotificationManager().pop("Cannot delete config!", 2_000, ERROR);
+        }
+    }
+
 }

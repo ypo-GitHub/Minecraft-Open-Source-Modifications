@@ -1,47 +1,104 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.loader;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.io.BufferedWriter;
+import java.io.FilterWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Objects;
 import java.util.concurrent.Callable;
-import net.awr;
-import net.uU;
 
+import static java.util.Objects.requireNonNull;
+
+/**
+ * A utility for creating "atomic" file writers.
+ *
+ * <p>An atomic writer copies any existing file at the given path to a temporary location, then
+ * writes to the same temporary location, before moving the file back to the desired output path
+ * once the write is fully complete.</p>
+ */
 public final class AtomicFiles {
-   public static Callable createAtomicWriterFactory(Path var0, Charset var1) {
-      Objects.requireNonNull(var0, "path");
-      return AtomicFiles::lambda$createAtomicWriterFactory$0;
-   }
 
-   public static BufferedWriter createAtomicBufferedWriter(Path var0, Charset var1) throws IOException {
-      var0 = var0.toAbsolutePath();
-      awr.d();
-      Path var3 = getTemporaryPath(var0.getParent(), var0.getFileName().toString());
-      if(Files.exists(var0, new LinkOption[0])) {
-         Files.copy(var0, var3, new CopyOption[]{StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING});
-      }
+    private AtomicFiles() {
+    }
 
-      BufferedWriter var4 = Files.newBufferedWriter(var3, var1, new OpenOption[0]);
-      return new BufferedWriter(new uU(var3, var0, var4));
-   }
+    /**
+     * Creates and returns an "atomic" writer factory for the given path.
+     *
+     * @param path    The path
+     * @param charset The charset to be used by the writer
+     * @return The writer factory
+     */
+    @NonNull
+    public static Callable<BufferedWriter> createAtomicWriterFactory(@NonNull Path path, @NonNull Charset charset) {
+        requireNonNull(path, "path");
+        return () -> createAtomicBufferedWriter(path, charset);
+    }
 
-   private static Path getTemporaryPath(Path var0, String var1) {
-      String var2 = System.nanoTime() + ((String)Objects.requireNonNull(var1, "key")).replaceAll("\\\\|/|:", "-") + ".tmp";
-      return var0.resolve(var2);
-   }
+    /**
+     * Creates and returns an "atomic" writer for the given path.
+     *
+     * @param path    The path
+     * @param charset The charset to be used by the writer
+     * @return The writer factory
+     */
+    @NonNull
+    public static BufferedWriter createAtomicBufferedWriter(@NonNull Path path, @NonNull Charset charset) throws IOException {
+        path = path.toAbsolutePath();
 
-   private static BufferedWriter lambda$createAtomicWriterFactory$0(Path var0, Charset var1) throws Exception {
-      return createAtomicBufferedWriter(var0, var1);
-   }
+        Path writePath = getTemporaryPath(path.getParent(), path.getFileName().toString());
+        if (Files.exists(path)) {
+            Files.copy(path, writePath, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+        }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        BufferedWriter output = Files.newBufferedWriter(writePath, charset);
+        return new BufferedWriter(new AtomicFileWriter(writePath, path, output));
+    }
+
+    @NonNull
+    private static Path getTemporaryPath(@NonNull Path parent, @NonNull String key) {
+        String fileName = System.nanoTime() + requireNonNull(key, "key").replaceAll("\\\\|/|:", "-") + ".tmp";
+        return parent.resolve(fileName);
+    }
+
+    private static class AtomicFileWriter extends FilterWriter {
+
+        private final Path targetPath, writePath;
+
+        protected AtomicFileWriter(Path writePath, Path targetPath, Writer wrapping) {
+            super(wrapping);
+            this.writePath = writePath;
+            this.targetPath = targetPath;
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            Files.createDirectories(targetPath.getParent());
+            Files.move(writePath, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+    }
+
 }

@@ -1,87 +1,124 @@
 package cc.novoline.gui.screen.dropdown.config;
 
-import cc.novoline.gui.screen.dropdown.config.ConfigTab;
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_17;
-import java.awt.Color;
-import java.util.Iterator;
-import net.l6;
+import cc.novoline.utils.fonts.impl.Fonts;
 import net.minecraft.client.gui.Gui;
 import org.lwjgl.input.Keyboard;
 
-public class ConfigTextField extends l6 {
-   private String value;
-   private final Timer backspace = new Timer();
+import java.awt.*;
 
-   public ConfigTextField(String var1, ConfigTab var2) {
-      super(var1, var2);
-   }
+import static cc.novoline.utils.fonts.impl.Fonts.SF.SF_16.SF_16;
 
-   public void b(int var1, int var2) {
-      l6.d();
-      String var4 = this.a();
-      if(this.c().d() == this && Keyboard.isKeyDown(14) && this.backspace.delay(100.0D) && var4.length() >= 1) {
-         this.setValue(var4.substring(0, var4.length() - 1));
-         this.backspace.reset();
-      }
+public class ConfigTextField extends Config {
 
-      this.g = (int)(this.c().getPosY() + 15.0F);
-      Iterator var5 = this.c().getConfigs().iterator();
-      if(var5.hasNext()) {
-         l6 var6 = (l6)var5.next();
-         if(var6 == this) {
-            ;
-         }
+    private String value;
+    private final Timer backspace = new Timer();
 
-         this.g += var6.a();
-      }
+    public ConfigTextField(String name, ConfigTab parent) {
+        super(name, parent);
+    }
 
-      Gui.drawRect((double)this.c().getPosX(), (double)this.g, (double)(this.c().getPosX() + 100.0F), (double)(this.g + this.a()), (new Color(40, 40, 40, 255)).getRGB());
-      Gui.drawRect((double)(this.c().getPosX() + 2.0F), (double)(this.g + 16), (double)(this.c().getPosX() + 101.0F - 6.0F), (double)this.g + 16.5D, (new Color(195, 195, 195, 220)).getRGB());
-      Fonts$SF$SF_17.SF_17.drawString(this.b(), this.c().getPosX() + 2.0F, (float)this.g + 2.0F, (new Color(227, 227, 227, 255)).getRGB());
-      if(Fonts$SF$SF_17.SF_17.stringWidth(var4) > 65) {
-         Fonts$SF$SF_17.SF_17.drawString(Fonts$SF$SF_17.SF_17.trimStringToWidth(var4, 78, true), this.c().getPosX() + 2.0F, (float)(this.g + 10), -1);
-      }
+    @Override
+    public void drawScreen(int mouseX, int mouseY) {
+        final String s = getValue();
 
-      Fonts$SF$SF_17.SF_17.drawString(var4, this.c().getPosX() + 2.0F, (float)(this.g + 10), -1);
-   }
+        if (getParent().getSelectedConfig() == this
+                && Keyboard.isKeyDown(Keyboard.KEY_BACK)
+                && backspace.delay(100) && s.length() >= 1
+        ) {
+            setValue(s.substring(0, s.length() - 1));
+            backspace.reset();
+        }
 
-   public void a(int var1, int var2, int var3) {
-      String var4 = l6.d();
-      if(this.a(var1, var2)) {
-         this.c().a(this);
-      }
+        y = (int) (getParent().getPosY() + 15);
 
-      if(this.c().d() == this) {
-         this.c().a((l6)null);
-      }
+        for (Config config : getParent().getConfigs()) {
+            if (config == this) {
+                break;
+            } else {
+                y += config.getYPerConfig();
+            }
+        }
+        
+        Gui.drawRect(getParent().getPosX(), y,getParent().getPosX() + 100, y + getYPerConfig(), new Color(40, 40, 40, 255).getRGB());
 
-   }
+        Gui.drawRect(getParent().getPosX() + 2, y + 16, getParent().getPosX() + 101 - 6, y + 16.5,
+                new Color(195, 195, 195, 220).getRGB());
 
-   public void a(char var1, int var2) {
-      String var3 = l6.d();
-      if(this.c().d() == this) {
-         if(var2 == 1 || var2 == 28) {
-            this.c().a((l6)null);
-         }
+        Fonts.SF.SF_17.SF_17.drawString(getName(), getParent().getPosX() + 2f, y + 2f,
+                new Color(227, 227, 227, 255).getRGB());
 
-         if(var2 != 14 && var2 != 157 && var2 != 29 && var2 != 54 && var2 != 42 && var2 != 15 && var2 != 58 && var2 != 211 && var2 != 199 && var2 != 210 && var2 != 200 && var2 != 208 && var2 != 205 && var2 != 203 && var2 != 56 && var2 != 184 && var2 != 197 && var2 != 70 && var2 != 207 && var2 != 201 && var2 != 209 && var2 != 221 && var2 != 59 && var2 != 60 && var2 != 62 && var2 != 63 && var2 != 64 && var2 != 65 && var2 != 66 && var2 != 67 && var2 != 68 && var2 != 87 && var2 != 88) {
-            this.setValue(this.a() + var1);
-         }
-      }
+        if (Fonts.SF.SF_17.SF_17.stringWidth(s) > 65) {
+            Fonts.SF.SF_17.SF_17.drawString(Fonts.SF.SF_17.SF_17.trimStringToWidth(s, 78, true), getParent().getPosX() + 2, y + 10,
+                            0xFFFFFFFF);
+        } else {
+            Fonts.SF.SF_17.SF_17.drawString(s, getParent().getPosX() + 2, y + 10, 0xFFFFFFFF);
+        }
+    }
 
-   }
+    @Override
+    public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if(isHovered(mouseX, mouseY) && mouseButton == 0) {
+            getParent().setSelectedConfig(this);
+        } else if(getParent().getSelectedConfig() == this) {
+            getParent().setSelectedConfig(null);
+        }
+    }
 
-   public String a() {
-      String var1 = l6.d();
-      return this.value == null?"":this.value;
-   }
+    @Override
+    public void keyTyped(char typedChar, int keyCode) {
+        if(getParent().getSelectedConfig() == this) {
+            if (keyCode == Keyboard.KEY_ESCAPE || keyCode == Keyboard.KEY_RETURN) {
+                getParent().setSelectedConfig(null);
+            } else if (!(keyCode == Keyboard.KEY_BACK)
+                    && keyCode != Keyboard.KEY_RCONTROL
+                    && keyCode != Keyboard.KEY_LCONTROL
+                    && keyCode != Keyboard.KEY_RSHIFT
+                    && keyCode != Keyboard.KEY_LSHIFT
+                    && keyCode != Keyboard.KEY_TAB
+                    && keyCode != Keyboard.KEY_CAPITAL
+                    && keyCode != Keyboard.KEY_DELETE
+                    && keyCode != Keyboard.KEY_HOME
+                    && keyCode != Keyboard.KEY_INSERT
+                    && keyCode != Keyboard.KEY_UP
+                    && keyCode != Keyboard.KEY_DOWN
+                    && keyCode != Keyboard.KEY_RIGHT
+                    && keyCode != Keyboard.KEY_LEFT
+                    && keyCode != Keyboard.KEY_LMENU
+                    && keyCode != Keyboard.KEY_RMENU
+                    && keyCode != Keyboard.KEY_PAUSE
+                    && keyCode != Keyboard.KEY_SCROLL
+                    && keyCode != Keyboard.KEY_END
+                    && keyCode != Keyboard.KEY_PRIOR
+                    && keyCode != Keyboard.KEY_NEXT
+                    && keyCode != Keyboard.KEY_APPS
+                    && keyCode != Keyboard.KEY_F1
+                    && keyCode != Keyboard.KEY_F2
+                    && keyCode != Keyboard.KEY_F4
+                    && keyCode != Keyboard.KEY_F5
+                    && keyCode != Keyboard.KEY_F6
+                    && keyCode != Keyboard.KEY_F7
+                    && keyCode != Keyboard.KEY_F8
+                    && keyCode != Keyboard.KEY_F9
+                    && keyCode != Keyboard.KEY_F10
+                    && keyCode != Keyboard.KEY_F11
+                    && keyCode != Keyboard.KEY_F12
+            ) {
+                setValue(getValue() + typedChar);
+            }
+        }
+    }
 
-   public void setValue(String var1) {
-      this.value = var1;
-   }
+    public String getValue() {
+    	return value == null ? "" : value;
+    }
 
-   public int a() {
-      return 19;
-   }
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public int getYPerConfig() {
+        return 19;
+    }
 }

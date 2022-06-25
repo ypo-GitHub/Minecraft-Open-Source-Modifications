@@ -5,46 +5,45 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import java.lang.reflect.Type;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import net.a0R;
 import net.minecraft.client.resources.Language;
-import net.minecraft.client.resources.data.BaseMetadataSectionSerializer;
 import net.minecraft.util.JsonUtils;
 
-public class LanguageMetadataSectionSerializer extends BaseMetadataSectionSerializer {
-   public a0R a(JsonElement var1, Type var2, JsonDeserializationContext var3) throws JsonParseException {
-      JsonObject var4 = var1.getAsJsonObject();
-      HashSet var5 = Sets.newHashSet();
+import java.lang.reflect.Type;
+import java.util.Map.Entry;
+import java.util.Set;
 
-      for(Entry var7 : var4.entrySet()) {
-         String var8 = (String)var7.getKey();
-         JsonObject var9 = JsonUtils.getJsonObject((JsonElement)var7.getValue(), "language");
-         String var10 = JsonUtils.getString(var9, "region");
-         String var11 = JsonUtils.getString(var9, "name");
-         boolean var12 = JsonUtils.getBoolean(var9, "bidirectional", false);
-         if(var10.isEmpty()) {
-            throw new JsonParseException("Invalid language->\'" + var8 + "\'->region: empty value");
-         }
+public class LanguageMetadataSectionSerializer extends BaseMetadataSectionSerializer<LanguageMetadataSection> {
+    public LanguageMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
+        JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
+        Set<Language> set = Sets.<Language>newHashSet();
 
-         if(var11.isEmpty()) {
-            throw new JsonParseException("Invalid language->\'" + var8 + "\'->name: empty value");
-         }
+        for (Entry<String, JsonElement> entry : jsonobject.entrySet()) {
+            String s = (String) entry.getKey();
+            JsonObject jsonobject1 = JsonUtils.getJsonObject((JsonElement) entry.getValue(), "language");
+            String s1 = JsonUtils.getString(jsonobject1, "region");
+            String s2 = JsonUtils.getString(jsonobject1, "name");
+            boolean flag = JsonUtils.getBoolean(jsonobject1, "bidirectional", false);
 
-         if(!var5.add(new Language(var8, var10, var11, var12))) {
-            throw new JsonParseException("Duplicate language->\'" + var8 + "\' defined");
-         }
-      }
+            if (s1.isEmpty()) {
+                throw new JsonParseException("Invalid language->\'" + s + "\'->region: empty value");
+            }
 
-      return new a0R(var5);
-   }
+            if (s2.isEmpty()) {
+                throw new JsonParseException("Invalid language->\'" + s + "\'->name: empty value");
+            }
 
-   public String getSectionName() {
-      return "language";
-   }
+            if (!set.add(new Language(s, s1, s2, flag))) {
+                throw new JsonParseException("Duplicate language->\'" + s + "\' defined");
+            }
+        }
 
-   private static JsonParseException a(JsonParseException var0) {
-      return var0;
-   }
+        return new LanguageMetadataSection(set);
+    }
+
+    /**
+     * The name of this section type as it appears in JSON.
+     */
+    public String getSectionName() {
+        return "language";
+    }
 }

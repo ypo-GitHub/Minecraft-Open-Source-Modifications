@@ -1,39 +1,39 @@
 package viaversion.viaversion.api.minecraft.chunks;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+
 import java.util.List;
-import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 
 public interface Chunk {
-   int getX();
 
-   int getZ();
+    int getX();
 
-   boolean isBiomeData();
+    int getZ();
 
-   boolean isFullChunk();
+    boolean isBiomeData();
 
-   /** @deprecated */
-   @Deprecated
-   default boolean isGroundUp() {
-      return this.isFullChunk();
-   }
+    boolean isFullChunk();
 
-   boolean isIgnoreOldLightData();
+    @Deprecated
+    default boolean isGroundUp() {
+        return isFullChunk();
+    }
 
-   void setIgnoreOldLightData(boolean var1);
+    boolean isIgnoreOldLightData();
 
-   int getBitmask();
+    void setIgnoreOldLightData(boolean ignoreOldLightData);
 
-   ChunkSection[] getSections();
+    int getBitmask();
 
-   int[] getBiomeData();
+    ChunkSection[] getSections();
 
-   void setBiomeData(int[] var1);
+    int[] getBiomeData();
 
-   CompoundTag getHeightMap();
+    void setBiomeData(int[] biomeData);
 
-   void setHeightMap(CompoundTag var1);
+    CompoundTag getHeightMap();
 
-   List getBlockEntities();
+    void setHeightMap(CompoundTag heightMap);
+
+    List<CompoundTag> getBlockEntities();
 }

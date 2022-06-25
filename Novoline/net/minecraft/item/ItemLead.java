@@ -6,47 +6,51 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLeashKnot;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class ItemLead extends Item {
-   public ItemLead() {
-      this.setCreativeTab(CreativeTabs.tabTools);
-   }
+    public ItemLead() {
+        this.setCreativeTab(CreativeTabs.tabTools);
+    }
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      Block var9 = var3.getBlockState(var4).getBlock();
-      if(var9 instanceof BlockFence) {
-         if(!var3.isRemote) {
-            attachToFence(var2, var3, var4);
-         }
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        Block block = worldIn.getBlockState(pos).getBlock();
 
-         return true;
-      } else {
-         return false;
-      }
-   }
+        if (block instanceof BlockFence) {
+            if (!worldIn.isRemote) {
+                attachToFence(playerIn, worldIn, pos);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-   public static boolean attachToFence(EntityPlayer var0, World var1, BlockPos var2) {
-      EntityLeashKnot var3 = EntityLeashKnot.getKnotForPosition(var1, var2);
-      boolean var4 = false;
-      double var5 = 7.0D;
-      int var7 = var2.getX();
-      int var8 = var2.getY();
-      int var9 = var2.getZ();
+    public static boolean attachToFence(EntityPlayer player, World worldIn, BlockPos fence) {
+        EntityLeashKnot entityleashknot = EntityLeashKnot.getKnotForPosition(worldIn, fence);
+        boolean flag = false;
+        double d0 = 7.0D;
+        int i = fence.getX();
+        int j = fence.getY();
+        int k = fence.getZ();
 
-      for(EntityLiving var11 : var1.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB((double)var7 - var5, (double)var8 - var5, (double)var9 - var5, (double)var7 + var5, (double)var8 + var5, (double)var9 + var5))) {
-         if(var11.getLeashed() && var11.getLeashedToEntity() == var0) {
-            var3 = EntityLeashKnot.createKnot(var1, var2);
-            var11.setLeashedToEntity(var3, true);
-            var4 = true;
-         }
-      }
+        for (EntityLiving entityliving : worldIn.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB((double) i - d0, (double) j - d0, (double) k - d0, (double) i + d0, (double) j + d0, (double) k + d0))) {
+            if (entityliving.getLeashed() && entityliving.getLeashedToEntity() == player) {
+                if (entityleashknot == null) {
+                    entityleashknot = EntityLeashKnot.createKnot(worldIn, fence);
+                }
 
-      return var4;
-   }
+                entityliving.setLeashedToEntity(entityleashknot, true);
+                flag = true;
+            }
+        }
+
+        return flag;
+    }
 }

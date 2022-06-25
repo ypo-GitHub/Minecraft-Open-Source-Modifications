@@ -6,34 +6,52 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 
 public class EntityDragonPart extends Entity {
-   public final IEntityMultiPart entityDragonObj;
-   public final String partName;
+    /**
+     * The dragon entity this dragon part belongs to
+     */
+    public final IEntityMultiPart entityDragonObj;
+    public final String partName;
 
-   public EntityDragonPart(IEntityMultiPart var1, String var2, float var3, float var4) {
-      super(var1.getWorld());
-      this.setSize(var3, var4);
-      this.entityDragonObj = var1;
-      this.partName = var2;
-   }
+    public EntityDragonPart(IEntityMultiPart parent, String partName, float base, float sizeHeight) {
+        super(parent.getWorld());
+        this.setSize(base, sizeHeight);
+        this.entityDragonObj = parent;
+        this.partName = partName;
+    }
 
-   protected void entityInit() {
-   }
+    protected void entityInit() {
+    }
 
-   protected void readEntityFromNBT(NBTTagCompound var1) {
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    protected void readEntityFromNBT(NBTTagCompound tagCompund) {
+    }
 
-   protected void writeEntityToNBT(NBTTagCompound var1) {
-   }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    protected void writeEntityToNBT(NBTTagCompound tagCompound) {
+    }
 
-   public boolean canBeCollidedWith() {
-      return true;
-   }
+    /**
+     * Returns true if other Entities should be prevented from moving through this Entity.
+     */
+    public boolean canBeCollidedWith() {
+        return true;
+    }
 
-   public boolean attackEntityFrom(DamageSource var1, float var2) {
-      return !this.isEntityInvulnerable(var1) && this.entityDragonObj.attackEntityFromPart(this, var1, var2);
-   }
+    /**
+     * Called when the entity is attacked.
+     */
+    public boolean attackEntityFrom(DamageSource source, float amount) {
+        return !this.isEntityInvulnerable(source) && this.entityDragonObj.attackEntityFromPart(this, source, amount);
+    }
 
-   public boolean isEntityEqual(Entity var1) {
-      return this == var1 || this.entityDragonObj == var1;
-   }
+    /**
+     * Returns true if Entity argument is equal to this Entity
+     */
+    public boolean isEntityEqual(Entity entityIn) {
+        return this == entityIn || this.entityDragonObj == entityIn;
+    }
 }

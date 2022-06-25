@@ -3,139 +3,124 @@ package cc.novoline.commands.impl;
 import cc.novoline.Novoline;
 import cc.novoline.commands.NovoCommand;
 import cc.novoline.modules.misc.Killsults;
-import cc.novoline.utils.messages.MessageFactory;
 import cc.novoline.utils.messages.TextMessage;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import net.Uj;
-import net.a_E;
-import net.minecraft.util.EnumChatFormatting;
+
+import static cc.novoline.utils.messages.MessageFactory.text;
+import static cc.novoline.utils.messages.MessageFactory.usage;
+import static net.minecraft.util.EnumChatFormatting.GREEN;
+import static net.minecraft.util.EnumChatFormatting.RED;
 
 public class KillsultsCommand extends NovoCommand {
-   public KillsultsCommand(Novoline var1) {
-      super(var1, "killsults", (Iterable)Arrays.asList(new String[]{"ks", "sults"}));
-   }
 
-   public void process(String[] var1) throws IOException {
-      int[] var2 = a_E.b();
-      if(var1.length < 1) {
-         this.a("Killsults help:", ".killsults", new Uj[]{MessageFactory.a("list", "shows all killsults"), MessageFactory.a("add (\"text\")", "add a killsults"), MessageFactory.a("remove (index)", "removes a killsults"), MessageFactory.a("clear", "removes all killsults")});
-      } else {
-         String var3 = var1[0].toLowerCase();
-         Killsults var4 = (Killsults)this.novoline.getModuleManager().getModule(Killsults.class);
-         List var5 = var4.getKillsults();
-         byte var7 = -1;
-         switch(var3.hashCode()) {
-         case 96417:
-            if(!var3.equals("add")) {
-               break;
-            }
+    public KillsultsCommand(@NonNull Novoline novoline) {
+        super(novoline, "killsults", Arrays.asList("ks", "sults"));
+    }
 
-            var7 = 0;
-         case -934610812:
-            if(!var3.equals("remove")) {
-               break;
-            }
+    @Override
+    public void process(String[] args) throws IOException {
+        if (args.length < 1) {
+            sendHelp( // @off
+                    "Killsults help:", ".killsults",
+                    usage("list", "shows all killsults"),
+                    usage("add (\"text\")", "add a killsults"),
+                    usage("remove (index)", "removes a killsults"),
+                    usage("clear", "removes all killsults")
+            ); //@on
+            return;
+        }
 
-            var7 = 1;
-         case 94746189:
-            if(!var3.equals("clear")) {
-               break;
-            }
+        String command = args[0].toLowerCase();
+        Killsults killsults = novoline.getModuleManager().getModule(Killsults.class);
+        List<String> list = killsults.getKillsults();
 
-            var7 = 2;
-         case 3322014:
-            if(var3.equals("list")) {
-               var7 = 3;
-            }
-         }
+        switch (command) {
+            case "add":
+                int end = 0;
+                for (String arg : args) {
+                    if (arg.contains("\"")) {
+                        end = Arrays.asList(args).indexOf(arg);
+                    }
+                }
 
-         switch(var7) {
-         case 0:
-            int var8 = 0;
-            int var10 = var1.length;
-            int var11 = 0;
-            if(var11 < var10) {
-               String var12 = var1[var11];
-               if(var12.contains("\"")) {
-                  var8 = Arrays.asList(var1).indexOf(var12);
-               }
+                if (!args[end].endsWith("\"")) {
+                    notifyError("message must be enclosed in quotation marks");
+                } else {
+                    StringBuilder stringBuilder = new StringBuilder();
 
-               ++var11;
-            }
+                    for (int i = 1; i <= end; i++) {
+                        stringBuilder.append(args[i]).append(i == end ? "" : " ");
+                    }
 
-            if(!var1[var8].endsWith("\"")) {
-               this.notifyError("message must be enclosed in quotation marks");
-            }
+                    String sult = stringBuilder.toString().replace("\"", "");
 
-            StringBuilder var9 = new StringBuilder();
-            var10 = 1;
-            if(var10 <= var8) {
-               var9.append(var1[var10]).append(var10 == var8?"":" ");
-               ++var10;
-            }
+                    if (sult.isEmpty()) {
+                        notifyError("message is empty!");
+                    } else {
+                        if (!list.contains(sult)) {
+                            list.add(sult);
+                            notify("added: \"" + sult + "\" to list!");
+                        } else {
+                            notifyError("list already contains that line!");
+                        }
+                    }
+                }
+                break;
 
-            String var18 = var9.toString().replace("\"", "");
-            if(var18.isEmpty()) {
-               this.notifyError("message is empty!");
-            }
+            case "remove":
+                if (args.length < 2) {
+                    notifyError("please specify the index of the killsult you want to delete");
+                } else {
+                    String remove = args[1];
+                    if (remove.length() == 1 && Character.isDigit(remove.charAt(0))) {
+                        remove = list.get(Integer.parseInt(args[1]));
 
-            if(!var5.contains(var18)) {
-               var5.add(var18);
-               this.notify("added: \"" + var18 + "\" to list!");
-            }
+                        if (list.contains(remove)) {
+                            list.remove(remove);
+                            notify("removed: " + remove + " from list!");
+                        } else {
+                            notifyError("list does not contains that line!");
+                        }
 
-            this.notifyError("list already contains that line!");
-         case 1:
-            if(var1.length < 2) {
-               this.notifyError("please specify the index of the killsult you want to delete");
-            }
+                    } else {
+                        notifyError("please specify the index of the killsult you want to delete");
+                    }
+                }
+                break;
 
-            String var13 = var1[1];
-            if(var13.length() == 1 && Character.isDigit(var13.charAt(0))) {
-               var13 = (String)var5.get(Integer.parseInt(var1[1]));
-               if(var5.contains(var13)) {
-                  var5.remove(var13);
-                  this.notify("removed: " + var13 + " from list!");
-               }
+            case "clear":
+                if (list.isEmpty()) {
+                    notifyError("list is empty!");
+                } else {
+                    list.clear();
+                    notify("list cleared!");
+                }
+                break;
 
-               this.notifyError("list does not contains that line!");
-            }
+            case "list":
+                killsults.loadSults();
 
-            this.notifyError("please specify the index of the killsult you want to delete");
-         case 2:
-            if(var5.isEmpty()) {
-               this.notifyError("list is empty!");
-            }
+                if (list.isEmpty()) {
+                    notifyError("list is empty!");
+                } else {
+                    final TextMessage text = text("List of killsults:");
+                    send(text, true);
 
-            var5.clear();
-            this.notify("list cleared!");
-         case 3:
-            var4.loadSults();
-            if(var5.isEmpty()) {
-               this.notifyError("list is empty!");
-            }
+                    for (String sults : list) {
+                        String sult = "> " + list.indexOf(sults) + ": " + GREEN + sults;
 
-            TextMessage var15 = MessageFactory.text("List of killsults:");
-            this.send(var15, true);
-            Iterator var19 = var5.iterator();
-            if(var19.hasNext()) {
-               String var21 = (String)var19.next();
-               String var22 = "> " + var5.indexOf(var21) + ": " + EnumChatFormatting.GREEN + var21;
-               if(var22.contains("%s")) {
-                  this.send(var22.replace("%s", EnumChatFormatting.RED + "%s" + EnumChatFormatting.GREEN));
-               }
-
-               this.send(var22);
-            }
-         default:
-         }
-      }
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+                        if (sult.contains("%s")) {
+                            send(sult.replace("%s", RED + "%s" + GREEN));
+                        } else {
+                            send(sult);
+                        }
+                    }
+                }
+                break;
+        }
+    }
 }

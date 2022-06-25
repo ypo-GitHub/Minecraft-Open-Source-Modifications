@@ -4,47 +4,69 @@ import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.holder.CreatingModuleHolder;
 import cc.novoline.modules.configurations.property.mapper.PropertyMapper;
-import cc.novoline.modules.serializers.PropertySerializer;
 import com.google.common.reflect.TypeToken;
-import net.X9;
-import net.axb;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.ObjectMapper;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public final class ConfigSerializer implements TypeSerializer {
-   private final ModuleManager moduleManager;
+/**
+ * @author xDelsy
+ */
+public final class ConfigSerializer implements TypeSerializer<Object> {
 
-   public ConfigSerializer(ModuleManager var1) {
-      this.moduleManager = var1;
-   }
+    /* fields */
+    @NonNull
+    private final ModuleManager moduleManager;
 
-   public void serialize(TypeToken var1, Object var2, ConfigurationNode var3) throws X9 {
-      int[] var4 = PropertySerializer.b();
-      ((PropertyMapper)var3.getOptions().getObjectMapperFactory().getMapper(var2.getClass())).a(var2).a(var3);
-      var3.setValue((Object)null);
-   }
+    /* constructors */
+    public ConfigSerializer(@NonNull ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
+    }
 
-   public Object deserialize(TypeToken var1, ConfigurationNode var2) throws X9 {
-      PropertySerializer.b();
-      PropertyMapper var4 = (PropertyMapper)var2.getOptions().getObjectMapperFactory().getMapper(var1.getRawType());
-      if(!AbstractModule.class.isAssignableFrom(var4.getClazz())) {
-         axb var5 = var4.b();
-      }
+    /* methods */
+    @Override
+    @SuppressWarnings("unchecked")
+    public void serialize(@NonNull TypeToken<?> type, @Nullable Object obj,
+                          @NonNull ConfigurationNode node) throws ObjectMappingException {
+        if (obj != null) {
+            ((PropertyMapper<Object>) node.getOptions() // @off
+                    .getObjectMapperFactory()
+                    .getMapper(obj.getClass()))
+                    .bind(obj)
+                    .serialize(node); // @on
+        } else {
+            node.setValue(null);
+        }
+    }
 
-      ConfigSerializer var10000 = this;
+    @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Object deserialize(@NonNull TypeToken<?> type,
+                              @NonNull ConfigurationNode node) throws ObjectMappingException {
+        final PropertyMapper mapper = (PropertyMapper<?>) node.getOptions().getObjectMapperFactory()
+                .getMapper(type.getRawType());
+        final ObjectMapper<?>.BoundInstance instance;
 
-      CreatingModuleHolder var6;
-      try {
-         var6 = (CreatingModuleHolder)var10000.moduleManager.getModuleManager().getHolderByClass(var4.getClazz());
-      } catch (Throwable var8) {
-         throw new X9("No registered module is available for class " + var4.getClazz() + " but is required to construct new instances!", var8);
-      }
+        if (!AbstractModule.class.isAssignableFrom(mapper.getClazz())) {
+            instance = mapper.bindToNew();
+        } else {
+            final CreatingModuleHolder<AbstractModule> holder;
 
-      axb var9 = var4.a(var6.createNew());
-      return var9.b(var2);
-   }
+            try {
+                holder = (CreatingModuleHolder<AbstractModule>) this.moduleManager.getModuleManager()
+                        .getHolderByClass((Class<AbstractModule>) mapper.getClazz());
+            } catch (Throwable t) {
+                throw new ObjectMappingException("No registered module is available for class " + mapper
+                        .getClazz() + " but is required to construct new instances!", t);
+            }
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+            instance = mapper.bind(holder.createNew());
+        }
+
+        return instance.populate(node);
+    }
+
 }

@@ -1,21 +1,29 @@
 package net.minecraft.util;
 
 public class ChatAllowedCharacters {
-   public static final char[] allowedCharactersArray = new char[]{'/', '\n', '\r', '\t', '\u0000', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
 
-   public static boolean isAllowedCharacter(char var0) {
-      return var0 != 167 && var0 >= 32 && var0 != 127;
-   }
+    /**
+     * Array of the special characters that are allowed in any text drawing of Minecraft.
+     */
+    public static final char[] allowedCharactersArray = new char[]{'/', '\n', '\r', '\t', '\u0000', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
 
-   public static String filterAllowedCharacters(String var0) {
-      StringBuilder var1 = new StringBuilder();
+    public static boolean isAllowedCharacter(char character) {
+        return character != 167 && character >= 32 && character != 127;
+    }
 
-      for(char var5 : var0.toCharArray()) {
-         if(isAllowedCharacter(var5)) {
-            var1.append(var5);
-         }
-      }
+    /**
+     * Filter string by only keeping those characters for which isAllowedCharacter() returns true.
+     */
+    public static String filterAllowedCharacters(String input) {
+        StringBuilder stringbuilder = new StringBuilder();
 
-      return var1.toString();
-   }
+        for (char c0 : input.toCharArray()) {
+            if (isAllowedCharacter(c0)) {
+                stringbuilder.append(c0);
+            }
+        }
+
+        return stringbuilder.toString();
+    }
+
 }

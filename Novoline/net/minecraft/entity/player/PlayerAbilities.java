@@ -3,98 +3,99 @@ package net.minecraft.entity.player;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class PlayerAbilities {
-   private boolean disabledDamage;
-   private boolean isFlying;
-   private boolean allowFlying;
-   private boolean isCreative;
-   private boolean allowEdit = true;
-   private float flySpeed = 0.05F;
-   private float walkSpeed = 0.1F;
 
-   public void writeCapabilitiesToNBT(NBTTagCompound var1) {
-      NBTTagCompound var2 = new NBTTagCompound();
-      var2.setBoolean("invulnerable", this.disabledDamage);
-      var2.setBoolean("flying", this.isFlying);
-      var2.setBoolean("mayfly", this.allowFlying);
-      var2.setBoolean("instabuild", this.isCreative);
-      var2.setBoolean("mayBuild", this.allowEdit);
-      var2.setFloat("flySpeed", this.flySpeed);
-      var2.setFloat("walkSpeed", this.walkSpeed);
-      var1.setTag("abilities", var2);
-   }
+    private boolean disabledDamage;
+    private boolean isFlying;
+    private boolean allowFlying;
+    private boolean isCreative;
+    private boolean allowEdit = true;
+    private float flySpeed = 0.05F;
+    private float walkSpeed = 0.1F;
 
-   public void readCapabilitiesFromNBT(NBTTagCompound var1) {
-      if(var1.hasKey("abilities", 10)) {
-         NBTTagCompound var2 = var1.getCompoundTag("abilities");
-         this.disabledDamage = var2.getBoolean("invulnerable");
-         this.isFlying = var2.getBoolean("flying");
-         this.allowFlying = var2.getBoolean("mayfly");
-         this.isCreative = var2.getBoolean("instabuild");
-         if(var2.hasKey("flySpeed", 99)) {
-            this.flySpeed = var2.getFloat("flySpeed");
-            this.walkSpeed = var2.getFloat("walkSpeed");
-         }
+    public void writeCapabilitiesToNBT(NBTTagCompound tagCompound) {
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        nbttagcompound.setBoolean("invulnerable", this.disabledDamage);
+        nbttagcompound.setBoolean("flying", this.isFlying);
+        nbttagcompound.setBoolean("mayfly", this.allowFlying);
+        nbttagcompound.setBoolean("instabuild", this.isCreative);
+        nbttagcompound.setBoolean("mayBuild", this.allowEdit);
+        nbttagcompound.setFloat("flySpeed", this.flySpeed);
+        nbttagcompound.setFloat("walkSpeed", this.walkSpeed);
+        tagCompound.setTag("abilities", nbttagcompound);
+    }
 
-         if(var2.hasKey("mayBuild", 1)) {
-            this.allowEdit = var2.getBoolean("mayBuild");
-         }
-      }
+    public void readCapabilitiesFromNBT(NBTTagCompound tagCompound) {
+        if (tagCompound.hasKey("abilities", 10)) {
+            NBTTagCompound nbttagcompound = tagCompound.getCompoundTag("abilities");
+            this.disabledDamage = nbttagcompound.getBoolean("invulnerable");
+            this.isFlying = nbttagcompound.getBoolean("flying");
+            this.allowFlying = nbttagcompound.getBoolean("mayfly");
+            this.isCreative = nbttagcompound.getBoolean("instabuild");
 
-   }
+            if (nbttagcompound.hasKey("flySpeed", 99)) {
+                this.flySpeed = nbttagcompound.getFloat("flySpeed");
+                this.walkSpeed = nbttagcompound.getFloat("walkSpeed");
+            }
 
-   public void setDisabledDamage(boolean var1) {
-      this.disabledDamage = var1;
-   }
+            if (nbttagcompound.hasKey("mayBuild", 1)) {
+                this.allowEdit = nbttagcompound.getBoolean("mayBuild");
+            }
+        }
+    }
 
-   public void setFlying(boolean var1) {
-      this.isFlying = var1;
-   }
+    public void setDisabledDamage(boolean disabledDamage) {
+        this.disabledDamage = disabledDamage;
+    }
 
-   public void setAllowFlying(boolean var1) {
-      this.allowFlying = var1;
-   }
+    public void setFlying(boolean flying) {
+        isFlying = flying;
+    }
 
-   public void setCreative(boolean var1) {
-      this.isCreative = var1;
-   }
+    public void setAllowFlying(boolean allowFlying) {
+        this.allowFlying = allowFlying;
+    }
 
-   public void setAllowEdit(boolean var1) {
-      this.allowEdit = var1;
-   }
+    public void setCreative(boolean creative) {
+        isCreative = creative;
+    }
 
-   public void setFlySpeed(float var1) {
-      this.flySpeed = var1;
-   }
+    public void setAllowEdit(boolean allowEdit) {
+        this.allowEdit = allowEdit;
+    }
 
-   public void setWalkSpeed(float var1) {
-      this.walkSpeed = var1;
-   }
+    public void setFlySpeed(float flySpeed) {
+        this.flySpeed = flySpeed;
+    }
 
-   public boolean isDisabledDamage() {
-      return this.disabledDamage;
-   }
+    public void setWalkSpeed(float walkSpeed) {
+        this.walkSpeed = walkSpeed;
+    }
 
-   public boolean isFlying() {
-      return this.isFlying;
-   }
+    public boolean isDisabledDamage() {
+        return disabledDamage;
+    }
 
-   public boolean isAllowFlying() {
-      return this.allowFlying;
-   }
+    public boolean isFlying() {
+        return isFlying;
+    }
 
-   public boolean isCreative() {
-      return this.isCreative;
-   }
+    public boolean isAllowFlying() {
+        return allowFlying;
+    }
 
-   public boolean isAllowEdit() {
-      return this.allowEdit;
-   }
+    public boolean isCreative() {
+        return isCreative;
+    }
 
-   public float getFlySpeed() {
-      return this.flySpeed;
-   }
+    public boolean isAllowEdit() {
+        return allowEdit;
+    }
 
-   public float getWalkSpeed() {
-      return this.walkSpeed;
-   }
+    public float getFlySpeed() {
+        return flySpeed;
+    }
+
+    public float getWalkSpeed() {
+        return walkSpeed;
+    }
 }

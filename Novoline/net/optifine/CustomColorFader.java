@@ -1,41 +1,50 @@
 package net.optifine;
 
-import net.acE;
 import net.minecraft.util.Vec3;
-import net.optifine.Config;
-import net.optifine.MatchBlock;
 
-public class CustomColorFader {
-   private Vec3 color = null;
-   private long timeUpdate = System.currentTimeMillis();
+public class CustomColorFader
+{
+    private Vec3 color = null;
+    private long timeUpdate = System.currentTimeMillis();
 
-   public Vec3 getColor(double var1, double var3, double var5) {
-      acE[] var7 = MatchBlock.b();
-      if(this.color == null) {
-         this.color = new Vec3(var1, var3, var5);
-         return this.color;
-      } else {
-         long var8 = System.currentTimeMillis();
-         long var10 = var8 - this.timeUpdate;
-         if(var10 == 0L) {
+    public Vec3 getColor(double p_getColor_1_, double p_getColor_3_, double p_getColor_5_)
+    {
+        if (this.color == null)
+        {
+            this.color = new Vec3(p_getColor_1_, p_getColor_3_, p_getColor_5_);
             return this.color;
-         } else {
-            this.timeUpdate = var8;
-            if(Math.abs(var1 - this.color.xCoord) < 0.004D && Math.abs(var3 - this.color.yCoord) < 0.004D && Math.abs(var5 - this.color.zCoord) < 0.004D) {
-               return this.color;
-            } else {
-               double var12 = (double)var10 * 0.001D;
-               var12 = Config.limit(var12, 0.0D, 1.0D);
-               double var14 = var1 - this.color.xCoord;
-               double var16 = var3 - this.color.yCoord;
-               double var18 = var5 - this.color.zCoord;
-               double var20 = this.color.xCoord + var14 * var12;
-               double var22 = this.color.yCoord + var16 * var12;
-               double var24 = this.color.zCoord + var18 * var12;
-               this.color = new Vec3(var20, var22, var24);
-               return this.color;
+        }
+        else
+        {
+            long i = System.currentTimeMillis();
+            long j = i - this.timeUpdate;
+
+            if (j == 0L)
+            {
+                return this.color;
             }
-         }
-      }
-   }
+            else
+            {
+                this.timeUpdate = i;
+
+                if (Math.abs(p_getColor_1_ - this.color.xCoord) < 0.004D && Math.abs(p_getColor_3_ - this.color.yCoord) < 0.004D && Math.abs(p_getColor_5_ - this.color.zCoord) < 0.004D)
+                {
+                    return this.color;
+                }
+                else
+                {
+                    double d0 = (double)j * 0.001D;
+                    d0 = Config.limit(d0, 0.0D, 1.0D);
+                    double d1 = p_getColor_1_ - this.color.xCoord;
+                    double d2 = p_getColor_3_ - this.color.yCoord;
+                    double d3 = p_getColor_5_ - this.color.zCoord;
+                    double d4 = this.color.xCoord + d1 * d0;
+                    double d5 = this.color.yCoord + d2 * d0;
+                    double d6 = this.color.zCoord + d3 * d0;
+                    this.color = new Vec3(d4, d5, d6);
+                    return this.color;
+                }
+            }
+        }
+    }
 }

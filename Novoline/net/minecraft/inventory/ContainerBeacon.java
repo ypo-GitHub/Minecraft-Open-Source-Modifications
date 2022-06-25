@@ -1,85 +1,126 @@
 package net.minecraft.inventory;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.ContainerBeacon$BeaconSlot;
-import net.minecraft.inventory.ICrafting;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 public class ContainerBeacon extends Container {
-   private IInventory tileBeacon;
-   private final ContainerBeacon$BeaconSlot beaconSlot;
+    private IInventory tileBeacon;
 
-   public ContainerBeacon(IInventory var1, IInventory var2) {
-      this.tileBeacon = var2;
-      this.addSlotToContainer(this.beaconSlot = new ContainerBeacon$BeaconSlot(this, var2, 0, 136, 110));
-      byte var3 = 36;
-      short var4 = 137;
+    /**
+     * This beacon's slot where you put in Emerald, Diamond, Gold or Iron Ingot.
+     */
+    private final ContainerBeacon.BeaconSlot beaconSlot;
 
-      for(int var5 = 0; var5 < 3; ++var5) {
-         for(int var6 = 0; var6 < 9; ++var6) {
-            this.addSlotToContainer(new Slot(var1, var6 + var5 * 9 + 9, var3 + var6 * 18, var4 + var5 * 18));
-         }
-      }
+    public ContainerBeacon(IInventory playerInventory, IInventory tileBeaconIn) {
+        this.tileBeacon = tileBeaconIn;
+        this.addSlotToContainer(this.beaconSlot = new ContainerBeacon.BeaconSlot(tileBeaconIn, 0, 136, 110));
+        int i = 36;
+        int j = 137;
 
-      for(int var7 = 0; var7 < 9; ++var7) {
-         this.addSlotToContainer(new Slot(var1, var7, var3 + var7 * 18, 58 + var4));
-      }
+        for (int k = 0; k < 3; ++k) {
+            for (int l = 0; l < 9; ++l) {
+                this.addSlotToContainer(new Slot(playerInventory, l + k * 9 + 9, i + l * 18, j + k * 18));
+            }
+        }
 
-   }
+        for (int i1 = 0; i1 < 9; ++i1) {
+            this.addSlotToContainer(new Slot(playerInventory, i1, i + i1 * 18, 58 + j));
+        }
+    }
 
-   public void onCraftGuiOpened(ICrafting var1) {
-      super.onCraftGuiOpened(var1);
-      var1.func_175173_a(this, this.tileBeacon);
-   }
+    public void onCraftGuiOpened(ICrafting listener) {
+        super.onCraftGuiOpened(listener);
+        listener.func_175173_a(this, this.tileBeacon);
+    }
 
-   public void updateProgressBar(int var1, int var2) {
-      this.tileBeacon.setField(var1, var2);
-   }
+    public void updateProgressBar(int id, int data) {
+        this.tileBeacon.setField(id, data);
+    }
 
-   public IInventory func_180611_e() {
-      return this.tileBeacon;
-   }
+    public IInventory func_180611_e() {
+        return this.tileBeacon;
+    }
 
-   public void onContainerClosed(EntityPlayer var1) {
-      super.onContainerClosed(var1);
-      if(!var1.worldObj.isRemote) {
-         ItemStack var2 = this.beaconSlot.decrStackSize(this.beaconSlot.getSlotStackLimit());
-         var1.dropPlayerItemWithRandomChoice(var2, false);
-      }
+    /**
+     * Called when the container is closed.
+     */
+    public void onContainerClosed(EntityPlayer playerIn) {
+        super.onContainerClosed(playerIn);
 
-   }
+        if (playerIn != null && !playerIn.worldObj.isRemote) {
+            ItemStack itemstack = this.beaconSlot.decrStackSize(this.beaconSlot.getSlotStackLimit());
 
-   public boolean canInteractWith(EntityPlayer var1) {
-      return this.tileBeacon.isUseableByPlayer(var1);
-   }
+            if (itemstack != null) {
+                playerIn.dropPlayerItemWithRandomChoice(itemstack, false);
+            }
+        }
+    }
 
-   public ItemStack transferStackInSlot(EntityPlayer var1, int var2) {
-      ItemStack var3 = null;
-      Slot var4 = (Slot)this.inventorySlots.get(var2);
-      if(var4.getHasStack()) {
-         ItemStack var5 = var4.getStack();
-         var3 = var5.copy();
-         if(!this.mergeItemStack(var5, 1, 37, true)) {
-            return null;
-         }
+    public boolean canInteractWith(EntityPlayer playerIn) {
+        return this.tileBeacon.isUseableByPlayer(playerIn);
+    }
 
-         var4.onSlotChange(var5, var3);
-         if(var5.stackSize == 0) {
-            var4.putStack((ItemStack)null);
-         } else {
-            var4.onSlotChanged();
-         }
+    /**
+     * Take a stack from the specified inventory slot.
+     */
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+        ItemStack itemstack = null;
+        Slot slot = (Slot) this.inventorySlots.get(index);
 
-         if(var5.stackSize == var3.stackSize) {
-            return null;
-         }
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
 
-         var4.onPickupFromSlot(var1, var5);
-      }
+            if (index == 0) {
+                if (!this.mergeItemStack(itemstack1, 1, 37, true)) {
+                    return null;
+                }
 
-      return var3;
-   }
+                slot.onSlotChange(itemstack1, itemstack);
+            } else if (!this.beaconSlot.getHasStack() && this.beaconSlot.isItemValid(itemstack1) && itemstack1.stackSize == 1) {
+                if (!this.mergeItemStack(itemstack1, 0, 1, false)) {
+                    return null;
+                }
+            } else if (index >= 1 && index < 28) {
+                if (!this.mergeItemStack(itemstack1, 28, 37, false)) {
+                    return null;
+                }
+            } else if (index >= 28 && index < 37) {
+                if (!this.mergeItemStack(itemstack1, 1, 28, false)) {
+                    return null;
+                }
+            } else if (!this.mergeItemStack(itemstack1, 1, 37, false)) {
+                return null;
+            }
+
+            if (itemstack1.stackSize == 0) {
+                slot.putStack((ItemStack) null);
+            } else {
+                slot.onSlotChanged();
+            }
+
+            if (itemstack1.stackSize == itemstack.stackSize) {
+                return null;
+            }
+
+            slot.onPickupFromSlot(playerIn, itemstack1);
+        }
+
+        return itemstack;
+    }
+
+    class BeaconSlot extends Slot {
+        public BeaconSlot(IInventory p_i1801_2_, int p_i1801_3_, int p_i1801_4_, int p_i1801_5_) {
+            super(p_i1801_2_, p_i1801_3_, p_i1801_4_, p_i1801_5_);
+        }
+
+        public boolean isItemValid(ItemStack stack) {
+            return stack != null && (stack.getItem() == Items.emerald || stack.getItem() == Items.diamond || stack.getItem() == Items.gold_ingot || stack.getItem() == Items.iron_ingot);
+        }
+
+        public int getSlotStackLimit() {
+            return 1;
+        }
+    }
 }

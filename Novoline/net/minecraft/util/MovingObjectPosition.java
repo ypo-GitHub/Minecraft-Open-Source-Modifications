@@ -1,48 +1,62 @@
 package net.minecraft.util;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MovingObjectPosition$MovingObjectType;
-import net.minecraft.util.Vec3;
 
 public class MovingObjectPosition {
-   private BlockPos blockPos;
-   public MovingObjectPosition$MovingObjectType typeOfHit;
-   public EnumFacing facing;
-   public Vec3 hitVec;
-   public Entity entityHit;
+    private BlockPos blockPos;
 
-   public MovingObjectPosition(Vec3 var1, EnumFacing var2, BlockPos var3) {
-      this(MovingObjectPosition$MovingObjectType.BLOCK, var1, var2, var3);
-   }
+    /**
+     * What type of ray trace hit was this? 0 = block, 1 = entity
+     */
+    public MovingObjectPosition.MovingObjectType typeOfHit;
+    public EnumFacing facing;
 
-   public MovingObjectPosition(Vec3 var1, EnumFacing var2) {
-      this(MovingObjectPosition$MovingObjectType.BLOCK, var1, var2, BlockPos.ORIGIN);
-   }
+    /**
+     * The vector position of the hit
+     */
+    public Vec3 hitVec;
 
-   public MovingObjectPosition(Entity var1) {
-      this(var1, new Vec3(var1.posX, var1.posY, var1.posZ));
-   }
+    /**
+     * The hit entity
+     */
+    public Entity entityHit;
 
-   public MovingObjectPosition(MovingObjectPosition$MovingObjectType var1, Vec3 var2, EnumFacing var3, BlockPos var4) {
-      this.typeOfHit = var1;
-      this.blockPos = var4;
-      this.facing = var3;
-      this.hitVec = new Vec3(var2.xCoord, var2.yCoord, var2.zCoord);
-   }
+    public MovingObjectPosition(Vec3 hitVecIn, EnumFacing facing, BlockPos blockPosIn) {
+        this(MovingObjectPosition.MovingObjectType.BLOCK, hitVecIn, facing, blockPosIn);
+    }
 
-   public MovingObjectPosition(Entity var1, Vec3 var2) {
-      this.typeOfHit = MovingObjectPosition$MovingObjectType.ENTITY;
-      this.entityHit = var1;
-      this.hitVec = var2;
-   }
+    public MovingObjectPosition(Vec3 p_i45552_1_, EnumFacing facing) {
+        this(MovingObjectPosition.MovingObjectType.BLOCK, p_i45552_1_, facing, BlockPos.ORIGIN);
+    }
 
-   public BlockPos getBlockPos() {
-      return this.blockPos;
-   }
+    public MovingObjectPosition(Entity p_i2304_1_) {
+        this(p_i2304_1_, new Vec3(p_i2304_1_.posX, p_i2304_1_.posY, p_i2304_1_.posZ));
+    }
 
-   public String toString() {
-      return "HitResult{type=" + this.typeOfHit + ", blockpos=" + this.blockPos + ", f=" + this.facing + ", pos=" + this.hitVec + ", entity=" + this.entityHit + '}';
-   }
+    public MovingObjectPosition(MovingObjectPosition.MovingObjectType typeOfHitIn, Vec3 hitVecIn, EnumFacing sideHitIn, BlockPos blockPosIn) {
+        this.typeOfHit = typeOfHitIn;
+        this.blockPos = blockPosIn;
+        this.facing = sideHitIn;
+        this.hitVec = new Vec3(hitVecIn.xCoord, hitVecIn.yCoord, hitVecIn.zCoord);
+    }
+
+    public MovingObjectPosition(Entity entityHitIn, Vec3 hitVecIn) {
+        this.typeOfHit = MovingObjectPosition.MovingObjectType.ENTITY;
+        this.entityHit = entityHitIn;
+        this.hitVec = hitVecIn;
+    }
+
+    public BlockPos getBlockPos() {
+        return this.blockPos;
+    }
+
+    public String toString() {
+        return "HitResult{type=" + this.typeOfHit + ", blockpos=" + this.blockPos + ", f=" + this.facing + ", pos=" + this.hitVec + ", entity=" + this.entityHit + '}';
+    }
+
+    public enum MovingObjectType {
+        MISS,
+        BLOCK,
+        ENTITY
+    }
 }

@@ -1,6 +1,16 @@
 package viaversion.viaversion.api.protocol;
 
-import viaversion.viaversion.api.protocol.Protocol;
+/**
+ * Dummy protocol class for when you do not need any of the
+ * existing packet type enums or automated channel mappings.
+ *
+ * @see Protocol
+ */
+public abstract class SimpleProtocol extends Protocol<SimpleProtocol.DummyPacketTypes, SimpleProtocol.DummyPacketTypes, SimpleProtocol.DummyPacketTypes, SimpleProtocol.DummyPacketTypes> {
 
-public abstract class SimpleProtocol extends Protocol {
+    protected SimpleProtocol() {
+    }
+
+    public enum DummyPacketTypes implements ClientboundPacketType, ServerboundPacketType {
+    }
 }

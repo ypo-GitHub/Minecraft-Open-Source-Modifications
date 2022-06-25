@@ -1,49 +1,39 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import java.lang.reflect.Array;
-import net.Gh;
 import viaversion.viaversion.api.type.Type;
 
-public class ArrayType extends Type {
-   private final Type elementType;
+import java.lang.reflect.Array;
 
-   public ArrayType(Type var1) {
-      super(var1.getTypeName() + " Array", getArrayClass(var1.getOutputClass()));
-      this.elementType = var1;
-   }
+public class ArrayType<T> extends Type<T[]> {
+    private final Type<T> elementType;
 
-   public static Class getArrayClass(Class var0) {
-      return Array.newInstance(var0, 0).getClass();
-   }
+    public ArrayType(Type<T> type) {
+        super(type.getTypeName() + " Array", (Class<T[]>) getArrayClass(type.getOutputClass()));
+        this.elementType = type;
+    }
 
-   public Object[] read(ByteBuf var1) throws Exception {
-      Gh.b();
-      int var3 = Type.VAR_INT.readPrimitive(var1);
-      Object[] var4 = (Object[])((Object[])Array.newInstance(this.elementType.getOutputClass(), var3));
-      int var5 = 0;
-      if(var5 < var3) {
-         var4[var5] = this.elementType.read(var1);
-         ++var5;
-      }
+    public static Class<?> getArrayClass(Class<?> componentType) {
+        // Should only happen once per class init.
+        return Array.newInstance(componentType, 0).getClass();
+    }
 
-      return var4;
-   }
+    @Override
+    public T[] read(ByteBuf buffer) throws Exception {
+        int amount = Type.VAR_INT.readPrimitive(buffer);
+        T[] array = (T[]) Array.newInstance(elementType.getOutputClass(), amount);
 
-   public void write(ByteBuf var1, Object[] var2) throws Exception {
-      Gh.b();
-      Type.VAR_INT.writePrimitive(var1, var2.length);
-      int var5 = var2.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         Object var7 = var2[var6];
-         this.elementType.write(var1, var7);
-         ++var6;
-      }
+        for (int i = 0; i < amount; i++) {
+            array[i] = elementType.read(buffer);
+        }
+        return array;
+    }
 
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    @Override
+    public void write(ByteBuf buffer, T[] object) throws Exception {
+        Type.VAR_INT.writePrimitive(buffer, object.length);
+        for (T o : object) {
+            elementType.write(buffer, o);
+        }
+    }
 }

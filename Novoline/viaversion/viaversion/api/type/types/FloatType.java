@@ -1,37 +1,49 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import net.Gh;
 import viaversion.viaversion.api.type.Type;
 import viaversion.viaversion.api.type.TypeConverter;
 
-public class FloatType extends Type implements TypeConverter {
-   public FloatType() {
-      super("Float", Float.class);
-   }
+public class FloatType extends Type<Float> implements TypeConverter<Float> {
 
-   public float readPrimitive(ByteBuf var1) {
-      return var1.readFloat();
-   }
+    public FloatType() {
+        super("Float", Float.class);
+    }
 
-   public void writePrimitive(ByteBuf var1, float var2) {
-      var1.writeFloat(var2);
-   }
+    public float readPrimitive(ByteBuf buffer) {
+        return buffer.readFloat();
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public Float read(ByteBuf var1) {
-      return Float.valueOf(var1.readFloat());
-   }
+    public void writePrimitive(ByteBuf buffer, float object) {
+        buffer.writeFloat(object);
+    }
 
-   /** @deprecated */
-   @Deprecated
-   public void write(ByteBuf var1, Float var2) {
-      var1.writeFloat(var2.floatValue());
-   }
+    /**
+     * @deprecated use {@link #readPrimitive(ByteBuf)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public Float read(ByteBuf buffer) {
+        return buffer.readFloat();
+    }
 
-   public Float from(Object var1) {
-      String var2 = Gh.b();
-      return var1 instanceof Number?Float.valueOf(((Number)var1).floatValue()):(var1 instanceof Boolean?Float.valueOf(((Boolean)var1).booleanValue()?1.0F:0.0F):(Float)var1);
-   }
+    /**
+     * @deprecated use {@link #writePrimitive(ByteBuf, float)} for manual reading to avoid wrapping
+     */
+    @Override
+    @Deprecated
+    public void write(ByteBuf buffer, Float object) {
+        buffer.writeFloat(object);
+    }
+
+    @Override
+    public Float from(Object o) {
+        if (o instanceof Number) {
+            return ((Number) o).floatValue();
+        }
+        if (o instanceof Boolean) {
+            return ((Boolean) o) ? 1F : 0;
+        }
+        return (Float) o;
+    }
 }

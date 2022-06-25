@@ -2,68 +2,93 @@ package viaversion.viaversion.api.data;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.Arrays;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.data.MappingDataLoader;
+
+import java.util.Arrays;
 
 public class Mappings {
-   protected final short[] oldToNew;
+    protected final short[] oldToNew;
 
-   public Mappings(short[] var1) {
-      this.oldToNew = var1;
-   }
+    public Mappings(short[] oldToNew) {
+        this.oldToNew = oldToNew;
+    }
 
-   public Mappings(int var1, JsonObject var2, JsonObject var3, @Nullable JsonObject var4) {
-      this.oldToNew = new short[var1];
-      Arrays.fill(this.oldToNew, (short)-1);
-      MappingDataLoader.mapIdentifiers(this.oldToNew, var2, var3, var4);
-   }
+    /**
+     * Maps old identifiers to the new ones.
+     * If an old value cannot be found in the new mappings, the diffmapping will be checked for the given entry.
+     *
+     * @param size        set size of the underlying short array
+     * @param oldMapping  mappings to map from
+     * @param newMapping  mappings to map to
+     * @param diffMapping extra mappings that will be used/scanned when an entry cannot be found
+     */
+    public Mappings(int size, JsonObject oldMapping, JsonObject newMapping, @Nullable JsonObject diffMapping) {
+        oldToNew = new short[size];
+        Arrays.fill(oldToNew, (short) -1);
+        MappingDataLoader.mapIdentifiers(oldToNew, oldMapping, newMapping, diffMapping);
+    }
 
-   public Mappings(JsonObject var1, JsonObject var2, @Nullable JsonObject var3) {
-      this(var1.entrySet().size(), var1, var2, var3);
-   }
+    public Mappings(JsonObject oldMapping, JsonObject newMapping, @Nullable JsonObject diffMapping) {
+        this(oldMapping.entrySet().size(), oldMapping, newMapping, diffMapping);
+    }
 
-   public Mappings(int var1, JsonObject var2, JsonObject var3) {
-      this.oldToNew = new short[var1];
-      Arrays.fill(this.oldToNew, (short)-1);
-      MappingDataLoader.mapIdentifiers(this.oldToNew, var2, var3);
-   }
+    /**
+     * Maps old identifiers to the new ones.
+     *
+     * @param size       set size of the underlying short array
+     * @param oldMapping mappings to map from
+     * @param newMapping mappings to map to
+     */
+    public Mappings(int size, JsonObject oldMapping, JsonObject newMapping) {
+        oldToNew = new short[size];
+        Arrays.fill(oldToNew, (short) -1);
+        MappingDataLoader.mapIdentifiers(oldToNew, oldMapping, newMapping);
+    }
 
-   public Mappings(JsonObject var1, JsonObject var2) {
-      this(var1.entrySet().size(), var1, var2);
-   }
+    public Mappings(JsonObject oldMapping, JsonObject newMapping) {
+        this(oldMapping.entrySet().size(), oldMapping, newMapping);
+    }
 
-   public Mappings(int var1, JsonArray var2, JsonArray var3, JsonObject var4, boolean var5) {
-      this.oldToNew = new short[var1];
-      Arrays.fill(this.oldToNew, (short)-1);
-      MappingDataLoader.mapIdentifiers(this.oldToNew, var2, var3, var4, var5);
-   }
+    /**
+     * Maps old identifiers to the new ones.
+     *
+     * @param size          set size of the underlying short array
+     * @param oldMapping    mappings to map from
+     * @param newMapping    mappings to map to
+     * @param diffMapping   extra mappings that will be used/scanned when an entry cannot be found
+     * @param warnOnMissing should "No key for x" be printed if there is no matching identifier
+     */
+    public Mappings(int size, JsonArray oldMapping, JsonArray newMapping, JsonObject diffMapping, boolean warnOnMissing) {
+        oldToNew = new short[size];
+        Arrays.fill(oldToNew, (short) -1);
+        MappingDataLoader.mapIdentifiers(oldToNew, oldMapping, newMapping, diffMapping, warnOnMissing);
+    }
 
-   public Mappings(int var1, JsonArray var2, JsonArray var3, boolean var4) {
-      this(var1, var2, var3, (JsonObject)null, var4);
-   }
+    public Mappings(int size, JsonArray oldMapping, JsonArray newMapping, boolean warnOnMissing) {
+        this(size, oldMapping, newMapping, null, warnOnMissing);
+    }
 
-   public Mappings(JsonArray var1, JsonArray var2, boolean var3) {
-      this(var1.size(), var1, var2, var3);
-   }
+    public Mappings(JsonArray oldMapping, JsonArray newMapping, boolean warnOnMissing) {
+        this(oldMapping.size(), oldMapping, newMapping, warnOnMissing);
+    }
 
-   public Mappings(int var1, JsonArray var2, JsonArray var3) {
-      this(var1, var2, var3, true);
-   }
+    public Mappings(int size, JsonArray oldMapping, JsonArray newMapping) {
+        this(size, oldMapping, newMapping, true);
+    }
 
-   public Mappings(JsonArray var1, JsonArray var2, JsonObject var3) {
-      this(var1.size(), var1, var2, var3, true);
-   }
+    public Mappings(JsonArray oldMapping, JsonArray newMapping, JsonObject diffMapping) {
+        this(oldMapping.size(), oldMapping, newMapping, diffMapping, true);
+    }
 
-   public Mappings(JsonArray var1, JsonArray var2) {
-      this(var1.size(), var1, var2, true);
-   }
+    public Mappings(JsonArray oldMapping, JsonArray newMapping) {
+        this(oldMapping.size(), oldMapping, newMapping, true);
+    }
 
-   public int getNewId(int var1) {
-      return var1 < this.oldToNew.length?this.oldToNew[var1]:-1;
-   }
+    public int getNewId(int old) {
+        return old >= 0 && old < oldToNew.length ? oldToNew[old] : -1;
+    }
 
-   public short[] getOldToNew() {
-      return this.oldToNew;
-   }
+    public short[] getOldToNew() {
+        return oldToNew;
+    }
 }

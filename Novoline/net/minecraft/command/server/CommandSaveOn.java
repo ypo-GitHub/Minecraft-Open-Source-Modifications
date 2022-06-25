@@ -7,32 +7,42 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.WorldServer;
 
 public class CommandSaveOn extends CommandBase {
-   public String getCommandName() {
-      return "save-on";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "save-on";
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.save-on.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.save-on.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      MinecraftServer var3 = MinecraftServer.getServer();
-      boolean var4 = false;
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
+        boolean flag = false;
 
-      for(int var5 = 0; var5 < var3.worldServers.length; ++var5) {
-         if(var3.worldServers[var5] != null) {
-            WorldServer var6 = var3.worldServers[var5];
-            if(var6.disableLevelSaving) {
-               var6.disableLevelSaving = false;
-               var4 = true;
+        for (int i = 0; i < minecraftserver.worldServers.length; ++i) {
+            if (minecraftserver.worldServers[i] != null) {
+                WorldServer worldserver = minecraftserver.worldServers[i];
+
+                if (worldserver.disableLevelSaving) {
+                    worldserver.disableLevelSaving = false;
+                    flag = true;
+                }
             }
-         }
-      }
+        }
 
-      notifyOperators(var1, this, "commands.save.enabled", new Object[0]);
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+        if (flag) {
+            notifyOperators(sender, this, "commands.save.enabled", new Object[0]);
+        } else {
+            throw new CommandException("commands.save-on.alreadyOn", new Object[0]);
+        }
+    }
 }

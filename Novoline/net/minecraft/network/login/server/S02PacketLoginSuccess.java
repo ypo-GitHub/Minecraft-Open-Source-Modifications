@@ -1,44 +1,50 @@
 package net.minecraft.network.login.server;
 
 import com.mojang.authlib.GameProfile;
-import java.io.IOException;
-import java.util.UUID;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.login.INetHandlerLoginClient;
 
-public class S02PacketLoginSuccess implements Packet {
-   private GameProfile profile;
+import java.io.IOException;
+import java.util.UUID;
 
-   public S02PacketLoginSuccess() {
-   }
+public class S02PacketLoginSuccess implements Packet<INetHandlerLoginClient> {
+    private GameProfile profile;
 
-   public S02PacketLoginSuccess(GameProfile var1) {
-      this.profile = var1;
-   }
+    public S02PacketLoginSuccess() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      String var2 = var1.a(36);
-      String var3 = var1.a(16);
-      UUID var4 = UUID.fromString(var2);
-      this.profile = new GameProfile(var4, var3);
-   }
+    public S02PacketLoginSuccess(GameProfile profileIn) {
+        this.profile = profileIn;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      UUID var2 = this.profile.getId();
-      var1.writeString("");
-      var1.writeString(this.profile.getName());
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        String s = buf.readStringFromBuffer(36);
+        String s1 = buf.readStringFromBuffer(16);
+        UUID uuid = UUID.fromString(s);
+        this.profile = new GameProfile(uuid, s1);
+    }
 
-   public void processPacket(INetHandlerLoginClient var1) {
-      var1.handleLoginSuccess(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        UUID uuid = this.profile.getId();
+        buf.writeString(uuid == null ? "" : uuid.toString());
+        buf.writeString(this.profile.getName());
+    }
 
-   public GameProfile getProfile() {
-      return this.profile;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerLoginClient handler) {
+        handler.handleLoginSuccess(this);
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public GameProfile getProfile() {
+        return this.profile;
+    }
 }

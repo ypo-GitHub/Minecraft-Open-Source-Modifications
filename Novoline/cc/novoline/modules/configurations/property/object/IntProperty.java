@@ -4,76 +4,74 @@ import cc.novoline.modules.configurations.property.AbstractNumberProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class IntProperty extends AbstractNumberProperty {
-   private static int[] f;
+public class IntProperty extends AbstractNumberProperty<IntProperty, Integer> {
 
-   public IntProperty(@Nullable Integer var1) {
-      super(var1);
-   }
+    /* constructors */
+    public IntProperty(@Nullable Integer value) {
+        super(value);
+    }
 
-   public IntProperty() {
-      this(Integer.valueOf(0));
-   }
+    public IntProperty() {
+        this(0);
+    }
 
-   @NotNull
-   public static IntProperty of(@Nullable Integer var0) {
-      return new IntProperty(var0);
-   }
+    public static @NotNull IntProperty of(@Nullable Integer value) {
+        return new IntProperty(value);
+    }
 
-   @NotNull
-   public static IntProperty create() {
-      return new IntProperty();
-   }
+    public static @NotNull IntProperty create() {
+        return new IntProperty();
+    }
 
-   protected boolean inLimits(@NotNull Integer var1) {
-      int[] var2 = a();
-      return (this.minimum == null || var1.intValue() >= ((Integer)this.minimum).intValue()) && (this.maximum == null || var1.intValue() <= ((Integer)this.maximum).intValue());
-   }
+    /* methods */
+    @Override
+    protected boolean inLimits(@NotNull Integer number) {
+        return (minimum == null || number >= minimum) && (maximum == null || number <= maximum);
+    }
 
-   public void c(@Nullable Integer var1) {
-      int[] var2 = a();
-      if(this.value == null) {
-         this.value = var1;
-      }
+    @Override
+    public void add(@Nullable Integer number) {
+        if (value == null) {
+            this.value = number;
+        } else if (number != null) {
+            set(value + number);
+        }
+    }
 
-      this.set(Integer.valueOf(((Integer)this.value).intValue() + var1.intValue()));
-   }
+    @Override
+    public void subtract(@Nullable Integer number) {
+        if (value == null) {
+            this.value = number;
+        } else if (number != null) {
+            set(value - number);
+        }
+    }
 
-   public void b(@Nullable Integer var1) {
-      int[] var2 = a();
-      if(this.value == null) {
-         this.value = var1;
-      }
+    @Override
+    public boolean greaterThan(@Nullable Integer number) {
+        if (number == null) {
+            return value != null;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value > number;
+        }
+    }
 
-      this.set(Integer.valueOf(((Integer)this.value).intValue() - var1.intValue()));
-   }
+    @Override
+    public boolean lessThan(@Nullable Integer number) {
+        if (number == null) {
+            return false;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value < number;
+        }
+    }
 
-   public boolean greaterThan(@Nullable Integer var1) {
-      int[] var2 = a();
-      return var1 == null?this.value != null:(this.value == null?true:((Integer)this.value).intValue() > var1.intValue());
-   }
+    @Override
+    protected IntProperty self() {
+        return this;
+    }
 
-   public boolean lessThan(@Nullable Integer var1) {
-      int[] var2 = a();
-      return var1 == null?false:(this.value == null?true:((Integer)this.value).intValue() < var1.intValue());
-   }
-
-   protected IntProperty self() {
-      return this;
-   }
-
-   public static void b(int[] var0) {
-      f = var0;
-   }
-
-   public static int[] a() {
-      return f;
-   }
-
-   static {
-      if(a() == null) {
-         b(new int[5]);
-      }
-
-   }
 }

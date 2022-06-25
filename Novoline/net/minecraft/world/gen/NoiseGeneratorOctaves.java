@@ -1,49 +1,63 @@
 package net.minecraft.world.gen;
 
-import java.util.Random;
-import net.aAC;
 import net.minecraft.util.MathHelper;
-import net.minecraft.world.gen.NoiseGenerator;
-import net.minecraft.world.gen.NoiseGeneratorImproved;
+
+import java.util.Random;
 
 public class NoiseGeneratorOctaves extends NoiseGenerator {
-   private NoiseGeneratorImproved[] generatorCollection;
-   private int octaves;
+    /**
+     * Collection of noise generation functions.  Output is combined to produce different octaves of noise.
+     */
+    private NoiseGeneratorImproved[] generatorCollection;
+    private int octaves;
 
-   public NoiseGeneratorOctaves(Random var1, int var2) {
-      this.octaves = var2;
-      this.generatorCollection = new NoiseGeneratorImproved[var2];
+    public NoiseGeneratorOctaves(Random p_i2111_1_, int p_i2111_2_) {
+        this.octaves = p_i2111_2_;
+        this.generatorCollection = new NoiseGeneratorImproved[p_i2111_2_];
 
-      for(int var3 = 0; var3 < var2; ++var3) {
-         this.generatorCollection[var3] = new NoiseGeneratorImproved(var1);
-      }
+        for (int i = 0; i < p_i2111_2_; ++i) {
+            this.generatorCollection[i] = new NoiseGeneratorImproved(p_i2111_1_);
+        }
+    }
 
-   }
+    /**
+     * pars:(par2,3,4=noiseOffset ; so that adjacent noise segments connect) (pars5,6,7=x,y,zArraySize),(pars8,10,12 =
+     * x,y,z noiseScale)
+     */
+    public double[] generateNoiseOctaves(double[] p_76304_1_, int p_76304_2_, int p_76304_3_, int p_76304_4_, int p_76304_5_, int p_76304_6_, int p_76304_7_, double p_76304_8_, double p_76304_10_, double p_76304_12_) {
+        if (p_76304_1_ == null) {
+            p_76304_1_ = new double[p_76304_5_ * p_76304_6_ * p_76304_7_];
+        } else {
+            for (int i = 0; i < p_76304_1_.length; ++i) {
+                p_76304_1_[i] = 0.0D;
+            }
+        }
 
-   public double[] a(double[] var1, int var2, int var3, int var4, int var5, int var6, int var7, double var8, double var10, double var12) {
-      var1 = new double[var5 * var6 * var7];
-      double var14 = 1.0D;
+        double d3 = 1.0D;
 
-      for(int var16 = 0; var16 < this.octaves; ++var16) {
-         double var17 = (double)var2 * var14 * var8;
-         double var19 = (double)var3 * var14 * var10;
-         double var21 = (double)var4 * var14 * var12;
-         long var23 = MathHelper.floor_double_long(var17);
-         long var25 = MathHelper.floor_double_long(var21);
-         var17 = var17 - (double)var23;
-         var21 = var21 - (double)var25;
-         var23 = var23 % 16777216L;
-         var25 = var25 % 16777216L;
-         var17 = var17 + (double)var23;
-         var21 = var21 + (double)var25;
-         aAC.a(this.generatorCollection[var16], var1, var17, var19, var21, var5, var6, var7, var8 * var14, var10 * var14, var12 * var14, var14);
-         var14 /= 2.0D;
-      }
+        for (int j = 0; j < this.octaves; ++j) {
+            double d0 = (double) p_76304_2_ * d3 * p_76304_8_;
+            double d1 = (double) p_76304_3_ * d3 * p_76304_10_;
+            double d2 = (double) p_76304_4_ * d3 * p_76304_12_;
+            long k = MathHelper.floor_double_long(d0);
+            long l = MathHelper.floor_double_long(d2);
+            d0 = d0 - (double) k;
+            d2 = d2 - (double) l;
+            k = k % 16777216L;
+            l = l % 16777216L;
+            d0 = d0 + (double) k;
+            d2 = d2 + (double) l;
+            this.generatorCollection[j].populateNoiseArray(p_76304_1_, d0, d1, d2, p_76304_5_, p_76304_6_, p_76304_7_, p_76304_8_ * d3, p_76304_10_ * d3, p_76304_12_ * d3, d3);
+            d3 /= 2.0D;
+        }
 
-      return var1;
-   }
+        return p_76304_1_;
+    }
 
-   public double[] generateNoiseOctaves(double[] var1, int var2, int var3, int var4, int var5, double var6, double var8, double var10) {
-      return this.a(var1, var2, 10, var3, var4, 1, var5, var6, 1.0D, var8);
-   }
+    /**
+     * Bouncer function to the main one with some default arguments.
+     */
+    public double[] generateNoiseOctaves(double[] p_76305_1_, int p_76305_2_, int p_76305_3_, int p_76305_4_, int p_76305_5_, double p_76305_6_, double p_76305_8_, double p_76305_10_) {
+        return this.generateNoiseOctaves(p_76305_1_, p_76305_2_, 10, p_76305_3_, p_76305_4_, 1, p_76305_5_, p_76305_6_, 1.0D, p_76305_8_);
+    }
 }

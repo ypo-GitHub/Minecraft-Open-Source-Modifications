@@ -1,6 +1,5 @@
 package net.minecraft.world;
 
-import net.sD;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -9,70 +8,93 @@ import net.minecraft.network.play.server.S28PacketEffect;
 import net.minecraft.network.play.server.S29PacketSoundEffect;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
-import net.minecraft.world.IWorldAccess;
-import net.minecraft.world.WorldServer;
 
 public class WorldManager implements IWorldAccess {
-   private MinecraftServer mcServer;
-   private WorldServer theWorldServer;
+    /**
+     * Reference to the MinecraftServer object.
+     */
+    private MinecraftServer mcServer;
 
-   public WorldManager(MinecraftServer var1, WorldServer var2) {
-      this.mcServer = var1;
-      this.theWorldServer = var2;
-   }
+    /**
+     * The WorldServer object.
+     */
+    private WorldServer theWorldServer;
 
-   public void spawnParticle(int var1, boolean var2, double var3, double var5, double var7, double var9, double var11, double var13, int... var15) {
-   }
+    public WorldManager(MinecraftServer p_i1517_1_, WorldServer p_i1517_2_) {
+        this.mcServer = p_i1517_1_;
+        this.theWorldServer = p_i1517_2_;
+    }
 
-   public void onEntityAdded(Entity var1) {
-      this.theWorldServer.getEntityTracker().trackEntity(var1);
-   }
+    public void spawnParticle(int particleID, boolean ignoreRange, double xCoord, double yCoord, double zCoord, double xOffset, double yOffset, double zOffset, int... p_180442_15_) {
+    }
 
-   public void onEntityRemoved(Entity var1) {
-      this.theWorldServer.getEntityTracker().untrackEntity(var1);
-      this.theWorldServer.getScoreboard().func_181140_a(var1);
-   }
+    /**
+     * Called on all IWorldAccesses when an entity is created or loaded. On client worlds, starts downloading any
+     * necessary textures. On server worlds, adds the entity to the entity tracker.
+     */
+    public void onEntityAdded(Entity entityIn) {
+        this.theWorldServer.getEntityTracker().trackEntity(entityIn);
+    }
 
-   public void playSound(String var1, double var2, double var4, double var6, float var8, float var9) {
-      this.mcServer.getConfigurationManager().sendToAllNear(var2, var4, var6, var8 > 1.0F?(double)(16.0F * var8):16.0D, this.theWorldServer.provider.getDimensionId(), new S29PacketSoundEffect(var1, var2, var4, var6, var8, var9));
-   }
+    /**
+     * Called on all IWorldAccesses when an entity is unloaded or destroyed. On client worlds, releases any downloaded
+     * textures. On server worlds, removes the entity from the entity tracker.
+     */
+    public void onEntityRemoved(Entity entityIn) {
+        this.theWorldServer.getEntityTracker().untrackEntity(entityIn);
+        this.theWorldServer.getScoreboard().func_181140_a(entityIn);
+    }
 
-   public void playSoundToNearExcept(EntityPlayer var1, String var2, double var3, double var5, double var7, float var9, float var10) {
-      sD.a(this.mcServer.getConfigurationManager(), var1, var3, var5, var7, var9 > 1.0F?(double)(16.0F * var9):16.0D, this.theWorldServer.provider.getDimensionId(), new S29PacketSoundEffect(var2, var3, var5, var7, var9, var10));
-   }
+    /**
+     * Plays the specified sound. Arg: soundName, x, y, z, volume, pitch
+     */
+    public void playSound(String soundName, double x, double y, double z, float volume, float pitch) {
+        this.mcServer.getConfigurationManager().sendToAllNear(x, y, z, volume > 1.0F ? (double) (16.0F * volume) : 16.0D, this.theWorldServer.provider.getDimensionId(), new S29PacketSoundEffect(soundName, x, y, z, volume, pitch));
+    }
 
-   public void markBlockRangeForRenderUpdate(int var1, int var2, int var3, int var4, int var5, int var6) {
-   }
+    /**
+     * Plays sound to all near players except the player reference given
+     */
+    public void playSoundToNearExcept(EntityPlayer except, String soundName, double x, double y, double z, float volume, float pitch) {
+        this.mcServer.getConfigurationManager().sendToAllNearExcept(except, x, y, z, volume > 1.0F ? (double) (16.0F * volume) : 16.0D, this.theWorldServer.provider.getDimensionId(), new S29PacketSoundEffect(soundName, x, y, z, volume, pitch));
+    }
 
-   public void markBlockForUpdate(BlockPos var1) {
-      this.theWorldServer.getPlayerManager().markBlockForUpdate(var1);
-   }
+    /**
+     * On the client, re-renders all blocks in this range, inclusive. On the server, does nothing. Args: min x, min y,
+     * min z, max x, max y, max z
+     */
+    public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) {
+    }
 
-   public void notifyLightSet(BlockPos var1) {
-   }
+    public void markBlockForUpdate(BlockPos pos) {
+        this.theWorldServer.getPlayerManager().markBlockForUpdate(pos);
+    }
 
-   public void playRecord(String var1, BlockPos var2) {
-   }
+    public void notifyLightSet(BlockPos pos) {
+    }
 
-   public void playAuxSFX(EntityPlayer var1, int var2, BlockPos var3, int var4) {
-      sD.a(this.mcServer.getConfigurationManager(), var1, (double)var3.getX(), (double)var3.getY(), (double)var3.getZ(), 64.0D, this.theWorldServer.provider.getDimensionId(), new S28PacketEffect(var2, var3, var4, false));
-   }
+    public void playRecord(String recordName, BlockPos blockPosIn) {
+    }
 
-   public void broadcastSound(int var1, BlockPos var2, int var3) {
-      this.mcServer.getConfigurationManager().sendPacketToAllPlayers(new S28PacketEffect(var1, var2, var3, true));
-   }
+    public void playAuxSFX(EntityPlayer player, int sfxType, BlockPos blockPosIn, int p_180439_4_) {
+        this.mcServer.getConfigurationManager().sendToAllNearExcept(player, (double) blockPosIn.getX(), (double) blockPosIn.getY(), (double) blockPosIn.getZ(), 64.0D, this.theWorldServer.provider.getDimensionId(), new S28PacketEffect(sfxType, blockPosIn, p_180439_4_, false));
+    }
 
-   public void sendBlockBreakProgress(int var1, BlockPos var2, int var3) {
-      for(EntityPlayerMP var5 : this.mcServer.getConfigurationManager().func_181057_v()) {
-         if(var5.worldObj == this.theWorldServer && var5.getEntityID() != var1) {
-            double var6 = (double)var2.getX() - var5.posX;
-            double var8 = (double)var2.getY() - var5.posY;
-            double var10 = (double)var2.getZ() - var5.posZ;
-            if(var6 * var6 + var8 * var8 + var10 * var10 < 1024.0D) {
-               var5.playerNetServerHandler.sendPacket(new S25PacketBlockBreakAnim(var1, var2, var3));
+    public void broadcastSound(int p_180440_1_, BlockPos p_180440_2_, int p_180440_3_) {
+        this.mcServer.getConfigurationManager().sendPacketToAllPlayers(new S28PacketEffect(p_180440_1_, p_180440_2_, p_180440_3_, true));
+    }
+
+    public void sendBlockBreakProgress(int breakerId, BlockPos pos, int progress) {
+        for (EntityPlayerMP entityplayermp : this.mcServer.getConfigurationManager().func_181057_v()) {
+            if (entityplayermp != null && entityplayermp.worldObj == this.theWorldServer && entityplayermp.getEntityID() != breakerId) {
+                double d0 = (double) pos.getX() - entityplayermp.posX;
+                double d1 = (double) pos.getY() - entityplayermp.posY;
+                double d2 = (double) pos.getZ() - entityplayermp.posZ;
+
+                if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
+                    entityplayermp.playerNetServerHandler.sendPacket(new S25PacketBlockBreakAnim(breakerId, pos, progress));
+                }
             }
-         }
-      }
-
-   }
+        }
+    }
 }

@@ -6,133 +6,149 @@ import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.world.EnumSkyBlock;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldType;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.Chunk$EnumCreateEntityType;
 
 public class ChunkCache implements IBlockAccess {
-   protected int chunkX;
-   protected int chunkZ;
-   protected Chunk[][] chunkArray;
-   protected boolean hasExtendedLevels;
-   protected World worldObj;
+    protected int chunkX;
+    protected int chunkZ;
+    protected Chunk[][] chunkArray;
 
-   public ChunkCache(World var1, BlockPos var2, BlockPos var3, int var4) {
-      this.worldObj = var1;
-      this.chunkX = var2.getX() - var4 >> 4;
-      this.chunkZ = var2.getZ() - var4 >> 4;
-      int var5 = var3.getX() + var4 >> 4;
-      int var6 = var3.getZ() + var4 >> 4;
-      this.chunkArray = new Chunk[var5 - this.chunkX + 1][var6 - this.chunkZ + 1];
-      this.hasExtendedLevels = true;
+    /**
+     * set by !chunk.getAreLevelsEmpty
+     */
+    protected boolean hasExtendedLevels;
 
-      for(int var7 = this.chunkX; var7 <= var5; ++var7) {
-         for(int var8 = this.chunkZ; var8 <= var6; ++var8) {
-            this.chunkArray[var7 - this.chunkX][var8 - this.chunkZ] = var1.getChunkFromChunkCoords(var7, var8);
-         }
-      }
+    /**
+     * Reference to the World object.
+     */
+    protected World worldObj;
 
-      for(int var10 = var2.getX() >> 4; var10 <= var3.getX() >> 4; ++var10) {
-         for(int var11 = var2.getZ() >> 4; var11 <= var3.getZ() >> 4; ++var11) {
-            Chunk var9 = this.chunkArray[var10 - this.chunkX][var11 - this.chunkZ];
-            if(!var9.getAreLevelsEmpty(var2.getY(), var3.getY())) {
-               this.hasExtendedLevels = false;
+    public ChunkCache(World worldIn, BlockPos posFromIn, BlockPos posToIn, int subIn) {
+        this.worldObj = worldIn;
+        this.chunkX = posFromIn.getX() - subIn >> 4;
+        this.chunkZ = posFromIn.getZ() - subIn >> 4;
+        int i = posToIn.getX() + subIn >> 4;
+        int j = posToIn.getZ() + subIn >> 4;
+        this.chunkArray = new Chunk[i - this.chunkX + 1][j - this.chunkZ + 1];
+        this.hasExtendedLevels = true;
+
+        for (int k = this.chunkX; k <= i; ++k) {
+            for (int l = this.chunkZ; l <= j; ++l) {
+                this.chunkArray[k - this.chunkX][l - this.chunkZ] = worldIn.getChunkFromChunkCoords(k, l);
             }
-         }
-      }
+        }
 
-   }
+        for (int i1 = posFromIn.getX() >> 4; i1 <= posToIn.getX() >> 4; ++i1) {
+            for (int j1 = posFromIn.getZ() >> 4; j1 <= posToIn.getZ() >> 4; ++j1) {
+                Chunk chunk = this.chunkArray[i1 - this.chunkX][j1 - this.chunkZ];
 
-   public boolean extendedLevelsInChunkCache() {
-      return this.hasExtendedLevels;
-   }
-
-   public TileEntity getTileEntity(BlockPos var1) {
-      int var2 = (var1.getX() >> 4) - this.chunkX;
-      int var3 = (var1.getZ() >> 4) - this.chunkZ;
-      return this.chunkArray[var2][var3].getTileEntity(var1, Chunk$EnumCreateEntityType.IMMEDIATE);
-   }
-
-   public int getCombinedLight(BlockPos var1, int var2) {
-      int var3 = this.getLightForExt(EnumSkyBlock.SKY, var1);
-      int var4 = this.getLightForExt(EnumSkyBlock.BLOCK, var1);
-      if(var4 < var2) {
-         var4 = var2;
-      }
-
-      return var3 << 20 | var4 << 4;
-   }
-
-   public IBlockState getBlockState(BlockPos var1) {
-      if(var1.getY() >= 0 && var1.getY() < 256) {
-         int var2 = (var1.getX() >> 4) - this.chunkX;
-         int var3 = (var1.getZ() >> 4) - this.chunkZ;
-         if(var2 < this.chunkArray.length && var3 < this.chunkArray[var2].length) {
-            Chunk var4 = this.chunkArray[var2][var3];
-            return var4.getBlockState(var1);
-         }
-      }
-
-      return Blocks.air.getDefaultState();
-   }
-
-   public BiomeGenBase getBiomeGenForCoords(BlockPos var1) {
-      return this.worldObj.getBiomeGenForCoords(var1);
-   }
-
-   private int getLightForExt(EnumSkyBlock var1, BlockPos var2) {
-      if(var1 == EnumSkyBlock.SKY && this.worldObj.provider.getHasNoSky()) {
-         return 0;
-      } else if(var2.getY() >= 0 && var2.getY() < 256) {
-         if(this.getBlockState(var2).getBlock().getUseNeighborBrightness()) {
-            int var9 = 0;
-
-            for(EnumFacing var7 : EnumFacing.values()) {
-               int var8 = this.getLightFor(var1, var2.offset(var7));
-               if(var8 > var9) {
-                  var9 = var8;
-               }
-
-               if(var9 >= 15) {
-                  return var9;
-               }
+                if (chunk != null && !chunk.getAreLevelsEmpty(posFromIn.getY(), posToIn.getY())) {
+                    this.hasExtendedLevels = false;
+                }
             }
+        }
+    }
 
-            return var9;
-         } else {
-            int var3 = (var2.getX() >> 4) - this.chunkX;
-            int var4 = (var2.getZ() >> 4) - this.chunkZ;
-            return this.chunkArray[var3][var4].getLightFor(var1, var2);
-         }
-      } else {
-         return var1.defaultLightValue;
-      }
-   }
+    /**
+     * set by !chunk.getAreLevelsEmpty
+     */
+    public boolean extendedLevelsInChunkCache() {
+        return this.hasExtendedLevels;
+    }
 
-   public boolean isAirBlock(BlockPos var1) {
-      return this.getBlockState(var1).getBlock().getMaterial() == Material.air;
-   }
+    public TileEntity getTileEntity(BlockPos pos) {
+        int i = (pos.getX() >> 4) - this.chunkX;
+        int j = (pos.getZ() >> 4) - this.chunkZ;
+        return this.chunkArray[i][j].getTileEntity(pos, Chunk.EnumCreateEntityType.IMMEDIATE);
+    }
 
-   public int getLightFor(EnumSkyBlock var1, BlockPos var2) {
-      if(var2.getY() >= 0 && var2.getY() < 256) {
-         int var3 = (var2.getX() >> 4) - this.chunkX;
-         int var4 = (var2.getZ() >> 4) - this.chunkZ;
-         return this.chunkArray[var3][var4].getLightFor(var1, var2);
-      } else {
-         return var1.defaultLightValue;
-      }
-   }
+    public int getCombinedLight(BlockPos pos, int lightValue) {
+        int i = this.getLightForExt(EnumSkyBlock.SKY, pos);
+        int j = this.getLightForExt(EnumSkyBlock.BLOCK, pos);
 
-   public int getStrongPower(BlockPos var1, EnumFacing var2) {
-      IBlockState var3 = this.getBlockState(var1);
-      return var3.getBlock().getStrongPower(this, var1, var3, var2);
-   }
+        if (j < lightValue) {
+            j = lightValue;
+        }
 
-   public WorldType getWorldType() {
-      return this.worldObj.getWorldType();
-   }
+        return i << 20 | j << 4;
+    }
+
+    public IBlockState getBlockState(BlockPos pos) {
+        if (pos.getY() >= 0 && pos.getY() < 256) {
+            int i = (pos.getX() >> 4) - this.chunkX;
+            int j = (pos.getZ() >> 4) - this.chunkZ;
+
+            if (i >= 0 && i < this.chunkArray.length && j >= 0 && j < this.chunkArray[i].length) {
+                Chunk chunk = this.chunkArray[i][j];
+
+                if (chunk != null) {
+                    return chunk.getBlockState(pos);
+                }
+            }
+        }
+
+        return Blocks.air.getDefaultState();
+    }
+
+    public BiomeGenBase getBiomeGenForCoords(BlockPos pos) {
+        return this.worldObj.getBiomeGenForCoords(pos);
+    }
+
+    private int getLightForExt(EnumSkyBlock p_175629_1_, BlockPos pos) {
+        if (p_175629_1_ == EnumSkyBlock.SKY && this.worldObj.provider.getHasNoSky()) {
+            return 0;
+        } else if (pos.getY() >= 0 && pos.getY() < 256) {
+            if (this.getBlockState(pos).getBlock().getUseNeighborBrightness()) {
+                int l = 0;
+
+                for (EnumFacing enumfacing : EnumFacing.values()) {
+                    int k = this.getLightFor(p_175629_1_, pos.offset(enumfacing));
+
+                    if (k > l) {
+                        l = k;
+                    }
+
+                    if (l >= 15) {
+                        return l;
+                    }
+                }
+
+                return l;
+            } else {
+                int i = (pos.getX() >> 4) - this.chunkX;
+                int j = (pos.getZ() >> 4) - this.chunkZ;
+                return this.chunkArray[i][j].getLightFor(p_175629_1_, pos);
+            }
+        } else {
+            return p_175629_1_.defaultLightValue;
+        }
+    }
+
+    /**
+     * Checks to see if an air block exists at the provided location. Note that this only checks to see if the blocks
+     * material is set to air, meaning it is possible for non-vanilla blocks to still pass this check.
+     */
+    public boolean isAirBlock(BlockPos pos) {
+        return this.getBlockState(pos).getBlock().getMaterial() == Material.air;
+    }
+
+    public int getLightFor(EnumSkyBlock p_175628_1_, BlockPos pos) {
+        if (pos.getY() >= 0 && pos.getY() < 256) {
+            int i = (pos.getX() >> 4) - this.chunkX;
+            int j = (pos.getZ() >> 4) - this.chunkZ;
+            return this.chunkArray[i][j].getLightFor(p_175628_1_, pos);
+        } else {
+            return p_175628_1_.defaultLightValue;
+        }
+    }
+
+    public int getStrongPower(BlockPos pos, EnumFacing direction) {
+        IBlockState iblockstate = this.getBlockState(pos);
+        return iblockstate.getBlock().getStrongPower(this, pos, iblockstate, direction);
+    }
+
+    public WorldType getWorldType() {
+        return this.worldObj.getWorldType();
+    }
 }

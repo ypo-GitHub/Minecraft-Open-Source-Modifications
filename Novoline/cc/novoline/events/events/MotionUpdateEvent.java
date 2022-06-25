@@ -1,124 +1,89 @@
 package cc.novoline.events.events;
 
-import cc.novoline.events.EventManager;
-import cc.novoline.events.events.Event;
-import cc.novoline.events.events.EventState;
-import net.acE;
-import net.aea;
-import net.minecraft.client.entity.EntityPlayerSP;
+import cc.novoline.events.events.callables.CancellableEvent;
 
-public class MotionUpdateEvent implements Event {
-   private float yaw;
-   private float pitch;
-   private double posY;
-   private double posZ;
-   private double posX;
-   private boolean onGround;
-   private EventState state;
-   private static boolean d;
+public class MotionUpdateEvent extends CancellableEvent {
 
-   public MotionUpdateEvent(double var1, double var3, double var5, float var7, float var8, boolean var9, EventState var10) {
-      aea var11 = new aea(var1, var3, var5, var7, var8, var9, var10);
-      EventManager.call(var11);
-      this.posX = var11.getX();
-      this.posY = var11.getY();
-      this.posZ = var11.getZ();
-      this.yaw = var11.getYaw();
-      this.pitch = var11.getPitch();
-      this.onGround = var11.isOnGround();
-      this.state = var11.getState();
-   }
+    private float yaw;
+    private float pitch;
+    private double posY;
+    private double posZ;
+    private double posX;
+    private boolean onGround;
+    private State state;
 
-   public MotionUpdateEvent(EntityPlayerSP var1, EventState var2) {
-      aea var4 = new aea(this.posX, this.posY, this.posZ, this.yaw, this.pitch, this.onGround, var2);
-      j();
-      EventManager.call(var4);
-      this.posX = var1.posX;
-      this.posY = var1.getEntityBoundingBox().minY;
-      this.posZ = var1.posZ;
-      this.yaw = var1.rotationYaw;
-      this.pitch = var1.rotationPitch;
-      this.onGround = var1.onGround;
-      this.state = var4.getState();
-      if(acE.b() == null) {
-         b(false);
-      }
+    public MotionUpdateEvent(double posX, double posY, double posZ, float yaw, float pitch, boolean onGround, State state) {
+        this.posX = posX;
+        this.posY = posY;
+        this.posZ = posZ;
+        this.yaw = yaw;
+        this.pitch = pitch;
+        this.onGround = onGround;
+        this.state = state;
+    }
 
-   }
+    public MotionUpdateEvent(State state) {
+        this.state = state;
+    }
 
-   public float getYaw() {
-      return this.yaw;
-   }
+    public enum State {
+        PRE,
+        POST
+    }
 
-   public float getPitch() {
-      return this.pitch;
-   }
+    public float getYaw() {
+        return yaw;
+    }
 
-   public double getY() {
-      return this.posY;
-   }
+    public float getPitch() {
+        return pitch;
+    }
 
-   public double getZ() {
-      return this.posZ;
-   }
+    public double getY() {
+        return posY;
+    }
 
-   public double getX() {
-      return this.posX;
-   }
+    public double getZ() {
+        return posZ;
+    }
 
-   public boolean isOnGround() {
-      return this.onGround;
-   }
+    public double getX() {
+        return posX;
+    }
 
-   public EventState getState() {
-      return this.state;
-   }
+    public boolean isOnGround() {
+        return onGround;
+    }
 
-   public void setYaw(float var1) {
-      this.yaw = var1;
-   }
+    public State getState() {
+        return state;
+    }
 
-   public void setPitch(float var1) {
-      this.pitch = var1;
-   }
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
+    }
 
-   public void setY(double var1) {
-      this.posY = var1;
-   }
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
 
-   public void setZ(double var1) {
-      this.posZ = var1;
-   }
+    public void setY(double posY) {
+        this.posY = posY;
+    }
 
-   public void setX(double var1) {
-      this.posX = var1;
-   }
+    public void setZ(double posZ) {
+        this.posZ = posZ;
+    }
 
-   public void setOnGround(boolean var1) {
-      this.onGround = var1;
-   }
+    public void setX(double posX) {
+        this.posX = posX;
+    }
 
-   public void setState(EventState var1) {
-      this.state = var1;
-   }
+    public void setOnGround(boolean onGround) {
+        this.onGround = onGround;
+    }
 
-   public static void b(boolean var0) {
-      d = var0;
-   }
-
-   public static boolean j() {
-      return d;
-   }
-
-   public static boolean c() {
-      boolean var0 = j();
-      return true;
-   }
-
-   static {
-      if(!c()) {
-         b(true);
-      }
-
-   }
+    public void setState(State state) {
+        this.state = state;
+    }
 }

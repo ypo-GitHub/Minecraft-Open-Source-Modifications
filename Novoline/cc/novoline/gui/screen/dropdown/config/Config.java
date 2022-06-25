@@ -1,117 +1,103 @@
 package cc.novoline.gui.screen.dropdown.config;
 
 import cc.novoline.Novoline;
+import cc.novoline.commands.impl.ConfigCommand;
 import cc.novoline.modules.visual.HUD;
 import cc.novoline.utils.OpenGLUtil;
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_18;
-import java.awt.Color;
-import java.util.Iterator;
-import net.K6;
-import net.a1I;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.MathHelper;
 
+import java.awt.*;
+
+import static cc.novoline.utils.fonts.impl.Fonts.SF.SF_18.SF_18;
+
 public class Config {
-   private K6 e;
-   public int y;
-   public a1I i;
-   private float fraction = 0.0F;
-   private Timer lastClick = new Timer();
-   public static final Color WHITE = new Color(255, 255, 255, 255);
-   public static final Color BACKGROUND_130 = new Color(0, 0, 0, 130);
-   public static final Color BACKGROUND_120 = new Color(0, 0, 0, 120);
-   private static boolean c;
 
-   public Config(K6 var1, a1I var2) {
-      this.e = var1;
-      this.i = var2;
-   }
+	public int y;
 
-   public void b(int var1, int var2) {
-      a();
-      this.y = (int)(this.i.getPosY() + 15.0F);
-      boolean var4 = this.i.c() == this;
-      HUD var5 = (HUD)Novoline.getInstance().getModuleManager().getModule(HUD.class);
-      Iterator var6 = this.i.a().iterator();
-      if(var6.hasNext()) {
-         Config var7 = (Config)var6.next();
-         if(var7 == this) {
-            ;
-         }
+	public final static Color WHITE = new Color(255, 255, 255, 255);
+	public final static Color BACKGROUND_130 = new Color(0, 0, 0, 130);
+	public final static Color BACKGROUND_120 = new Color(0, 0, 0, 120);
 
-         this.y += var7.getYPerConfig();
-      }
+	private final String name;
+	private final ConfigTab parent;
+	private float fraction = 0;
+	private Timer lastClick = new Timer();
 
-      if(var4 && this.fraction < 1.0F) {
-         this.fraction = (float)((double)this.fraction + 0.0025D * (double)(2000 / Minecraft.getInstance().getDebugFPS()));
-      }
+	public Config(String name, ConfigTab parent) {
+		this.name = name;
+		this.parent = parent;
+	}
 
-      if(!var4 && this.fraction > 0.0F) {
-         this.fraction = (float)((double)this.fraction - 0.0025D * (double)(2000 / Minecraft.getInstance().getDebugFPS()));
-      }
+	public void drawScreen(int mouseX, int mouseY) {
+		y = (int) (parent.getPosY() + 15);
 
-      this.fraction = MathHelper.clamp_float(this.fraction, 0.0F, 1.0F);
-      Gui.drawRect((double)this.i.getPosX(), (double)this.y, (double)(this.i.getPosX() + 100.0F), (double)(this.y + this.getYPerConfig()), (new Color(40, 40, 40, 255)).getRGB());
-      Fonts$SF$SF_18.SF_18.drawCenteredString(this.e.g(), this.i.getPosX() + 50.0F, (float)(this.y + 4), OpenGLUtil.interpolateColor(WHITE, new Color(var5.getColor().getRed(), var5.getColor().getGreen(), var5.getColor().getBlue(), 250), this.fraction), true);
-   }
+		boolean isSelected = parent.getSelectedConfig() == this;
 
-   public boolean isHovered(int var1, int var2) {
-      d();
-      this.y = (int)(this.i.getPosY() + 15.0F);
-      Iterator var4 = this.i.a().iterator();
-      if(var4.hasNext()) {
-         Config var5 = (Config)var4.next();
-         if(var5 == this) {
-            ;
-         }
+		HUD hud = Novoline.getInstance().getModuleManager().getModule(HUD.class);
 
-         this.y += var5.getYPerConfig();
-      }
+		for (Config config : parent.getConfigs()) {
+			if (config == this) {
+				break;
+			} else {
+				y += config.getYPerConfig();
+			}
+		}
 
-      return (float)var1 >= this.i.getPosX() && var2 >= this.y && (float)var1 <= this.i.getPosX() + 101.0F && var2 <= this.y + this.getYPerConfig();
-   }
+		if(isSelected && fraction < 1){
+			fraction+=0.0025 * (2000 / Minecraft.getInstance().getDebugFPS());
+		}
+		if(!isSelected && fraction > 0){
+			fraction-=0.0025 * (2000 / Minecraft.getInstance().getDebugFPS());
+		}
+		fraction = MathHelper.clamp_float(fraction,0,1);
 
-   public void a(int var1, int var2, int var3) {
-      boolean var4 = a();
-      if(this.isHovered(var1, var2) && var3 == 0) {
-         this.i.a(this);
-         if(!this.lastClick.check(200.0F)) {
-            Novoline.getInstance().u().d(this.e.g());
-         }
+		Gui.drawRect(parent.getPosX(), y,parent.getPosX() + 100, y + getYPerConfig(), new Color(40, 40, 40, 255).getRGB());
+		SF_18.drawCenteredString(name, parent.getPosX() + 101 / 2, y + 4, OpenGLUtil.interpolateColor(WHITE,new Color(hud.getColor().getRed(), hud.getColor().getGreen(), hud.getColor().getBlue(), 250),fraction), true);
+	}
 
-         this.lastClick.reset();
-      }
+	public void keyTyped(char typedChar, int keyCode) {
 
-   }
+	}
 
-   public int getYPerConfig() {
-      return 14;
-   }
+	public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+		if(isHovered(mouseX, mouseY) && mouseButton == 0) {
+			parent.setSelectedConfig(this);
 
-   public String e() {
-      return this.e.g();
-   }
+			if(!lastClick.check(200)) {
+				ConfigCommand.loadConfig(Novoline.getInstance().getModuleManager().getConfigManager(), getName());
+			}
 
-   public a1I b() {
-      return this.i;
-   }
+			lastClick.reset();
+		}
+	}
 
-   static {
-      b(true);
-   }
+	public boolean isHovered(int mouseX, int mouseY) {
+		y = (int) (parent.getPosY() + 15);
 
-   public static void b(boolean var0) {
-      c = var0;
-   }
+		for (Config tabModule : parent.getConfigs()) {
+			if (tabModule == this) {
+				break;
+			} else {
+				y += tabModule.getYPerConfig();
+			}
+		}
 
-   public static boolean d() {
-      return c;
-   }
+		return mouseX >= parent.getPosX() && mouseY >= y && mouseX <= parent.getPosX() + 101 && mouseY <= y + getYPerConfig();
+	}
 
-   public static boolean a() {
-      boolean var0 = d();
-      return true;
-   }
+	public int getYPerConfig() {
+		return 14;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public ConfigTab getParent() {
+		return parent;
+	}
+	
 }

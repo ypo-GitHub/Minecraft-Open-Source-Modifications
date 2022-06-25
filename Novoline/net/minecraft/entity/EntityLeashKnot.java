@@ -1,9 +1,6 @@
 package net.minecraft.entity;
 
 import net.minecraft.block.BlockFence;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityHanging;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -14,107 +11,136 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class EntityLeashKnot extends EntityHanging {
-   public EntityLeashKnot(World var1) {
-      super(var1);
-   }
+    public EntityLeashKnot(World worldIn) {
+        super(worldIn);
+    }
 
-   public EntityLeashKnot(World var1, BlockPos var2) {
-      super(var1, var2);
-      this.setPosition((double)var2.getX() + 0.5D, (double)var2.getY() + 0.5D, (double)var2.getZ() + 0.5D);
-      float var3 = 0.125F;
-      float var4 = 0.1875F;
-      float var5 = 0.25F;
-      this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.1875D, this.posY - 0.25D + 0.125D, this.posZ - 0.1875D, this.posX + 0.1875D, this.posY + 0.25D + 0.125D, this.posZ + 0.1875D));
-   }
+    public EntityLeashKnot(World worldIn, BlockPos hangingPositionIn) {
+        super(worldIn, hangingPositionIn);
+        this.setPosition((double) hangingPositionIn.getX() + 0.5D, (double) hangingPositionIn.getY() + 0.5D, (double) hangingPositionIn.getZ() + 0.5D);
+        float f = 0.125F;
+        float f1 = 0.1875F;
+        float f2 = 0.25F;
+        this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.1875D, this.posY - 0.25D + 0.125D, this.posZ - 0.1875D, this.posX + 0.1875D, this.posY + 0.25D + 0.125D, this.posZ + 0.1875D));
+    }
 
-   protected void entityInit() {
-      super.entityInit();
-   }
+    protected void entityInit() {
+        super.entityInit();
+    }
 
-   public void updateFacingWithBoundingBox(EnumFacing var1) {
-   }
+    /**
+     * Updates facing and bounding box based on it
+     */
+    public void updateFacingWithBoundingBox(EnumFacing facingDirectionIn) {
+    }
 
-   public int getWidthPixels() {
-      return 9;
-   }
+    public int getWidthPixels() {
+        return 9;
+    }
 
-   public int getHeightPixels() {
-      return 9;
-   }
+    public int getHeightPixels() {
+        return 9;
+    }
 
-   public float getEyeHeight() {
-      return -0.0625F;
-   }
+    public float getEyeHeight() {
+        return -0.0625F;
+    }
 
-   public boolean isInRangeToRenderDist(double var1) {
-      return var1 < 1024.0D;
-   }
+    /**
+     * Checks if the entity is in range to render by using the past in distance and comparing it to its average edge
+     * length * 64 * renderDistanceWeight Args: distance
+     */
+    public boolean isInRangeToRenderDist(double distance) {
+        return distance < 1024.0D;
+    }
 
-   public void onBroken(Entity var1) {
-   }
+    /**
+     * Called when this entity is broken. Entity parameter may be null.
+     */
+    public void onBroken(Entity brokenEntity) {
+    }
 
-   public boolean writeToNBTOptional(NBTTagCompound var1) {
-      return false;
-   }
+    /**
+     * Either write this entity to the NBT tag given and return true, or return false without doing anything. If this
+     * returns false the entity is not saved on disk. Ridden entities return false here as they are saved with their
+     * rider.
+     */
+    public boolean writeToNBTOptional(NBTTagCompound tagCompund) {
+        return false;
+    }
 
-   public void writeEntityToNBT(NBTTagCompound var1) {
-   }
+    /**
+     * (abstract) Protected helper method to write subclass entity data to NBT.
+     */
+    public void writeEntityToNBT(NBTTagCompound tagCompound) {
+    }
 
-   public void readEntityFromNBT(NBTTagCompound var1) {
-   }
+    /**
+     * (abstract) Protected helper method to read subclass entity data from NBT.
+     */
+    public void readEntityFromNBT(NBTTagCompound tagCompund) {
+    }
 
-   public boolean interactFirst(EntityPlayer var1) {
-      ItemStack var2 = var1.getHeldItem();
-      boolean var3 = false;
-      if(var2.getItem() == Items.lead && !this.worldObj.isRemote) {
-         double var4 = 7.0D;
+    /**
+     * First layer of player interaction
+     */
+    public boolean interactFirst(EntityPlayer playerIn) {
+        ItemStack itemstack = playerIn.getHeldItem();
+        boolean flag = false;
 
-         for(EntityLiving var7 : this.worldObj.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB(this.posX - var4, this.posY - var4, this.posZ - var4, this.posX + var4, this.posY + var4, this.posZ + var4))) {
-            if(var7.getLeashed() && var7.getLeashedToEntity() == var1) {
-               var7.setLeashedToEntity(this, true);
-               var3 = true;
+        if (itemstack != null && itemstack.getItem() == Items.lead && !this.worldObj.isRemote) {
+            double d0 = 7.0D;
+
+            for (EntityLiving entityliving : this.worldObj.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB(this.posX - d0, this.posY - d0, this.posZ - d0, this.posX + d0, this.posY + d0, this.posZ + d0))) {
+                if (entityliving.getLeashed() && entityliving.getLeashedToEntity() == playerIn) {
+                    entityliving.setLeashedToEntity(this, true);
+                    flag = true;
+                }
             }
-         }
-      }
+        }
 
-      if(!this.worldObj.isRemote) {
-         this.setDead();
-         if(var1.abilities.isCreative()) {
-            double var9 = 7.0D;
+        if (!this.worldObj.isRemote && !flag) {
+            this.setDead();
 
-            for(EntityLiving var11 : this.worldObj.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB(this.posX - var9, this.posY - var9, this.posZ - var9, this.posX + var9, this.posY + var9, this.posZ + var9))) {
-               if(var11.getLeashed() && var11.getLeashedToEntity() == this) {
-                  var11.clearLeashed(true, false);
-               }
+            if (playerIn.abilities.isCreative()) {
+                double d1 = 7.0D;
+
+                for (EntityLiving entityliving1 : this.worldObj.getEntitiesWithinAABB(EntityLiving.class, new AxisAlignedBB(this.posX - d1, this.posY - d1, this.posZ - d1, this.posX + d1, this.posY + d1, this.posZ + d1))) {
+                    if (entityliving1.getLeashed() && entityliving1.getLeashedToEntity() == this) {
+                        entityliving1.clearLeashed(true, false);
+                    }
+                }
             }
-         }
-      }
+        }
 
-      return true;
-   }
+        return true;
+    }
 
-   public boolean onValidSurface() {
-      return this.worldObj.getBlockState(this.hangingPosition).getBlock() instanceof BlockFence;
-   }
+    /**
+     * checks to make sure painting can be placed there
+     */
+    public boolean onValidSurface() {
+        return this.worldObj.getBlockState(this.hangingPosition).getBlock() instanceof BlockFence;
+    }
 
-   public static EntityLeashKnot createKnot(World var0, BlockPos var1) {
-      EntityLeashKnot var2 = new EntityLeashKnot(var0, var1);
-      var2.forceSpawn = true;
-      var0.spawnEntityInWorld(var2);
-      return var2;
-   }
+    public static EntityLeashKnot createKnot(World worldIn, BlockPos fence) {
+        EntityLeashKnot entityleashknot = new EntityLeashKnot(worldIn, fence);
+        entityleashknot.forceSpawn = true;
+        worldIn.spawnEntityInWorld(entityleashknot);
+        return entityleashknot;
+    }
 
-   public static EntityLeashKnot getKnotForPosition(World var0, BlockPos var1) {
-      int var2 = var1.getX();
-      int var3 = var1.getY();
-      int var4 = var1.getZ();
+    public static EntityLeashKnot getKnotForPosition(World worldIn, BlockPos pos) {
+        int i = pos.getX();
+        int j = pos.getY();
+        int k = pos.getZ();
 
-      for(EntityLeashKnot var6 : var0.getEntitiesWithinAABB(EntityLeashKnot.class, new AxisAlignedBB((double)var2 - 1.0D, (double)var3 - 1.0D, (double)var4 - 1.0D, (double)var2 + 1.0D, (double)var3 + 1.0D, (double)var4 + 1.0D))) {
-         if(var6.getHangingPosition().equals(var1)) {
-            return var6;
-         }
-      }
+        for (EntityLeashKnot entityleashknot : worldIn.getEntitiesWithinAABB(EntityLeashKnot.class, new AxisAlignedBB((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D, (double) k + 1.0D))) {
+            if (entityleashknot.getHangingPosition().equals(pos)) {
+                return entityleashknot;
+            }
+        }
 
-      return null;
-   }
+        return null;
+    }
 }

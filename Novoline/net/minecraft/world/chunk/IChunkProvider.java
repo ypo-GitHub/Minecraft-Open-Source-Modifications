@@ -1,38 +1,66 @@
 package net.minecraft.world.chunk;
 
-import java.util.List;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.IProgressUpdate;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.biome.BiomeGenBase;
+
+import java.util.List;
 
 public interface IChunkProvider {
-   boolean chunkExists(int var1, int var2);
+    /**
+     * Checks to see if a chunk exists at x, z
+     */
+    boolean chunkExists(int x, int z);
 
-   Chunk provideChunk(int var1, int var2);
+    /**
+     * Will return back a chunk, if it doesn't exist and its not a MP client it will generates all the blocks for the
+     * specified chunk from the map seed and chunk seed
+     */
+    Chunk provideChunk(int x, int z);
 
-   Chunk provideChunk(BlockPos var1);
+    Chunk provideChunk(BlockPos blockPosIn);
 
-   void populate(IChunkProvider var1, int var2, int var3);
+    /**
+     * Populates chunk with ores etc etc
+     */
+    void populate(IChunkProvider p_73153_1_, int p_73153_2_, int p_73153_3_);
 
-   boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4);
+    boolean func_177460_a(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_);
 
-   boolean saveChunks(boolean var1, IProgressUpdate var2);
+    /**
+     * Two modes of operation: if passed true, save all Chunks in one go.  If passed false, save up to two chunks.
+     * Return true if all chunks have been saved.
+     */
+    boolean saveChunks(boolean p_73151_1_, IProgressUpdate progressCallback);
 
-   boolean unloadQueuedChunks();
+    /**
+     * Unloads chunks that are marked to be unloaded. This is not guaranteed to unload every such chunk.
+     */
+    boolean unloadQueuedChunks();
 
-   boolean canSave();
+    /**
+     * Returns if the IChunkProvider supports saving.
+     */
+    boolean canSave();
 
-   String makeString();
+    /**
+     * Converts the instance data to a readable string.
+     */
+    String makeString();
 
-   List getPossibleCreatures(EnumCreatureType var1, BlockPos var2);
+    List<BiomeGenBase.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos);
 
-   BlockPos getStrongholdGen(World var1, String var2, BlockPos var3);
+    BlockPos getStrongholdGen(World worldIn, String structureName, BlockPos position);
 
-   int getLoadedChunkCount();
+    int getLoadedChunkCount();
 
-   void recreateStructures(Chunk var1, int var2, int var3);
+    void recreateStructures(Chunk p_180514_1_, int p_180514_2_, int p_180514_3_);
 
-   void saveExtraData();
+    /**
+     * Save extra data not associated with any Chunk.  Not saved during autosave, only during world unload.  Currently
+     * unimplemented.
+     */
+    void saveExtraData();
 }

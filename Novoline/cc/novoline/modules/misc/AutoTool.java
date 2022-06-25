@@ -1,7 +1,6 @@
 package cc.novoline.modules.misc;
 
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.EventState;
 import cc.novoline.events.events.MotionUpdateEvent;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
@@ -12,54 +11,42 @@ import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.BooleanProperty;
 import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.misc.WindowedFullscreen;
-import net.CD;
-import net.minecraft.client.Minecraft;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.lwjgl.input.Keyboard;
 
 public final class AutoTool extends AbstractModule {
-   @Property("switch-back")
-   private BooleanProperty switch_back = PropertyFactory.booleanTrue();
-   private int z;
-   private int tick;
 
-   public AutoTool(ModuleManager var1) {
-      super(var1, "AutoTool", "Auto Tool", 0, EnumModuleType.MISC, "Switches to the best tool");
-      Manager.put(new Setting("AT_SWITCH_BACK", "Switch Back", SettingType.CHECKBOX, this, this.switch_back));
-   }
+    @Property("switch-back")
+    private BooleanProperty switch_back = PropertyFactory.booleanTrue();
 
-   @EventTarget
-   public void onPre(MotionUpdateEvent var1) {
-      String[] var2 = WindowedFullscreen.a();
-      if(var1.getState().equals(EventState.PRE)) {
-         if(this.mc.at.f()) {
-            ++this.tick;
-            if(this.tick == 1) {
-               this.z = this.mc.player.inventory.currentItem;
+    private int oldSlot;
+    private int tick;
+
+    /* constructors */
+    public AutoTool(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "AutoTool", "Auto Tool", Keyboard.KEY_NONE, EnumModuleType.MISC, "Switches to the best tool");
+        Manager.put(new Setting("AT_SWITCH_BACK", "Switch Back", SettingType.CHECKBOX, this, switch_back));
+    }
+
+    /* methods */
+    @EventTarget
+    public void onPre(MotionUpdateEvent event) {
+        if (event.getState().equals(MotionUpdateEvent.State.PRE)) {
+            if (mc.playerController.isBreakingBlock()) {
+                tick++;
+
+                if (tick == 1) {
+                    oldSlot = mc.player.inventory.currentItem;
+                }
+
+                mc.player.updateTool(mc.objectMouseOver.getBlockPos());
+            } else if (tick > 0) {
+                if (switch_back.get()) {
+                    mc.player.inventory.currentItem = oldSlot;
+                }
+
+                tick = 0;
             }
-
-            this.mc.player.updateTool(this.mc.objectMouseOver.getBlockPos());
-         }
-
-         if(this.tick > 0) {
-            if(((Boolean)this.switch_back.get()).booleanValue()) {
-               this.novoline.getTaskManager().queue(new CD(this, 100));
-            }
-
-            this.tick = 0;
-         }
-      }
-
-   }
-
-   static Minecraft b(AutoTool var0) {
-      return var0.mc;
-   }
-
-   static Minecraft a(AutoTool var0) {
-      return var0.mc;
-   }
-
-   static int c(AutoTool var0) {
-      return var0.z;
-   }
+        }
+    }
 }

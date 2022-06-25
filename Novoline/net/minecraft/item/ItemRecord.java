@@ -1,62 +1,76 @@
 package net.minecraft.item;
 
 import com.google.common.collect.Maps;
-import java.util.List;
-import java.util.Map;
 import net.minecraft.block.BlockJukebox;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.EnumRarity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Map;
+
 public class ItemRecord extends Item {
-   private static final Map RECORDS = Maps.newHashMap();
-   public final String recordName;
+    private static final Map<String, ItemRecord> RECORDS = Maps.<String, ItemRecord>newHashMap();
 
-   protected ItemRecord(String var1) {
-      this.recordName = var1;
-      this.maxStackSize = 1;
-      this.setCreativeTab(CreativeTabs.tabMisc);
-      RECORDS.put("records." + var1, this);
-   }
+    /**
+     * The name of the record.
+     */
+    public final String recordName;
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      IBlockState var9 = var3.getBlockState(var4);
-      if(var9.getBlock() == Blocks.jukebox && !((Boolean)var9.getValue(BlockJukebox.HAS_RECORD)).booleanValue()) {
-         if(!var3.isRemote) {
-            ((BlockJukebox)Blocks.jukebox).insertRecord(var3, var4, var9, var1);
-            var3.playAuxSFXAtEntity((EntityPlayer)null, 1005, var4, Item.b(this));
-            --var1.stackSize;
-            var2.triggerAchievement(StatList.field_181740_X);
-         }
+    protected ItemRecord(String name) {
+        this.recordName = name;
+        this.maxStackSize = 1;
+        this.setCreativeTab(CreativeTabs.tabMisc);
+        RECORDS.put("records." + name, this);
+    }
 
-         return true;
-      } else {
-         return false;
-      }
-   }
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        IBlockState iblockstate = worldIn.getBlockState(pos);
 
-   public void addInformation(ItemStack var1, EntityPlayer var2, List var3, boolean var4) {
-      var3.add(this.getRecordNameLocal());
-   }
+        if (iblockstate.getBlock() == Blocks.jukebox && !(Boolean) iblockstate.getValue(BlockJukebox.HAS_RECORD)) {
+            if (!worldIn.isRemote) {
+                ((BlockJukebox) Blocks.jukebox).insertRecord(worldIn, pos, iblockstate, stack);
+                worldIn.playAuxSFXAtEntity((EntityPlayer) null, 1005, pos, Item.getIdFromItem(this));
+                --stack.stackSize;
+                playerIn.triggerAchievement(StatList.field_181740_X);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-   public String getRecordNameLocal() {
-      return StatCollector.translateToLocal("item.record." + this.recordName + ".desc");
-   }
+    /**
+     * allows items to add custom lines of information to the mouseover description
+     */
+    public void addInformation(ItemStack stack, EntityPlayer playerIn, List<String> tooltip, boolean advanced) {
+        tooltip.add(this.getRecordNameLocal());
+    }
 
-   public EnumRarity getRarity(ItemStack var1) {
-      return EnumRarity.RARE;
-   }
+    public String getRecordNameLocal() {
+        return StatCollector.translateToLocal("item.record." + this.recordName + ".desc");
+    }
 
-   public static ItemRecord getRecord(String var0) {
-      return (ItemRecord)RECORDS.get(var0);
-   }
+    /**
+     * Return an item rarity from EnumRarity
+     */
+    public EnumRarity getRarity(ItemStack stack) {
+        return EnumRarity.RARE;
+    }
+
+    /**
+     * Return the record item corresponding to the given name.
+     */
+    public static ItemRecord getRecord(String name) {
+        return (ItemRecord) RECORDS.get(name);
+    }
 }

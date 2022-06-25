@@ -1,77 +1,60 @@
 package viaversion.viarewind.utils;
 
 import com.google.gson.JsonElement;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-import net.JM;
-import net.acE;
-import net.vL;
+import viaversion.viarewind.ViaRewind;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+
 public class ChatUtil {
-   private static final Pattern UNUSED_COLOR_PATTERN = Pattern.compile("(?>(?>§[0-fk-or])*(§r|\\Z))|(?>(?>§[0-f])*(§[0-f]))");
+    private static final Pattern UNUSED_COLOR_PATTERN = Pattern.compile("(?>(?>\u00A7[0-fk-or])*(\u00A7r|\\Z))|(?>(?>\u00A7[0-f])*(\u00A7[0-f]))");
 
-   public static String jsonToLegacy(String var0) {
-      acE[] var1 = vL.b();
-      if(var0 != null && !var0.equals("null") && !var0.equals("")) {
-         String var10000 = var0;
+    public static String jsonToLegacy(String json) {
+        if (json == null || json.equals("null") || json.equals("")) return "";
+        try {
+            String legacy = BaseComponent.toLegacyText(ComponentSerializer.parse(json));
+            while (legacy.startsWith("\u00A7f")) legacy = legacy.substring(2);
+            return legacy;
+        } catch (Exception ex) {
+            ViaRewind.getPlatform().getLogger().log(Level.WARNING, "Could not convert component to legacy text: " + json, ex);
+        }
+        return "";
+    }
 
-         try {
-            String var2 = BaseComponent.toLegacyText(ComponentSerializer.parse(var10000));
-            if(var2.startsWith("§f")) {
-               var2 = var2.substring(2);
-            }
-
-            return var2;
-         } catch (Exception var3) {
-            JM.a().a().log(Level.WARNING, "Could not convert component to legacy text: " + var0, var3);
+    public static String jsonToLegacy(JsonElement component) {
+        if (component.isJsonNull() || component.isJsonArray() && component.getAsJsonArray().size() == 0 || component
+                .isJsonObject() && component.getAsJsonObject().size() == 0) {
             return "";
-         }
-      } else {
-         return "";
-      }
-   }
+        } else if (component.isJsonPrimitive()) {
+            return component.getAsString();
+        } else {
+            return jsonToLegacy(component.toString());
+        }
+    }
 
-   public static String jsonToLegacy(JsonElement var0) {
-      acE[] var1 = vL.b();
-      return !var0.isJsonNull() && (!var0.isJsonArray() || var0.getAsJsonArray().size() != 0) && (!var0.isJsonObject() || var0.getAsJsonObject().size() != 0)?(var0.isJsonPrimitive()?var0.getAsString():jsonToLegacy(var0.toString())):"";
-   }
+    public static String legacyToJson(String legacy) {
+        if (legacy == null) return "";
+        return ComponentSerializer.toString(TextComponent.fromLegacyText(legacy));
+    }
 
-   public static String legacyToJson(String var0) {
-      acE[] var1 = vL.b();
-      return var0 == null?"":ComponentSerializer.toString(TextComponent.fromLegacyText(var0));
-   }
-
-   public static String removeUnusedColor(String var0, char var1) {
-      acE[] var2 = vL.b();
-      if(var0 == null) {
-         return null;
-      } else {
-         var0 = UNUSED_COLOR_PATTERN.matcher(var0).replaceAll("$1$2");
-         StringBuilder var3 = new StringBuilder();
-         int var4 = 0;
-         if(var4 < var0.length()) {
-            char var5 = var0.charAt(var4);
-            if(var5 != 167 || var4 == var0.length() - 1) {
-               var3.append(var5);
+    public static String removeUnusedColor(String legacy, char last) {
+        if (legacy == null) return null;
+        legacy = UNUSED_COLOR_PATTERN.matcher(legacy).replaceAll("$1$2");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < legacy.length(); i++) {
+            char current = legacy.charAt(i);
+            if (current != '\u00A7' || i == legacy.length() - 1) {
+                builder.append(current);
+                continue;
             }
-
-            ++var4;
-            var5 = var0.charAt(var4);
-            if(var5 != var1) {
-               var3.append('§').append(var5);
-            }
-
-            ++var4;
-         }
-
-         return var3.toString();
-      }
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+            current = legacy.charAt(++i);
+            if (current == last) continue;
+            builder.append('\u00A7').append(current);
+            last = current;
+        }
+        return builder.toString();
+    }
 }

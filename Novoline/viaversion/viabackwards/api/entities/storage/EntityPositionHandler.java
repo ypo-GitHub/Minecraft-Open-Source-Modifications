@@ -1,101 +1,97 @@
 package viaversion.viabackwards.api.entities.storage;
 
-import java.util.function.Supplier;
-import net.VV;
-import net.acE;
-import net.cQ;
-import viaversion.viabackwards.api.entities.storage.EntityPositionStorage;
-import viaversion.viabackwards.api.entities.storage.EntityTracker$StoredEntity;
+import viaversion.viabackwards.ViaBackwards;
 import viaversion.viabackwards.api.rewriters.EntityRewriterBase;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.type.Type;
 
+import java.util.function.Supplier;
+
 public class EntityPositionHandler {
-   public static final double RELATIVE_MOVE_FACTOR = 4096.0D;
-   private final EntityRewriterBase entityRewriter;
-   private final Class storageClass;
-   private final Supplier d;
-   private boolean warnedForMissingEntity;
 
-   public EntityPositionHandler(EntityRewriterBase var1, Class var2, Supplier var3) {
-      this.entityRewriter = var1;
-      this.storageClass = var2;
-      this.d = var3;
-   }
+    public static final double RELATIVE_MOVE_FACTOR = 32 * 128;
+    private final EntityRewriterBase<?> entityRewriter;
+    private final Class<? extends EntityPositionStorage> storageClass;
+    private final Supplier<? extends EntityPositionStorage> storageSupplier;
+    private boolean warnedForMissingEntity;
 
-   public void cacheEntityPosition(PacketWrapper var1, boolean var2, boolean var3) throws Exception {
-      this.cacheEntityPosition(var1, ((Double)var1.get(Type.DOUBLE, 0)).doubleValue(), ((Double)var1.get(Type.DOUBLE, 1)).doubleValue(), ((Double)var1.get(Type.DOUBLE, 2)).doubleValue(), var2, var3);
-   }
+    public EntityPositionHandler(EntityRewriterBase<?> entityRewriter,
+                                 Class<? extends EntityPositionStorage> storageClass, Supplier<? extends EntityPositionStorage> storageSupplier) {
+        this.entityRewriter = entityRewriter;
+        this.storageClass = storageClass;
+        this.storageSupplier = storageSupplier;
+    }
 
-   public void cacheEntityPosition(PacketWrapper var1, double var2, double var4, double var6, boolean var8, boolean var9) throws Exception {
-      cQ.a();
-      int var11 = ((Integer)var1.get(Type.VAR_INT, 0)).intValue();
-      EntityTracker$StoredEntity var12 = this.entityRewriter.getEntityTracker(var1.user()).getEntity(var11);
-      if(Via.getManager().isDebug()) {
-         VV.d().getLogger().warning("Stored entity with id " + var11 + " missing at position: " + var2 + " - " + var4 + " - " + var6 + " in " + this.storageClass.getCanonicalName());
-         if(var11 == -1 && var2 == 0.0D && var4 == 0.0D && var6 == 0.0D) {
-            VV.d().getLogger().warning("DO NOT REPORT THIS TO VIA, THIS IS A PLUGIN ISSUE");
-         }
+    public void cacheEntityPosition(PacketWrapper wrapper, boolean create, boolean relative) throws Exception {
+        cacheEntityPosition(wrapper,
+                wrapper.get(Type.DOUBLE, 0), wrapper.get(Type.DOUBLE, 1), wrapper.get(Type.DOUBLE, 2), create, relative);
+    }
 
-         if(!this.warnedForMissingEntity) {
-            this.warnedForMissingEntity = true;
-            VV.d().getLogger().warning("This is very likely caused by a plugin sending a teleport packet for an entity outside of the player\'s range.");
-         }
-      }
+    public void cacheEntityPosition(PacketWrapper wrapper, double x, double y, double z, boolean create, boolean relative) throws Exception {
+        int entityId = wrapper.get(Type.VAR_INT, 0);
+        EntityTracker.StoredEntity storedEntity = entityRewriter.getEntityTracker(wrapper.user()).getEntity(entityId);
+        if (storedEntity == null) {
+            if (Via.getManager().isDebug()) { // There is too many plugins violating this out there, and reading seems to be hard! :>
+                ViaBackwards.getPlatform().getLogger().warning("Stored entity with id " + entityId + " missing at position: " + x + " - " + y + " - " + z + " in " + storageClass.getCanonicalName());
+                if (entityId == -1 && x == 0 && y == 0 && z == 0) {
+                    ViaBackwards.getPlatform().getLogger().warning("DO NOT REPORT THIS TO VIA, THIS IS A PLUGIN ISSUE");
+                } else if (!warnedForMissingEntity) {
+                    warnedForMissingEntity = true;
+                    ViaBackwards.getPlatform().getLogger().warning("This is very likely caused by a plugin sending a teleport packet for an entity outside of the player's range.");
+                }
+            }
+            return;
+        }
 
-   }
+        EntityPositionStorage positionStorage = create ? storageSupplier.get() : storedEntity.get(storageClass);
+        if (positionStorage == null) {
+            ViaBackwards.getPlatform().getLogger().warning("Stored entity with id " + entityId + " missing " + storageClass.getCanonicalName());
+            return;
+        }
 
-   public EntityPositionStorage getStorage(UserConnection var1, int var2) {
-      cQ.d();
-      EntityTracker$StoredEntity var4 = ((cQ)var1.b(cQ.class)).a(this.entityRewriter.c()).getEntity(var2);
-      EntityPositionStorage var5;
-      if((var5 = (EntityPositionStorage)var4.get(EntityPositionStorage.class)) == null) {
-         VV.d().getLogger().warning("Untracked entity with id " + var2 + " in " + this.storageClass.getCanonicalName());
-         return null;
-      } else {
-         return var5;
-      }
-   }
+        positionStorage.setCoordinates(x, y, z, relative);
+        storedEntity.put(positionStorage);
+    }
 
-   public static void writeFacingAngles(PacketWrapper var0, double var1, double var3, double var5, double var7, double var9, double var11) {
-      cQ.d();
-      double var14 = var7 - var1;
-      double var16 = var9 - var3;
-      double var18 = var11 - var5;
-      double var20 = Math.sqrt(var14 * var14 + var16 * var16 + var18 * var18);
-      double var22 = -Math.atan2(var14, var18) / 3.141592653589793D * 180.0D;
-      if(var22 < 0.0D) {
-         var22 += 360.0D;
-      }
+    public EntityPositionStorage getStorage(UserConnection user, int entityId) {
+        EntityTracker.StoredEntity storedEntity = user.get(EntityTracker.class).get(entityRewriter.getProtocol()).getEntity(entityId);
+        EntityPositionStorage entityStorage;
+        if (storedEntity == null || (entityStorage = storedEntity.get(EntityPositionStorage.class)) == null) {
+            ViaBackwards.getPlatform().getLogger().warning("Untracked entity with id " + entityId + " in " + storageClass.getCanonicalName());
+            return null;
+        }
+        return entityStorage;
+    }
 
-      double var24 = -Math.asin(var16 / var20) / 3.141592653589793D * 180.0D;
-      var0.write(Type.BYTE, Byte.valueOf((byte)((int)(var22 * 256.0D / 360.0D))));
-      var0.write(Type.BYTE, Byte.valueOf((byte)((int)(var24 * 256.0D / 360.0D))));
-   }
+    public static void writeFacingAngles(PacketWrapper wrapper, double x, double y, double z, double targetX, double targetY, double targetZ) {
+        double dX = targetX - x;
+        double dY = targetY - y;
+        double dZ = targetZ - z;
+        double r = Math.sqrt(dX * dX + dY * dY + dZ * dZ);
+        double yaw = -Math.atan2(dX, dZ) / Math.PI * 180;
+        if (yaw < 0) {
+            yaw = 360 + yaw;
+        }
+        double pitch = -Math.asin(dY / r) / Math.PI * 180;
 
-   public static void writeFacingDegrees(PacketWrapper var0, double var1, double var3, double var5, double var7, double var9, double var11) {
-      cQ.a();
-      double var14 = var7 - var1;
-      double var16 = var9 - var3;
-      double var18 = var11 - var5;
-      double var20 = Math.sqrt(var14 * var14 + var16 * var16 + var18 * var18);
-      double var22 = -Math.atan2(var14, var18) / 3.141592653589793D * 180.0D;
-      if(var22 < 0.0D) {
-         var22 += 360.0D;
-      }
+        wrapper.write(Type.BYTE, (byte) (yaw * 256f / 360f));
+        wrapper.write(Type.BYTE, (byte) (pitch * 256f / 360f));
+    }
 
-      double var24 = -Math.asin(var16 / var20) / 3.141592653589793D * 180.0D;
-      var0.write(Type.FLOAT, Float.valueOf((float)var22));
-      var0.write(Type.FLOAT, Float.valueOf((float)var24));
-      if(acE.b() == null) {
-         cQ.a(false);
-      }
+    public static void writeFacingDegrees(PacketWrapper wrapper, double x, double y, double z, double targetX, double targetY, double targetZ) {
+        double dX = targetX - x;
+        double dY = targetY - y;
+        double dZ = targetZ - z;
+        double r = Math.sqrt(dX * dX + dY * dY + dZ * dZ);
+        double yaw = -Math.atan2(dX, dZ) / Math.PI * 180;
+        if (yaw < 0) {
+            yaw = 360 + yaw;
+        }
+        double pitch = -Math.asin(dY / r) / Math.PI * 180;
 
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        wrapper.write(Type.FLOAT, (float) yaw);
+        wrapper.write(Type.FLOAT, (float) pitch);
+    }
 }

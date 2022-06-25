@@ -1,6 +1,5 @@
 package net.optifine;
 
-import net.acE;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBush;
 import net.minecraft.block.BlockDoublePlant;
@@ -9,7 +8,6 @@ import net.minecraft.block.BlockFenceGate;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockFlowerPot;
 import net.minecraft.block.BlockLever;
-import net.minecraft.block.BlockLever$EnumOrientation;
 import net.minecraft.block.BlockMushroom;
 import net.minecraft.block.BlockPane;
 import net.minecraft.block.BlockRedstoneTorch;
@@ -25,62 +23,82 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.IBlockAccess;
-import net.optifine.Config;
-import net.optifine.MatchBlock;
 
-public class BetterSnow {
-   private static IBakedModel modelSnowLayer = null;
+public class BetterSnow
+{
+    private static IBakedModel modelSnowLayer = null;
 
-   public static void update() {
-      modelSnowLayer = Config.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getModelForState(Blocks.snow_layer.getDefaultState());
-   }
+    public static void update()
+    {
+        modelSnowLayer = Config.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getModelForState(Blocks.snow_layer.getDefaultState());
+    }
 
-   public static IBakedModel getModelSnowLayer() {
-      return modelSnowLayer;
-   }
+    public static IBakedModel getModelSnowLayer()
+    {
+        return modelSnowLayer;
+    }
 
-   public static IBlockState getStateSnowLayer() {
-      return Blocks.snow_layer.getDefaultState();
-   }
+    public static IBlockState getStateSnowLayer()
+    {
+        return Blocks.snow_layer.getDefaultState();
+    }
 
-   public static boolean shouldRender(IBlockAccess var0, Block var1, IBlockState var2, BlockPos var3) {
-      acE[] var4 = MatchBlock.b();
-      return !checkBlock(var1, var2)?false:hasSnowNeighbours(var0, var3);
-   }
+    public static boolean shouldRender(IBlockAccess p_shouldRender_0_, Block p_shouldRender_1_, IBlockState p_shouldRender_2_, BlockPos p_shouldRender_3_)
+    {
+        return !checkBlock(p_shouldRender_1_, p_shouldRender_2_) ? false : hasSnowNeighbours(p_shouldRender_0_, p_shouldRender_3_);
+    }
 
-   private static boolean hasSnowNeighbours(IBlockAccess var0, BlockPos var1) {
-      MatchBlock.b();
-      Block var3 = Blocks.snow_layer;
-      return var0.getBlockState(var1.north()).getBlock() != var3 && var0.getBlockState(var1.south()).getBlock() != var3 && var0.getBlockState(var1.west()).getBlock() != var3 && var0.getBlockState(var1.east()).getBlock() != var3?false:var0.getBlockState(var1.down()).getBlock().isOpaqueCube();
-   }
+    private static boolean hasSnowNeighbours(IBlockAccess p_hasSnowNeighbours_0_, BlockPos p_hasSnowNeighbours_1_)
+    {
+        Block block = Blocks.snow_layer;
+        return p_hasSnowNeighbours_0_.getBlockState(p_hasSnowNeighbours_1_.north()).getBlock() != block && p_hasSnowNeighbours_0_.getBlockState(p_hasSnowNeighbours_1_.south()).getBlock() != block && p_hasSnowNeighbours_0_.getBlockState(p_hasSnowNeighbours_1_.west()).getBlock() != block && p_hasSnowNeighbours_0_.getBlockState(p_hasSnowNeighbours_1_.east()).getBlock() != block ? false : p_hasSnowNeighbours_0_.getBlockState(p_hasSnowNeighbours_1_.down()).getBlock().isOpaqueCube();
+    }
 
-   private static boolean checkBlock(Block var0, IBlockState var1) {
-      acE[] var2 = MatchBlock.b();
-      if(var0.isFullCube()) {
-         return false;
-      } else if(var0.isOpaqueCube()) {
-         return false;
-      } else if(var0 instanceof BlockSnow) {
-         return false;
-      } else if(!(var0 instanceof BlockBush) || !(var0 instanceof BlockDoublePlant) && !(var0 instanceof BlockFlower) && !(var0 instanceof BlockMushroom) && !(var0 instanceof BlockSapling) && !(var0 instanceof BlockTallGrass)) {
-         if(!(var0 instanceof BlockFence) && !(var0 instanceof BlockFenceGate) && !(var0 instanceof BlockFlowerPot) && !(var0 instanceof BlockPane) && !(var0 instanceof BlockReed) && !(var0 instanceof BlockWall)) {
-            if(var0 instanceof BlockRedstoneTorch && var1.getValue(BlockTorch.FACING) == EnumFacing.UP) {
-               return true;
-            } else {
-               if(var0 instanceof BlockLever) {
-                  Comparable var3 = var1.getValue(BlockLever.FACING);
-                  if(var3 == BlockLever$EnumOrientation.UP_X || var3 == BlockLever$EnumOrientation.UP_Z) {
-                     return true;
-                  }
-               }
+    private static boolean checkBlock(Block p_checkBlock_0_, IBlockState p_checkBlock_1_)
+    {
+        if (p_checkBlock_0_.isFullCube())
+        {
+            return false;
+        }
+        else if (p_checkBlock_0_.isOpaqueCube())
+        {
+            return false;
+        }
+        else if (p_checkBlock_0_ instanceof BlockSnow)
+        {
+            return false;
+        }
+        else if (!(p_checkBlock_0_ instanceof BlockBush) || !(p_checkBlock_0_ instanceof BlockDoublePlant) && !(p_checkBlock_0_ instanceof BlockFlower) && !(p_checkBlock_0_ instanceof BlockMushroom) && !(p_checkBlock_0_ instanceof BlockSapling) && !(p_checkBlock_0_ instanceof BlockTallGrass))
+        {
+            if (!(p_checkBlock_0_ instanceof BlockFence) && !(p_checkBlock_0_ instanceof BlockFenceGate) && !(p_checkBlock_0_ instanceof BlockFlowerPot) && !(p_checkBlock_0_ instanceof BlockPane) && !(p_checkBlock_0_ instanceof BlockReed) && !(p_checkBlock_0_ instanceof BlockWall))
+            {
+                if (p_checkBlock_0_ instanceof BlockRedstoneTorch && p_checkBlock_1_.getValue(BlockTorch.FACING) == EnumFacing.UP)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (p_checkBlock_0_ instanceof BlockLever)
+                    {
+                        Object object = p_checkBlock_1_.getValue(BlockLever.FACING);
 
-               return false;
+                        if (object == BlockLever.EnumOrientation.UP_X || object == BlockLever.EnumOrientation.UP_Z)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
             }
-         } else {
+            else
+            {
+                return true;
+            }
+        }
+        else
+        {
             return true;
-         }
-      } else {
-         return true;
-      }
-   }
+        }
+    }
 }

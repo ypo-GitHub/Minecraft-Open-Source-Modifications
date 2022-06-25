@@ -2,19 +2,18 @@ package net.minecraft.potion;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.attributes.BaseAttributeMap;
-import net.minecraft.potion.Potion;
 import net.minecraft.util.ResourceLocation;
 
 public class PotionHealthBoost extends Potion {
-   public PotionHealthBoost(int var1, ResourceLocation var2, boolean var3, int var4) {
-      super(var1, var2, var3, var4);
-   }
+    public PotionHealthBoost(int potionID, ResourceLocation location, boolean badEffect, int potionColor) {
+        super(potionID, location, badEffect, potionColor);
+    }
 
-   public void removeAttributesModifiersFromEntity(EntityLivingBase var1, BaseAttributeMap var2, int var3) {
-      super.removeAttributesModifiersFromEntity(var1, var2, var3);
-      if(var1.getHealth() > var1.getMaxHealth()) {
-         var1.setHealth(var1.getMaxHealth());
-      }
+    public void removeAttributesModifiersFromEntity(EntityLivingBase entityLivingBaseIn, BaseAttributeMap p_111187_2_, int amplifier) {
+        super.removeAttributesModifiersFromEntity(entityLivingBaseIn, p_111187_2_, amplifier);
 
-   }
+        if (entityLivingBaseIn.getHealth() > entityLivingBaseIn.getMaxHealth()) {
+            entityLivingBaseIn.setHealth(entityLivingBaseIn.getMaxHealth());
+        }
+    }
 }

@@ -1,61 +1,72 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S32PacketConfirmTransaction implements Packet {
-   private int windowId;
-   private short actionNumber;
-   private boolean accepted;
+import java.io.IOException;
 
-   public S32PacketConfirmTransaction() {
-   }
+public class S32PacketConfirmTransaction implements Packet<INetHandlerPlayClient> {
 
-   public S32PacketConfirmTransaction(int var1, short var2, boolean var3) {
-      this.windowId = var1;
-      this.actionNumber = var2;
-      this.accepted = var3;
-   }
+    private int windowId;
+    private short actionNumber;
+    private boolean accepted;
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleConfirmTransaction(this);
-   }
+    public S32PacketConfirmTransaction() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readUnsignedByte();
-      this.actionNumber = var1.readShort();
-      this.accepted = var1.readBoolean();
-   }
+    public S32PacketConfirmTransaction(int windowIdIn, short actionNumberIn, boolean accepted) {
+        this.windowId = windowIdIn;
+        this.actionNumber = actionNumberIn;
+        this.accepted = accepted;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-      var1.writeShort(this.actionNumber);
-      var1.writeBoolean(this.accepted);
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleConfirmTransaction(this);
+    }
 
-   public int getWindowId() {
-      return this.windowId;
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readUnsignedByte();
+        this.actionNumber = buf.readShort();
+        this.accepted = buf.readBoolean();
+    }
 
-   public short getActionNumber() {
-      return this.actionNumber;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+        buf.writeShort(this.actionNumber);
+        buf.writeBoolean(this.accepted);
+    }
 
-   public boolean isAccepted() {
-      return this.accepted;
-   }
+    public int getWindowId() {
+        return this.windowId;
+    }
 
-   public void setWindowId(int var1) {
-      this.windowId = var1;
-   }
+    public short getActionNumber() {
+        return this.actionNumber;
+    }
 
-   public void setActionNumber(short var1) {
-      this.actionNumber = var1;
-   }
+    public boolean isAccepted() {
+        return this.accepted;
+    }
 
-   public void setAccepted(boolean var1) {
-      this.accepted = var1;
-   }
+    public void setWindowId(int windowId) {
+        this.windowId = windowId;
+    }
+
+    public void setActionNumber(short actionNumber) {
+        this.actionNumber = actionNumber;
+    }
+
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
+    }
 }

@@ -2,12 +2,17 @@ package net.minecraft.block.properties;
 
 import java.util.Collection;
 
-public interface IProperty {
-   String getName();
+public interface IProperty<T extends Comparable<T>> {
 
-   Collection getAllowedValues();
+    String getName();
 
-   Class getValueClass();
+    Collection<T> getAllowedValues();
 
-   String getName(Comparable var1);
+    Class<T> getValueClass();
+
+    /**
+     * Get the name for the given value.
+     */
+    String getName(T value);
+
 }

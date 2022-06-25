@@ -5,13 +5,22 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 public interface IRecipe {
-   boolean matches(InventoryCrafting var1, World var2);
+    /**
+     * Used to check if a recipe matches current crafting inventory
+     */
+    boolean matches(InventoryCrafting inv, World worldIn);
 
-   ItemStack getCraftingResult(InventoryCrafting var1);
+    /**
+     * Returns an Item that is the result of this recipe
+     */
+    ItemStack getCraftingResult(InventoryCrafting inv);
 
-   int getRecipeSize();
+    /**
+     * Returns the size of the recipe area
+     */
+    int getRecipeSize();
 
-   ItemStack getRecipeOutput();
+    ItemStack getRecipeOutput();
 
-   ItemStack[] getRemainingItems(InventoryCrafting var1);
+    ItemStack[] getRemainingItems(InventoryCrafting inv);
 }

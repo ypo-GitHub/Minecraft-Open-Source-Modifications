@@ -4,116 +4,127 @@ import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonElement;
-import java.util.Set;
-import net.Gh;
-import net.UN;
-import net.aAA;
-import net.aSG;
-import net.acE;
-import net.aqF;
-import net.aqG;
-import net.awD;
-import net.axs;
-import net.n3;
-import net.yb;
-import viaversion.viabackwards.api.entities.meta.MetaHandler;
-import viaversion.viabackwards.api.exceptions.RemovedValueException;
+import viaversion.viabackwards.api.rewriters.EntityRewriter;
 import viaversion.viabackwards.protocol.protocol1_16_1to1_16_2.Protocol1_16_1To1_16_2;
-import viaversion.viabackwards.protocol.protocol1_16_1to1_16_2.packets.EntityPackets1_16_2$1;
-import viaversion.viabackwards.protocol.protocol1_16_1to1_16_2.packets.EntityPackets1_16_2$2;
+import viaversion.viaversion.api.entities.Entity1_16Types;
+import viaversion.viaversion.api.entities.Entity1_16_2Types;
 import viaversion.viaversion.api.entities.EntityType;
 import viaversion.viaversion.api.minecraft.item.Item;
 import viaversion.viaversion.api.minecraft.metadata.MetaType;
 import viaversion.viaversion.api.minecraft.metadata.Metadata;
-import viaversion.viaversion.api.remapper.PacketHandler;
+import viaversion.viaversion.api.minecraft.metadata.types.MetaType1_14;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.api.type.types.Particle;
+import viaversion.viaversion.api.type.types.version.Types1_14;
+import viaversion.viaversion.protocols.protocol1_16_2to1_16_1.ClientboundPackets1_16_2;
+import viaversion.viaversion.protocols.protocol1_16to1_15_2.packets.EntityPackets;
 
-public class EntityPackets1_16_2 extends aqF {
-   private final Set oldDimensions = Sets.newHashSet(new String[]{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"});
+import java.util.Set;
 
-   public EntityPackets1_16_2(Protocol1_16_1To1_16_2 var1) {
-      super(var1);
-   }
+public class EntityPackets1_16_2 extends EntityRewriter<Protocol1_16_1To1_16_2> {
 
-   protected void registerPackets() {
-      aqG.c();
-      this.b(UN.SPAWN_ENTITY, awD.FALLING_BLOCK);
-      this.b(UN.SPAWN_MOB);
-      this.registerExtraTracker(UN.SPAWN_EXPERIENCE_ORB, awD.EXPERIENCE_ORB);
-      this.registerExtraTracker(UN.SPAWN_PAINTING, awD.PAINTING);
-      this.registerExtraTracker(UN.SPAWN_PLAYER, awD.PLAYER);
-      this.registerEntityDestroy(UN.DESTROY_ENTITIES);
-      this.a(UN.ENTITY_METADATA, aSG.c);
-      ((Protocol1_16_1To1_16_2)this.c).a(UN.JOIN_GAME, new EntityPackets1_16_2$1(this));
-      ((Protocol1_16_1To1_16_2)this.c).a(UN.RESPAWN, new EntityPackets1_16_2$2(this));
-      if(acE.b() == null) {
-         aqG.b(false);
-      }
+    private final Set<String> oldDimensions = Sets.newHashSet("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end");
 
-   }
+    public EntityPackets1_16_2(Protocol1_16_1To1_16_2 protocol) {
+        super(protocol);
+    }
 
-   private String getDimensionFromData(CompoundTag var1) {
-      StringTag var2 = (StringTag)var1.get("effects");
-      return this.oldDimensions.contains(var2.getValue())?var2.getValue():"minecraft:overworld";
-   }
+    @Override
+    protected void registerPackets() {
+        registerSpawnTrackerWithData(ClientboundPackets1_16_2.SPAWN_ENTITY, Entity1_16_2Types.EntityType.FALLING_BLOCK);
+        registerSpawnTracker(ClientboundPackets1_16_2.SPAWN_MOB);
+        registerExtraTracker(ClientboundPackets1_16_2.SPAWN_EXPERIENCE_ORB, Entity1_16_2Types.EntityType.EXPERIENCE_ORB);
+        registerExtraTracker(ClientboundPackets1_16_2.SPAWN_PAINTING, Entity1_16_2Types.EntityType.PAINTING);
+        registerExtraTracker(ClientboundPackets1_16_2.SPAWN_PLAYER, Entity1_16_2Types.EntityType.PLAYER);
+        registerEntityDestroy(ClientboundPackets1_16_2.DESTROY_ENTITIES);
+        registerMetadataRewriter(ClientboundPackets1_16_2.ENTITY_METADATA, Types1_14.METADATA_LIST);
 
-   protected void registerRewrites() {
-      this.registerMetaHandler().handle(this::lambda$registerRewrites$0);
-      this.mapTypes(awD.values(), axs.class);
-      this.mapEntity(awD.PIGLIN_BRUTE, awD.PIGLIN).jsonName("Piglin Brute");
-      this.registerMetaHandler().filter(awD.ABSTRACT_PIGLIN, true).handle(EntityPackets1_16_2::lambda$registerRewrites$1);
-   }
+        protocol.registerOutgoing(ClientboundPackets1_16_2.JOIN_GAME, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.INT); // Entity ID
+                handler(wrapper -> {
+                    boolean hardcore = wrapper.read(Type.BOOLEAN);
+                    short gamemode = wrapper.read(Type.UNSIGNED_BYTE);
+                    if (hardcore) {
+                        gamemode |= 0x08;
+                    }
+                    wrapper.write(Type.UNSIGNED_BYTE, gamemode);
+                });
+                map(Type.BYTE); // Previous Gamemode
+                map(Type.STRING_ARRAY); // World List
+                handler(wrapper -> {
+                    // Just screw the registry and write the defaults for 1.16 and 1.16.1 clients
+                    wrapper.read(Type.NBT);
+                    wrapper.write(Type.NBT, EntityPackets.DIMENSIONS_TAG);
 
-   protected EntityType getTypeFromId(int var1) {
-      return aAA.a(var1);
-   }
+                    CompoundTag dimensionData = wrapper.read(Type.NBT);
+                    wrapper.write(Type.STRING, getDimensionFromData(dimensionData));
+                });
+                map(Type.STRING); // Dimension
+                map(Type.LONG); // Seed
+                handler(wrapper -> {
+                    int maxPlayers = wrapper.read(Type.VAR_INT);
+                    wrapper.write(Type.UNSIGNED_BYTE, (short) Math.max(maxPlayers, 255));
+                });
+                // ...
+                handler(getTrackerHandler(Entity1_16_2Types.EntityType.PLAYER, Type.INT));
+            }
+        });
 
-   private static Metadata lambda$registerRewrites$1(yb var0) throws RemovedValueException {
-      boolean var1 = aqG.d();
-      if(var0.a() == 15) {
-         var0.i().setId(16);
-      }
+        protocol.registerOutgoing(ClientboundPackets1_16_2.RESPAWN, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    CompoundTag dimensionData = wrapper.read(Type.NBT);
+                    wrapper.write(Type.STRING, getDimensionFromData(dimensionData));
+                });
+            }
+        });
+    }
 
-      if(var0.a() == 16) {
-         var0.i().setId(15);
-      }
+    private String getDimensionFromData(CompoundTag dimensionData) {
+        // This may technically break other custom dimension settings for 1.16/1.16.1 clients, so those cases are considered semi "unsupported" here
+        StringTag effectsLocation = dimensionData.get("effects");
+        return effectsLocation != null && oldDimensions.contains(effectsLocation.getValue()) ? effectsLocation.getValue() : "minecraft:overworld";
+    }
 
-      return var0.i();
-   }
+    @Override
+    protected void registerRewrites() {
+        registerMetaHandler().handle(e -> {
+            Metadata meta = e.getData();
+            MetaType type = meta.getMetaType();
+            if (type == MetaType1_14.Slot) {
+                meta.setValue(protocol.getBlockItemPackets().handleItemToClient((Item) meta.getValue()));
+            } else if (type == MetaType1_14.BlockID) {
+                meta.setValue(protocol.getMappingData().getNewBlockStateId((int) meta.getValue()));
+            } else if (type == MetaType1_14.OptChat) {
+                JsonElement text = meta.getCastedValue();
+                if (text != null) {
+                    protocol.getTranslatableRewriter().processText(text);
+                }
+            } else if (type == MetaType1_14.PARTICLE) {
+                rewriteParticle((Particle) meta.getValue());
+            }
+            return meta;
+        });
 
-   private Metadata lambda$registerRewrites$0(yb var1) throws RemovedValueException {
-      aqG.d();
-      Metadata var3 = var1.i();
-      MetaType var4 = var3.getMetaType();
-      if(var4 == n3.Slot) {
-         var3.setValue(((Protocol1_16_1To1_16_2)this.c).a().a((Item)var3.getValue()));
-      }
+        mapTypes(Entity1_16_2Types.EntityType.values(), Entity1_16Types.EntityType.class);
+        mapEntity(Entity1_16_2Types.EntityType.PIGLIN_BRUTE, Entity1_16_2Types.EntityType.PIGLIN).jsonName("Piglin Brute");
 
-      if(var4 == n3.BlockID) {
-         var3.setValue(Integer.valueOf(((Protocol1_16_1To1_16_2)this.c).getMappingData().getNewBlockStateId(((Integer)var3.getValue()).intValue())));
-      }
+        registerMetaHandler().filter(Entity1_16_2Types.EntityType.ABSTRACT_PIGLIN, true).handle(meta -> {
+            if (meta.getIndex() == 15) {
+                meta.getData().setId(16);
+            } else if (meta.getIndex() == 16) {
+                meta.getData().setId(15);
+            }
+            return meta.getData();
+        });
+    }
 
-      if(var4 == n3.OptChat) {
-         JsonElement var5 = (JsonElement)var3.getCastedValue();
-         ((Protocol1_16_1To1_16_2)this.c).getTranslatableRewriter().processText(var5);
-      }
-
-      if(var4 == n3.PARTICLE) {
-         this.a((Gh)var3.getValue());
-      }
-
-      return var3;
-   }
-
-   static PacketHandler access$000(EntityPackets1_16_2 var0, EntityType var1, Type var2) {
-      return var0.getTrackerHandler(var1, var2);
-   }
-
-   static String access$100(EntityPackets1_16_2 var0, CompoundTag var1) {
-      return var0.getDimensionFromData(var1);
-   }
-
-   private static RemovedValueException a(RemovedValueException var0) {
-      return var0;
-   }
+    @Override
+    protected EntityType getTypeFromId(int typeId) {
+        return Entity1_16_2Types.getTypeFromId(typeId);
+    }
 }

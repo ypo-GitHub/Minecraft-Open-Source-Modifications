@@ -1,96 +1,120 @@
+/*
+ * This file is part of adventure, licensed under the MIT License.
+ *
+ * Copyright (c) 2017-2020 KyoriPowered
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package viaversion.viaversion.api.minecraft.nbt;
 
-import net.aPX;
-import net.acE;
-import viaversion.viaversion.api.minecraft.nbt.StringTagParseException;
+/* package */ final class CharBuffer {
+    private final CharSequence sequence;
+    private int index;
 
-final class CharBuffer {
-   private final CharSequence sequence;
-   private int index;
+    CharBuffer(final CharSequence sequence) {
+        this.sequence = sequence;
+    }
 
-   CharBuffer(CharSequence var1) {
-      this.sequence = var1;
-   }
+    /**
+     * Get the character at the current position
+     *
+     * @return The current character
+     */
+    public char peek() {
+        return this.sequence.charAt(this.index);
+    }
 
-   public char peek() {
-      return this.sequence.charAt(this.index);
-   }
+    public char peek(final int offset) {
+        return this.sequence.charAt(this.index + offset);
+    }
 
-   public char peek(int var1) {
-      return this.sequence.charAt(this.index + var1);
-   }
+    /**
+     * Get the current character and advance
+     *
+     * @return current character
+     */
+    public char take() {
+        return this.sequence.charAt(this.index++);
+    }
 
-   public char take() {
-      return this.sequence.charAt(this.index++);
-   }
+    public boolean advance() {
+        this.index++;
+        return this.hasMore();
+    }
 
-   public boolean advance() {
-      ++this.index;
-      return this.hasMore();
-   }
+    public boolean hasMore() {
+        return this.index < this.sequence.length();
+    }
 
-   public boolean hasMore() {
-      String var1 = aPX.b();
-      return this.index < this.sequence.length();
-   }
+    /**
+     * Search for the provided token, and advance the reader index past the {@code until} character.
+     *
+     * @param until Case-insensitive token
+     * @return the string starting at the current position (inclusive) and going until the location of {@code until}, exclusive
+     */
+    public CharSequence takeUntil(char until) throws StringTagParseException {
+        until = Character.toLowerCase(until);
+        int endIdx = -1;
+        for (int idx = this.index; idx < this.sequence.length(); ++idx) {
+            if (this.sequence.charAt(idx) == Tokens.ESCAPE_MARKER) {
+                idx++;
+            } else if (Character.toLowerCase(this.sequence.charAt(idx)) == until) {
+                endIdx = idx;
+                break;
+            }
+        }
+        if (endIdx == -1) {
+            throw this.makeError("No occurrence of " + until + " was found");
+        }
 
-   public CharSequence takeUntil(char var1) throws StringTagParseException {
-      aPX.b();
-      var1 = Character.toLowerCase(var1);
-      int var3 = -1;
-      int var4 = this.index;
-      if(var4 < this.sequence.length()) {
-         if(this.sequence.charAt(var4) == 92) {
-            ++var4;
-         }
+        final CharSequence result = this.sequence.subSequence(this.index, endIdx);
+        this.index = endIdx + 1;
+        return result;
+    }
 
-         if(Character.toLowerCase(this.sequence.charAt(var4)) == var1) {
-            var3 = var4;
-         }
+    /**
+     * Assert that the next non-whitespace character is the provided parameter.
+     *
+     * <p>If the assertion is successful, the token will be consumed.</p>
+     *
+     * @param expectedChar expected character
+     * @return this
+     * @throws StringTagParseException if EOF or non-matching value is found
+     */
+    public CharBuffer expect(final char expectedChar) throws StringTagParseException {
+        this.skipWhitespace();
+        if (!this.hasMore()) {
+            throw this.makeError("Expected character '" + expectedChar + "' but got EOF");
+        }
+        if (this.peek() != expectedChar) {
+            throw this.makeError("Expected character '" + expectedChar + "' but got '" + this.peek() + "'");
+        }
+        this.take();
+        return this;
+    }
 
-         ++var4;
-      }
+    public CharBuffer skipWhitespace() {
+        while (this.hasMore() && Character.isWhitespace(this.peek())) this.advance();
+        return this;
+    }
 
-      if(var3 == -1) {
-         throw this.makeError("No occurrence of " + var1 + " was found");
-      } else {
-         CharSequence var7 = this.sequence.subSequence(this.index, var3);
-         this.index = var3 + 1;
-         if(acE.b() == null) {
-            aPX.b("Nr1Otc");
-         }
-
-         return var7;
-      }
-   }
-
-   public CharBuffer expect(char var1) throws StringTagParseException {
-      aPX.b();
-      this.skipWhitespace();
-      if(!this.hasMore()) {
-         throw this.makeError("Expected character \'" + var1 + "\' but got EOF");
-      } else if(this.peek() != var1) {
-         throw this.makeError("Expected character \'" + var1 + "\' but got \'" + this.peek() + "\'");
-      } else {
-         this.take();
-         return this;
-      }
-   }
-
-   public CharBuffer skipWhitespace() {
-      String var1 = aPX.b();
-      if(this.hasMore() && Character.isWhitespace(this.peek())) {
-         this.advance();
-      }
-
-      return this;
-   }
-
-   public StringTagParseException makeError(String var1) {
-      return new StringTagParseException(var1, this.sequence, this.index);
-   }
-
-   private static StringTagParseException a(StringTagParseException var0) {
-      return var0;
-   }
+    public StringTagParseException makeError(final String message) {
+        return new StringTagParseException(message, this.sequence, this.index);
+    }
 }

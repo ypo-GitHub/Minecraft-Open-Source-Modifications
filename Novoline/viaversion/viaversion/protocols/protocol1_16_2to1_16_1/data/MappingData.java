@@ -5,62 +5,46 @@ import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.google.gson.JsonObject;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import net.aPX;
-import net.acE;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.MappingDataLoader;
+import viaversion.viaversion.api.minecraft.nbt.BinaryTagIO;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MappingData extends viaversion.viaversion.api.data.MappingData {
-   private final Map dimensionDataMap = new HashMap();
-   private CompoundTag dimensionRegistry;
-   private static acE[] n;
+    private final Map<String, CompoundTag> dimensionDataMap = new HashMap<>();
+    private CompoundTag dimensionRegistry;
 
-   public MappingData() {
-      super("1.16", "1.16.2", true);
-   }
+    public MappingData() {
+        super("1.16", "1.16.2", true);
+    }
 
-   public void loadExtras(JsonObject var1, JsonObject var2, JsonObject var3) {
-      acE[] var4 = b();
+    @Override
+    public void loadExtras(JsonObject oldMappings, JsonObject newMappings, JsonObject diffMappings) {
+        try {
+            dimensionRegistry = BinaryTagIO.readCompressedInputStream(MappingDataLoader.getResource("dimension-registry-1.16.2.nbt"));
+        } catch (IOException e) {
+            Via.getPlatform().getLogger().severe("Error loading dimension registry:");
+            e.printStackTrace();
+        }
 
-      try {
-         this.dimensionRegistry = aPX.a(MappingDataLoader.getResource("dimension-registry-1.16.2.nbt"));
-      } catch (IOException var10) {
-         Via.getPlatform().getLogger().severe("Error loading dimension registry:");
-         var10.printStackTrace();
-      }
+        // Data of each dimension
+        ListTag dimensions = ((CompoundTag) dimensionRegistry.get("minecraft:dimension_type")).get("value");
+        for (Tag dimension : dimensions) {
+            CompoundTag dimensionCompound = (CompoundTag) dimension;
+            // Copy with an empty name
+            CompoundTag dimensionData = new CompoundTag("", ((CompoundTag) dimensionCompound.get("element")).getValue());
+            dimensionDataMap.put(((StringTag) dimensionCompound.get("name")).getValue(), dimensionData);
+        }
+    }
 
-      ListTag var5 = (ListTag)((CompoundTag)this.dimensionRegistry.get("minecraft:dimension_type")).get("value");
-      Iterator var6 = var5.iterator();
-      if(var6.hasNext()) {
-         Tag var7 = (Tag)var6.next();
-         CompoundTag var8 = (CompoundTag)var7;
-         CompoundTag var9 = new CompoundTag("", ((CompoundTag)var8.get("element")).getValue());
-         this.dimensionDataMap.put(((StringTag)var8.get("name")).getValue(), var9);
-      }
+    public Map<String, CompoundTag> getDimensionDataMap() {
+        return dimensionDataMap;
+    }
 
-   }
-
-   public Map getDimensionDataMap() {
-      return this.dimensionDataMap;
-   }
-
-   public CompoundTag getDimensionRegistry() {
-      return this.dimensionRegistry;
-   }
-
-   public static void b(acE[] var0) {
-      n = var0;
-   }
-
-   public static acE[] b() {
-      return n;
-   }
-
-   static {
-      b(new acE[4]);
-   }
+    public CompoundTag getDimensionRegistry() {
+        return dimensionRegistry;
+    }
 }

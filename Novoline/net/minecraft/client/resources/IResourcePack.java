@@ -1,23 +1,24 @@
 package net.minecraft.client.resources;
 
+import net.minecraft.client.resources.data.IMetadataSection;
+import net.minecraft.client.resources.data.IMetadataSerializer;
+import net.minecraft.util.ResourceLocation;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
-import net.apX;
-import net.minecraft.client.resources.data.IMetadataSection;
-import net.minecraft.util.ResourceLocation;
 
 public interface IResourcePack {
-   InputStream getInputStream(ResourceLocation var1) throws IOException;
+    InputStream getInputStream(ResourceLocation location) throws IOException;
 
-   boolean resourceExists(ResourceLocation var1);
+    boolean resourceExists(ResourceLocation location);
 
-   Set getResourceDomains();
+    Set<String> getResourceDomains();
 
-   IMetadataSection a(apX var1, String var2) throws IOException;
+    <T extends IMetadataSection> T getPackMetadata(IMetadataSerializer p_135058_1_, String p_135058_2_) throws IOException;
 
-   BufferedImage getPackImage() throws IOException;
+    BufferedImage getPackImage() throws IOException;
 
-   String getPackName();
+    String getPackName();
 }

@@ -1,35 +1,51 @@
 package net.minecraft.enchantment;
 
-import java.util.Random;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 
+import java.util.Random;
+
 public class EnchantmentDurability extends Enchantment {
-   protected EnchantmentDurability(int var1, ResourceLocation var2, int var3) {
-      super(var1, var2, var3, EnumEnchantmentType.BREAKABLE);
-      this.setName("durability");
-   }
+    protected EnchantmentDurability(int enchID, ResourceLocation enchName, int enchWeight) {
+        super(enchID, enchName, enchWeight, EnumEnchantmentType.BREAKABLE);
+        this.setName("durability");
+    }
 
-   public int getMinEnchantability(int var1) {
-      return 5 + (var1 - 1) * 8;
-   }
+    /**
+     * Returns the minimal value of enchantability needed on the enchantment level passed.
+     */
+    public int getMinEnchantability(int enchantmentLevel) {
+        return 5 + (enchantmentLevel - 1) * 8;
+    }
 
-   public int getMaxEnchantability(int var1) {
-      return super.getMinEnchantability(var1) + 50;
-   }
+    /**
+     * Returns the maximum value of enchantability nedded on the enchantment level passed.
+     */
+    public int getMaxEnchantability(int enchantmentLevel) {
+        return super.getMinEnchantability(enchantmentLevel) + 50;
+    }
 
-   public int getMaxLevel() {
-      return 3;
-   }
+    /**
+     * Returns the maximum level that the enchantment can have.
+     */
+    public int getMaxLevel() {
+        return 3;
+    }
 
-   public boolean canApply(ItemStack var1) {
-      return var1.isItemStackDamageable() || super.canApply(var1);
-   }
+    /**
+     * Determines if this enchantment can be applied to a specific ItemStack.
+     */
+    public boolean canApply(ItemStack stack) {
+        return stack.isItemStackDamageable() || super.canApply(stack);
+    }
 
-   public static boolean negateDamage(ItemStack var0, int var1, Random var2) {
-      return (!(var0.getItem() instanceof ItemArmor) || var2.nextFloat() >= 0.6F) && var2.nextInt(var1 + 1) > 0;
-   }
+    /**
+     * Used by ItemStack.attemptDamageItem. Randomly determines if a point of damage should be negated using the
+     * enchantment level (par1). If the ItemStack is Armor then there is a flat 60% chance for damage to be negated no
+     * matter the enchantment level, otherwise there is a 1-(par/1) chance for damage to be negated.
+     */
+    public static boolean negateDamage(ItemStack p_92097_0_, int p_92097_1_, Random p_92097_2_) {
+        return (!(p_92097_0_.getItem() instanceof ItemArmor) || !(p_92097_2_.nextFloat() < 0.6F)) && p_92097_2_.nextInt(p_92097_1_ + 1) > 0;
+    }
 }

@@ -1,31 +1,43 @@
 package net.minecraft.command;
 
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.storage.WorldInfo;
 
 public class CommandToggleDownfall extends CommandBase {
-   public String getCommandName() {
-      return "toggledownfall";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "toggledownfall";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.downfall.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.downfall.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      this.toggleDownfall();
-      notifyOperators(var1, this, "commands.downfall.success", new Object[0]);
-   }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        this.toggleDownfall();
+        notifyOperators(sender, this, "commands.downfall.success", new Object[0]);
+    }
 
-   protected void toggleDownfall() {
-      WorldInfo var1 = MinecraftServer.getServer().worldServers[0].getWorldInfo();
-      var1.setRaining(!var1.isRaining());
-   }
+    /**
+     * Toggle rain and enable thundering.
+     */
+    protected void toggleDownfall() {
+        WorldInfo worldinfo = MinecraftServer.getServer().worldServers[0].getWorldInfo();
+        worldinfo.setRaining(!worldinfo.isRaining());
+    }
 }

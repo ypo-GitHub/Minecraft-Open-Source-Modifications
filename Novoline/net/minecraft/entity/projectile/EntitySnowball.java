@@ -2,42 +2,44 @@ package net.minecraft.entity.projectile;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityBlaze;
-import net.minecraft.entity.projectile.EntityThrowable;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
 public class EntitySnowball extends EntityThrowable {
-   public EntitySnowball(World var1) {
-      super(var1);
-   }
+    public EntitySnowball(World worldIn) {
+        super(worldIn);
+    }
 
-   public EntitySnowball(World var1, EntityLivingBase var2) {
-      super(var1, var2);
-   }
+    public EntitySnowball(World worldIn, EntityLivingBase throwerIn) {
+        super(worldIn, throwerIn);
+    }
 
-   public EntitySnowball(World var1, double var2, double var4, double var6) {
-      super(var1, var2, var4, var6);
-   }
+    public EntitySnowball(World worldIn, double x, double y, double z) {
+        super(worldIn, x, y, z);
+    }
 
-   protected void onImpact(MovingObjectPosition var1) {
-      if(var1.entityHit != null) {
-         byte var2 = 0;
-         if(var1.entityHit instanceof EntityBlaze) {
-            var2 = 3;
-         }
+    /**
+     * Called when this EntityThrowable hits a block or entity.
+     */
+    protected void onImpact(MovingObjectPosition p_70184_1_) {
+        if (p_70184_1_.entityHit != null) {
+            int i = 0;
 
-         var1.entityHit.attackEntityFrom(DamageSource.causeThrownDamage(this, this.getThrower()), (float)var2);
-      }
+            if (p_70184_1_.entityHit instanceof EntityBlaze) {
+                i = 3;
+            }
 
-      for(int var3 = 0; var3 < 8; ++var3) {
-         this.worldObj.spawnParticle(EnumParticleTypes.SNOWBALL, this.posX, this.posY, this.posZ, 0.0D, 0.0D, 0.0D, new int[0]);
-      }
+            p_70184_1_.entityHit.attackEntityFrom(DamageSource.causeThrownDamage(this, this.getThrower()), (float) i);
+        }
 
-      if(!this.worldObj.isRemote) {
-         this.setDead();
-      }
+        for (int j = 0; j < 8; ++j) {
+            this.worldObj.spawnParticle(EnumParticleTypes.SNOWBALL, this.posX, this.posY, this.posZ, 0.0D, 0.0D, 0.0D, new int[0]);
+        }
 
-   }
+        if (!this.worldObj.isRemote) {
+            this.setDead();
+        }
+    }
 }

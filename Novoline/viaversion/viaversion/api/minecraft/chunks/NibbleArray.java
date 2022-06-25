@@ -1,84 +1,128 @@
 package viaversion.viaversion.api.minecraft.chunks;
 
 import java.util.Arrays;
-import net.acE;
-import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 
 public class NibbleArray {
-   private final byte[] handle;
+    private final byte[] handle;
 
-   public NibbleArray(int var1) {
-      ChunkSection.b();
-      super();
-      if(var1 != 0 && var1 % 2 == 0) {
-         this.handle = new byte[var1 / 2];
-      } else {
-         throw new IllegalArgumentException("Length of nibble array must be a positive number dividable by 2!");
-      }
-   }
+    public NibbleArray(int length) {
+        if (length == 0 || length % 2 != 0) {
+            throw new IllegalArgumentException("Length of nibble array must be a positive number dividable by 2!");
+        }
 
-   public NibbleArray(byte[] var1) {
-      ChunkSection.b();
-      super();
-      if(var1.length != 0 && var1.length % 2 == 0) {
-         this.handle = var1;
-      } else {
-         throw new IllegalArgumentException("Length of nibble array must be a positive number dividable by 2!");
-      }
-   }
+        this.handle = new byte[length / 2];
+    }
 
-   public byte get(int var1, int var2, int var3) {
-      return this.a(ChunkSection.index(var1, var2, var3));
-   }
+    public NibbleArray(byte[] handle) {
+        if (handle.length == 0 || handle.length % 2 != 0) {
+            throw new IllegalArgumentException("Length of nibble array must be a positive number dividable by 2!");
+        }
 
-   public byte a(int var1) {
-      ChunkSection.b();
-      byte var3 = this.handle[var1 / 2];
-      return var1 % 2 == 0?(byte)(var3 & 15):(byte)(var3 >> 4 & 15);
-   }
+        this.handle = handle;
+    }
 
-   public void set(int var1, int var2, int var3, int var4) {
-      this.a(ChunkSection.index(var1, var2, var3), var4);
-   }
+    /**
+     * Get the value at a desired X, Y, Z
+     *
+     * @param x Block X
+     * @param y Block Y
+     * @param z Block Z
+     * @return The value at the given XYZ
+     */
+    public byte get(int x, int y, int z) {
+        return get(ChunkSection.index(x, y, z));
+    }
 
-   public void a(int var1, int var2) {
-      acE[] var3 = ChunkSection.b();
-      if(var1 % 2 == 0) {
-         var1 /= 2;
-         this.handle[var1] = (byte)(this.handle[var1] & 240 | var2 & 15);
-      }
+    /**
+     * Get the value at an index
+     *
+     * @param index The index to lookup
+     * @return The value at that index.
+     */
+    public byte get(int index) {
+        byte value = handle[index / 2];
+        if (index % 2 == 0) {
+            return (byte) (value & 0xF);
+        } else {
+            return (byte) ((value >> 4) & 0xF);
+        }
+    }
 
-      var1 = var1 / 2;
-      this.handle[var1] = (byte)(this.handle[var1] & 15 | (var2 & 15) << 4);
-   }
+    /**
+     * Set the value based on an x, y, z
+     *
+     * @param x     Block X
+     * @param y     Block Y
+     * @param z     Block Z
+     * @param value Desired Value
+     */
+    public void set(int x, int y, int z, int value) {
+        set(ChunkSection.index(x, y, z), value);
+    }
 
-   public int size() {
-      return this.handle.length * 2;
-   }
+    /**
+     * Set a value at an index
+     *
+     * @param index The index to set the value at.
+     * @param value The desired value
+     */
+    public void set(int index, int value) {
+        if (index % 2 == 0) {
+            index /= 2;
+            handle[index] = (byte) ((handle[index] & 0xF0) | (value & 0xF));
+        } else {
+            index /= 2;
+            handle[index] = (byte) ((handle[index] & 0xF) | ((value & 0xF) << 4));
+        }
+    }
 
-   public int actualSize() {
-      return this.handle.length;
-   }
+    /**
+     * The size of this nibble
+     *
+     * @return The size as an int of the nibble
+     */
+    public int size() {
+        return handle.length * 2;
+    }
 
-   public void fill(byte var1) {
-      var1 = (byte)(var1 & 15);
-      Arrays.fill(this.handle, (byte)(var1 << 4 | var1));
-   }
+    /**
+     * Get the actual number of bytes
+     *
+     * @return The number of bytes based on the handle.
+     */
+    public int actualSize() {
+        return handle.length;
+    }
 
-   public byte[] getHandle() {
-      return this.handle;
-   }
+    /**
+     * Fill the array with a value
+     *
+     * @param value Value to fill with
+     */
+    public void fill(byte value) {
+        value &= 0xF; // Max nibble size (= 16)
+        Arrays.fill(handle, (byte) ((value << 4) | value));
+    }
 
-   public void setHandle(byte[] var1) {
-      acE[] var2 = ChunkSection.b();
-      if(var1.length != this.handle.length) {
-         throw new IllegalArgumentException("Length of handle must equal to size of nibble array!");
-      } else {
-         System.arraycopy(var1, 0, this.handle, 0, var1.length);
-      }
-   }
+    /**
+     * Get the byte array behind this nibble
+     *
+     * @return The byte array
+     */
+    public byte[] getHandle() {
+        return handle;
+    }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+    /**
+     * Copy a byte array into this nibble
+     *
+     * @param handle The byte array to copy in.
+     */
+    public void setHandle(byte[] handle) {
+        if (handle.length != this.handle.length) {
+            throw new IllegalArgumentException("Length of handle must equal to size of nibble array!");
+        }
+
+        System.arraycopy(handle, 0, this.handle, 0, handle.length);
+    }
 }

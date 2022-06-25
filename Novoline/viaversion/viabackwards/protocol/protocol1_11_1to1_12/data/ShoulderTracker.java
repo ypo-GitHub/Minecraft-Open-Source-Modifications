@@ -1,121 +1,111 @@
+/*
+ * Copyright (c) 2016 Matsv
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package viaversion.viabackwards.protocol.protocol1_11_1to1_12.data;
 
-import io.netty.buffer.ByteBuf;
-import net.VV;
-import net.aRY;
-import net.ay_;
-import net.cA;
 import net.md_5.bungee.api.ChatColor;
+import viaversion.viabackwards.ViaBackwards;
+import viaversion.viabackwards.protocol.protocol1_11_1to1_12.Protocol1_11_1To1_12;
 import viaversion.viaversion.api.PacketWrapper;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_9to1_8.Protocol1_9To1_8;
 
-public class ShoulderTracker extends cA {
-   private int entityId;
-   private String e;
-   private String c;
-   private static int f;
+public class ShoulderTracker extends StoredObject {
+    private int entityId;
+    private String leftShoulder;
+    private String rightShoulder;
 
-   public ShoulderTracker(UserConnection var1) {
-      super(var1);
-   }
+    public ShoulderTracker(UserConnection user) {
+        super(user);
+    }
 
-   public void update() {
-      PacketWrapper var1 = new PacketWrapper(15, (ByteBuf)null, this.d());
-      var1.write(Type.COMPONENT, aRY.b(this.generateString()));
-      var1.write(Type.BYTE, Byte.valueOf((byte)2));
-      PacketWrapper var10000 = var1;
-      Class var10001 = ay_.class;
+    public void update() {
+        PacketWrapper wrapper = new PacketWrapper(0x0F, null, getUser());
 
-      try {
-         var10000.send(var10001);
-      } catch (Exception var3) {
-         VV.d().getLogger().severe("Failed to send the shoulder indication");
-         var3.printStackTrace();
-      }
+        wrapper.write(Type.COMPONENT, Protocol1_9To1_8.fixJson(generateString()));
+        wrapper.write(Type.BYTE, (byte) 2);
 
-   }
+        try {
+            wrapper.send(Protocol1_11_1To1_12.class);
+        } catch (Exception e) {
+            ViaBackwards.getPlatform().getLogger().severe("Failed to send the shoulder indication");
+            e.printStackTrace();
+        }
+    }
 
-   private String generateString() {
-      d();
-      StringBuilder var2 = new StringBuilder();
-      var2.append("  ");
-      if(this.e == null) {
-         var2.append(ChatColor.RED).append(ChatColor.BOLD).append("Nothing");
-      }
+    // Does actionbar not support json colors? :(
+    private String generateString() {
+        StringBuilder builder = new StringBuilder();
 
-      var2.append(ChatColor.DARK_GREEN).append(ChatColor.BOLD).append(this.getName(this.e));
-      var2.append(ChatColor.DARK_GRAY).append(ChatColor.BOLD).append(" <- ").append(ChatColor.GRAY).append(ChatColor.BOLD).append("Shoulders").append(ChatColor.DARK_GRAY).append(ChatColor.BOLD).append(" -> ");
-      if(this.c == null) {
-         var2.append(ChatColor.RED).append(ChatColor.BOLD).append("Nothing");
-      }
+        // Empty spaces because the non-json formatting is weird
+        builder.append("  ");
+        if (leftShoulder == null)
+            builder.append(ChatColor.RED).append(ChatColor.BOLD).append("Nothing");
+        else
+            builder.append(ChatColor.DARK_GREEN).append(ChatColor.BOLD).append(getName(leftShoulder));
 
-      var2.append(ChatColor.DARK_GREEN).append(ChatColor.BOLD).append(this.getName(this.c));
-      return var2.toString();
-   }
+        builder.append(ChatColor.DARK_GRAY).append(ChatColor.BOLD).append(" <- ")
+                .append(ChatColor.GRAY).append(ChatColor.BOLD).append("Shoulders")
+                .append(ChatColor.DARK_GRAY).append(ChatColor.BOLD).append(" -> ");
 
-   private String getName(String var1) {
-      int var2 = d();
-      if(var1.startsWith("minecraft:")) {
-         var1 = var1.substring(10);
-      }
+        if (rightShoulder == null)
+            builder.append(ChatColor.RED).append(ChatColor.BOLD).append("Nothing");
+        else
+            builder.append(ChatColor.DARK_GREEN).append(ChatColor.BOLD).append(getName(rightShoulder));
 
-      String[] var3 = var1.split("_");
-      StringBuilder var4 = new StringBuilder();
-      int var6 = var3.length;
-      int var7 = 0;
-      if(var7 < var6) {
-         String var8 = var3[var7];
-         var4.append(var8.substring(0, 1).toUpperCase()).append(var8.substring(1)).append(" ");
-         ++var7;
-      }
+        return builder.toString();
+    }
 
-      return var4.toString();
-   }
+    private String getName(String current) {
+        if (current.startsWith("minecraft:"))
+            current = current.substring(10);
+        String[] array = current.split("_");
+        StringBuilder builder = new StringBuilder();
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+        for (String s : array) {
+            builder.append(s.substring(0, 1).toUpperCase())
+                    .append(s.substring(1))
+                    .append(" ");
+        }
 
-   public void setEntityId(int var1) {
-      this.entityId = var1;
-   }
+        return builder.toString();
+    }
 
-   public String g() {
-      return this.e;
-   }
+    public int getEntityId() {
+        return entityId;
+    }
 
-   public void c(String var1) {
-      this.e = var1;
-   }
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
 
-   public String h() {
-      return this.c;
-   }
+    public String getLeftShoulder() {
+        return leftShoulder;
+    }
 
-   public void a(String var1) {
-      this.c = var1;
-   }
+    public void setLeftShoulder(String leftShoulder) {
+        this.leftShoulder = leftShoulder;
+    }
 
-   public String toString() {
-      int var1 = d();
-      return "ShoulderTracker{entityId=" + this.entityId + ", leftShoulder=\'" + this.e + '\'' + ", rightShoulder=\'" + this.c + '\'' + '}';
-   }
+    public String getRightShoulder() {
+        return rightShoulder;
+    }
 
-   public static void b(int var0) {
-      f = var0;
-   }
+    public void setRightShoulder(String rightShoulder) {
+        this.rightShoulder = rightShoulder;
+    }
 
-   public static int d() {
-      return f;
-   }
-
-   public static int a() {
-      int var0 = d();
-      return 65;
-   }
-
-   static {
-      b(0);
-   }
+    @Override
+    public String toString() {
+        return "ShoulderTracker{" + "entityId=" + entityId + ", leftShoulder='" + leftShoulder + '\'' + ", rightShoulder='" + rightShoulder + '\'' + '}';
+    }
 }

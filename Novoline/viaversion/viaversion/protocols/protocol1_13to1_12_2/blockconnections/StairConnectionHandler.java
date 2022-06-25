@@ -1,166 +1,168 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import net.abi;
-import net.acE;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.StairConnectionHandler$1;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.StairConnectionHandler$StairData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-public class StairConnectionHandler extends abi {
-   private static final Map stairDataMap = new HashMap();
-   private static final Map c = new HashMap();
+import java.util.*;
 
-   static ConnectionData$ConnectorInitAction init() {
-      LinkedList var1 = new LinkedList();
-      var1.add("minecraft:oak_stairs");
-      abi.b();
-      var1.add("minecraft:cobblestone_stairs");
-      var1.add("minecraft:brick_stairs");
-      var1.add("minecraft:stone_brick_stairs");
-      var1.add("minecraft:nether_brick_stairs");
-      var1.add("minecraft:sandstone_stairs");
-      var1.add("minecraft:spruce_stairs");
-      var1.add("minecraft:birch_stairs");
-      var1.add("minecraft:jungle_stairs");
-      var1.add("minecraft:quartz_stairs");
-      var1.add("minecraft:acacia_stairs");
-      var1.add("minecraft:dark_oak_stairs");
-      var1.add("minecraft:red_sandstone_stairs");
-      var1.add("minecraft:purpur_stairs");
-      var1.add("minecraft:prismarine_stairs");
-      var1.add("minecraft:prismarine_brick_stairs");
-      var1.add("minecraft:dark_prismarine_stairs");
-      StairConnectionHandler var2 = new StairConnectionHandler();
-      ConnectionData$ConnectorInitAction var10000 = StairConnectionHandler::lambda$init$0;
-      if(acE.b() == null) {
-         abi.b(new acE[2]);
-      }
+public class StairConnectionHandler extends ConnectionHandler {
+    private static final Map<Integer, StairData> stairDataMap = new HashMap<>();
+    private static final Map<Short, Integer> connectedBlocks = new HashMap<>();
 
-      return var10000;
-   }
+    static ConnectionData.ConnectorInitAction init() {
+        final List<String> baseStairs = new LinkedList<>();
+        baseStairs.add("minecraft:oak_stairs");
+        baseStairs.add("minecraft:cobblestone_stairs");
+        baseStairs.add("minecraft:brick_stairs");
+        baseStairs.add("minecraft:stone_brick_stairs");
+        baseStairs.add("minecraft:nether_brick_stairs");
+        baseStairs.add("minecraft:sandstone_stairs");
+        baseStairs.add("minecraft:spruce_stairs");
+        baseStairs.add("minecraft:birch_stairs");
+        baseStairs.add("minecraft:jungle_stairs");
+        baseStairs.add("minecraft:quartz_stairs");
+        baseStairs.add("minecraft:acacia_stairs");
+        baseStairs.add("minecraft:dark_oak_stairs");
+        baseStairs.add("minecraft:red_sandstone_stairs");
+        baseStairs.add("minecraft:purpur_stairs");
+        baseStairs.add("minecraft:prismarine_stairs");
+        baseStairs.add("minecraft:prismarine_brick_stairs");
+        baseStairs.add("minecraft:dark_prismarine_stairs");
 
-   private static short a(StairConnectionHandler$StairData var0) {
-      abi.b();
-      short var2 = 0;
-      if(var0.isBottom()) {
-         var2 = (short)(var2 | 1);
-      }
+        final StairConnectionHandler connectionHandler = new StairConnectionHandler();
+        return blockData -> {
+            int type = baseStairs.indexOf(blockData.getMinecraftKey());
+            if (type == -1) return;
 
-      var2 = (short)(var2 | var0.getShape() << 1);
-      var2 = (short)(var2 | var0.getType() << 4);
-      var2 = (short)(var2 | var0.getFacing().ordinal() << 9);
-      return var2;
-   }
+            if (blockData.getValue("waterlogged").equals("true")) return;
 
-   public int connect(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      StairConnectionHandler$StairData var5 = (StairConnectionHandler$StairData)stairDataMap.get(Integer.valueOf(var3));
-      return var3;
-   }
-
-   private int getShape(UserConnection var1, Position var2, StairConnectionHandler$StairData var3) {
-      abi.b();
-      BlockFace var5 = var3.getFacing();
-      StairConnectionHandler$StairData var6 = (StairConnectionHandler$StairData)stairDataMap.get(Integer.valueOf(this.getBlockData(var1, var2.getRelative(var5))));
-      if(var6 != null && var6.isBottom() == var3.isBottom()) {
-         BlockFace var7 = var6.getFacing();
-         if(var5.getAxis() != var7.getAxis() && this.checkOpposite(var1, var3, var2, var7.opposite())) {
-            return var7 == this.rotateAntiClockwise(var5)?3:4;
-         }
-      }
-
-      var6 = (StairConnectionHandler$StairData)stairDataMap.get(Integer.valueOf(this.getBlockData(var1, var2.getRelative(var5.opposite()))));
-      if(var6 != null && var6.isBottom() == var3.isBottom()) {
-         BlockFace var9 = var6.getFacing();
-         if(var5.getAxis() != var9.getAxis() && this.checkOpposite(var1, var3, var2, var9)) {
-            return var9 == this.rotateAntiClockwise(var5)?1:2;
-         }
-      }
-
-      return 0;
-   }
-
-   private boolean checkOpposite(UserConnection var1, StairConnectionHandler$StairData var2, Position var3, BlockFace var4) {
-      abi.b();
-      StairConnectionHandler$StairData var6 = (StairConnectionHandler$StairData)stairDataMap.get(Integer.valueOf(this.getBlockData(var1, var3.getRelative(var4))));
-      return var6 == null || var6.getFacing() != var2.getFacing() || var6.isBottom() != var2.isBottom();
-   }
-
-   private BlockFace rotateAntiClockwise(BlockFace var1) {
-      switch(StairConnectionHandler$1.$SwitchMap$viaversion$viaversion$api$minecraft$BlockFace[var1.ordinal()]) {
-      case 1:
-         return BlockFace.WEST;
-      case 2:
-         return BlockFace.EAST;
-      case 3:
-         return BlockFace.NORTH;
-      case 4:
-         return BlockFace.SOUTH;
-      default:
-         return var1;
-      }
-   }
-
-   private static void lambda$init$0(List var0, StairConnectionHandler var1, WrappedBlockData var2) {
-      abi.b();
-      int var4 = var0.indexOf(var2.getMinecraftKey());
-      if(var4 != -1) {
-         if(!var2.getValue("waterlogged").equals("true")) {
-            String var6 = var2.getValue("shape");
-            byte var7 = -1;
-            switch(var6.hashCode()) {
-            case 1787472634:
-               if(!var6.equals("straight")) {
-                  break;
-               }
-
-               var7 = 0;
-            case 823365712:
-               if(!var6.equals("inner_left")) {
-                  break;
-               }
-
-               var7 = 1;
-            case -239805709:
-               if(!var6.equals("inner_right")) {
-                  break;
-               }
-
-               var7 = 2;
-            case 1743932747:
-               if(!var6.equals("outer_left")) {
-                  break;
-               }
-
-               var7 = 3;
-            case -1766998696:
-               if(var6.equals("outer_right")) {
-                  var7 = 4;
-               }
+            byte shape;
+            switch (blockData.getValue("shape")) {
+                case "straight":
+                    shape = 0;
+                    break;
+                case "inner_left":
+                    shape = 1;
+                    break;
+                case "inner_right":
+                    shape = 2;
+                    break;
+                case "outer_left":
+                    shape = 3;
+                    break;
+                case "outer_right":
+                    shape = 4;
+                    break;
+                default:
+                    return;
             }
 
-            switch(var7) {
-            case 0:
-               boolean var5 = false;
-            case 1:
-               boolean var8 = true;
-            case 2:
-               boolean var9 = true;
-            case 3:
-               boolean var10 = true;
-            case 4:
-               boolean var11 = true;
+            StairData stairData = new StairData(
+                    blockData.getValue("half").equals("bottom"),
+                    shape, (byte) type,
+                    BlockFace.valueOf(blockData.getValue("facing").toUpperCase(Locale.ROOT))
+            );
+
+            stairDataMap.put(blockData.getSavedBlockStateId(), stairData);
+            connectedBlocks.put(getStates(stairData), blockData.getSavedBlockStateId());
+
+            ConnectionData.connectionHandlerMap.put(blockData.getSavedBlockStateId(), connectionHandler);
+        };
+    }
+
+    private static short getStates(StairData stairData) {
+        short s = 0;
+        if (stairData.isBottom()) s |= 1;
+        s |= stairData.getShape() << 1;
+        s |= stairData.getType() << 4;
+        s |= stairData.getFacing().ordinal() << 9;
+        return s;
+    }
+
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        StairData stairData = stairDataMap.get(blockState);
+        if (stairData == null) return blockState;
+
+        short s = 0;
+        if (stairData.isBottom()) s |= 1;
+        s |= getShape(user, position, stairData) << 1;
+        s |= stairData.getType() << 4;
+        s |= stairData.getFacing().ordinal() << 9;
+
+        Integer newBlockState = connectedBlocks.get(s);
+        return newBlockState == null ? blockState : newBlockState;
+    }
+
+    private int getShape(UserConnection user, Position position, StairData stair) {
+        BlockFace facing = stair.getFacing();
+
+        StairData relativeStair = stairDataMap.get(getBlockData(user, position.getRelative(facing)));
+        if (relativeStair != null && relativeStair.isBottom() == stair.isBottom()) {
+            BlockFace facing2 = relativeStair.getFacing();
+            if (facing.getAxis() != facing2.getAxis() && checkOpposite(user, stair, position, facing2.opposite())) {
+                return facing2 == rotateAntiClockwise(facing) ? 3 : 4; // outer_left : outer_right
+            }
+        }
+
+        relativeStair = stairDataMap.get(getBlockData(user, position.getRelative(facing.opposite())));
+        if (relativeStair != null && relativeStair.isBottom() == stair.isBottom()) {
+            BlockFace facing2 = relativeStair.getFacing();
+            if (facing.getAxis() != facing2.getAxis() && checkOpposite(user, stair, position, facing2)) {
+                return facing2 == rotateAntiClockwise(facing) ? 1 : 2; // inner_left : inner_right
+            }
+        }
+
+        return 0; // straight
+    }
+
+    private boolean checkOpposite(UserConnection user, StairData stair, Position position, BlockFace face) {
+        StairData relativeStair = stairDataMap.get(getBlockData(user, position.getRelative(face)));
+        return relativeStair == null || relativeStair.getFacing() != stair.getFacing() || relativeStair.isBottom() != stair.isBottom();
+    }
+
+    private BlockFace rotateAntiClockwise(BlockFace face) {
+        switch (face) {
+            case NORTH:
+                return BlockFace.WEST;
+            case SOUTH:
+                return BlockFace.EAST;
+            case EAST:
+                return BlockFace.NORTH;
+            case WEST:
+                return BlockFace.SOUTH;
             default:
-            }
-         }
-      }
-   }
+                return face;
+        }
+    }
+
+    private static final class StairData {
+        private final boolean bottom;
+        private final byte shape, type;
+        private final BlockFace facing;
+
+        private StairData(boolean bottom, byte shape, byte type, BlockFace facing) {
+            this.bottom = bottom;
+            this.shape = shape;
+            this.type = type;
+            this.facing = facing;
+        }
+
+        public boolean isBottom() {
+            return bottom;
+        }
+
+        public byte getShape() {
+            return shape;
+        }
+
+        public byte getType() {
+            return type;
+        }
+
+        public BlockFace getFacing() {
+            return facing;
+        }
+    }
 }

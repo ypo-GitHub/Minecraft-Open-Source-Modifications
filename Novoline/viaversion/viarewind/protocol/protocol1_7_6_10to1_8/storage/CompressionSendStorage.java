@@ -1,47 +1,41 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
 import java.util.Objects;
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.EntityTracker;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 
-public class CompressionSendStorage extends cA {
-   private boolean compressionSend = false;
+public class CompressionSendStorage extends StoredObject {
 
-   public CompressionSendStorage(UserConnection var1) {
-      super(var1);
-   }
+	private boolean compressionSend = false;
 
-   public CompressionSendStorage(UserConnection var1, boolean var2) {
-      super(var1);
-      this.compressionSend = var2;
-   }
+	public CompressionSendStorage(UserConnection user) {
+		super(user);
+	}
 
-   public boolean isCompressionSend() {
-      return this.compressionSend;
-   }
+	public CompressionSendStorage(UserConnection user, boolean compressionSend) {
+		super(user);
+		this.compressionSend = compressionSend;
+	}
 
-   public void setCompressionSend(boolean var1) {
-      this.compressionSend = var1;
-   }
+	public boolean isCompressionSend() { return compressionSend; }
+	public void setCompressionSend(boolean compressionSend) { this.compressionSend = compressionSend; }
 
-   public boolean equals(Object var1) {
-      String var2 = EntityTracker.b();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof CompressionSendStorage)) {
-         return false;
-      } else {
-         CompressionSendStorage var3 = (CompressionSendStorage)var1;
-         return this.compressionSend == var3.compressionSend;
-      }
-   }
+	@Override
+	public boolean equals(Object o) {
+		if(this == o) return true;
+		if(!(o instanceof CompressionSendStorage)) return false;
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Boolean.valueOf(this.compressionSend)});
-   }
+		CompressionSendStorage other = (CompressionSendStorage) o;
+		return compressionSend == other.compressionSend;
+	}
 
-   public String toString() {
-      return "CompressionSendStorage{compressionSend=" + this.compressionSend + '}';
-   }
+	@Override
+	public int hashCode() {
+		return Objects.hash(compressionSend);
+	}
+
+	@Override
+	public String toString() {
+		return "CompressionSendStorage{" + "compressionSend=" + compressionSend + '}';
+	}
 }

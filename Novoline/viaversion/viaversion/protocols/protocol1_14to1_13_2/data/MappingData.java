@@ -5,72 +5,61 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import net.amx;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.MappingDataLoader;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MappingData extends viaversion.viaversion.api.data.MappingData {
-   private IntSet motionBlocking;
-   private IntSet nonFullBlocks;
+    private IntSet motionBlocking;
+    private IntSet nonFullBlocks;
 
-   public MappingData() {
-      super("1.13.2", "1.14");
-   }
+    public MappingData() {
+        super("1.13.2", "1.14");
+    }
 
-   public void loadExtras(JsonObject var1, JsonObject var2, JsonObject var3) {
-      amx.a();
-      JsonObject var5 = var2.getAsJsonObject("blockstates");
-      HashMap var6 = new HashMap(var5.entrySet().size());
-      Iterator var7 = var5.entrySet().iterator();
-      if(var7.hasNext()) {
-         Entry var8 = (Entry)var7.next();
-         var6.put(((JsonElement)var8.getValue()).getAsString(), Integer.valueOf(Integer.parseInt((String)var8.getKey())));
-      }
+    @Override
+    public void loadExtras(JsonObject oldMappings, JsonObject newMappings, JsonObject diffMappings) {
+        JsonObject blockStates = newMappings.getAsJsonObject("blockstates");
+        Map<String, Integer> blockStateMap = new HashMap<>(blockStates.entrySet().size());
+        for (Map.Entry<String, JsonElement> entry : blockStates.entrySet()) {
+            blockStateMap.put(entry.getValue().getAsString(), Integer.parseInt(entry.getKey()));
+        }
 
-      JsonObject var13 = MappingDataLoader.loadData("heightMapData-1.14.json");
-      JsonArray var14 = var13.getAsJsonArray("MOTION_BLOCKING");
-      this.motionBlocking = new IntOpenHashSet(var14.size(), 1.0F);
-      Iterator var9 = var14.iterator();
-      if(var9.hasNext()) {
-         JsonElement var10 = (JsonElement)var9.next();
-         String var11 = var10.getAsString();
-         Integer var12 = (Integer)var6.get(var11);
-         if(var12 == null) {
-            Via.getPlatform().getLogger().warning("Unknown blockstate " + var11 + " :(");
-         }
-
-         this.motionBlocking.add(var12.intValue());
-      }
-
-      if(Via.getConfig().isNonFullBlockLightFix()) {
-         this.nonFullBlocks = new IntOpenHashSet(1611, 1.0F);
-         var9 = var1.getAsJsonObject("blockstates").entrySet().iterator();
-         if(var9.hasNext()) {
-            Entry var18 = (Entry)var9.next();
-            String var19 = ((JsonElement)var18.getValue()).getAsString();
-            if(var19.contains("_slab") || var19.contains("_stairs") || var19.contains("_wall[")) {
-               this.nonFullBlocks.add(this.blockStateMappings.getNewId(Integer.parseInt((String)var18.getKey())));
+        JsonObject heightMapData = MappingDataLoader.loadData("heightMapData-1.14.json");
+        JsonArray motionBlocking = heightMapData.getAsJsonArray("MOTION_BLOCKING");
+        this.motionBlocking = new IntOpenHashSet(motionBlocking.size(), 1F);
+        for (JsonElement blockState : motionBlocking) {
+            String key = blockState.getAsString();
+            Integer id = blockStateMap.get(key);
+            if (id == null) {
+                Via.getPlatform().getLogger().warning("Unknown blockstate " + key + " :(");
+            } else {
+                this.motionBlocking.add(id.intValue());
             }
-         }
+        }
 
-         this.nonFullBlocks.add(this.blockStateMappings.getNewId(8163));
-         int var16 = 3060;
-         if(var16 <= 3067) {
-            this.nonFullBlocks.add(this.blockStateMappings.getNewId(var16));
-            ++var16;
-         }
-      }
+        if (Via.getConfig().isNonFullBlockLightFix()) {
+            nonFullBlocks = new IntOpenHashSet(1611, 1F);
+            for (Map.Entry<String, JsonElement> blockstates : oldMappings.getAsJsonObject("blockstates").entrySet()) {
+                final String state = blockstates.getValue().getAsString();
+                if (state.contains("_slab") || state.contains("_stairs") || state.contains("_wall[")) {
+                    nonFullBlocks.add(blockStateMappings.getNewId(Integer.parseInt(blockstates.getKey())));
+                }
+            }
+            nonFullBlocks.add(blockStateMappings.getNewId(8163)); // grass path
+            for (int i = 3060; i <= 3067; i++) { // farmland
+                nonFullBlocks.add(blockStateMappings.getNewId(i));
+            }
+        }
+    }
 
-   }
+    public IntSet getMotionBlocking() {
+        return motionBlocking;
+    }
 
-   public IntSet getMotionBlocking() {
-      return this.motionBlocking;
-   }
-
-   public IntSet getNonFullBlocks() {
-      return this.nonFullBlocks;
-   }
+    public IntSet getNonFullBlocks() {
+        return nonFullBlocks;
+    }
 }

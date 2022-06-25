@@ -1,90 +1,81 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class CPacketVehicleMove implements Packet {
-   private double x;
-   private double y;
-   private double z;
-   private float yaw;
-   private float pitch;
+import java.io.IOException;
 
-   public CPacketVehicleMove() {
-   }
+public class CPacketVehicleMove implements Packet<INetHandlerPlayServer> {
 
-   public CPacketVehicleMove(Entity var1) {
-      this.x = var1.posX;
-      this.y = var1.posY;
-      this.z = var1.posZ;
-      this.yaw = var1.rotationYaw;
-      this.pitch = var1.rotationPitch;
-   }
+	private double x;
+	private double y;
+	private double z;
+	private float yaw;
+	private float pitch;
 
-   public CPacketVehicleMove(Entity var1, float var2, float var3) {
-      this.x = var1.posX;
-      this.y = var1.posY;
-      this.z = var1.posZ;
-      this.yaw = var2;
-      this.pitch = var3;
-   }
+	public CPacketVehicleMove() {
+	}
 
-   public CPacketVehicleMove(Entity var1, double var2, double var4, double var6) {
-      this.x = var2;
-      this.y = var4;
-      this.z = var6;
-      this.yaw = var1.rotationYaw;
-      this.pitch = var1.rotationPitch;
-   }
+	public CPacketVehicleMove(Entity entityIn) {
+		this.x = entityIn.posX;
+		this.y = entityIn.posY;
+		this.z = entityIn.posZ;
+		this.yaw = entityIn.rotationYaw;
+		this.pitch = entityIn.rotationPitch;
+	}
 
-   public CPacketVehicleMove(double var1, double var3, double var5, float var7, float var8) {
-      this.x = var1;
-      this.y = var3;
-      this.z = var5;
-      this.yaw = var7;
-      this.pitch = var8;
-   }
+	public CPacketVehicleMove(Entity entityIn, float yaw, float pitch) {
+		this.x = entityIn.posX;
+		this.y = entityIn.posY;
+		this.z = entityIn.posZ;
+		this.yaw = yaw;
+		this.pitch = pitch;
+	}
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.x = var1.readDouble();
-      this.y = var1.readDouble();
-      this.z = var1.readDouble();
-      this.yaw = var1.readFloat();
-      this.pitch = var1.readFloat();
-   }
+	public CPacketVehicleMove(Entity entityIn, double posX, double posY, double posZ) {
+		this.x = posX;
+		this.y = posY;
+		this.z = posZ;
+		this.yaw = entityIn.rotationYaw;
+		this.pitch = entityIn.rotationPitch;
+	}
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeDouble(this.x);
-      var1.writeDouble(this.y);
-      var1.writeDouble(this.z);
-      var1.writeFloat(this.yaw);
-      var1.writeFloat(this.pitch);
-   }
+	public CPacketVehicleMove(double posX, double posY, double posZ, float yaw, float pitch) {
+		this.x = posX;
+		this.y = posY;
+		this.z = posZ;
+		this.yaw = yaw;
+		this.pitch = pitch;
+	}
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processVehicleMove(this);
-   }
+	@Override
+    public void readPacketData(PacketBuffer buf) throws IOException {
+		this.x = buf.readDouble();
+		this.y = buf.readDouble();
+		this.z = buf.readDouble();
+		this.yaw = buf.readFloat();
+		this.pitch = buf.readFloat();
+	}
 
-   public double getX() {
-      return this.x;
-   }
+	@Override
+    public void writePacketData(PacketBuffer buf) throws IOException {
+		buf.writeDouble(x);
+		buf.writeDouble(y);
+		buf.writeDouble(z);
+		buf.writeFloat(yaw);
+		buf.writeFloat(pitch);
+	}
 
-   public double getY() {
-      return this.y;
-   }
+	@Override
+    public void processPacket(INetHandlerPlayServer handler) {
+		handler.processVehicleMove(this);
+	}
 
-   public double getZ() {
-      return this.z;
-   }
-
-   public float getYaw() {
-      return this.yaw;
-   }
-
-   public float getPitch() {
-      return this.pitch;
-   }
+    public double getX() { return x; }
+    public double getY() { return y; }
+    public double getZ() { return z; }
+    public float getYaw() { return yaw; }
+    public float getPitch() { return pitch; }
 }

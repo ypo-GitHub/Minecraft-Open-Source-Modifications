@@ -1,5 +1,6 @@
 package net.minecraft.server.network;
 
+import cc.novoline.utils.ChatUtils;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.status.INetHandlerStatusServer;
 import net.minecraft.network.status.client.C00PacketServerQuery;
@@ -11,31 +12,33 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
 
 public class NetHandlerStatusServer implements INetHandlerStatusServer {
-   private static final IChatComponent field_183007_a = new ChatComponentText("Status request has been handled.");
-   private final MinecraftServer server;
-   private final NetworkManager networkManager;
-   private boolean field_183008_d;
+    private static final IChatComponent field_183007_a = new ChatComponentText("Status request has been handled.");
+    private final MinecraftServer server;
+    private final NetworkManager networkManager;
+    private boolean field_183008_d;
 
-   public NetHandlerStatusServer(MinecraftServer var1, NetworkManager var2) {
-      this.server = var1;
-      this.networkManager = var2;
-   }
+    public NetHandlerStatusServer(MinecraftServer serverIn, NetworkManager netManager) {
+        this.server = serverIn;
+        this.networkManager = netManager;
+    }
 
-   public void onDisconnect(IChatComponent var1) {
-   }
+    /**
+     * Invoked when disconnecting, the parameter is a ChatComponent describing the reason for termination
+     */
+    public void onDisconnect(IChatComponent reason) {
+    }
 
-   public void processServerQuery(C00PacketServerQuery var1) {
-      if(this.field_183008_d) {
-         this.networkManager.closeChannel(field_183007_a);
-      } else {
-         this.field_183008_d = true;
-         this.networkManager.sendPacket(new S00PacketServerInfo(this.server.getServerStatusResponse()));
-      }
+    public void processServerQuery(C00PacketServerQuery packetIn) {
+        if (this.field_183008_d) {
+            this.networkManager.closeChannel(field_183007_a);
+        } else {
+            this.field_183008_d = true;
+            this.networkManager.sendPacket(new S00PacketServerInfo(this.server.getServerStatusResponse()));
+        }
+    }
 
-   }
-
-   public void processPing(C01PacketPing var1) {
-      this.networkManager.sendPacket(new S01PacketPong(var1.getClientTime()));
-      this.networkManager.closeChannel(field_183007_a);
-   }
+    public void processPing(C01PacketPing packetIn) {
+        this.networkManager.sendPacket(new S01PacketPong(packetIn.getClientTime()));
+        this.networkManager.closeChannel(field_183007_a);
+    }
 }

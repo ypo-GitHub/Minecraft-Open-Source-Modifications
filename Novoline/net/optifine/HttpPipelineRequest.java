@@ -1,31 +1,34 @@
 package net.optifine;
 
-import net.optifine.HttpListener;
-import net.optifine.HttpRequest;
+public class HttpPipelineRequest
+{
+    private HttpRequest httpRequest = null;
+    private HttpListener httpListener = null;
+    private boolean closed = false;
 
-public class HttpPipelineRequest {
-   private HttpRequest httpRequest = null;
-   private HttpListener httpListener = null;
-   private boolean closed = false;
+    public HttpPipelineRequest(HttpRequest p_i58_1_, HttpListener p_i58_2_)
+    {
+        this.httpRequest = p_i58_1_;
+        this.httpListener = p_i58_2_;
+    }
 
-   public HttpPipelineRequest(HttpRequest var1, HttpListener var2) {
-      this.httpRequest = var1;
-      this.httpListener = var2;
-   }
+    public HttpRequest getHttpRequest()
+    {
+        return this.httpRequest;
+    }
 
-   public HttpRequest getHttpRequest() {
-      return this.httpRequest;
-   }
+    public HttpListener getHttpListener()
+    {
+        return this.httpListener;
+    }
 
-   public HttpListener getHttpListener() {
-      return this.httpListener;
-   }
+    public boolean isClosed()
+    {
+        return this.closed;
+    }
 
-   public boolean isClosed() {
-      return this.closed;
-   }
-
-   public void setClosed(boolean var1) {
-      this.closed = var1;
-   }
+    public void setClosed(boolean p_setClosed_1_)
+    {
+        this.closed = p_setClosed_1_;
+    }
 }

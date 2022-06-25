@@ -1,116 +1,217 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import net.acE;
-import ninja.leaping.configurate.ConfigValue;
-import ninja.leaping.configurate.SimpleConfigurationNode;
-import ninja.leaping.configurate.ValueType;
 
+/**
+ * A {@link ConfigValue} which holds a list of values.
+ */
 class ListConfigValue extends ConfigValue {
-   final AtomicReference values = new AtomicReference(new ArrayList());
 
-   ListConfigValue(SimpleConfigurationNode var1) {
-      super(var1);
-   }
+    final AtomicReference<List<SimpleConfigurationNode>> values = new AtomicReference<>(new ArrayList<>());
 
-   ValueType getType() {
-      return ValueType.LIST;
-   }
+    ListConfigValue(SimpleConfigurationNode holder) {
+        super(holder);
+    }
 
-   ListConfigValue(SimpleConfigurationNode var1, Object var2) {
-      super(var1);
-      SimpleConfigurationNode var3 = var1.createNode(Integer.valueOf(0));
-      var3.attached = true;
-      var3.setValue(var2);
-      ((List)this.values.get()).add(var3);
-   }
+    @Override
+    ValueType getType() {
+        return ValueType.LIST;
+    }
 
-   public Object getValue() {
-      // $FF: Couldn't be decompiled
-   }
+    ListConfigValue(SimpleConfigurationNode holder, Object startValue) {
+        super(holder);
 
-   public void setValue(Object var1) {
-      acE[] var2 = ValueType.b();
-      if(!(var1 instanceof Collection)) {
-         var1 = Collections.singleton(var1);
-      }
+        SimpleConfigurationNode child = holder.createNode(0);
+        child.attached = true;
+        child.setValue(startValue);
+        this.values.get().add(child);
+    }
 
-      Collection var3 = (Collection)var1;
-      ArrayList var4 = new ArrayList(var3.size());
-      int var5 = 0;
-      Iterator var6 = var3.iterator();
-      if(var6.hasNext()) {
-         Object var7 = var6.next();
-         if(var7 == null) {
-            ;
-         }
+    @Nullable
+    @Override
+    public Object getValue() {
+        final List<SimpleConfigurationNode> values = this.values.get();
+        synchronized (values) {
+            final List<Object> ret = new ArrayList<>(values.size());
+            for (SimpleConfigurationNode obj : values) {
+                ret.add(obj.getValue()); // unwrap
+            }
+            return ret;
+        }
+    }
 
-         SimpleConfigurationNode var8 = this.holder.createNode(Integer.valueOf(var5));
-         var4.add(var5, var8);
-         var8.attached = true;
-         var8.setValue(var7);
-         ++var5;
-      }
+    @Override
+    public void setValue(@Nullable Object value) {
+        if (!(value instanceof Collection)) {
+            value = Collections.singleton(value);
+        }
+        final Collection<?> valueAsList = (Collection<?>) value;
+        final List<SimpleConfigurationNode> newValue = new ArrayList<>(valueAsList.size());
 
-      detachNodes((List)this.values.getAndSet(var4));
-   }
+        int count = 0;
+        for (Object o : valueAsList) {
+            if (o == null) {
+                continue;
+            }
 
-   public SimpleConfigurationNode putChild(Object var1, SimpleConfigurationNode var2) {
-      return this.putChild(((Integer)var1).intValue(), var2, false);
-   }
+            SimpleConfigurationNode child = holder.createNode(count);
+            newValue.add(count, child);
+            child.attached = true;
+            child.setValue(o);
+            ++count;
+        }
+        detachNodes(values.getAndSet(newValue));
+    }
 
-   SimpleConfigurationNode putChildIfAbsent(Object var1, SimpleConfigurationNode var2) {
-      return this.putChild(((Integer)var1).intValue(), var2, true);
-   }
+    @Nullable
+    @Override
+    public SimpleConfigurationNode putChild(@NonNull Object key, @Nullable SimpleConfigurationNode value) {
+        return putChild((int) key, value, false);
+    }
 
-   private SimpleConfigurationNode putChild(int param1, SimpleConfigurationNode param2, boolean param3) {
-      // $FF: Couldn't be decompiled
-   }
+    @Nullable
+    @Override
+    SimpleConfigurationNode putChildIfAbsent(@NonNull Object key, @Nullable SimpleConfigurationNode value) {
+        return putChild((int) key, value, true);
+    }
 
-   public SimpleConfigurationNode getChild(Object param1) {
-      // $FF: Couldn't be decompiled
-   }
+    private SimpleConfigurationNode putChild(int index, @Nullable SimpleConfigurationNode value, boolean onlyIfAbsent) {
+        SimpleConfigurationNode ret = null;
+        List<SimpleConfigurationNode> values;
+        do {
+            values = this.values.get();
+            synchronized (values) {
+                if (value == null) {
+                    if (index < values.size()) {
+                        // remove the value
+                        ret = values.remove(index);
+                        // update indexes for subsequent elements
+                        for (int i = index; i < values.size(); ++i) {
+                            values.get(i).key = index;
+                        }
+                    }
+                } else {
+                    // check if the index is in range
+                    if (index >= 0 && index < values.size()) {
+                        if (onlyIfAbsent) {
+                            return values.get(index);
+                        } else {
+                            ret = values.set(index, value);
+                        }
+                    } else if (index == -1) { // Gotta correct the child path for the correct path name
+                        values.add(value);
+                        value.key = values.lastIndexOf(value);
+                    } else {
+                        values.add(index, value);
+                    }
+                }
+            }
+        } while (!this.values.compareAndSet(values, values));
+        return ret;
+    }
 
-   public Iterable iterateChildren() {
-      // $FF: Couldn't be decompiled
-   }
 
-   ListConfigValue copy(SimpleConfigurationNode param1) {
-      // $FF: Couldn't be decompiled
-   }
+    @Nullable
+    @Override
+    public SimpleConfigurationNode getChild(@Nullable Object key) {
+        Integer value = Types.asInt(key);
+        if (value == null || value < 0) {
+            return null;
+        }
 
-   private static void detachNodes(List param0) {
-      // $FF: Couldn't be decompiled
-   }
+        final List<SimpleConfigurationNode> values = this.values.get();
+        synchronized (values) {
+            if (value >= values.size()) {
+                return null;
+            }
+            return values.get(value);
+        }
+    }
 
-   public void clear() {
-      List var1 = (List)this.values.getAndSet(new ArrayList());
-      detachNodes(var1);
-   }
+    @NonNull
+    @Override
+    public Iterable<SimpleConfigurationNode> iterateChildren() {
+        List<SimpleConfigurationNode> values = this.values.get();
+        synchronized (values) {
+            return ImmutableList.copyOf(values);
+        }
+    }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = ValueType.b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         ListConfigValue var3 = (ListConfigValue)var1;
-         return Objects.equals(this.values.get(), var3.values.get());
-      } else {
-         return false;
-      }
-   }
+    @NonNull
+    @Override
+    ListConfigValue copy(@NonNull SimpleConfigurationNode holder) {
+        ListConfigValue copy = new ListConfigValue(holder);
+        List<SimpleConfigurationNode> copyValues;
 
-   public int hashCode() {
-      return ((List)this.values.get()).hashCode();
-   }
+        final List<SimpleConfigurationNode> values = this.values.get();
+        synchronized (values) {
+            copyValues = new ArrayList<>(values.size());
+            for (SimpleConfigurationNode obj : values) {
+                copyValues.add(obj.copy(holder)); // recursively copy
+            }
+        }
 
-   public String toString() {
-      return "ListConfigValue{values=" + ((List)this.values.get()).toString() + '}';
-   }
+        copy.values.set(copyValues);
+        return copy;
+    }
+
+    private static void detachNodes(List<SimpleConfigurationNode> children) {
+        synchronized (children) {
+            for (SimpleConfigurationNode node : children) {
+                node.attached = false;
+                node.clear();
+            }
+        }
+    }
+
+    @Override
+    public void clear() {
+        List<SimpleConfigurationNode> oldValues = values.getAndSet(new ArrayList<>());
+        detachNodes(oldValues);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ListConfigValue that = (ListConfigValue) o;
+        return Objects.equals(values.get(), that.values.get());
+    }
+
+    @Override
+    public int hashCode() {
+        return values.get().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ListConfigValue{values=" + this.values.get().toString() + '}';
+    }
+
 }

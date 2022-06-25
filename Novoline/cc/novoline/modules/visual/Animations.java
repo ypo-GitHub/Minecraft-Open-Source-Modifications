@@ -5,91 +5,93 @@ import cc.novoline.events.events.Render2DEvent;
 import cc.novoline.events.events.TickUpdateEvent;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
-import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
-import cc.novoline.modules.configurations.property.object.BooleanProperty;
-import cc.novoline.modules.configurations.property.object.DoubleProperty;
-import cc.novoline.modules.configurations.property.object.FloatProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.configurations.property.object.StringProperty;
-import cc.novoline.modules.visual.HUD;
+import cc.novoline.modules.configurations.property.object.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import static cc.novoline.gui.screen.setting.SettingType.*;
+import static cc.novoline.modules.EnumModuleType.VISUALS;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.*;
 
 public final class Animations extends AbstractModule {
-   private float heightSmooth;
-   @Property("type")
-   private final StringProperty type = PropertyFactory.createString("Swank").acceptableValues(new String[]{"Swank", "Swing", "Swang", "Swong", "Swaing", "Punch", "Stella", "Styles", "Slide", "Interia", "Ethereal", "1.7", "Sigma", "Exhibition", "Smooth", "Spinning"});
-   @Property("hit")
-   private final StringProperty hit = PropertyFactory.createString("Vanilla").acceptableValues(new String[]{"Vanilla", "Smooth"});
-   @Property("slowdown")
-   private final IntProperty slowdown = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(0)).minimum(Integer.valueOf(-4))).maximum(Integer.valueOf(6));
-   @Property("downscale-factor")
-   private final DoubleProperty downscaleFactor = (DoubleProperty)((DoubleProperty)PropertyFactory.createDouble(Double.valueOf(0.3D)).minimum(Double.valueOf(0.0D))).maximum(Double.valueOf(0.5D));
-   @Property("hit-height")
-   private final FloatProperty height = (FloatProperty)((FloatProperty)PropertyFactory.createFloat(Float.valueOf(10.0F)).minimum(Float.valueOf(-10.0F))).maximum(Float.valueOf(30.0F));
-   @Property("block-height")
-   private final FloatProperty block_height = (FloatProperty)((FloatProperty)PropertyFactory.createFloat(Float.valueOf(10.0F)).minimum(Float.valueOf(0.0F))).maximum(Float.valueOf(60.0F));
-   @Property("rotating")
-   private final BooleanProperty rotating = PropertyFactory.createBoolean(Boolean.valueOf(false));
 
-   public Animations(ModuleManager var1) {
-      super(var1, "Animations", EnumModuleType.VISUALS, "AutoBlock/Hit animations");
-      Manager.put(new Setting("Anim_Mode", "Block", SettingType.COMBOBOX, this, this.type));
-      Manager.put(new Setting("HIT_ANIM_MODE", "Hit", SettingType.COMBOBOX, this, this.hit));
-      Manager.put(new Setting("SWING_SLOW", "Slowdown", SettingType.SLIDER, this, this.slowdown, 1.0D));
-      Manager.put(new Setting("SCALE_FACTOR", "Downscale Factor", SettingType.SLIDER, this, this.downscaleFactor, 0.1D));
-      Manager.put(new Setting("HIT_HEIGHT", "Hit Height", SettingType.SLIDER, this, this.height, 1.0D));
-      Manager.put(new Setting("BLOCK_HEIGHT", "Block Height", SettingType.SLIDER, this, this.block_height, 1.0D));
-      Manager.put(new Setting("BLOCK_ROTATING", "Rotating", SettingType.CHECKBOX, this, this.rotating));
-   }
+    private float heightSmooth;
 
-   @EventTarget
-   public void shouldSlowSwing(TickUpdateEvent var1) {
-      this.setSuffix((String)this.type.get());
-   }
+    /* properties @off */
+    @Property("type")
+    private final StringProperty type = createString("Swank").acceptableValues("Swank", "Swing", "Swang", "Swong", "Swaing", "Punch", "Stella", "Styles", "Slide", "Interia", "Ethereal", "1.7", "Sigma", "Exhibition", "Smooth", "Spinning");
+    @Property("hit")
+    private final StringProperty hit = createString("Vanilla").acceptableValues("Vanilla", "Smooth");
+    @Property("slowdown")
+    private final IntProperty slowdown = createInt(0).minimum(-4).maximum(6);
+    @Property("downscale-factor")
+    private final DoubleProperty downscaleFactor = createDouble(0.3d).minimum(0.0).maximum(0.5);
+    @Property("hit-height")
+    private final FloatProperty height = createFloat(10.0F).minimum(-10.0F).maximum(30.0F);
+    @Property("block-height")
+    private final FloatProperty block_height = createFloat(10.0F).minimum(0.0F).maximum(60.0F);
+    @Property("rotating")
+    private final BooleanProperty rotating = createBoolean(false);
 
-   @EventTarget
-   public void onRender(Render2DEvent var1) {
-      int var2 = HUD.e();
-      float var3 = 20.0F - (this.mc.player.isSwingInProgress && this.mc.player.isBlocking()?((Float)this.block_height.get()).floatValue():(this.mc.player.getHeldItem() == null?0.0F:((Float)this.height.get()).floatValue()));
-      if(this.heightSmooth < var3) {
-         ++this.heightSmooth;
-      }
+    /* constructors @on */
+    public Animations(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "Animations", VISUALS, "AutoBlock/Hit animations");
+        Manager.put(new Setting("Anim_Mode", "Block", COMBOBOX, this, type));
+        Manager.put(new Setting("HIT_ANIM_MODE", "Hit", COMBOBOX, this, hit));
+        Manager.put(new Setting("SWING_SLOW", "Slowdown", SLIDER, this, slowdown, 1));
+        Manager.put(new Setting("SCALE_FACTOR", "Downscale Factor", SLIDER, this, downscaleFactor, 0.1));
+        Manager.put(new Setting("HIT_HEIGHT", "Hit Height", SLIDER, this, height, 1.0F));
+        Manager.put(new Setting("BLOCK_HEIGHT", "Block Height", SLIDER, this, block_height, 1.0F));
+        Manager.put(new Setting("BLOCK_ROTATING", "Rotating", CHECKBOX, this, rotating));
+    }
 
-      if(this.heightSmooth > var3) {
-         --this.heightSmooth;
-      }
+    /* events */
+    @EventTarget
+    public void shouldSlowSwing(TickUpdateEvent event) {
+        setSuffix(type.get());
+    }
 
-   }
+    @EventTarget
+    public void onRender(Render2DEvent event) {
+        float heightSet = 20.0F - (mc.player.isSwingInProgress && mc.player.isBlocking() ? block_height.get() : mc.player.getHeldItem() == null ? 0.0F : height.get());
 
-   public StringProperty getAnim() {
-      return this.type;
-   }
+        if (heightSmooth < heightSet) {
+            heightSmooth += 1.0F;
+        } else if (heightSmooth > heightSet) {
+            heightSmooth -= 1.0F;
+        }
+    }
 
-   public IntProperty getSlowdown() {
-      return this.slowdown;
-   }
+    //region Lombok
+    public StringProperty getAnim() {
+        return type;
+    }
 
-   public DoubleProperty getDownscaleFactor() {
-      return this.downscaleFactor;
-   }
+    public IntProperty getSlowdown() {
+        return slowdown;
+    }
 
-   public StringProperty getHit() {
-      return this.hit;
-   }
+    public DoubleProperty getDownscaleFactor() {
+        return downscaleFactor;
+    }
 
-   public float getHeight() {
-      return this.heightSmooth;
-   }
+    public StringProperty getHit() {
+        return hit;
+    }
 
-   public boolean getRotating() {
-      return ((Boolean)this.rotating.get()).booleanValue();
-   }
+    public float getHeight() {
+        return heightSmooth;
+    }
 
-   public void onEnable() {
-      this.setSuffix((String)this.type.get());
-   }
+    public boolean getRotating() {
+        return rotating.get();
+    }
+    //endregion
+
+    @Override
+    public void onEnable() {
+        setSuffix(this.type.get());
+    }
 }

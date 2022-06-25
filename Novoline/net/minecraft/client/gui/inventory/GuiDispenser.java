@@ -1,34 +1,47 @@
 package net.minecraft.client.gui.inventory;
 
-import net.aHz;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ContainerDispenser;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
 
-public class GuiDispenser extends aHz {
-   private static final ResourceLocation dispenserGuiTextures = new ResourceLocation("textures/gui/container/dispenser.png");
-   private final InventoryPlayer playerInventory;
-   public IInventory dispenserInventory;
+public class GuiDispenser extends GuiContainer {
+    private static final ResourceLocation dispenserGuiTextures = new ResourceLocation("textures/gui/container/dispenser.png");
 
-   public GuiDispenser(InventoryPlayer var1, IInventory var2) {
-      super(new ContainerDispenser(var1, var2));
-      this.playerInventory = var1;
-      this.dispenserInventory = var2;
-   }
+    /**
+     * The player inventory bound to this GUI.
+     */
+    private final InventoryPlayer playerInventory;
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      String var3 = this.dispenserInventory.getDisplayName().getUnformattedText();
-      this.fontRendererObj.drawString(var3, (float)(this.y / 2 - this.fontRendererObj.d(var3) / 2), 6.0F, 4210752);
-      this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8.0F, (float)(this.ab - 96 + 2), 4210752);
-   }
+    /**
+     * The inventory contained within the corresponding Dispenser.
+     */
+    public IInventory dispenserInventory;
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(dispenserGuiTextures);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.ab);
-   }
+    public GuiDispenser(InventoryPlayer playerInv, IInventory dispenserInv) {
+        super(new ContainerDispenser(playerInv, dispenserInv));
+        this.playerInventory = playerInv;
+        this.dispenserInventory = dispenserInv;
+    }
+
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        String s = this.dispenserInventory.getDisplayName().getUnformattedText();
+        this.fontRendererObj.drawString(s, this.xSize / 2 - this.fontRendererObj.getStringWidth(s) / 2, 6, 4210752);
+        this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
+    }
+
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(dispenserGuiTextures);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+    }
 }

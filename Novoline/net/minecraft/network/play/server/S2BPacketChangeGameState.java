@@ -1,42 +1,52 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S2BPacketChangeGameState implements Packet {
-   public static final String[] MESSAGE_NAMES = new String[]{"tile.bed.notValid"};
-   private int state;
-   private float field_149141_c;
+import java.io.IOException;
 
-   public S2BPacketChangeGameState() {
-   }
+public class S2BPacketChangeGameState implements Packet<INetHandlerPlayClient> {
+    public static final String[] MESSAGE_NAMES = new String[]{"tile.bed.notValid"};
+    private int state;
+    private float field_149141_c;
 
-   public S2BPacketChangeGameState(int var1, float var2) {
-      this.state = var1;
-      this.field_149141_c = var2;
-   }
+    public S2BPacketChangeGameState() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.state = var1.readUnsignedByte();
-      this.field_149141_c = var1.readFloat();
-   }
+    public S2BPacketChangeGameState(int stateIn, float p_i45194_2_) {
+        this.state = stateIn;
+        this.field_149141_c = p_i45194_2_;
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.state);
-      var1.writeFloat(this.field_149141_c);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.state = buf.readUnsignedByte();
+        this.field_149141_c = buf.readFloat();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleChangeGameState(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.state);
+        buf.writeFloat(this.field_149141_c);
+    }
 
-   public int getGameState() {
-      return this.state;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleChangeGameState(this);
+    }
 
-   public float func_149137_d() {
-      return this.field_149141_c;
-   }
+    public int getGameState() {
+        return this.state;
+    }
+
+    public float func_149137_d() {
+        return this.field_149141_c;
+    }
 }

@@ -1,10 +1,15 @@
 package cc.novoline.modules.configurations.property;
 
-import cc.novoline.modules.configurations.property.AbstractProperty;
-import cc.novoline.modules.configurations.property.ImmutableProperty;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public abstract class AbstractImmutableProperty extends AbstractProperty implements ImmutableProperty {
-   public final void set(Object var1) {
-      super.set(var1);
-   }
+/**
+ * @author xDelsy
+ */
+public abstract class AbstractImmutableProperty<T> extends AbstractProperty<T> implements ImmutableProperty<T> {
+
+    @Override
+    public final void set(@Nullable T value) {
+        super.set(value);
+    }
+
 }

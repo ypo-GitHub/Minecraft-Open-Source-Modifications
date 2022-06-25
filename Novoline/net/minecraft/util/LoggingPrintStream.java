@@ -1,30 +1,35 @@
 package net.minecraft.util;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 public class LoggingPrintStream extends PrintStream {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final String domain;
 
-   public LoggingPrintStream(String var1, OutputStream var2) {
-      super(var2);
-      this.domain = var1;
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public void println(String var1) {
-      this.logString(var1);
-   }
+    private final String domain;
 
-   public void println(Object var1) {
-      this.logString(String.valueOf(var1));
-   }
+    public LoggingPrintStream(String domainIn, OutputStream outStream) {
+        super(outStream);
+        this.domain = domainIn;
+    }
 
-   private void logString(String var1) {
-      StackTraceElement[] var2 = Thread.currentThread().getStackTrace();
-      StackTraceElement var3 = var2[Math.min(3, var2.length)];
-      LOGGER.info("[{}]@.({}:{}): {}", new Object[]{this.domain, var3.getFileName(), Integer.valueOf(var3.getLineNumber()), var1});
-   }
+    public void println(String p_println_1_) {
+        this.logString(p_println_1_);
+    }
+
+    public void println(Object p_println_1_) {
+        this.logString(String.valueOf(p_println_1_));
+    }
+
+    private void logString(String string) {
+        final StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        final StackTraceElement stackTraceElement = stackTraceElements[Math.min(3, stackTraceElements.length)];
+
+        LOGGER.info("[{}]@.({}:{}): {}", this.domain, stackTraceElement.getFileName(), stackTraceElement.getLineNumber(), string);
+    }
+
 }

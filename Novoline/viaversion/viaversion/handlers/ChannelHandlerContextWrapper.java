@@ -2,249 +2,254 @@ package viaversion.viaversion.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
+
 import java.net.SocketAddress;
-import net.acE;
-import viaversion.viaversion.handlers.ViaHandler;
 
 public class ChannelHandlerContextWrapper implements ChannelHandlerContext {
-   private final ChannelHandlerContext base;
-   private final ViaHandler handler;
-   private static int b;
+    private final ChannelHandlerContext base;
+    private final ViaHandler handler;
 
-   public ChannelHandlerContextWrapper(ChannelHandlerContext var1, ViaHandler var2) {
-      int var10000 = c();
-      this.base = var1;
-      this.handler = var2;
-      int var3 = var10000;
-      if(acE.b() == null) {
-         ++var3;
-         b(var3);
-      }
+    public ChannelHandlerContextWrapper(ChannelHandlerContext base, ViaHandler handler) {
+        this.base = base;
+        this.handler = handler;
+    }
 
-   }
+    @Override
+    public Channel channel() {
+        return base.channel();
+    }
 
-   public Channel channel() {
-      return this.base.channel();
-   }
+    @Override
+    public EventExecutor executor() {
+        return base.executor();
+    }
 
-   public EventExecutor executor() {
-      return this.base.executor();
-   }
+    @Override
+    public String name() {
+        return base.name();
+    }
 
-   public String name() {
-      return this.base.name();
-   }
+    @Override
+    public ChannelHandler handler() {
+        return base.handler();
+    }
 
-   public ChannelHandler handler() {
-      return this.base.handler();
-   }
+    @Override
+    public boolean isRemoved() {
+        return base.isRemoved();
+    }
 
-   public boolean isRemoved() {
-      return this.base.isRemoved();
-   }
+    @Override
+    public ChannelHandlerContext fireChannelRegistered() {
+        base.fireChannelRegistered();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelRegistered() {
-      this.base.fireChannelRegistered();
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelUnregistered() {
+        base.fireChannelUnregistered();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelUnregistered() {
-      this.base.fireChannelUnregistered();
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelActive() {
+        base.fireChannelActive();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelActive() {
-      this.base.fireChannelActive();
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelInactive() {
+        base.fireChannelInactive();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelInactive() {
-      this.base.fireChannelInactive();
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireExceptionCaught(Throwable throwable) {
+        base.fireExceptionCaught(throwable);
+        return this;
+    }
 
-   public ChannelHandlerContext fireExceptionCaught(Throwable var1) {
-      this.base.fireExceptionCaught(var1);
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireUserEventTriggered(Object o) {
+        base.fireUserEventTriggered(o);
+        return this;
+    }
 
-   public ChannelHandlerContext fireUserEventTriggered(Object var1) {
-      this.base.fireUserEventTriggered(var1);
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelRead(Object o) {
+        base.fireChannelRead(o);
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelRead(Object var1) {
-      this.base.fireChannelRead(var1);
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelReadComplete() {
+        base.fireChannelReadComplete();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelReadComplete() {
-      this.base.fireChannelReadComplete();
-      return this;
-   }
+    @Override
+    public ChannelHandlerContext fireChannelWritabilityChanged() {
+        base.fireChannelWritabilityChanged();
+        return this;
+    }
 
-   public ChannelHandlerContext fireChannelWritabilityChanged() {
-      this.base.fireChannelWritabilityChanged();
-      return this;
-   }
+    @Override
+    public ChannelFuture bind(SocketAddress socketAddress) {
+        return base.bind(socketAddress);
+    }
 
-   public ChannelFuture bind(SocketAddress var1) {
-      return this.base.bind(var1);
-   }
+    @Override
+    public ChannelFuture connect(SocketAddress socketAddress) {
+        return base.connect(socketAddress);
+    }
 
-   public ChannelFuture connect(SocketAddress var1) {
-      return this.base.connect(var1);
-   }
+    @Override
+    public ChannelFuture connect(SocketAddress socketAddress, SocketAddress socketAddress1) {
+        return base.connect(socketAddress, socketAddress1);
+    }
 
-   public ChannelFuture connect(SocketAddress var1, SocketAddress var2) {
-      return this.base.connect(var1, var2);
-   }
+    @Override
+    public ChannelFuture disconnect() {
+        return base.disconnect();
+    }
 
-   public ChannelFuture disconnect() {
-      return this.base.disconnect();
-   }
+    @Override
+    public ChannelFuture close() {
+        return base.close();
+    }
 
-   public ChannelFuture close() {
-      return this.base.close();
-   }
+    @Override
+    public ChannelFuture deregister() {
+        return base.deregister();
+    }
 
-   public ChannelFuture deregister() {
-      return this.base.deregister();
-   }
+    @Override
+    public ChannelFuture bind(SocketAddress socketAddress, ChannelPromise channelPromise) {
+        return base.bind(socketAddress, channelPromise);
+    }
 
-   public ChannelFuture bind(SocketAddress var1, ChannelPromise var2) {
-      return this.base.bind(var1, var2);
-   }
+    @Override
+    public ChannelFuture connect(SocketAddress socketAddress, ChannelPromise channelPromise) {
+        return base.connect(socketAddress, channelPromise);
+    }
 
-   public ChannelFuture connect(SocketAddress var1, ChannelPromise var2) {
-      return this.base.connect(var1, var2);
-   }
+    @Override
+    public ChannelFuture connect(SocketAddress socketAddress, SocketAddress socketAddress1, ChannelPromise channelPromise) {
+        return base.connect(socketAddress, socketAddress1, channelPromise);
+    }
 
-   public ChannelFuture connect(SocketAddress var1, SocketAddress var2, ChannelPromise var3) {
-      return this.base.connect(var1, var2, var3);
-   }
+    @Override
+    public ChannelFuture disconnect(ChannelPromise channelPromise) {
+        return base.disconnect(channelPromise);
+    }
 
-   public ChannelFuture disconnect(ChannelPromise var1) {
-      return this.base.disconnect(var1);
-   }
+    @Override
+    public ChannelFuture close(ChannelPromise channelPromise) {
+        return base.close(channelPromise);
+    }
 
-   public ChannelFuture close(ChannelPromise var1) {
-      return this.base.close(var1);
-   }
+    @Override
+    public ChannelFuture deregister(ChannelPromise channelPromise) {
+        return base.deregister(channelPromise);
+    }
 
-   public ChannelFuture deregister(ChannelPromise var1) {
-      return this.base.deregister(var1);
-   }
+    @Override
+    public ChannelHandlerContext read() {
+        base.read();
+        return this;
+    }
 
-   public ChannelHandlerContext read() {
-      this.base.read();
-      return this;
-   }
+    @Override
+    public ChannelFuture write(Object o) {
+        if (o instanceof ByteBuf) {
+            if (transform((ByteBuf) o)) return base.newFailedFuture(new Throwable());
+        }
+        return base.write(o);
+    }
 
-   public ChannelFuture write(Object var1) {
-      int var2 = c();
-      return var1 instanceof ByteBuf && this.transform((ByteBuf)var1)?this.base.newFailedFuture(new Throwable()):this.base.write(var1);
-   }
+    @Override
+    public ChannelFuture write(Object o, ChannelPromise channelPromise) {
+        if (o instanceof ByteBuf) {
+            if (transform((ByteBuf) o)) return base.newFailedFuture(new Throwable());
+        }
+        return base.write(o, channelPromise);
+    }
 
-   public ChannelFuture write(Object var1, ChannelPromise var2) {
-      int var3 = b();
-      return var1 instanceof ByteBuf && this.transform((ByteBuf)var1)?this.base.newFailedFuture(new Throwable()):this.base.write(var1, var2);
-   }
+    public boolean transform(ByteBuf buf) {
+        try {
+            handler.transform(buf);
+            return false;
+        } catch (Exception e) {
+            try {
+                handler.exceptionCaught(base, e);
+            } catch (Exception e1) {
+                base.fireExceptionCaught(e1);
+            }
+            return true;
+        }
+    }
 
-   public boolean transform(ByteBuf var1) {
-      try {
-         this.handler.transform(var1);
-         return false;
-      } catch (Exception var5) {
-         Exception var2 = var5;
+    @Override
+    public ChannelHandlerContext flush() {
+        base.flush();
+        return this;
+    }
 
-         try {
-            this.handler.exceptionCaught(this.base, var2);
-         } catch (Exception var4) {
-            this.base.fireExceptionCaught(var4);
-         }
+    @Override
+    public ChannelFuture writeAndFlush(Object o, ChannelPromise channelPromise) {
+        ChannelFuture future = write(o, channelPromise);
+        flush();
+        return future;
+    }
 
-         return true;
-      }
-   }
+    @Override
+    public ChannelFuture writeAndFlush(Object o) {
+        ChannelFuture future = write(o);
+        flush();
+        return future;
+    }
 
-   public ChannelHandlerContext flush() {
-      this.base.flush();
-      return this;
-   }
+    @Override
+    public ChannelPipeline pipeline() {
+        return base.pipeline();
+    }
 
-   public ChannelFuture writeAndFlush(Object var1, ChannelPromise var2) {
-      c();
-      ChannelFuture var4 = this.write(var1, var2);
-      this.flush();
-      return var4;
-   }
+    @Override
+    public ByteBufAllocator alloc() {
+        return base.alloc();
+    }
 
-   public ChannelFuture writeAndFlush(Object var1) {
-      ChannelFuture var2 = this.write(var1);
-      this.flush();
-      return var2;
-   }
+    @Override
+    public ChannelPromise newPromise() {
+        return base.newPromise();
+    }
 
-   public ChannelPipeline pipeline() {
-      return this.base.pipeline();
-   }
+    @Override
+    public ChannelProgressivePromise newProgressivePromise() {
+        return base.newProgressivePromise();
+    }
 
-   public ByteBufAllocator alloc() {
-      return this.base.alloc();
-   }
+    @Override
+    public ChannelFuture newSucceededFuture() {
+        return base.newSucceededFuture();
+    }
 
-   public ChannelPromise newPromise() {
-      return this.base.newPromise();
-   }
+    @Override
+    public ChannelFuture newFailedFuture(Throwable throwable) {
+        return base.newFailedFuture(throwable);
+    }
 
-   public ChannelProgressivePromise newProgressivePromise() {
-      return this.base.newProgressivePromise();
-   }
+    @Override
+    public ChannelPromise voidPromise() {
+        return base.voidPromise();
+    }
 
-   public ChannelFuture newSucceededFuture() {
-      return this.base.newSucceededFuture();
-   }
-
-   public ChannelFuture newFailedFuture(Throwable var1) {
-      return this.base.newFailedFuture(var1);
-   }
-
-   public ChannelPromise voidPromise() {
-      return this.base.voidPromise();
-   }
-
-   public Attribute attr(AttributeKey var1) {
-      return this.base.attr(var1);
-   }
-
-   public static void b(int var0) {
-      b = var0;
-   }
-
-   public static int b() {
-      return b;
-   }
-
-   public static int c() {
-      int var0 = b();
-      return 70;
-   }
-
-   static {
-      if(c() == 0) {
-         b(124);
-      }
-
-   }
+    @Override
+    public <T> Attribute<T> attr(AttributeKey<T> attributeKey) {
+        return base.attr(attributeKey);
+    }
 }

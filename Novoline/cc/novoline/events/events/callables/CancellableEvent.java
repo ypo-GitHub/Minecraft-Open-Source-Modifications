@@ -2,35 +2,34 @@ package cc.novoline.events.events.callables;
 
 import cc.novoline.events.events.Cancellable;
 import cc.novoline.events.events.Event;
-import net.aSv;
-import net.acE;
 
+/**
+ * Abstract example implementation of the Cancellable interface.
+ *
+ * @author DarkMagician6
+ * @since August 27, 2013
+ */
 public abstract class CancellableEvent implements Event, Cancellable {
-   private boolean cancelled;
-   private static acE[] b;
 
-   @aSv
-   public boolean isCancelled() {
-      return this.cancelled;
-   }
+    private boolean cancelled;
 
-   @aSv
-   public void setCancelled(boolean var1) {
-      this.cancelled = var1;
-   }
+    protected CancellableEvent() {
+    }
 
-   public static void b(acE[] var0) {
-      b = var0;
-   }
+    /**
+     * @see Cancellable#isCancelled()
+     */
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-   public static acE[] b() {
-      return b;
-   }
+    /**
+     * @see Cancellable#setCancelled(boolean)
+     */
+    @Override
+    public void setCancelled(boolean state) {
+        this.cancelled = state;
+    }
 
-   static {
-      if(b() == null) {
-         b(new acE[1]);
-      }
-
-   }
 }

@@ -1,47 +1,51 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S13PacketDestroyEntities implements Packet {
-   private int[] entityIDs;
+import java.io.IOException;
 
-   public S13PacketDestroyEntities() {
-   }
+public class S13PacketDestroyEntities implements Packet<INetHandlerPlayClient> {
+    private int[] entityIDs;
 
-   public S13PacketDestroyEntities(int... var1) {
-      this.entityIDs = var1;
-   }
+    public S13PacketDestroyEntities() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityIDs = new int[var1.readVarIntFromBuffer()];
+    public S13PacketDestroyEntities(int... entityIDsIn) {
+        this.entityIDs = entityIDsIn;
+    }
 
-      for(int var2 = 0; var2 < this.entityIDs.length; ++var2) {
-         this.entityIDs[var2] = var1.readVarIntFromBuffer();
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityIDs = new int[buf.readVarIntFromBuffer()];
 
-   }
+        for (int i = 0; i < this.entityIDs.length; ++i) {
+            this.entityIDs[i] = buf.readVarIntFromBuffer();
+        }
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityIDs.length);
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityIDs.length);
 
-      for(int var5 : this.entityIDs) {
-         var1.writeVarIntToBuffer(var5);
-      }
+        for (int entityID : this.entityIDs) {
+            buf.writeVarIntToBuffer(entityID);
+        }
+    }
 
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleDestroyEntities(this);
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleDestroyEntities(this);
-   }
-
-   public int[] getEntityIDs() {
-      return this.entityIDs;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public int[] getEntityIDs() {
+        return this.entityIDs;
+    }
 }

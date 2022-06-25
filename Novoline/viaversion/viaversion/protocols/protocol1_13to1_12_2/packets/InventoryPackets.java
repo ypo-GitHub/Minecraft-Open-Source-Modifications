@@ -7,436 +7,698 @@ import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.ShortTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
+import com.google.common.base.Joiner;
 import com.google.common.primitives.Ints;
-import java.util.Iterator;
-import java.util.Locale;
-import net.BS;
-import net.DA;
-import net.aQU;
-import net.aW8;
-import net.aWf;
-import net.aWi;
-import net.acE;
-import net.azW;
-import net.uN;
 import net.md_5.bungee.api.ChatColor;
+import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.minecraft.item.Item;
-import viaversion.viaversion.api.rewriters.ItemRewriter$RewriteFunction;
+import viaversion.viaversion.api.remapper.PacketHandler;
+import viaversion.viaversion.api.remapper.PacketRemapper;
+import viaversion.viaversion.api.rewriters.ItemRewriter;
+import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_12_1to1_12.ClientboundPackets1_12_1;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.ChatRewriter;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.Protocol1_13To1_12_2;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.ServerboundPackets1_13;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.data.BlockIdData;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.data.MappingData;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.data.SoundSource;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.data.SpawnEggRewriter;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.InventoryPackets$1;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.InventoryPackets$2;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.InventoryPackets$5;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.InventoryPackets$6;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.packets.InventoryPackets$8;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 public class InventoryPackets {
-   private static final String a = "ViaVersion|Protocol1_13To1_12_2";
+    private static final String NBT_TAG_NAME = "ViaVersion|Protocol1_13To1_12_2";
 
-   public static void register(Protocol1_13To1_12_2 var0) {
-      aQU var2 = new aQU(var0, InventoryPackets::toClient, InventoryPackets::a);
-      var0.a(azW.SET_SLOT, new InventoryPackets$1(var2));
-      var0.a(azW.WINDOW_ITEMS, new InventoryPackets$2(var2));
-      var0.a(azW.WINDOW_PROPERTY, new aWf(var0));
-      var0.a(azW.PLUGIN_MESSAGE, new aWi());
-      var0.a(azW.ENTITY_EQUIPMENT, new InventoryPackets$5(var2));
-      var0.a(uN.CLICK_WINDOW, new InventoryPackets$6(var2));
-      BS.b();
-      var0.a(uN.PLUGIN_MESSAGE, new aW8());
-      var0.a(uN.CREATIVE_INVENTORY_ACTION, new InventoryPackets$8(var2));
-      if(acE.b() == null) {
-         BS.b(new acE[3]);
-      }
+    public static void register(Protocol1_13To1_12_2 protocol) {
+        ItemRewriter itemRewriter = new ItemRewriter(protocol, InventoryPackets::toClient, InventoryPackets::toServer);
 
-   }
+        protocol.registerOutgoing(ClientboundPackets1_12_1.SET_SLOT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.BYTE); // 0 - Window ID
+                map(Type.SHORT); // 1 - Slot ID
+                map(Type.ITEM, Type.FLAT_ITEM); // 2 - Slot Value
 
-   public static void toClient(Item var0) {
-      acE[] var1 = BS.b();
-      if(var0 != null) {
-         CompoundTag var2 = var0.getTag();
-         int var3 = var0.getIdentifier() << 16 | var0.getData() & '\uffff';
-         int var4 = var0.getIdentifier() << 4 | var0.getData() & 15;
-         if(a(var0.getIdentifier())) {
-            if(var2 == null) {
-               var0.setTag(var2 = new CompoundTag("tag"));
+                handler(itemRewriter.itemToClientHandler(Type.FLAT_ITEM));
+            }
+        });
+        protocol.registerOutgoing(ClientboundPackets1_12_1.WINDOW_ITEMS, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.UNSIGNED_BYTE); // 0 - Window ID
+                map(Type.ITEM_ARRAY, Type.FLAT_ITEM_ARRAY); // 1 - Window Values
+
+                handler(itemRewriter.itemArrayHandler(Type.FLAT_ITEM_ARRAY));
+            }
+        });
+        protocol.registerOutgoing(ClientboundPackets1_12_1.WINDOW_PROPERTY, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.UNSIGNED_BYTE); // Window id
+                map(Type.SHORT); // Property
+                map(Type.SHORT); // Value
+
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        short property = wrapper.get(Type.SHORT, 0);
+                        if (property >= 4 && property <= 6) { // Enchantment id
+                            wrapper.set(Type.SHORT, 1, (short) protocol.getMappingData().getEnchantmentMappings().getNewId(wrapper.get(Type.SHORT, 1)));
+                        }
+                    }
+                });
+            }
+        });
+
+        // Plugin message Packet -> Trading
+        protocol.registerOutgoing(ClientboundPackets1_12_1.PLUGIN_MESSAGE, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.STRING); // 0 - Channel
+
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        String channel = wrapper.get(Type.STRING, 0);
+                        // Handle stopsound change TODO change location of this remap to other class?
+                        if (channel.equalsIgnoreCase("MC|StopSound")) {
+                            String originalSource = wrapper.read(Type.STRING);
+                            String originalSound = wrapper.read(Type.STRING);
+
+                            // Reset the packet
+                            wrapper.clearPacket();
+                            wrapper.setId(0x4C);
+
+                            byte flags = 0;
+                            wrapper.write(Type.BYTE, flags); // Placeholder
+                            if (!originalSource.isEmpty()) {
+                                flags |= 1;
+                                Optional<SoundSource> finalSource = SoundSource.findBySource(originalSource);
+                                if (!finalSource.isPresent()) {
+                                    if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                                        Via.getPlatform().getLogger().info("Could not handle unknown sound source " + originalSource + " falling back to default: master");
+                                    }
+                                    finalSource = Optional.of(SoundSource.MASTER);
+
+                                }
+
+                                wrapper.write(Type.VAR_INT, finalSource.get().getId());
+                            }
+                            if (!originalSound.isEmpty()) {
+                                flags |= 2;
+                                wrapper.write(Type.STRING, originalSound);
+                            }
+
+                            wrapper.set(Type.BYTE, 0, flags); // Update flags
+                            return;
+                        } else if (channel.equalsIgnoreCase("MC|TrList")) {
+                            channel = "minecraft:trader_list";
+                            wrapper.passthrough(Type.INT); // Passthrough Window ID
+
+                            int size = wrapper.passthrough(Type.UNSIGNED_BYTE);
+                            for (int i = 0; i < size; i++) {
+                                // Input Item
+                                Item input = wrapper.read(Type.ITEM);
+                                InventoryPackets.toClient(input);
+                                wrapper.write(Type.FLAT_ITEM, input);
+                                // Output Item
+                                Item output = wrapper.read(Type.ITEM);
+                                InventoryPackets.toClient(output);
+                                wrapper.write(Type.FLAT_ITEM, output);
+
+                                boolean secondItem = wrapper.passthrough(Type.BOOLEAN); // Has second item
+                                if (secondItem) {
+                                    // Second Item
+                                    Item second = wrapper.read(Type.ITEM);
+                                    InventoryPackets.toClient(second);
+                                    wrapper.write(Type.FLAT_ITEM, second);
+                                }
+
+                                wrapper.passthrough(Type.BOOLEAN); // Trade disabled
+                                wrapper.passthrough(Type.INT); // Number of tools uses
+                                wrapper.passthrough(Type.INT); // Maximum number of trade uses
+                            }
+                        } else {
+                            String old = channel;
+                            channel = getNewPluginChannelId(channel);
+                            if (channel == null) {
+                                if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                                    Via.getPlatform().getLogger().warning("Ignoring outgoing plugin message with channel: " + old);
+                                }
+                                wrapper.cancel();
+                                return;
+                            } else if (channel.equals("minecraft:register") || channel.equals("minecraft:unregister")) {
+                                String[] channels = new String(wrapper.read(Type.REMAINING_BYTES), StandardCharsets.UTF_8).split("\0");
+                                List<String> rewrittenChannels = new ArrayList<>();
+                                for (int i = 0; i < channels.length; i++) {
+                                    String rewritten = getNewPluginChannelId(channels[i]);
+                                    if (rewritten != null) {
+                                        rewrittenChannels.add(rewritten);
+                                    } else if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                                        Via.getPlatform().getLogger().warning("Ignoring plugin channel in outgoing REGISTER: " + channels[i]);
+                                    }
+                                }
+                                if (!rewrittenChannels.isEmpty()) {
+                                    wrapper.write(Type.REMAINING_BYTES, Joiner.on('\0').join(rewrittenChannels).getBytes(StandardCharsets.UTF_8));
+                                } else {
+                                    wrapper.cancel();
+                                    return;
+                                }
+                            }
+                        }
+                        wrapper.set(Type.STRING, 0, channel);
+                    }
+                    // TODO Fix trading GUI
+                });
+            }
+        });
+
+        protocol.registerOutgoing(ClientboundPackets1_12_1.ENTITY_EQUIPMENT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity ID
+                map(Type.VAR_INT); // 1 - Slot ID
+                map(Type.ITEM, Type.FLAT_ITEM); // 2 - Item
+
+                handler(itemRewriter.itemToClientHandler(Type.FLAT_ITEM));
+            }
+        });
+
+
+        protocol.registerIncoming(ServerboundPackets1_13.CLICK_WINDOW, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.UNSIGNED_BYTE); // 0 - Window ID
+                map(Type.SHORT); // 1 - Slot
+                map(Type.BYTE); // 2 - Button
+                map(Type.SHORT); // 3 - Action number
+                map(Type.VAR_INT); // 4 - Mode
+                map(Type.FLAT_ITEM, Type.ITEM); // 5 - Clicked Item
+
+                handler(itemRewriter.itemToServerHandler(Type.ITEM));
+            }
+        });
+
+        protocol.registerIncoming(ServerboundPackets1_13.PLUGIN_MESSAGE, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.STRING); // Channel
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        String channel = wrapper.get(Type.STRING, 0);
+                        String old = channel;
+                        channel = getOldPluginChannelId(channel);
+                        if (channel == null) {
+                            if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                                Via.getPlatform().getLogger().warning("Ignoring incoming plugin message with channel: " + old);
+                            }
+                            wrapper.cancel();
+                            return;
+                        } else if (channel.equals("REGISTER") || channel.equals("UNREGISTER")) {
+                            String[] channels = new String(wrapper.read(Type.REMAINING_BYTES), StandardCharsets.UTF_8).split("\0");
+                            List<String> rewrittenChannels = new ArrayList<>();
+                            for (int i = 0; i < channels.length; i++) {
+                                String rewritten = getOldPluginChannelId(channels[i]);
+                                if (rewritten != null) {
+                                    rewrittenChannels.add(rewritten);
+                                } else if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                                    Via.getPlatform().getLogger().warning("Ignoring plugin channel in incoming REGISTER: " + channels[i]);
+                                }
+                            }
+                            wrapper.write(Type.REMAINING_BYTES, Joiner.on('\0').join(rewrittenChannels).getBytes(StandardCharsets.UTF_8));
+                        }
+                        wrapper.set(Type.STRING, 0, channel);
+                    }
+                });
+            }
+        });
+
+        protocol.registerIncoming(ServerboundPackets1_13.CREATIVE_INVENTORY_ACTION, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.SHORT); // 0 - Slot
+                map(Type.FLAT_ITEM, Type.ITEM); // 1 - Clicked Item
+
+                handler(itemRewriter.itemToServerHandler(Type.ITEM));
+            }
+        });
+    }
+
+    // TODO CLEANUP / SMARTER REWRITE SYSTEM
+    // TODO Rewrite identifiers
+    public static void toClient(Item item) {
+        if (item == null) return;
+        CompoundTag tag = item.getTag();
+
+        // Save original id
+        int originalId = (item.getIdentifier() << 16 | item.getData() & 0xFFFF);
+
+        int rawId = (item.getIdentifier() << 4 | item.getData() & 0xF);
+
+        // NBT Additions
+        if (isDamageable(item.getIdentifier())) {
+            if (tag == null) item.setTag(tag = new CompoundTag("tag"));
+            tag.put(new IntTag("Damage", item.getData()));
+        }
+        if (item.getIdentifier() == 358) { // map
+            if (tag == null) item.setTag(tag = new CompoundTag("tag"));
+            tag.put(new IntTag("map", item.getData()));
+        }
+
+        // NBT Changes
+        if (tag != null) {
+            // Invert banner/shield color id
+            boolean banner = item.getIdentifier() == 425;
+            if (banner || item.getIdentifier() == 442) {
+                if (tag.get("BlockEntityTag") instanceof CompoundTag) {
+                    CompoundTag blockEntityTag = tag.get("BlockEntityTag");
+                    if (blockEntityTag.get("Base") instanceof IntTag) {
+                        IntTag base = blockEntityTag.get("Base");
+                        // Set banner item id according to nbt
+                        if (banner) {
+                            rawId = 6800 + base.getValue();
+                        }
+
+                        base.setValue(15 - base.getValue());
+                    }
+                    if (blockEntityTag.get("Patterns") instanceof ListTag) {
+                        for (Tag pattern : (ListTag) blockEntityTag.get("Patterns")) {
+                            if (pattern instanceof CompoundTag) {
+                                IntTag c = ((CompoundTag) pattern).get("Color");
+                                c.setValue(15 - c.getValue()); // Invert color id
+                            }
+                        }
+                    }
+                }
+            }
+            // Display Name now uses JSON
+            if (tag.get("display") instanceof CompoundTag) {
+                CompoundTag display = tag.get("display");
+                if (display.get("Name") instanceof StringTag) {
+                    StringTag name = display.get("Name");
+                    display.put(new StringTag(NBT_TAG_NAME + "|Name", name.getValue()));
+                    name.setValue(ChatRewriter.fromLegacyTextAsString(name.getValue(), ChatColor.WHITE, true));
+                }
+            }
+            // ench is now Enchantments and now uses identifiers
+            if (tag.get("ench") instanceof ListTag) {
+                ListTag ench = tag.get("ench");
+                ListTag enchantments = new ListTag("Enchantments", CompoundTag.class);
+                for (Tag enchEntry : ench) {
+                    if (enchEntry instanceof CompoundTag) {
+                        CompoundTag enchantmentEntry = new CompoundTag("");
+                        short oldId = ((Number) ((CompoundTag) enchEntry).get("id").getValue()).shortValue();
+                        String newId = Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().get(oldId);
+                        if (newId == null) {
+                            newId = "viaversion:legacy/" + oldId;
+                        }
+                        enchantmentEntry.put(new StringTag("id", newId));
+                        enchantmentEntry.put(new ShortTag("lvl", ((Number) ((CompoundTag) enchEntry).get("lvl").getValue()).shortValue()));
+                        enchantments.add(enchantmentEntry);
+                    }
+                }
+                tag.remove("ench");
+                tag.put(enchantments);
+            }
+            if (tag.get("StoredEnchantments") instanceof ListTag) {
+                ListTag storedEnch = tag.get("StoredEnchantments");
+                ListTag newStoredEnch = new ListTag("StoredEnchantments", CompoundTag.class);
+                for (Tag enchEntry : storedEnch) {
+                    if (enchEntry instanceof CompoundTag) {
+                        CompoundTag enchantmentEntry = new CompoundTag("");
+                        short oldId = ((Number) ((CompoundTag) enchEntry).get("id").getValue()).shortValue();
+                        String newId = Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().get(oldId);
+                        if (newId == null) {
+                            newId = "viaversion:legacy/" + oldId;
+                        }
+                        enchantmentEntry.put(new StringTag("id",
+                                newId
+                        ));
+                        enchantmentEntry.put(new ShortTag("lvl", ((Number) ((CompoundTag) enchEntry).get("lvl").getValue()).shortValue()));
+                        newStoredEnch.add(enchantmentEntry);
+                    }
+                }
+                tag.remove("StoredEnchantments");
+                tag.put(newStoredEnch);
+            }
+            if (tag.get("CanPlaceOn") instanceof ListTag) {
+                ListTag old = tag.get("CanPlaceOn");
+                ListTag newCanPlaceOn = new ListTag("CanPlaceOn", StringTag.class);
+                tag.put(ConverterRegistry.convertToTag(NBT_TAG_NAME + "|CanPlaceOn", ConverterRegistry.convertToValue(old))); // There will be data losing
+                for (Tag oldTag : old) {
+                    Object value = oldTag.getValue();
+                    String oldId = value.toString().replace("minecraft:", "");
+                    String numberConverted = BlockIdData.numberIdToString.get(Ints.tryParse(oldId));
+                    if (numberConverted != null) {
+                        oldId = numberConverted;
+                    }
+                    String[] newValues = BlockIdData.blockIdMapping.get(oldId.toLowerCase(Locale.ROOT));
+                    if (newValues != null) {
+                        for (String newValue : newValues) {
+                            newCanPlaceOn.add(new StringTag("", newValue));
+                        }
+                    } else {
+                        newCanPlaceOn.add(new StringTag("", oldId.toLowerCase(Locale.ROOT)));
+                    }
+                }
+                tag.put(newCanPlaceOn);
+            }
+            if (tag.get("CanDestroy") instanceof ListTag) {
+                ListTag old = tag.get("CanDestroy");
+                ListTag newCanDestroy = new ListTag("CanDestroy", StringTag.class);
+                tag.put(ConverterRegistry.convertToTag(NBT_TAG_NAME + "|CanDestroy", ConverterRegistry.convertToValue(old))); // There will be data losing
+                for (Tag oldTag : old) {
+                    Object value = oldTag.getValue();
+                    String oldId = value.toString().replace("minecraft:", "");
+                    String numberConverted = BlockIdData.numberIdToString.get(Ints.tryParse(oldId));
+                    if (numberConverted != null) {
+                        oldId = numberConverted;
+                    }
+                    String[] newValues = BlockIdData.blockIdMapping.get(oldId.toLowerCase(Locale.ROOT));
+                    if (newValues != null) {
+                        for (String newValue : newValues) {
+                            newCanDestroy.add(new StringTag("", newValue));
+                        }
+                    } else {
+                        newCanDestroy.add(new StringTag("", oldId.toLowerCase(Locale.ROOT)));
+                    }
+                }
+                tag.put(newCanDestroy);
+            }
+            // Handle SpawnEggs
+            if (item.getIdentifier() == 383) {
+                if (tag.get("EntityTag") instanceof CompoundTag) {
+                    CompoundTag entityTag = tag.get("EntityTag");
+                    if (entityTag.get("id") instanceof StringTag) {
+                        StringTag identifier = entityTag.get("id");
+                        rawId = SpawnEggRewriter.getSpawnEggId(identifier.getValue());
+                        if (rawId == -1) {
+                            rawId = 25100288; // Bat fallback
+                        } else {
+                            entityTag.remove("id");
+                            if (entityTag.isEmpty())
+                                tag.remove("EntityTag");
+                        }
+                    } else {
+                        // Fallback to bat
+                        rawId = 25100288;
+                    }
+                } else {
+                    // Fallback to bat
+                    rawId = 25100288;
+                }
+            }
+            if (tag.isEmpty()) {
+                item.setTag(tag = null);
+            }
+        }
+
+        if (!Protocol1_13To1_12_2.MAPPINGS.getItemMappings().containsKey(rawId)) {
+            if (!isDamageable(item.getIdentifier()) && item.getIdentifier() != 358) { // Map
+                if (tag == null) item.setTag(tag = new CompoundTag("tag"));
+                tag.put(new IntTag(NBT_TAG_NAME, originalId)); // Data will be lost, saving original id
+            }
+            if (item.getIdentifier() == 31 && item.getData() == 0) { // Shrub was removed
+                rawId = 32 << 4; // Dead Bush
+            } else if (Protocol1_13To1_12_2.MAPPINGS.getItemMappings().containsKey(rawId & ~0xF)) {
+                rawId &= ~0xF; // Remove data
+            } else {
+                if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                    Via.getPlatform().getLogger().warning("Failed to get 1.13 item for " + item.getIdentifier());
+                }
+                rawId = 16; // Stone
+            }
+        }
+
+        item.setIdentifier(Protocol1_13To1_12_2.MAPPINGS.getItemMappings().get(rawId));
+        item.setData((short) 0);
+    }
+
+    public static String getNewPluginChannelId(String old) {
+        // Default channels that should not be modifiable
+        switch (old) {
+            case "MC|TrList":
+                return "minecraft:trader_list";
+            case "MC|Brand":
+                return "minecraft:brand";
+            case "MC|BOpen":
+                return "minecraft:book_open";
+            case "MC|DebugPath":
+                return "minecraft:debug/paths";
+            case "MC|DebugNeighborsUpdate":
+                return "minecraft:debug/neighbors_update";
+            case "REGISTER":
+                return "minecraft:register";
+            case "UNREGISTER":
+                return "minecraft:unregister";
+            case "BungeeCord":
+                return "bungeecord:main";
+            case "bungeecord:main":
+                return null;
+            default:
+                String mappedChannel = Protocol1_13To1_12_2.MAPPINGS.getChannelMappings().get(old);
+                if (mappedChannel != null) return mappedChannel;
+                return MappingData.isValid1_13Channel(old) ? old : null;
+        }
+    }
+
+    public static void toServer(Item item) {
+        if (item == null) return;
+
+        Integer rawId = null;
+        boolean gotRawIdFromTag = false;
+
+        CompoundTag tag = item.getTag();
+
+        // Use tag to get original ID and data
+        if (tag != null) {
+            // Check for valid tag
+            if (tag.get(NBT_TAG_NAME) instanceof IntTag) {
+                rawId = (Integer) tag.get(NBT_TAG_NAME).getValue();
+                // Remove the tag
+                tag.remove(NBT_TAG_NAME);
+                gotRawIdFromTag = true;
+            }
+        }
+
+        if (rawId == null) {
+            int oldId = Protocol1_13To1_12_2.MAPPINGS.getItemMappings().inverse().get(item.getIdentifier());
+            if (oldId != -1) {
+                // Handle spawn eggs
+                Optional<String> eggEntityId = SpawnEggRewriter.getEntityId(oldId);
+                if (eggEntityId.isPresent()) {
+                    rawId = 383 << 16;
+                    if (tag == null)
+                        item.setTag(tag = new CompoundTag("tag"));
+                    if (!tag.contains("EntityTag")) {
+                        CompoundTag entityTag = new CompoundTag("EntityTag");
+                        entityTag.put(new StringTag("id", eggEntityId.get()));
+                        tag.put(entityTag);
+                    }
+                } else {
+                    rawId = (oldId >> 4) << 16 | oldId & 0xF;
+                }
+            }
+        }
+
+        if (rawId == null) {
+            if (!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
+                Via.getPlatform().getLogger().warning("Failed to get 1.12 item for " + item.getIdentifier());
+            }
+            rawId = 0x10000; // Stone
+        }
+
+        item.setIdentifier((short) (rawId >> 16));
+        item.setData((short) (rawId & 0xFFFF));
+
+        // NBT changes
+        if (tag != null) {
+            if (isDamageable(item.getIdentifier())) {
+                if (tag.get("Damage") instanceof IntTag) {
+                    if (!gotRawIdFromTag) {
+                        item.setData((short) (int) tag.get("Damage").getValue());
+                    }
+                    tag.remove("Damage");
+                }
             }
 
-            var2.put(new IntTag("Damage", var0.getData()));
-         }
-
-         if(var0.getIdentifier() == 358) {
-            if(var2 == null) {
-               var0.setTag(var2 = new CompoundTag("tag"));
+            if (item.getIdentifier() == 358) { // map
+                if (tag.get("map") instanceof IntTag) {
+                    if (!gotRawIdFromTag) {
+                        item.setData((short) (int) tag.get("map").getValue());
+                    }
+                    tag.remove("map");
+                }
             }
 
-            var2.put(new IntTag("map", var0.getData()));
-         }
-
-         boolean var5 = var0.getIdentifier() == 425;
-         if((var5 || var0.getIdentifier() == 442) && var2.get("BlockEntityTag") instanceof CompoundTag) {
-            CompoundTag var6 = (CompoundTag)var2.get("BlockEntityTag");
-            if(var6.get("Base") instanceof IntTag) {
-               IntTag var7 = (IntTag)var6.get("Base");
-               if(var5) {
-                  var4 = 6800 + var7.getValue().intValue();
-               }
-
-               var7.setValue(15 - var7.getValue().intValue());
+            if (item.getIdentifier() == 442 || item.getIdentifier() == 425) { // shield / banner
+                if (tag.get("BlockEntityTag") instanceof CompoundTag) {
+                    CompoundTag blockEntityTag = tag.get("BlockEntityTag");
+                    if (blockEntityTag.get("Base") instanceof IntTag) {
+                        IntTag base = blockEntityTag.get("Base");
+                        base.setValue(15 - base.getValue()); // invert color id
+                    }
+                    if (blockEntityTag.get("Patterns") instanceof ListTag) {
+                        for (Tag pattern : (ListTag) blockEntityTag.get("Patterns")) {
+                            if (pattern instanceof CompoundTag) {
+                                IntTag c = ((CompoundTag) pattern).get("Color");
+                                c.setValue(15 - c.getValue()); // Invert color id
+                            }
+                        }
+                    }
+                }
+            }
+            // Display Name now uses JSON
+            if (tag.get("display") instanceof CompoundTag) {
+                CompoundTag display = tag.get("display");
+                if (display.get("Name") instanceof StringTag) {
+                    StringTag name = display.get("Name");
+                    StringTag via = display.remove(NBT_TAG_NAME + "|Name");
+                    name.setValue(via != null ? via.getValue() : ChatRewriter.jsonTextToLegacy(name.getValue()));
+                }
             }
 
-            if(var6.get("Patterns") instanceof ListTag) {
-               Iterator var28 = ((ListTag)var6.get("Patterns")).iterator();
-               if(var28.hasNext()) {
-                  Tag var8 = (Tag)var28.next();
-                  if(var8 instanceof CompoundTag) {
-                     IntTag var9 = (IntTag)((CompoundTag)var8).get("Color");
-                     var9.setValue(15 - var9.getValue().intValue());
-                  }
-               }
+            // ench is now Enchantments and now uses identifiers
+            if (tag.get("Enchantments") instanceof ListTag) {
+                ListTag enchantments = tag.get("Enchantments");
+                ListTag ench = new ListTag("ench", CompoundTag.class);
+                for (Tag enchantmentEntry : enchantments) {
+                    if (enchantmentEntry instanceof CompoundTag) {
+                        CompoundTag enchEntry = new CompoundTag("");
+                        String newId = (String) ((CompoundTag) enchantmentEntry).get("id").getValue();
+                        Short oldId = Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().inverse().get(newId);
+                        if (oldId == null && newId.startsWith("viaversion:legacy/")) {
+                            oldId = Short.valueOf(newId.substring(18));
+                        }
+                        if (oldId != null) {
+                            enchEntry.put(new ShortTag("id", oldId));
+                            enchEntry.put(new ShortTag("lvl", (Short) ((CompoundTag) enchantmentEntry).get("lvl").getValue()));
+                            ench.add(enchEntry);
+                        }
+                    }
+                }
+                tag.remove("Enchantments");
+                tag.put(ench);
             }
-         }
-
-         if(var2.get("display") instanceof CompoundTag) {
-            CompoundTag var22 = (CompoundTag)var2.get("display");
-            if(var22.get("Name") instanceof StringTag) {
-               StringTag var29 = (StringTag)var22.get("Name");
-               var22.put(new StringTag("ViaVersion|Protocol1_13To1_12_2|Name", var29.getValue()));
-               var29.setValue(ChatRewriter.fromLegacyTextAsString(var29.getValue(), ChatColor.WHITE, true));
+            if (tag.get("StoredEnchantments") instanceof ListTag) {
+                ListTag storedEnch = tag.get("StoredEnchantments");
+                ListTag newStoredEnch = new ListTag("StoredEnchantments", CompoundTag.class);
+                for (Tag enchantmentEntry : storedEnch) {
+                    if (enchantmentEntry instanceof CompoundTag) {
+                        CompoundTag enchEntry = new CompoundTag("");
+                        String newId = (String) ((CompoundTag) enchantmentEntry).get("id").getValue();
+                        Short oldId = Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().inverse().get(newId);
+                        if (oldId == null && newId.startsWith("viaversion:legacy/")) {
+                            oldId = Short.valueOf(newId.substring(18));
+                        }
+                        if (oldId != null) {
+                            enchEntry.put(new ShortTag("id", oldId));
+                            enchEntry.put(new ShortTag("lvl", (Short) ((CompoundTag) enchantmentEntry).get("lvl").getValue()));
+                            newStoredEnch.add(enchEntry);
+                        }
+                    }
+                }
+                tag.remove("StoredEnchantments");
+                tag.put(newStoredEnch);
             }
-         }
-
-         if(var2.get("ench") instanceof ListTag) {
-            ListTag var23 = (ListTag)var2.get("ench");
-            ListTag var30 = new ListTag("Enchantments", CompoundTag.class);
-            Iterator var35 = var23.iterator();
-            if(var35.hasNext()) {
-               Tag var39 = (Tag)var35.next();
-               if(var39 instanceof CompoundTag) {
-                  CompoundTag var10 = new CompoundTag("");
-                  short var11 = ((Number)((CompoundTag)var39).get("id").getValue()).shortValue();
-                  String var12 = (String)Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().get(Short.valueOf(var11));
-                  var12 = "viaversion:legacy/" + var11;
-                  var10.put(new StringTag("id", var12));
-                  var10.put(new ShortTag("lvl", ((Number)((CompoundTag)var39).get("lvl").getValue()).shortValue()));
-                  var30.add(var10);
-               }
+            if (tag.get(NBT_TAG_NAME + "|CanPlaceOn") instanceof ListTag) {
+                tag.put(ConverterRegistry.convertToTag(
+                        "CanPlaceOn",
+                        ConverterRegistry.convertToValue(tag.get(NBT_TAG_NAME + "|CanPlaceOn"))
+                ));
+                tag.remove(NBT_TAG_NAME + "|CanPlaceOn");
+            } else if (tag.get("CanPlaceOn") instanceof ListTag) {
+                ListTag old = tag.get("CanPlaceOn");
+                ListTag newCanPlaceOn = new ListTag("CanPlaceOn", StringTag.class);
+                for (Tag oldTag : old) {
+                    Object value = oldTag.getValue();
+                    String[] newValues = BlockIdData.fallbackReverseMapping.get(value instanceof String
+                            ? ((String) value).replace("minecraft:", "")
+                            : null);
+                    if (newValues != null) {
+                        for (String newValue : newValues) {
+                            newCanPlaceOn.add(new StringTag("", newValue));
+                        }
+                    } else {
+                        newCanPlaceOn.add(oldTag);
+                    }
+                }
+                tag.put(newCanPlaceOn);
             }
-
-            var2.remove("ench");
-            var2.put(var30);
-         }
-
-         if(var2.get("StoredEnchantments") instanceof ListTag) {
-            ListTag var24 = (ListTag)var2.get("StoredEnchantments");
-            ListTag var31 = new ListTag("StoredEnchantments", CompoundTag.class);
-            Iterator var36 = var24.iterator();
-            if(var36.hasNext()) {
-               Tag var40 = (Tag)var36.next();
-               if(var40 instanceof CompoundTag) {
-                  CompoundTag var43 = new CompoundTag("");
-                  short var46 = ((Number)((CompoundTag)var40).get("id").getValue()).shortValue();
-                  String var50 = (String)Protocol1_13To1_12_2.MAPPINGS.getOldEnchantmentsIds().get(Short.valueOf(var46));
-                  var50 = "viaversion:legacy/" + var46;
-                  var43.put(new StringTag("id", var50));
-                  var43.put(new ShortTag("lvl", ((Number)((CompoundTag)var40).get("lvl").getValue()).shortValue()));
-                  var31.add(var43);
-               }
+            if (tag.get(NBT_TAG_NAME + "|CanDestroy") instanceof ListTag) {
+                tag.put(ConverterRegistry.convertToTag(
+                        "CanDestroy",
+                        ConverterRegistry.convertToValue(tag.get(NBT_TAG_NAME + "|CanDestroy"))
+                ));
+                tag.remove(NBT_TAG_NAME + "|CanDestroy");
+            } else if (tag.get("CanDestroy") instanceof ListTag) {
+                ListTag old = tag.get("CanDestroy");
+                ListTag newCanDestroy = new ListTag("CanDestroy", StringTag.class);
+                for (Tag oldTag : old) {
+                    Object value = oldTag.getValue();
+                    String[] newValues = BlockIdData.fallbackReverseMapping.get(value instanceof String
+                            ? ((String) value).replace("minecraft:", "")
+                            : null);
+                    if (newValues != null) {
+                        for (String newValue : newValues) {
+                            newCanDestroy.add(new StringTag("", newValue));
+                        }
+                    } else {
+                        newCanDestroy.add(oldTag);
+                    }
+                }
+                tag.put(newCanDestroy);
             }
+        }
+    }
 
-            var2.remove("StoredEnchantments");
-            var2.put(var31);
-         }
+    public static String getOldPluginChannelId(String newId) {
+        newId = MappingData.validateNewChannel(newId);
+        if (newId == null) return null;
 
-         if(var2.get("CanPlaceOn") instanceof ListTag) {
-            ListTag var25 = (ListTag)var2.get("CanPlaceOn");
-            ListTag var32 = new ListTag("CanPlaceOn", StringTag.class);
-            var2.put(ConverterRegistry.convertToTag("ViaVersion|Protocol1_13To1_12_2|CanPlaceOn", ConverterRegistry.convertToValue(var25)));
-            Iterator var37 = var25.iterator();
-            if(var37.hasNext()) {
-               Tag var41 = (Tag)var37.next();
-               Object var44 = var41.getValue();
-               String var47 = var44.toString().replace("minecraft:", "");
-               String var52 = (String)DA.c.get(Ints.tryParse(var47));
-               if(var52 != null) {
-                  var47 = var52;
-               }
+        // Default channels that should not be modifiable
+        switch (newId) {
+            case "minecraft:trader_list":
+                return "MC|TrList";
+            case "minecraft:book_open":
+                return "MC|BOpen";
+            case "minecraft:debug/paths":
+                return "MC|DebugPath";
+            case "minecraft:debug/neighbors_update":
+                return "MC|DebugNeighborsUpdate";
+            case "minecraft:register":
+                return "REGISTER";
+            case "minecraft:unregister":
+                return "UNREGISTER";
+            case "minecraft:brand":
+                return "MC|Brand";
+            case "bungeecord:main":
+                return "BungeeCord";
+            default:
+                String mappedChannel = Protocol1_13To1_12_2.MAPPINGS.getChannelMappings().inverse().get(newId);
+                if (mappedChannel != null) return mappedChannel;
+                return newId.length() > 20 ? newId.substring(0, 20) : newId;
+        }
+    }
 
-               String[] var13 = (String[])DA.d.get(var47.toLowerCase(Locale.ROOT));
-               if(var13 != null) {
-                  int var15 = var13.length;
-                  int var16 = 0;
-                  if(var16 < var15) {
-                     String var17 = var13[var16];
-                     var32.add(new StringTag("", var17));
-                     ++var16;
-                  }
-               }
-
-               var32.add(new StringTag("", var47.toLowerCase(Locale.ROOT)));
-            }
-
-            var2.put(var32);
-         }
-
-         if(var2.get("CanDestroy") instanceof ListTag) {
-            ListTag var26 = (ListTag)var2.get("CanDestroy");
-            ListTag var33 = new ListTag("CanDestroy", StringTag.class);
-            var2.put(ConverterRegistry.convertToTag("ViaVersion|Protocol1_13To1_12_2|CanDestroy", ConverterRegistry.convertToValue(var26)));
-            Iterator var38 = var26.iterator();
-            if(var38.hasNext()) {
-               Tag var42 = (Tag)var38.next();
-               Object var45 = var42.getValue();
-               String var48 = var45.toString().replace("minecraft:", "");
-               String var53 = (String)DA.c.get(Ints.tryParse(var48));
-               if(var53 != null) {
-                  var48 = var53;
-               }
-
-               String[] var54 = (String[])DA.d.get(var48.toLowerCase(Locale.ROOT));
-               if(var54 != null) {
-                  int var55 = var54.length;
-                  int var57 = 0;
-                  if(var57 < var55) {
-                     String var59 = var54[var57];
-                     var33.add(new StringTag("", var59));
-                     ++var57;
-                  }
-               }
-
-               var33.add(new StringTag("", var48.toLowerCase(Locale.ROOT)));
-            }
-
-            var2.put(var33);
-         }
-
-         if(var0.getIdentifier() == 383) {
-            if(var2.get("EntityTag") instanceof CompoundTag) {
-               CompoundTag var27 = (CompoundTag)var2.get("EntityTag");
-               if(var27.get("id") instanceof StringTag) {
-                  StringTag var34 = (StringTag)var27.get("id");
-                  var4 = SpawnEggRewriter.getSpawnEggId(var34.getValue());
-                  if(var4 == -1) {
-                     var4 = 25100288;
-                  }
-
-                  var27.remove("id");
-                  if(var27.isEmpty()) {
-                     var2.remove("EntityTag");
-                  }
-               }
-
-               var4 = 25100288;
-            }
-
-            var4 = 25100288;
-         }
-
-         if(var2.isEmpty()) {
-            var2 = null;
-            var0.setTag((CompoundTag)null);
-         }
-
-         if(!Protocol1_13To1_12_2.MAPPINGS.getItemMappings().containsKey(var4)) {
-            if(!a(var0.getIdentifier()) && var0.getIdentifier() != 358) {
-               if(var2 == null) {
-                  var0.setTag(var2 = new CompoundTag("tag"));
-               }
-
-               var2.put(new IntTag("ViaVersion|Protocol1_13To1_12_2", var3));
-            }
-
-            if(var0.getIdentifier() == 31 && var0.getData() == 0) {
-               var4 = 512;
-            }
-
-            if(Protocol1_13To1_12_2.MAPPINGS.getItemMappings().containsKey(var4 & -16)) {
-               var4 = var4 & -16;
-            }
-
-            if(!Via.getConfig().isSuppressConversionWarnings() || Via.getManager().isDebug()) {
-               Via.getPlatform().getLogger().warning("Failed to get 1.13 item for " + var0.getIdentifier());
-            }
-
-            var4 = 16;
-         }
-
-         var0.setIdentifier(Protocol1_13To1_12_2.MAPPINGS.getItemMappings().get(var4));
-         var0.setData((short)0);
-      }
-   }
-
-   public static String getNewPluginChannelId(String var0) {
-      BS.b();
-      byte var3 = -1;
-      switch(var0.hashCode()) {
-      case -37059198:
-         if(!var0.equals("MC|TrList")) {
-            break;
-         }
-
-         var3 = 0;
-      case -294893183:
-         if(!var0.equals("MC|Brand")) {
-            break;
-         }
-
-         var3 = 1;
-      case -295921722:
-         if(!var0.equals("MC|BOpen")) {
-            break;
-         }
-
-         var3 = 2;
-      case 125533714:
-         if(!var0.equals("MC|DebugPath")) {
-            break;
-         }
-
-         var3 = 3;
-      case 2076087261:
-         if(!var0.equals("MC|DebugNeighborsUpdate")) {
-            break;
-         }
-
-         var3 = 4;
-      case 92413603:
-         if(!var0.equals("REGISTER")) {
-            break;
-         }
-
-         var3 = 5;
-      case 1321107516:
-         if(!var0.equals("UNREGISTER")) {
-            break;
-         }
-
-         var3 = 6;
-      case 1537336522:
-         if(!var0.equals("BungeeCord")) {
-            break;
-         }
-
-         var3 = 7;
-      case -234943831:
-         if(var0.equals("bungeecord:main")) {
-            var3 = 8;
-         }
-      }
-
-      switch(var3) {
-      case 0:
-         return "minecraft:trader_list";
-      case 1:
-         return "minecraft:brand";
-      case 2:
-         return "minecraft:book_open";
-      case 3:
-         return "minecraft:debug/paths";
-      case 4:
-         return "minecraft:debug/neighbors_update";
-      case 5:
-         return "minecraft:register";
-      case 6:
-         return "minecraft:unregister";
-      case 7:
-         return "bungeecord:main";
-      case 8:
-         return null;
-      default:
-         String var4 = (String)Protocol1_13To1_12_2.MAPPINGS.getChannelMappings().get(var0);
-         return var4 != null?var4:(MappingData.isValid1_13Channel(var0)?var0:null);
-      }
-   }
-
-   public static void a(Item var0) {
-      acE[] var1 = BS.b();
-   }
-
-   public static String getOldPluginChannelId(String var0) {
-      BS.b();
-      var0 = MappingData.validateNewChannel(var0);
-      if(var0 == null) {
-         return null;
-      } else {
-         byte var3 = -1;
-         switch(var0.hashCode()) {
-         case 1963953250:
-            if(!var0.equals("minecraft:trader_list")) {
-               break;
-            }
-
-            var3 = 0;
-         case -420924333:
-            if(!var0.equals("minecraft:book_open")) {
-               break;
-            }
-
-            var3 = 1;
-         case 832866277:
-            if(!var0.equals("minecraft:debug/paths")) {
-               break;
-            }
-
-            var3 = 2;
-         case 1745645488:
-            if(!var0.equals("minecraft:debug/neighbors_update")) {
-               break;
-            }
-
-            var3 = 3;
-         case 339275216:
-            if(!var0.equals("minecraft:register")) {
-               break;
-            }
-
-            var3 = 4;
-         case -1963049943:
-            if(!var0.equals("minecraft:unregister")) {
-               break;
-            }
-
-            var3 = 5;
-         case -1149721734:
-            if(!var0.equals("minecraft:brand")) {
-               break;
-            }
-
-            var3 = 6;
-         case -234943831:
-            if(var0.equals("bungeecord:main")) {
-               var3 = 7;
-            }
-         }
-
-         switch(var3) {
-         case 0:
-            return "MC|TrList";
-         case 1:
-            return "MC|BOpen";
-         case 2:
-            return "MC|DebugPath";
-         case 3:
-            return "MC|DebugNeighborsUpdate";
-         case 4:
-            return "REGISTER";
-         case 5:
-            return "UNREGISTER";
-         case 6:
-            return "MC|Brand";
-         case 7:
-            return "BungeeCord";
-         default:
-            String var4 = (String)Protocol1_13To1_12_2.MAPPINGS.getChannelMappings().inverse().get(var0);
-            return var4 != null?var4:(var0.length() > 20?var0.substring(0, 20):var0);
-         }
-      }
-   }
-
-   public static boolean a(int var0) {
-      acE[] var1 = BS.b();
-      return var0 >= 256 && var0 <= 259 || var0 == 261 || var0 >= 267 && var0 <= 279 || var0 >= 283 && var0 <= 286 || var0 >= 290 && var0 <= 294 || var0 >= 298 && var0 <= 317 || var0 == 346 || var0 == 359 || var0 == 398 || var0 == 442 || var0 == 443;
-   }
+    public static boolean isDamageable(int id) {
+        return id >= 256 && id <= 259 // iron shovel, pickaxe, axe, flint and steel
+                || id == 261 // bow
+                || id >= 267 && id <= 279 // iron sword, wooden+stone+diamond swords, shovels, pickaxes, axes
+                || id >= 283 && id <= 286 // gold sword, shovel, pickaxe, axe
+                || id >= 290 && id <= 294 // hoes
+                || id >= 298 && id <= 317 // armors
+                || id == 346 // fishing rod
+                || id == 359 // shears
+                || id == 398 // carrot on a stick
+                || id == 442 // shield
+                || id == 443; // elytra
+    }
 }

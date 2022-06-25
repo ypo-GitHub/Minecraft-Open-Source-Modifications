@@ -1,134 +1,133 @@
 package cc.novoline.utils.pathfinding;
 
-import cc.novoline.utils.pathfinding.AStar$Node;
-import cc.novoline.utils.pathfinding.Vec3;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.ToDoubleFunction;
-import java.util.stream.Collectors;
-import net.acE;
 import net.minecraft.util.BlockPos;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+
 public class AStar {
-   public static AStar aStar;
 
-   public static AStar getAStar() {
-      return aStar;
-   }
+    public static AStar aStar;
 
-   public static List getPath(BlockPos var0, BlockPos var1) {
-      Vec3.b();
-      CopyOnWriteArrayList var3 = new CopyOnWriteArrayList();
-      CopyOnWriteArrayList var4 = new CopyOnWriteArrayList();
-      AStar$Node var5 = new AStar$Node(var0.getX(), var0.getZ(), 0, 0);
-      AStar$Node var6 = new AStar$Node(var0.getX(), var0.getZ(), 0, getCostToATarget(new AStar$Node(var0.getX(), var0.getZ(), 0, 0), var1));
-      AStar$Node var7 = new AStar$Node(var1.getX(), var1.getZ(), getCostToATarget(new AStar$Node(var1.getX(), var1.getZ(), 0, 0), var0), 0);
-      int var8 = 0;
-      if(var8 < 1000) {
-         CopyOnWriteArrayList var9 = new CopyOnWriteArrayList();
-         int var10 = -1;
-         if(var10 < 2) {
-            int var11 = 1;
-            if(var11 > -2) {
-               if(!doesNodeExistHere(var5.x + var10, var5.z + var11, var4)) {
-                  var9.add(new AStar$Node(var5.x + var10, var5.z + var11, getCostToATarget(var6, new BlockPos(var5.x + var10, 0, var5.z + var11)), getCostToATarget(var7, new BlockPos(var5.x + var10, 0, var5.z + var11))));
-               }
+    public static AStar getAStar() {
+        return aStar;
+    }
 
-               --var11;
+    public static List<Node> getPath(BlockPos pos1, BlockPos pos2) {
+        List<Node> path = new CopyOnWriteArrayList<>();
+        List<Node> nodes = new CopyOnWriteArrayList<>();
+        Node currentNode = new Node(pos1.getX(), pos1.getZ(), 0, 0);
+        Node startNode = new Node(pos1.getX(), pos1.getZ(), 0, getCostToATarget(new Node(pos1.getX(), pos1.getZ(), 0, 0), pos2));
+        Node endNode = new Node(pos2.getX(), pos2.getZ(), getCostToATarget(new Node(pos2.getX(), pos2.getZ(), 0, 0), pos1), 0);
+        for (int i = 0; i < 1000; i++) {
+            List<Node> set = new CopyOnWriteArrayList<>();
+            for (int x = -1; x < 2; x++) {
+                for (int z = 1; z > -2; z--) {
+                    if (!doesNodeExistHere(currentNode.x + x, currentNode.z + z, nodes)) {
+                        set.add(new Node(currentNode.x + x, currentNode.z + z, getCostToATarget(startNode, new BlockPos(currentNode.x + x, 0, currentNode.z + z)), getCostToATarget(endNode, new BlockPos(currentNode.x + x, 0, currentNode.z + z))));
+                    }
+                }
             }
+            nodes.addAll(set);
+            currentNode = set.stream().sorted(Comparator.comparingDouble(node -> node.getFinalCost())).collect(Collectors.toList()).get(0);
+            path.add(currentNode);
+            if (currentNode.hCost == 0) {
+                break;
+            }
+        }
+        return path;
+    }
 
-            ++var10;
-         }
+    private static boolean doesNodeExistHere(int x, int z, List<Node> nodes) {
+        for (Node node : nodes) {
+            if (node.x == x && node.z == z) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-         var4.addAll(var9);
-         var5 = (AStar$Node)((List)var9.stream().sorted(Comparator.comparingDouble(AStar::lambda$getPath$0)).collect(Collectors.toList())).get(0);
-         var3.add(var5);
-         if(var5.hCost == 0) {
-            ;
-         }
+    private static int getCostToATarget(Node node, BlockPos pos) {
+        int absDifferenceX = Math.abs(node.getX() - pos.getX());
+        int absDifferenceZ = Math.abs(node.getZ() - pos.getZ());
+        int finalCost = 0;
+        if (absDifferenceX > 0) {
+            for (int i = absDifferenceX; i > 0; i--) {
+                finalCost += 14;
+            }
+            if (absDifferenceZ > 1) {
+                absDifferenceZ -= 1;
+                finalCost += 10 * absDifferenceZ;
+            }
+            return finalCost;
+        } else if (absDifferenceZ > 0) {
+            for (int i = absDifferenceZ; i > 0; i--) {
+                finalCost += 14;
+            }
+            if (absDifferenceX > 1) {
+                absDifferenceX -= 1;
+                finalCost += 10 * absDifferenceX;
+            }
+            return finalCost;
+        }
+        return 0;
+    }
 
-         ++var8;
-      }
+    private int getCostToATarget(Node node, Node pos) {
+        int absDifferenceX = Math.abs(node.getX() - pos.getX());
+        int absDifferenceZ = Math.abs(node.getZ() - pos.getZ());
+        int finalCost = 0;
+        if (absDifferenceX > 0) {
+            for (int i = absDifferenceX; i > 0; i--) {
+                finalCost += 14;
+            }
+            if (absDifferenceZ > 1) {
+                absDifferenceZ -= 1;
+                finalCost += 10 * absDifferenceZ;
+            }
+            return finalCost;
+        } else if (absDifferenceZ > 0) {
+            for (int i = absDifferenceZ; i > 0; i--) {
+                finalCost += 14;
+            }
+            if (absDifferenceX > 1) {
+                absDifferenceX -= 1;
+                finalCost += 10 * absDifferenceX;
+            }
+            return finalCost;
+        }
+        return 0;
+    }
 
-      if(acE.b() == null) {
-         Vec3.b("OeTCZb");
-      }
 
-      return var3;
-   }
+    public static class Node {
+        int x, y, z, gCost, hCost;
 
-   private static boolean doesNodeExistHere(int var0, int var1, List var2) {
-      Vec3.b();
-      Iterator var4 = var2.iterator();
-      if(var4.hasNext()) {
-         AStar$Node var5 = (AStar$Node)var4.next();
-         if(var5.x == var0 && var5.z == var1) {
-            return true;
-         }
-      }
+        public Node(int x, int z, int gCost, int hCost) {
+            this.x = x;
+            this.z = z;
+            this.gCost = gCost;
+            this.hCost = hCost;
+        }
 
-      return false;
-   }
+        public int getX() {
+            return x;
+        }
 
-   private static int getCostToATarget(AStar$Node var0, BlockPos var1) {
-      Vec3.b();
-      int var3 = Math.abs(var0.getX() - var1.getX());
-      int var4 = Math.abs(var0.getZ() - var1.getZ());
-      int var5 = 0;
-      if(var3 > 0) {
-         var5 = var5 + 14;
-         int var11 = var3 - 1;
-         if(var4 > 1) {
-            --var4;
-            var5 += 10 * var4;
-         }
+        public int getZ() {
+            return z;
+        }
 
-         return var5;
-      } else if(var4 > 0) {
-         var5 = var5 + 14;
-         int var6 = var4 - 1;
-         if(var3 > 1) {
-            --var3;
-            var5 += 10 * var3;
-         }
+        public int getFinalCost() {
+            return gCost + hCost;
+        }
 
-         return var5;
-      } else {
-         return 0;
-      }
-   }
+        public BlockPos getBlockPos(int y) {
+            return new BlockPos(x, y, z);
+        }
 
-   private int getCostToATarget(AStar$Node var1, AStar$Node var2) {
-      Vec3.b();
-      int var4 = Math.abs(var1.getX() - var2.getX());
-      int var5 = Math.abs(var1.getZ() - var2.getZ());
-      int var6 = 0;
-      if(var4 > 0) {
-         var6 = var6 + 14;
-         int var12 = var4 - 1;
-         if(var5 > 1) {
-            --var5;
-            var6 += 10 * var5;
-         }
+    }
 
-         return var6;
-      } else if(var5 > 0) {
-         var6 = var6 + 14;
-         int var7 = var5 - 1;
-         if(var4 > 1) {
-            --var4;
-            var6 += 10 * var4;
-         }
-
-         return var6;
-      } else {
-         return 0;
-      }
-   }
-
-   private static double lambda$getPath$0(AStar$Node var0) {
-      return (double)var0.getFinalCost();
-   }
 }

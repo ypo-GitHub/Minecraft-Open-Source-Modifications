@@ -1,67 +1,80 @@
 package cc.novoline.gui;
 
-import cc.novoline.Novoline;
-import cc.novoline.gui.AbstractElement;
-import cc.novoline.gui.Element;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.awt.Color;
+import net.minecraft.client.gui.GuiScreen;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.awt.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.client.gui.GuiScreen;
 
+import static cc.novoline.Novoline.getLogger;
+
+/**
+ * @author xDelsy
+ */
 public abstract class NovoGuiScreen extends GuiScreen {
-   private final List elements;
-   private long lastMessageTimestamp;
 
-   public NovoGuiScreen(Collection var1) {
-      this.elements = new ObjectArrayList();
-   }
+    /* fields */
+    @NonNull
+    private final List<Element> elements;
 
-   public NovoGuiScreen() {
-      this((Collection)null);
-   }
+    /* constructors */
+    public NovoGuiScreen(@Nullable Collection<Element> elements) {
+        this.elements = elements == null ? new ObjectArrayList<>() : new ObjectArrayList<>(elements);
+    }
 
-   protected void register(Element var1) {
-      this.elements.add(var1);
-   }
+    public NovoGuiScreen() {
+        this(null);
+    }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      AbstractElement.b();
-      this.drawGradientRect(0.0F, 0.0F, (float)this.width, (float)this.height, (new Color(100, 200, 200)).getRGB(), (new Color(100, 100, 200)).getRGB());
-      int var5 = 0;
-      if(var5 < this.elements.size()) {
-         ((Element)this.elements.get(var5)).draw(var1, var2);
-         ++var5;
-      }
+    /* methods */
+    protected void register(@NonNull Element element) {
+        elements.add(element);
+        // System.out.println("Registered an element: " + element.getClass().getSimpleName());
+    }
 
-      if(System.currentTimeMillis() - this.lastMessageTimestamp >= 1000L) {
-         Novoline.getLogger().info("Drew: {}", new Object[]{this.elements.stream().map(NovoGuiScreen::lambda$drawScreen$0).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))});
-         this.lastMessageTimestamp = System.currentTimeMillis();
-      }
+    private long lastMessageTimestamp;
 
-      super.drawScreen(var1, var2, var3);
-   }
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        drawGradientRect(0, 0, width, height, new Color(100, 200, 200).getRGB(),
+                new Color(100, 100, 200).getRGB());
 
-   protected void onInitialize() {
-   }
+        for (int i = 0; i < elements.size(); i++) {
+            elements.get(i).draw(mouseX, mouseY);
+        }
 
-   protected void onClosing() {
-   }
+        if (System.currentTimeMillis() - lastMessageTimestamp >= 1_000) {
+            getLogger().info("Drew: {}", elements.stream()
+                    .map(element -> element.getClass().getSimpleName())
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
+            this.lastMessageTimestamp = System.currentTimeMillis();
+        }
 
-   public final void initGui() {
-      this.elements.clear();
-      this.onInitialize();
-      super.initGui();
-   }
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
 
-   public void onGuiClosed() {
-      this.onClosing();
-      super.onGuiClosed();
-   }
+    protected void onInitialize() {
+    }
 
-   private static String lambda$drawScreen$0(Element var0) {
-      return var0.getClass().getSimpleName();
-   }
+    protected void onClosing() {
+    }
+
+    @Override
+    public final void initGui() {
+        elements.clear();
+
+        onInitialize();
+        super.initGui();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        onClosing();
+        super.onGuiClosed();
+    }
 }

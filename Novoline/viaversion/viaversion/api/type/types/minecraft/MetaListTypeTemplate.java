@@ -1,14 +1,18 @@
 package viaversion.viaversion.api.type.types.minecraft;
 
-import java.util.List;
+import viaversion.viaversion.api.minecraft.metadata.Metadata;
 import viaversion.viaversion.api.type.Type;
 
-public abstract class MetaListTypeTemplate extends Type {
-   protected MetaListTypeTemplate() {
-      super("MetaData List", List.class);
-   }
+import java.util.List;
 
-   public Class getBaseClass() {
-      return MetaListTypeTemplate.class;
-   }
+public abstract class MetaListTypeTemplate extends Type<List<Metadata>> {
+
+    protected MetaListTypeTemplate() {
+        super("MetaData List", List.class);
+    }
+
+    @Override
+    public Class<? extends Type> getBaseClass() {
+        return MetaListTypeTemplate.class;
+    }
 }

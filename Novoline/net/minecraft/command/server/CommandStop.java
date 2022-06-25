@@ -6,23 +6,28 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 
 public class CommandStop extends CommandBase {
-   public String getCommandName() {
-      return "stop";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "stop";
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.stop.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.stop.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(MinecraftServer.getServer().worldServers != null) {
-         notifyOperators(var1, this, "commands.stop.start", new Object[0]);
-      }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (MinecraftServer.getServer().worldServers != null) {
+            notifyOperators(sender, this, "commands.stop.start", new Object[0]);
+        }
 
-      MinecraftServer.getServer().initiateShutdown();
-   }
-
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+        MinecraftServer.getServer().initiateShutdown();
+    }
 }

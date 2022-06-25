@@ -1,88 +1,84 @@
 package viaversion.viaversion.protocols.base;
 
-import java.util.UUID;
-import net.a66;
-import net.cA;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.protocol.ProtocolPipeline;
 import viaversion.viaversion.api.protocol.ProtocolVersion;
+import viaversion.viaversion.packets.State;
 
-public class ProtocolInfo extends cA {
-   private a66 c = a66.HANDSHAKE;
-   private int protocolVersion = -1;
-   private int serverProtocolVersion = -1;
-   private String username;
-   private UUID uuid;
-   private ProtocolPipeline pipeline;
-   private static String e;
+import java.util.UUID;
 
-   public ProtocolInfo(UserConnection var1) {
-      super(var1);
-   }
+public class ProtocolInfo extends StoredObject {
+    private State state = State.HANDSHAKE;
+    private int protocolVersion = -1;
+    private int serverProtocolVersion = -1;
+    private String username;
+    private UUID uuid;
+    private ProtocolPipeline pipeline;
 
-   public a66 e() {
-      return this.c;
-   }
+    public ProtocolInfo(UserConnection user) {
+        super(user);
+    }
 
-   public void a(a66 var1) {
-      this.c = var1;
-   }
+    public State getState() {
+        return state;
+    }
 
-   public int getProtocolVersion() {
-      return this.protocolVersion;
-   }
+    public void setState(State state) {
+        this.state = state;
+    }
 
-   public void setProtocolVersion(int var1) {
-      ProtocolVersion var2 = ProtocolVersion.getProtocol(var1);
-      this.protocolVersion = var2.getVersion();
-   }
+    public int getProtocolVersion() {
+        return protocolVersion;
+    }
 
-   public int getServerProtocolVersion() {
-      return this.serverProtocolVersion;
-   }
+    public void setProtocolVersion(int protocolVersion) {
+        // Map snapshot versions to the higher/orderer release version
+        ProtocolVersion protocol = ProtocolVersion.getProtocol(protocolVersion);
+        this.protocolVersion = protocol.getVersion();
+    }
 
-   public void setServerProtocolVersion(int var1) {
-      ProtocolVersion var2 = ProtocolVersion.getProtocol(var1);
-      this.serverProtocolVersion = var2.getVersion();
-   }
+    public int getServerProtocolVersion() {
+        return serverProtocolVersion;
+    }
 
-   public String getUsername() {
-      return this.username;
-   }
+    public void setServerProtocolVersion(int serverProtocolVersion) {
+        ProtocolVersion protocol = ProtocolVersion.getProtocol(serverProtocolVersion);
+        this.serverProtocolVersion = protocol.getVersion();
+    }
 
-   public void setUsername(String var1) {
-      this.username = var1;
-   }
+    public String getUsername() {
+        return username;
+    }
 
-   public UUID getUuid() {
-      return this.uuid;
-   }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-   public void setUuid(UUID var1) {
-      this.uuid = var1;
-   }
+    public UUID getUuid() {
+        return uuid;
+    }
 
-   public ProtocolPipeline getPipeline() {
-      return this.pipeline;
-   }
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
 
-   public void setPipeline(ProtocolPipeline var1) {
-      this.pipeline = var1;
-   }
+    public ProtocolPipeline getPipeline() {
+        return pipeline;
+    }
 
-   public String toString() {
-      return "ProtocolInfo{state=" + this.c + ", protocolVersion=" + this.protocolVersion + ", serverProtocolVersion=" + this.serverProtocolVersion + ", username=\'" + this.username + '\'' + ", uuid=" + this.uuid + '}';
-   }
+    public void setPipeline(ProtocolPipeline pipeline) {
+        this.pipeline = pipeline;
+    }
 
-   public static void b(String var0) {
-      e = var0;
-   }
-
-   public static String d() {
-      return e;
-   }
-
-   static {
-      b((String)null);
-   }
+    @Override
+    public String toString() {
+        return "ProtocolInfo{" +
+                "state=" + state +
+                ", protocolVersion=" + protocolVersion +
+                ", serverProtocolVersion=" + serverProtocolVersion +
+                ", username='" + username + '\'' +
+                ", uuid=" + uuid +
+                '}';
+    }
 }

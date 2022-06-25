@@ -1,67 +1,77 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.entity.item.EntityXPOrb;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.MathHelper;
 
-public class S11PacketSpawnExperienceOrb implements Packet {
-   private int entityID;
-   private int posX;
-   private int posY;
-   private int posZ;
-   private int xpValue;
+import java.io.IOException;
 
-   public S11PacketSpawnExperienceOrb() {
-   }
+public class S11PacketSpawnExperienceOrb implements Packet<INetHandlerPlayClient> {
+    private int entityID;
+    private int posX;
+    private int posY;
+    private int posZ;
+    private int xpValue;
 
-   public S11PacketSpawnExperienceOrb(EntityXPOrb var1) {
-      this.entityID = var1.getEntityID();
-      this.posX = MathHelper.floor_double(var1.posX * 32.0D);
-      this.posY = MathHelper.floor_double(var1.posY * 32.0D);
-      this.posZ = MathHelper.floor_double(var1.posZ * 32.0D);
-      this.xpValue = var1.getXpValue();
-   }
+    public S11PacketSpawnExperienceOrb() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityID = var1.readVarIntFromBuffer();
-      this.posX = var1.readInt();
-      this.posY = var1.readInt();
-      this.posZ = var1.readInt();
-      this.xpValue = var1.readShort();
-   }
+    public S11PacketSpawnExperienceOrb(EntityXPOrb xpOrb) {
+        this.entityID = xpOrb.getEntityID();
+        this.posX = MathHelper.floor_double(xpOrb.posX * 32.0D);
+        this.posY = MathHelper.floor_double(xpOrb.posY * 32.0D);
+        this.posZ = MathHelper.floor_double(xpOrb.posZ * 32.0D);
+        this.xpValue = xpOrb.getXpValue();
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityID);
-      var1.writeInt(this.posX);
-      var1.writeInt(this.posY);
-      var1.writeInt(this.posZ);
-      var1.writeShort(this.xpValue);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityID = buf.readVarIntFromBuffer();
+        this.posX = buf.readInt();
+        this.posY = buf.readInt();
+        this.posZ = buf.readInt();
+        this.xpValue = buf.readShort();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleSpawnExperienceOrb(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityID);
+        buf.writeInt(this.posX);
+        buf.writeInt(this.posY);
+        buf.writeInt(this.posZ);
+        buf.writeShort(this.xpValue);
+    }
 
-   public int getEntityID() {
-      return this.entityID;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleSpawnExperienceOrb(this);
+    }
 
-   public int getX() {
-      return this.posX;
-   }
+    public int getEntityID() {
+        return this.entityID;
+    }
 
-   public int getY() {
-      return this.posY;
-   }
+    public int getX() {
+        return this.posX;
+    }
 
-   public int getZ() {
-      return this.posZ;
-   }
+    public int getY() {
+        return this.posY;
+    }
 
-   public int getXPValue() {
-      return this.xpValue;
-   }
+    public int getZ() {
+        return this.posZ;
+    }
+
+    public int getXPValue() {
+        return this.xpValue;
+    }
 }

@@ -1,19 +1,21 @@
 package net.minecraft.command;
 
 public class CommandException extends Exception {
-   private final Object[] errorObjects;
 
-   public CommandException(String var1, Object... var2) {
-      super(var1);
-      this.errorObjects = var2;
-   }
+    private final Object[] errorObjects;
 
-   public CommandException(String var1, Throwable var2, Object... var3) {
-      super(var1, var2);
-      this.errorObjects = var3;
-   }
+    public CommandException(String message, Object... objects) {
+        super(message);
+        this.errorObjects = objects;
+    }
 
-   public Object[] getErrorObjects() {
-      return this.errorObjects;
-   }
+    public CommandException(String message, Throwable t, Object... objects) {
+        super(message, t);
+        this.errorObjects = objects;
+    }
+
+    public Object[] getErrorObjects() {
+        return this.errorObjects;
+    }
+
 }

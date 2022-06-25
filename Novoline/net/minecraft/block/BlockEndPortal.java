@@ -1,8 +1,5 @@
 package net.minecraft.block;
 
-import java.util.List;
-import java.util.Random;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -17,62 +14,84 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.Random;
+
 public class BlockEndPortal extends BlockContainer {
-   protected BlockEndPortal(Material var1) {
-      super(var1);
-      this.setLightLevel(1.0F);
-   }
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityEndPortal();
-   }
+    protected BlockEndPortal(Material materialIn) {
+        super(materialIn);
+        this.setLightLevel(1.0F);
+    }
 
-   public void setBlockBoundsBasedOnState(IBlockAccess var1, BlockPos var2) {
-      float var3 = 0.0625F;
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.0625F, 1.0F);
-   }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityEndPortal();
+    }
 
-   public boolean shouldSideBeRendered(IBlockAccess var1, BlockPos var2, EnumFacing var3) {
-      return var3 == EnumFacing.DOWN && super.shouldSideBeRendered(var1, var2, var3);
-   }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos) {
+        final float f = 0.0625F;
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
+    }
 
-   public void addCollisionBoxesToList(World var1, BlockPos var2, IBlockState var3, AxisAlignedBB var4, List var5, Entity var6) {
-   }
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+        return side == EnumFacing.DOWN && super.shouldSideBeRendered(worldIn, pos, side);
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    /**
+     * Add all collision boxes of this Block to the list that intersect with the given mask.
+     */
+    public void addCollisionBoxesToList(World worldIn, BlockPos pos, IBlockState state, AxisAlignedBB mask, List<AxisAlignedBB> list, Entity collidingEntity) {
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public int quantityDropped(Random var1) {
-      return 0;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public void onEntityCollidedWithBlock(World var1, BlockPos var2, IBlockState var3, Entity var4) {
-      if(var4.ridingEntity == null && var4.riddenByEntity == null && !var1.isRemote) {
-         var4.travelToDimension(1);
-      }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return 0;
+    }
 
-   }
+    /**
+     * Called When an Entity Collided with the Block
+     */
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn) {
+        if (entityIn.ridingEntity == null && entityIn.riddenByEntity == null && !worldIn.isRemote) {
+            entityIn.travelToDimension(1);
+        }
+    }
 
-   public void randomDisplayTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      double var5 = (double)((float)var2.getX() + var4.nextFloat());
-      double var7 = (double)((float)var2.getY() + 0.8F);
-      double var9 = (double)((float)var2.getZ() + var4.nextFloat());
-      double var11 = 0.0D;
-      double var13 = 0.0D;
-      double var15 = 0.0D;
-      var1.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, var5, var7, var9, 0.0D, 0.0D, 0.0D, new int[0]);
-   }
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        final double d0 = (float) pos.getX() + rand.nextFloat();
+        final double d1 = (float) pos.getY() + 0.8F;
+        final double d2 = (float) pos.getZ() + rand.nextFloat();
+        final double d3 = 0.0D;
+        final double d4 = 0.0D;
+        final double d5 = 0.0D;
+        worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0, d1, d2, d3, d4, d5);
+    }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return null;
-   }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return null;
+    }
 
-   public MapColor getMapColor(IBlockState var1) {
-      return MapColor.blackColor;
-   }
+    /**
+     * Get the MapColor for this Block and the given BlockState
+     */
+    public MapColor getMapColor(IBlockState state) {
+        return MapColor.blackColor;
+    }
+
 }

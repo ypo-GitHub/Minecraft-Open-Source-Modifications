@@ -1,114 +1,132 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class C0EPacketClickWindow implements Packet {
-   private int windowId;
-   private boolean b;
-   private int slotId;
-   private int usedButton;
-   private short actionNumber;
-   private ItemStack clickedItem;
-   private int mode;
+import java.io.IOException;
 
-   public C0EPacketClickWindow() {
-   }
+public class C0EPacketClickWindow implements Packet<INetHandlerPlayServer> {
 
-   public C0EPacketClickWindow(int var1, int var2, int var3, int var4, ItemStack var5, short var6) {
-      this.windowId = var1;
-      this.slotId = var2;
-      this.usedButton = var3;
-      this.clickedItem = var5.copy();
-      this.actionNumber = var6;
-      this.mode = var4;
-      this.b = false;
-   }
+    /**
+     * The id of the window which was clicked. 0 for player inventory.
+     */
+    private int windowId;
 
-   public C0EPacketClickWindow(int var1, int var2, int var3, int var4, ItemStack var5, short var6, boolean var7) {
-      this.windowId = var1;
-      this.slotId = var2;
-      this.usedButton = var3;
-      this.clickedItem = var5.copy();
-      this.actionNumber = var6;
-      this.mode = var4;
-      this.b = var7;
-   }
+    /**
+     * Id of the clicked slot
+     */
+    private int slotId;
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processClickWindow(this);
-   }
+    /**
+     * Button used
+     */
+    private int usedButton;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.windowId = var1.readByte();
-      this.slotId = var1.readShort();
-      this.usedButton = var1.readByte();
-      this.actionNumber = var1.readShort();
-      this.mode = var1.readByte();
-      this.clickedItem = var1.readItemStackFromBuffer();
-   }
+    /**
+     * A unique number for the action, used for transaction handling
+     */
+    private short actionNumber;
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeByte(this.windowId);
-      var1.writeShort(this.slotId);
-      var1.writeByte(this.usedButton);
-      var1.writeShort(this.actionNumber);
-      var1.writeByte(this.mode);
-      var1.a(this.clickedItem);
-   }
+    /**
+     * The item stack present in the slot
+     */
+    private ItemStack clickedItem;
 
-   public int getWindowId() {
-      return this.windowId;
-   }
+    /**
+     * Inventory operation mode
+     */
+    private int mode;
 
-   public int getSlotId() {
-      return this.slotId;
-   }
+    public C0EPacketClickWindow() {
+    }
 
-   public int getUsedButton() {
-      return this.usedButton;
-   }
+    public C0EPacketClickWindow(int windowId, int slotId, int usedButton, int mode, ItemStack clickedItem, short actionNumber) {
+        this.windowId = windowId;
+        this.slotId = slotId;
+        this.usedButton = usedButton;
+        this.clickedItem = clickedItem != null ? clickedItem.copy() : null;
+        this.actionNumber = actionNumber;
+        this.mode = mode;
+    }
 
-   public short getActionNumber() {
-      return this.actionNumber;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processClickWindow(this);
+    }
 
-   public ItemStack getClickedItem() {
-      return this.clickedItem;
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.windowId = buf.readByte();
+        this.slotId = buf.readShort();
+        this.usedButton = buf.readByte();
+        this.actionNumber = buf.readShort();
+        this.mode = buf.readByte();
+        this.clickedItem = buf.readItemStackFromBuffer();
+    }
 
-   public int getMode() {
-      return this.mode;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeByte(this.windowId);
+        buf.writeShort(this.slotId);
+        buf.writeByte(this.usedButton);
+        buf.writeShort(this.actionNumber);
+        buf.writeByte(this.mode);
+        buf.writeItemStackToBuffer(this.clickedItem);
+    }
 
-   public void setWindowId(int var1) {
-      this.windowId = var1;
-   }
+    public int getWindowId() {
+        return this.windowId;
+    }
 
-   public void setSlotId(int var1) {
-      this.slotId = var1;
-   }
+    public int getSlotId() {
+        return this.slotId;
+    }
 
-   public void setUsedButton(int var1) {
-      this.usedButton = var1;
-   }
+    public int getUsedButton() {
+        return this.usedButton;
+    }
 
-   public void setActionNumber(short var1) {
-      this.actionNumber = var1;
-   }
+    public short getActionNumber() {
+        return this.actionNumber;
+    }
 
-   public void setClickedItem(ItemStack var1) {
-      this.clickedItem = var1;
-   }
+    public ItemStack getClickedItem() {
+        return this.clickedItem;
+    }
 
-   public void a(int var1) {
-      this.mode = var1;
-   }
+    public int getMode() {
+        return this.mode;
+    }
 
-   public boolean d() {
-      return this.b;
-   }
+    public void setWindowId(int windowId) {
+        this.windowId = windowId;
+    }
+
+    public void setSlotId(int slotId) {
+        this.slotId = slotId;
+    }
+
+    public void setUsedButton(int usedButton) {
+        this.usedButton = usedButton;
+    }
+
+    public void setActionNumber(short actionNumber) {
+        this.actionNumber = actionNumber;
+    }
+
+    public void setClickedItem(ItemStack clickedItem) {
+        this.clickedItem = clickedItem;
+    }
+
+    public void setMode(int mode) {
+        this.mode = mode;
+    }
 }

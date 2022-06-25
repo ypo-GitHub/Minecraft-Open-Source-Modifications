@@ -1,203 +1,179 @@
 package net.shadersmod.client;
 
-import java.util.Arrays;
-import java.util.List;
 import net.optifine.Config;
 import net.optifine.StrUtils;
-import net.shadersmod.client.Shaders;
+
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class ShaderOption {
-   private String name = null;
-   private String description = null;
-   private String value = null;
-   private String[] values = null;
-   private String valueDefault = null;
-   private String[] paths = null;
-   private boolean enabled = true;
-   private boolean visible = true;
-   public static final String g = "§a";
-   public static final String h = "§c";
-   public static final String a = "§9";
-   private static String[] l;
+    private String name = null;
+    private String description = null;
+    private String value = null;
+    private String[] values = null;
+    private String valueDefault = null;
+    private String[] paths = null;
+    private boolean enabled = true;
+    private boolean visible = true;
+    public static final String COLOR_GREEN = "\u00a7a";
+    public static final String COLOR_RED = "\u00a7c";
+    public static final String COLOR_BLUE = "\u00a79";
 
-   public ShaderOption(String var1, String var2, String var3, String[] var4, String var5, String var6) {
-      this.name = var1;
-      this.description = var2;
-      p();
-      this.value = var3;
-      this.values = var4;
-      this.valueDefault = var5;
-      this.paths = new String[]{var6};
-   }
+    public ShaderOption(String name, String description, String value, String[] values, String valueDefault, String path) {
+        this.name = name;
+        this.description = description;
+        this.value = value;
+        this.values = values;
+        this.valueDefault = valueDefault;
 
-   public String getName() {
-      return this.name;
-   }
+        if (path != null) {
+            this.paths = new String[]{path};
+        }
+    }
 
-   public String getDescription() {
-      return this.description;
-   }
+    public String getName() {
+        return this.name;
+    }
 
-   public String getDescriptionText() {
-      String var1 = Config.c(this.description);
-      var1 = StrUtils.removePrefix(var1, "//");
-      var1 = Shaders.translate("option." + this.getName() + ".comment", var1);
-      return var1;
-   }
+    public String getDescription() {
+        return this.description;
+    }
 
-   public void setDescription(String var1) {
-      this.description = var1;
-   }
+    public String getDescriptionText() {
+        String s = Config.normalize(this.description);
+        s = StrUtils.removePrefix(s, "//");
+        s = Shaders.translate("option." + this.getName() + ".comment", s);
+        return s;
+    }
 
-   public String getValue() {
-      return this.value;
-   }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-   public boolean setValue(String var1) {
-      p();
-      int var3 = getIndex(var1, this.values);
-      if(var3 < 0) {
-         return false;
-      } else {
-         this.value = var1;
-         return true;
-      }
-   }
+    public String getValue() {
+        return this.value;
+    }
 
-   public String getValueDefault() {
-      return this.valueDefault;
-   }
+    public boolean setValue(String value) {
+        int i = getIndex(value, this.values);
 
-   public void resetValue() {
-      this.value = this.valueDefault;
-   }
+        if (i < 0) {
+            return false;
+        } else {
+            this.value = value;
+            return true;
+        }
+    }
 
-   public void nextValue() {
-      p();
-      int var2 = getIndex(this.value, this.values);
-      if(var2 >= 0) {
-         var2 = (var2 + 1) % this.values.length;
-         this.value = this.values[var2];
-      }
+    public String getValueDefault() {
+        return this.valueDefault;
+    }
 
-   }
+    public void resetValue() {
+        this.value = this.valueDefault;
+    }
 
-   public void prevValue() {
-      p();
-      int var2 = getIndex(this.value, this.values);
-      if(var2 >= 0) {
-         var2 = (var2 - 1 + this.values.length) % this.values.length;
-         this.value = this.values[var2];
-      }
+    public void nextValue() {
+        int i = getIndex(this.value, this.values);
 
-   }
+        if (i >= 0) {
+            i = (i + 1) % this.values.length;
+            this.value = this.values[i];
+        }
+    }
 
-   private static int getIndex(String var0, String[] var1) {
-      p();
-      int var3 = 0;
-      if(var3 < var1.length) {
-         String var4 = var1[var3];
-         if(var4.equals(var0)) {
-            return var3;
-         }
+    public void prevValue() {
+        int i = getIndex(this.value, this.values);
 
-         ++var3;
-      }
+        if (i >= 0) {
+            i = (i - 1 + this.values.length) % this.values.length;
+            this.value = this.values[i];
+        }
+    }
 
-      return -1;
-   }
+    private static int getIndex(String str, String[] strs) {
+        for (int i = 0; i < strs.length; ++i) {
+            String s = strs[i];
 
-   public String[] getPaths() {
-      return this.paths;
-   }
+            if (s.equals(str)) {
+                return i;
+            }
+        }
 
-   public void addPaths(String[] var1) {
-      List var3 = Arrays.asList(this.paths);
-      String[] var2 = p();
-      int var5 = var1.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         String var7 = var1[var6];
-         if(!var3.contains(var7)) {
-            this.paths = (String[])((String[])((String[])Config.addObjectToArray(this.paths, var7)));
-         }
+        return -1;
+    }
 
-         ++var6;
-      }
+    public String[] getPaths() {
+        return this.paths;
+    }
 
-   }
+    public void addPaths(String[] newPaths) {
+        List<String> list = Arrays.<String>asList(this.paths);
 
-   public boolean isEnabled() {
-      return this.enabled;
-   }
+        for (String s : newPaths) {
+            if (!list.contains(s)) {
+                this.paths = (String[]) (String[]) Config.addObjectToArray(this.paths, s);
+            }
+        }
+    }
 
-   public void setEnabled(boolean var1) {
-      this.enabled = var1;
-   }
+    public boolean isEnabled() {
+        return this.enabled;
+    }
 
-   public boolean isChanged() {
-      String[] var1 = p();
-      return !Config.equals(this.value, this.valueDefault);
-   }
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
-   public boolean isVisible() {
-      return this.visible;
-   }
+    public boolean isChanged() {
+        return !Config.equals(this.value, this.valueDefault);
+    }
 
-   public void setVisible(boolean var1) {
-      this.visible = var1;
-   }
+    public boolean isVisible() {
+        return this.visible;
+    }
 
-   public boolean isValidValue(String var1) {
-      String[] var2 = p();
-      return getIndex(var1, this.values) >= 0;
-   }
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 
-   public String getNameText() {
-      return Shaders.translate("option." + this.name, this.name);
-   }
+    public boolean isValidValue(String val) {
+        return getIndex(val, this.values) >= 0;
+    }
 
-   public String getValueText(String var1) {
-      return Shaders.translate("value." + this.name + "." + var1, var1);
-   }
+    public String getNameText() {
+        return Shaders.translate("option." + this.name, this.name);
+    }
 
-   public String getValueColor(String var1) {
-      return "";
-   }
+    public String getValueText(String val) {
+        return Shaders.translate("value." + this.name + "." + val, val);
+    }
 
-   public boolean matchesLine(String var1) {
-      return false;
-   }
+    public String getValueColor(String val) {
+        return "";
+    }
 
-   public boolean checkUsed() {
-      return false;
-   }
+    public boolean matchesLine(String line) {
+        return false;
+    }
 
-   public boolean isUsedInLine(String var1) {
-      return false;
-   }
+    public boolean checkUsed() {
+        return false;
+    }
 
-   public String getSourceLine() {
-      return null;
-   }
+    public boolean isUsedInLine(String line) {
+        return false;
+    }
 
-   public String[] getValues() {
-      return (String[])((String[])this.values.clone());
-   }
+    public String getSourceLine() {
+        return null;
+    }
 
-   public String toString() {
-      return "" + this.name + ", value: " + this.value + ", valueDefault: " + this.valueDefault + ", paths: " + Config.a((Object[])this.paths);
-   }
+    public String[] getValues() {
+        return (String[]) this.values.clone();
+    }
 
-   public static void b(String[] var0) {
-      l = var0;
-   }
-
-   public static String[] p() {
-      return l;
-   }
-
-   static {
-      b((String[])null);
-   }
+    public String toString() {
+        return "" + this.name + ", value: " + this.value + ", valueDefault: " + this.valueDefault + ", paths: " + Config.arrayToString((Object[]) this.paths);
+    }
 }

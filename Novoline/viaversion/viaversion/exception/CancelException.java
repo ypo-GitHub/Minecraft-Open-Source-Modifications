@@ -1,31 +1,45 @@
 package viaversion.viaversion.exception;
 
+import io.netty.handler.codec.CodecException;
 import viaversion.viaversion.api.Via;
-import viaversion.viaversion.exception.CancelException$1;
 
+/**
+ * Thrown during packet transformation to cancel the packet.
+ * Internally catched to then throw the appropriate {@link CodecException} for Netty's handler.
+ */
 public class CancelException extends Exception {
-   public static final CancelException CACHED = new CancelException$1("This packet is supposed to be cancelled; If you have debug enabled, you can ignore these");
+    public static final CancelException CACHED = new CancelException("This packet is supposed to be cancelled; If you have debug enabled, you can ignore these") {
+        @Override
+        public Throwable fillInStackTrace() {
+            return this;
+        }
+    };
 
-   public CancelException() {
-   }
+    public CancelException() {
+    }
 
-   public CancelException(String var1) {
-      super(var1);
-   }
+    public CancelException(String message) {
+        super(message);
+    }
 
-   public CancelException(String var1, Throwable var2) {
-      super(var1, var2);
-   }
+    public CancelException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-   public CancelException(Throwable var1) {
-      super(var1);
-   }
+    public CancelException(Throwable cause) {
+        super(cause);
+    }
 
-   public CancelException(String var1, Throwable var2, boolean var3, boolean var4) {
-      super(var1, var2, var3, var4);
-   }
+    public CancelException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 
-   public static CancelException generate() {
-      return Via.getManager().isDebug()?new CancelException():CACHED;
-   }
+    /**
+     * Returns a cached CancelException or a new instance when {@link viaversion.viaversion.ViaManager#isDebug()} is true.
+     *
+     * @return a CancelException instance
+     */
+    public static CancelException generate() {
+        return Via.getManager().isDebug() ? new CancelException() : CACHED;
+    }
 }

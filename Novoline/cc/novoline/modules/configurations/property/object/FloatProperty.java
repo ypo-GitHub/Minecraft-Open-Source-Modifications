@@ -1,53 +1,69 @@
 package cc.novoline.modules.configurations.property.object;
 
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class FloatProperty extends AbstractNumberProperty {
-   public FloatProperty(@Nullable Float var1) {
-      super(var1);
-   }
+public final class FloatProperty extends AbstractNumberProperty<FloatProperty, Float> {
 
-   public FloatProperty() {
-      this(Float.valueOf(0.0F));
-   }
+    /* constructors */
+    public FloatProperty(@Nullable Float value) {
+        super(value);
+    }
 
-   @NotNull
-   public static FloatProperty of(@Nullable Float var0) {
-      return new FloatProperty(var0);
-   }
+    public FloatProperty() {
+        this(0.0F);
+    }
 
-   @NotNull
-   public static FloatProperty create() {
-      return new FloatProperty();
-   }
+    public static @NotNull FloatProperty of(@Nullable Float value) {
+        return new FloatProperty(value);
+    }
 
-   protected void e(@Nullable Float var1) {
-      this.value = Float.valueOf(((Float)this.value).floatValue() + var1.floatValue());
-   }
+    public static @NotNull FloatProperty create() {
+        return new FloatProperty();
+    }
 
-   protected void a(@Nullable Float var1) {
-      this.value = Float.valueOf(((Float)this.value).floatValue() - var1.floatValue());
-   }
+    /* methods */
+    @Override
+    protected void add(@Nullable Float number) {
+        this.value += number;
+    }
 
-   protected boolean greaterThan(@Nullable Float var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?this.value != null:(this.value == null?true:((Float)this.value).floatValue() > var1.floatValue());
-   }
+    @Override
+    protected void subtract(@Nullable Float number) {
+        this.value -= number;
+    }
 
-   protected boolean lessThan(@Nullable Float var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?false:(this.value == null?true:((Float)this.value).floatValue() < var1.floatValue());
-   }
+    @Override
+    protected boolean greaterThan(@Nullable Float number) {
+        if(number == null) {
+            return value != null;
+        } else if(value == null) {
+            return true;
+        } else {
+            return value > number;
+        }
+    }
 
-   protected boolean inLimits(@NotNull Float var1) {
-      int[] var2 = IntProperty.a();
-      return (this.minimum == null || var1.floatValue() >= ((Float)this.minimum).floatValue()) && (this.maximum == null || var1.floatValue() <= ((Float)this.maximum).floatValue());
-   }
+    @Override
+    protected boolean lessThan(@Nullable Float number) {
+        if(number == null) {
+            return false;
+        } else if(value == null) {
+            return true;
+        } else {
+            return value < number;
+        }
+    }
 
-   protected FloatProperty self() {
-      return this;
-   }
+    @Override
+    protected boolean inLimits(@NotNull Float number) {
+        return (minimum == null || number >= minimum) && (maximum == null || number <= maximum);
+    }
+
+    @Override
+    protected FloatProperty self() {
+        return this;
+    }
+
 }

@@ -1,52 +1,32 @@
 package viaversion.viarewind.storage;
 
-import net.acE;
-
 public class BlockState {
-   private int id;
-   private int data;
-   private static String c;
+	private int id;
+	private int data;
 
-   public BlockState(int var1, int var2) {
-      b();
-      this.id = var1;
-      this.data = var2;
-      if(acE.b() == null) {
-         b("Kb6D6b");
-      }
+	public BlockState(int id, int data) {
+		this.id = id;
+		this.data = data;
+	}
 
-   }
+	public static BlockState rawToState(int raw) {
+		return new BlockState(raw >> 4, raw & 0xF);
+	}
 
-   public static BlockState rawToState(int var0) {
-      return new BlockState(var0 >> 4, var0 & 15);
-   }
+	public static int stateToRaw(BlockState state) {
+		return (state.getId() << 4) | (state.getData() & 0xF);
+	}
 
-   public static int stateToRaw(BlockState var0) {
-      return var0.getId() << 4 | var0.getData() & 15;
-   }
+	public int getId() {
+		return this.id;
+	}
 
-   public int getId() {
-      return this.id;
-   }
+	public int getData() {
+		return this.data;
+	}
 
-   public int getData() {
-      return this.data;
-   }
-
-   public String toString() {
-      String var1 = b();
-      return "BlockState{id: " + this.id + ", data: " + this.data + "}";
-   }
-
-   public static void b(String var0) {
-      c = var0;
-   }
-
-   public static String b() {
-      return c;
-   }
-
-   static {
-      b((String)null);
-   }
+	@Override
+	public String toString() {
+		return "BlockState{id: " + id + ", data: " + data + "}";
+	}
 }

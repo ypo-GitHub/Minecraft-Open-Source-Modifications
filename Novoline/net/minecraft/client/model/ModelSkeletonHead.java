@@ -1,32 +1,40 @@
 package net.minecraft.client.model;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
 
 public class ModelSkeletonHead extends ModelBase {
-   public ModelRenderer skeletonHead;
 
-   public ModelSkeletonHead() {
-      this(0, 35, 64, 64);
-   }
+    public ModelRenderer skeletonHead;
 
-   public ModelSkeletonHead(int var1, int var2, int var3, int var4) {
-      this.textureWidth = var3;
-      this.textureHeight = var4;
-      this.skeletonHead = new ModelRenderer(this, var1, var2);
-      this.skeletonHead.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, 0.0F);
-      this.skeletonHead.setRotationPoint(0.0F, 0.0F, 0.0F);
-   }
+    public ModelSkeletonHead() {
+        this(0, 35, 64, 64);
+    }
 
-   public void render(Entity var1, float var2, float var3, float var4, float var5, float var6, float var7) {
-      this.setRotationAngles(var2, var3, var4, var5, var6, var7, var1);
-      this.skeletonHead.render(var7);
-   }
+    public ModelSkeletonHead(int p_i1155_1_, int p_i1155_2_, int p_i1155_3_, int p_i1155_4_) {
+        this.textureWidth = p_i1155_3_;
+        this.textureHeight = p_i1155_4_;
+        this.skeletonHead = new ModelRenderer(this, p_i1155_1_, p_i1155_2_);
+        this.skeletonHead.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, 0.0F);
+        this.skeletonHead.setRotationPoint(0.0F, 0.0F, 0.0F);
+    }
 
-   public void setRotationAngles(float var1, float var2, float var3, float var4, float var5, float var6, Entity var7) {
-      super.setRotationAngles(var1, var2, var3, var4, var5, var6, var7);
-      this.skeletonHead.rotateAngleY = var4 / 57.295776F;
-      this.skeletonHead.rotateAngleX = var5 / 57.295776F;
-   }
+    /**
+     * Sets the models various rotation angles then renders the model.
+     */
+    public void render(Entity entity, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float scale) {
+        this.setRotationAngles(p_78088_2_, p_78088_3_, p_78088_4_, p_78088_5_, p_78088_6_, scale, entity);
+        this.skeletonHead.render(scale);
+    }
+
+    /**
+     * Sets the model's various rotation angles. For bipeds, par1 and par2 are used for animating the movement of arms
+     * and legs, where par1 represents the time(so that arms and legs swing back and forth) and par2 represents how
+     * "far" arms and legs can swing at most.
+     */
+    public void setRotationAngles(float p_78087_1_, float p_78087_2_, float p_78087_3_, float p_78087_4_, float p_78087_5_, float p_78087_6_, Entity entity) {
+        super.setRotationAngles(p_78087_1_, p_78087_2_, p_78087_3_, p_78087_4_, p_78087_5_, p_78087_6_, entity);
+        this.skeletonHead.rotateAngleY = p_78087_4_ / (180F / (float) Math.PI);
+        this.skeletonHead.rotateAngleX = p_78087_5_ / (180F / (float) Math.PI);
+    }
+
 }

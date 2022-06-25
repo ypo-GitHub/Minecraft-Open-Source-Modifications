@@ -1,151 +1,171 @@
 package net.minecraft.item;
 
-import java.util.List;
 import net.minecraft.block.BlockFence;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
-import net.minecraft.entity.EntityList$EntityEggInfo;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.IEntityLivingData;
+import net.minecraft.entity.*;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.MobSpawnerBaseLogic;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityMobSpawner;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.MovingObjectPosition$MovingObjectType;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
 
+import java.util.List;
+
 public class ItemMonsterPlacer extends Item {
-   public ItemMonsterPlacer() {
-      this.setHasSubtypes(true);
-      this.setCreativeTab(CreativeTabs.tabMisc);
-   }
+    public ItemMonsterPlacer() {
+        this.setHasSubtypes(true);
+        this.setCreativeTab(CreativeTabs.tabMisc);
+    }
 
-   public String getItemStackDisplayName(ItemStack var1) {
-      String var2 = ("" + StatCollector.translateToLocal(this.getUnlocalizedName() + ".name")).trim();
-      String var3 = EntityList.getStringFromID(var1.getMetadata());
-      var2 = var2 + " " + StatCollector.translateToLocal("entity." + var3 + ".name");
-      return var2;
-   }
+    public String getItemStackDisplayName(ItemStack stack) {
+        String s = ("" + StatCollector.translateToLocal(this.getUnlocalizedName() + ".name")).trim();
+        String s1 = EntityList.getStringFromID(stack.getMetadata());
 
-   public int getColorFromItemStack(ItemStack var1, int var2) {
-      EntityList$EntityEggInfo var3 = (EntityList$EntityEggInfo)EntityList.entityEggs.get(Integer.valueOf(var1.getMetadata()));
-      return var3.primaryColor;
-   }
+        if (s1 != null) {
+            s = s + " " + StatCollector.translateToLocal("entity." + s1 + ".name");
+        }
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var3.isRemote) {
-         return true;
-      } else if(!var2.a(var4.offset(var5), var5, var1)) {
-         return false;
-      } else {
-         IBlockState var9 = var3.getBlockState(var4);
-         if(var9.getBlock() == Blocks.mob_spawner) {
-            TileEntity var10 = var3.getTileEntity(var4);
-            if(var10 instanceof TileEntityMobSpawner) {
-               MobSpawnerBaseLogic var11 = ((TileEntityMobSpawner)var10).getSpawnerBaseLogic();
-               var11.setEntityName(EntityList.getStringFromID(var1.getMetadata()));
-               var10.markDirty();
-               var3.markBlockForUpdate(var4);
-               if(!var2.abilities.isCreative()) {
-                  --var1.stackSize;
-               }
+        return s;
+    }
 
-               return true;
-            }
-         }
+    public int getColorFromItemStack(ItemStack stack, int renderPass) {
+        EntityList.EntityEggInfo entitylist$entityegginfo = EntityList.entityEggs.get(stack.getMetadata());
+        return entitylist$entityegginfo != null ? renderPass == 0 ? entitylist$entityegginfo.primaryColor : entitylist$entityegginfo.secondaryColor : 16777215;
+    }
 
-         var4 = var4.offset(var5);
-         double var14 = 0.0D;
-         if(var5 == EnumFacing.UP && var9 instanceof BlockFence) {
-            var14 = 0.5D;
-         }
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (worldIn.isRemote) {
+            return true;
+        } else if (!playerIn.canPlayerEdit(pos.offset(side), side, stack)) {
+            return false;
+        } else {
+            IBlockState iblockstate = worldIn.getBlockState(pos);
 
-         Entity var12 = spawnCreature(var3, var1.getMetadata(), (double)var4.getX() + 0.5D, (double)var4.getY() + var14, (double)var4.getZ() + 0.5D);
-         if(var12 instanceof EntityLivingBase && var1.hasDisplayName()) {
-            var12.setCustomNameTag(var1.getDisplayName());
-         }
+            if (iblockstate.getBlock() == Blocks.mob_spawner) {
+                TileEntity tileentity = worldIn.getTileEntity(pos);
 
-         if(!var2.abilities.isCreative()) {
-            --var1.stackSize;
-         }
+                if (tileentity instanceof TileEntityMobSpawner) {
+                    MobSpawnerBaseLogic mobspawnerbaselogic = ((TileEntityMobSpawner) tileentity).getSpawnerBaseLogic();
+                    mobspawnerbaselogic.setEntityName(EntityList.getStringFromID(stack.getMetadata()));
+                    tileentity.markDirty();
+                    worldIn.markBlockForUpdate(pos);
 
-         return true;
-      }
-   }
+                    if (!playerIn.abilities.isCreative()) {
+                        --stack.stackSize;
+                    }
 
-   public ItemStack onItemRightClick(ItemStack var1, World var2, EntityPlayer var3) {
-      if(var2.isRemote) {
-         return var1;
-      } else {
-         MovingObjectPosition var4 = this.getMovingObjectPositionFromPlayer(var2, var3, true);
-         if(var4.typeOfHit == MovingObjectPosition$MovingObjectType.BLOCK) {
-            BlockPos var5 = var4.getBlockPos();
-            if(!var2.isBlockModifiable(var3, var5)) {
-               return var1;
+                    return true;
+                }
             }
 
-            if(!var3.a(var5, var4.facing, var1)) {
-               return var1;
+            pos = pos.offset(side);
+            double d0 = 0.0D;
+
+            if (side == EnumFacing.UP && iblockstate instanceof BlockFence) {
+                d0 = 0.5D;
             }
 
-            if(var2.getBlockState(var5).getBlock() instanceof BlockLiquid) {
-               Entity var6 = spawnCreature(var2, var1.getMetadata(), (double)var5.getX() + 0.5D, (double)var5.getY() + 0.5D, (double)var5.getZ() + 0.5D);
-               if(var6 instanceof EntityLivingBase && var1.hasDisplayName()) {
-                  var6.setCustomNameTag(var1.getDisplayName());
-               }
+            Entity entity = spawnCreature(worldIn, stack.getMetadata(), (double) pos.getX() + 0.5D, (double) pos.getY() + d0, (double) pos.getZ() + 0.5D);
 
-               if(!var3.abilities.isCreative()) {
-                  --var1.stackSize;
-               }
+            if (entity != null) {
+                if (entity instanceof EntityLivingBase && stack.hasDisplayName()) {
+                    entity.setCustomNameTag(stack.getDisplayName());
+                }
 
-               var3.triggerAchievement(StatList.objectUseStats[Item.b(this)]);
+                if (!playerIn.abilities.isCreative()) {
+                    --stack.stackSize;
+                }
             }
-         }
 
-         return var1;
-      }
-   }
+            return true;
+        }
+    }
 
-   public static Entity spawnCreature(World var0, int var1, double var2, double var4, double var6) {
-      if(!EntityList.entityEggs.containsKey(Integer.valueOf(var1))) {
-         return null;
-      } else {
-         Entity var8 = null;
+    /**
+     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
+     */
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn) {
+        if (worldIn.isRemote) {
+            return itemStackIn;
+        } else {
+            MovingObjectPosition movingobjectposition = this.getMovingObjectPositionFromPlayer(worldIn, playerIn, true);
 
-         for(int var9 = 0; var9 < 1; ++var9) {
-            var8 = EntityList.createEntityByID(var1, var0);
-            if(var8 instanceof EntityLivingBase) {
-               EntityLiving var10 = (EntityLiving)var8;
-               var8.setLocationAndAngles(var2, var4, var6, MathHelper.wrapAngleTo180_float(var0.rand.nextFloat() * 360.0F), 0.0F);
-               var10.rotationYawHead = var10.rotationYaw;
-               var10.renderYawOffset = var10.rotationYaw;
-               var10.onInitialSpawn(var0.getDifficultyForLocation(new BlockPos(var10)), (IEntityLivingData)null);
-               var0.spawnEntityInWorld(var8);
-               var10.playLivingSound();
+            if (movingobjectposition != null) {
+                if (movingobjectposition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                    BlockPos blockpos = movingobjectposition.getBlockPos();
+
+                    if (!worldIn.isBlockModifiable(playerIn, blockpos)) {
+                        return itemStackIn;
+                    }
+
+                    if (!playerIn.canPlayerEdit(blockpos, movingobjectposition.facing, itemStackIn)) {
+                        return itemStackIn;
+                    }
+
+                    if (worldIn.getBlockState(blockpos).getBlock() instanceof BlockLiquid) {
+                        Entity entity = spawnCreature(worldIn, itemStackIn.getMetadata(), (double) blockpos.getX() + 0.5D, (double) blockpos.getY() + 0.5D, (double) blockpos.getZ() + 0.5D);
+
+                        if (entity != null) {
+                            if (entity instanceof EntityLivingBase && itemStackIn.hasDisplayName()) {
+                                entity.setCustomNameTag(itemStackIn.getDisplayName());
+                            }
+
+                            if (!playerIn.abilities.isCreative()) {
+                                --itemStackIn.stackSize;
+                            }
+
+                            playerIn.triggerAchievement(StatList.objectUseStats[Item.getIdFromItem(this)]);
+                        }
+                    }
+                }
+
             }
-         }
+            return itemStackIn;
+        }
+    }
 
-         return var8;
-      }
-   }
+    /**
+     * Spawns the creature specified by the egg's type in the location specified by the last three parameters.
+     * Parameters: world, entityID, x, y, z.
+     */
+    public static Entity spawnCreature(World worldIn, int entityID, double x, double y, double z) {
+        if (!EntityList.entityEggs.containsKey(entityID)) {
+            return null;
+        } else {
+            Entity entity = null;
 
-   public void getSubItems(Item var1, CreativeTabs var2, List var3) {
-      for(EntityList$EntityEggInfo var5 : EntityList.entityEggs.values()) {
-         var3.add(new ItemStack(var1, 1, var5.spawnedID));
-      }
+            for (int i = 0; i < 1; ++i) {
+                entity = EntityList.createEntityByID(entityID, worldIn);
 
-   }
+                if (entity instanceof EntityLivingBase) {
+                    EntityLiving entityliving = (EntityLiving) entity;
+                    entity.setLocationAndAngles(x, y, z, MathHelper.wrapAngleTo180_float(worldIn.rand.nextFloat() * 360.0F), 0.0F);
+                    entityliving.rotationYawHead = entityliving.rotationYaw;
+                    entityliving.renderYawOffset = entityliving.rotationYaw;
+                    entityliving.onInitialSpawn(worldIn.getDifficultyForLocation(new BlockPos(entityliving)), null);
+                    worldIn.spawnEntityInWorld(entity);
+                    entityliving.playLivingSound();
+                }
+            }
+
+            return entity;
+        }
+    }
+
+    /**
+     * returns a list of items with the same ID, but different meta (eg: dye returns 16 items)
+     */
+    public void getSubItems(Item itemIn, CreativeTabs tab, List<ItemStack> subItems) {
+        for (EntityList.EntityEggInfo entitylist$entityegginfo : EntityList.entityEggs.values()) {
+            subItems.add(new ItemStack(itemIn, 1, entitylist$entityegginfo.spawnedID));
+        }
+    }
 }

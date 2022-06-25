@@ -1,36 +1,32 @@
 package cc.novoline.gui.group;
 
-import cc.novoline.gui.group.GroupLine;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.function.Function;
 
-public class GroupSupplierLine implements GroupLine {
-   private final Function stringFunction;
-   private static String b;
+/**
+ * @author xDelsy
+ */
+public class GroupSupplierLine<T> implements GroupLine<T> {
 
-   protected GroupSupplierLine(Function var1) {
-      this.stringFunction = var1;
-   }
+    /* fields */
+    @NonNull
+    private final Function<T, String> stringFunction;
 
-   static GroupSupplierLine of(Function var0) {
-      return new GroupSupplierLine(var0);
-   }
+    /* constructors */
+    protected GroupSupplierLine(@NonNull Function<T, String> stringFunction) {
+        this.stringFunction = stringFunction;
+    }
 
-   public String getText(Object var1) {
-      return (String)this.stringFunction.apply(var1);
-   }
+    @NonNull
+    static <T> GroupSupplierLine<T> of(@NonNull Function<T, String> stringFunction) {
+        return new GroupSupplierLine<>(stringFunction);
+    }
 
-   public static void b(String var0) {
-      b = var0;
-   }
+    /* methods */
+    @Override
+    public String getText(T t) {
+        return this.stringFunction.apply(t);
+    }
 
-   public static String b() {
-      return b;
-   }
-
-   static {
-      if(b() == null) {
-         b("YjyEw");
-      }
-
-   }
 }

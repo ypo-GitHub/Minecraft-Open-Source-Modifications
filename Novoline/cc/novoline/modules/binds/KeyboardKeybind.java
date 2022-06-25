@@ -1,60 +1,55 @@
 package cc.novoline.modules.binds;
 
-import cc.novoline.modules.binds.ModuleKeybind;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Objects;
 
+/**
+ * @author xDelsy
+ */
 public final class KeyboardKeybind implements ModuleKeybind {
-   private int key;
-   private static String b;
 
-   private KeyboardKeybind(int var1) {
-      this.key = var1;
-   }
+    /* fields */
+    private int key;
 
-   public static KeyboardKeybind of(int var0) {
-      return new KeyboardKeybind(var0);
-   }
+    /* constructors */
+    private KeyboardKeybind(int key) {
+        this.key = key;
+    }
 
-   public int getKey() {
-      return this.key;
-   }
+    @NonNull
+    public static KeyboardKeybind of(int key) {
+        return new KeyboardKeybind(key);
+    }
 
-   public void setKey(int var1) {
-      this.key = var1;
-   }
+    /* methods */
+    @Override
+    public int getKey() {
+        return this.key;
+    }
 
-   public boolean equals(Object var1) {
-      String var2 = b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         KeyboardKeybind var3 = (KeyboardKeybind)var1;
-         return this.key == var3.key;
-      } else {
-         return false;
-      }
-   }
+    //region Lombok
+    public void setKey(int key) {
+        this.key = key;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(this.key)});
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final KeyboardKeybind that = (KeyboardKeybind) o;
+        return this.key == that.key;
+    }
 
-   public String toString() {
-      return "KeyboardKeybind{key=" + this.key + '}';
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.key);
+    }
 
-   public static void b(String var0) {
-      b = var0;
-   }
+    @Override
+    public String toString() {
+        return "KeyboardKeybind{" + "key=" + this.key + '}';
+    }
+    //endregion
 
-   public static String b() {
-      return b;
-   }
-
-   static {
-      if(b() == null) {
-         b("FcIPUc");
-      }
-
-   }
 }

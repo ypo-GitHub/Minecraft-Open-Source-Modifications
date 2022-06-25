@@ -2,18 +2,20 @@ package net.minecraft.item;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
-import net.minecraft.item.ItemFood;
-import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 public class ItemSoup extends ItemFood {
-   public ItemSoup(int var1) {
-      super(var1, false);
-      this.setMaxStackSize(1);
-   }
+    public ItemSoup(int healAmount) {
+        super(healAmount, false);
+        this.setMaxStackSize(1);
+    }
 
-   public ItemStack onItemUseFinish(ItemStack var1, World var2, EntityPlayer var3) {
-      super.onItemUseFinish(var1, var2, var3);
-      return new ItemStack(Items.bowl);
-   }
+    /**
+     * Called when the player finishes using this Item (E.g. finishes eating.). Not called when the player stops using
+     * the Item before the action is complete.
+     */
+    public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityPlayer playerIn) {
+        super.onItemUseFinish(stack, worldIn, playerIn);
+        return new ItemStack(Items.bowl);
+    }
 }

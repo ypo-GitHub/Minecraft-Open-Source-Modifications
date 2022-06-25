@@ -1,94 +1,92 @@
 package net.minecraft.network.play.client;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 import net.minecraft.util.MovementInput;
 
-public class C0CPacketInput implements Packet {
-   private float strafeSpeed;
-   private float forwardSpeed;
-   private boolean jumping;
-   private boolean sneaking;
+import java.io.IOException;
 
-   public void b(float var1) {
-      this.strafeSpeed = var1;
-   }
+public class C0CPacketInput implements Packet<INetHandlerPlayServer> {
+    /**
+     * Positive for left strafe, negative for right
+     */
+    private float strafeSpeed;
 
-   public void a(float var1) {
-      this.forwardSpeed = var1;
-   }
+    /**
+     * Positive for forward, negative for backward
+     */
+    private float forwardSpeed;
+    private boolean jumping;
+    private boolean sneaking;
 
-   public void a(boolean var1) {
-      this.jumping = var1;
-   }
+    public C0CPacketInput() {
+    }
 
-   public void b(boolean var1) {
-      this.sneaking = var1;
-   }
+    public C0CPacketInput(float strafeSpeed, float forwardSpeed, boolean jumping, boolean sneaking) {
+        this.strafeSpeed = strafeSpeed;
+        this.forwardSpeed = forwardSpeed;
+        this.jumping = jumping;
+        this.sneaking = sneaking;
+    }
 
-   public C0CPacketInput() {
-   }
+    public C0CPacketInput(MovementInput movementInput) {
+        this.strafeSpeed = movementInput.getMoveStrafe();
+        this.forwardSpeed = movementInput.getMoveStrafe();
+        this.jumping = movementInput.jump();
+        this.sneaking = movementInput.sneak();
+    }
 
-   public C0CPacketInput(float var1, float var2, boolean var3, boolean var4) {
-      this.strafeSpeed = var1;
-      this.forwardSpeed = var2;
-      this.jumping = var3;
-      this.sneaking = var4;
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.strafeSpeed = buf.readFloat();
+        this.forwardSpeed = buf.readFloat();
+        byte b0 = buf.readByte();
+        this.jumping = (b0 & 1) > 0;
+        this.sneaking = (b0 & 2) > 0;
+    }
 
-   public C0CPacketInput(MovementInput var1) {
-      this.strafeSpeed = var1.getMoveStrafe();
-      this.forwardSpeed = var1.getMoveStrafe();
-      this.jumping = var1.jump();
-      this.sneaking = var1.sneak();
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeFloat(this.strafeSpeed);
+        buf.writeFloat(this.forwardSpeed);
+        byte b0 = 0;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.strafeSpeed = var1.readFloat();
-      this.forwardSpeed = var1.readFloat();
-      byte var2 = var1.readByte();
-      this.jumping = (var2 & 1) > 0;
-      this.sneaking = (var2 & 2) > 0;
-   }
+        if (this.jumping) {
+            b0 = (byte) (b0 | 1);
+        }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeFloat(this.strafeSpeed);
-      var1.writeFloat(this.forwardSpeed);
-      byte var2 = 0;
-      if(this.jumping) {
-         var2 = (byte)(var2 | 1);
-      }
+        if (this.sneaking) {
+            b0 = (byte) (b0 | 2);
+        }
 
-      if(this.sneaking) {
-         var2 = (byte)(var2 | 2);
-      }
+        buf.writeByte(b0);
+    }
 
-      var1.writeByte(var2);
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler) {
+        handler.processInput(this);
+    }
 
-   public void processPacket(INetHandlerPlayServer var1) {
-      var1.processInput(this);
-   }
+    public float getStrafeSpeed() {
+        return this.strafeSpeed;
+    }
 
-   public float getStrafeSpeed() {
-      return this.strafeSpeed;
-   }
+    public float getForwardSpeed() {
+        return this.forwardSpeed;
+    }
 
-   public float getForwardSpeed() {
-      return this.forwardSpeed;
-   }
+    public boolean isJumping() {
+        return this.jumping;
+    }
 
-   public boolean isJumping() {
-      return this.jumping;
-   }
-
-   public boolean isSneaking() {
-      return this.sneaking;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public boolean isSneaking() {
+        return this.sneaking;
+    }
 }

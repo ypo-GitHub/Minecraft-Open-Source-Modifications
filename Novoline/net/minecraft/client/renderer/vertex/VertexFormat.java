@@ -1,161 +1,172 @@
 package net.minecraft.client.renderer.vertex;
 
 import com.google.common.collect.Lists;
-import java.util.List;
-import net.minecraft.client.renderer.vertex.VertexFormat$1;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 public class VertexFormat {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final List elements;
-   private final List offsets;
-   private int nextOffset;
-   private int colorElementOffset;
-   private final List uvOffsetsById;
-   private int normalElementOffset;
 
-   public VertexFormat(VertexFormat var1) {
-      this();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-      for(int var2 = 0; var2 < var1.getElementCount(); ++var2) {
-         this.func_181721_a(var1.getElement(var2));
-      }
+    private final List<VertexFormatElement> elements;
+    private final List<Integer> offsets;
 
-      this.nextOffset = var1.getNextOffset();
-   }
+    /**
+     * The next available offset in this vertex format
+     */
+    private int nextOffset;
+    private int colorElementOffset;
+    private final List<Integer> uvOffsetsById;
+    private int normalElementOffset;
 
-   public VertexFormat() {
-      this.elements = Lists.newArrayList();
-      this.offsets = Lists.newArrayList();
-      this.nextOffset = 0;
-      this.colorElementOffset = -1;
-      this.uvOffsetsById = Lists.newArrayList();
-      this.normalElementOffset = -1;
-   }
+    public VertexFormat(VertexFormat vertexFormatIn) {
+        this();
 
-   public void clear() {
-      this.elements.clear();
-      this.offsets.clear();
-      this.colorElementOffset = -1;
-      this.uvOffsetsById.clear();
-      this.normalElementOffset = -1;
-      this.nextOffset = 0;
-   }
+        for (int i = 0; i < vertexFormatIn.getElementCount(); ++i) {
+            this.func_181721_a(vertexFormatIn.getElement(i));
+        }
 
-   public VertexFormat func_181721_a(VertexFormatElement var1) {
-      if(var1.isPositionElement() && this.hasPosition()) {
-         LOGGER.warn("VertexFormat error: Trying to add a position VertexFormatElement when one already exists, ignoring.");
-      } else {
-         this.elements.add(var1);
-         this.offsets.add(Integer.valueOf(this.nextOffset));
-         switch(VertexFormat$1.$SwitchMap$net$minecraft$client$renderer$vertex$VertexFormatElement$EnumUsage[var1.getUsage().ordinal()]) {
-         case 1:
-            this.normalElementOffset = this.nextOffset;
-            break;
-         case 2:
-            this.colorElementOffset = this.nextOffset;
-            break;
-         case 3:
-            this.uvOffsetsById.add(var1.getIndex(), Integer.valueOf(this.nextOffset));
-         }
+        this.nextOffset = vertexFormatIn.getNextOffset();
+    }
 
-         this.nextOffset += var1.getSize();
-      }
+    public VertexFormat() {
+        this.elements = Lists.newArrayList();
+        this.offsets = Lists.newArrayList();
+        this.nextOffset = 0;
+        this.colorElementOffset = -1;
+        this.uvOffsetsById = Lists.newArrayList();
+        this.normalElementOffset = -1;
+    }
 
-      return this;
-   }
+    public void clear() {
+        this.elements.clear();
+        this.offsets.clear();
+        this.colorElementOffset = -1;
+        this.uvOffsetsById.clear();
+        this.normalElementOffset = -1;
+        this.nextOffset = 0;
+    }
 
-   public boolean hasNormal() {
-      return this.normalElementOffset >= 0;
-   }
+    @SuppressWarnings("incomplete-switch")
+    public VertexFormat func_181721_a(VertexFormatElement p_181721_1_) {
+        if (p_181721_1_.isPositionElement() && this.hasPosition()) {
+            LOGGER.warn("VertexFormat error: Trying to add a position VertexFormatElement when one already exists, ignoring.");
+        } else {
+            this.elements.add(p_181721_1_);
+            this.offsets.add(this.nextOffset);
 
-   public int getNormalOffset() {
-      return this.normalElementOffset;
-   }
+            switch (p_181721_1_.getUsage()) {
+                case NORMAL:
+                    this.normalElementOffset = this.nextOffset;
+                    break;
 
-   public boolean hasColor() {
-      return this.colorElementOffset >= 0;
-   }
+                case COLOR:
+                    this.colorElementOffset = this.nextOffset;
+                    break;
 
-   public int getColorOffset() {
-      return this.colorElementOffset;
-   }
+                case UV:
+                    this.uvOffsetsById.add(p_181721_1_.getIndex(), this.nextOffset);
+            }
+            this.nextOffset += p_181721_1_.getSize();
+        }
 
-   public boolean hasUvOffset(int var1) {
-      return this.uvOffsetsById.size() - 1 >= var1;
-   }
+        return this;
+    }
 
-   public int getUvOffsetById(int var1) {
-      return ((Integer)this.uvOffsetsById.get(var1)).intValue();
-   }
+    public boolean hasNormal() {
+        return this.normalElementOffset >= 0;
+    }
 
-   public String toString() {
-      String var1 = "format: " + this.elements.size() + " elements: ";
+    public int getNormalOffset() {
+        return this.normalElementOffset;
+    }
 
-      for(int var2 = 0; var2 < this.elements.size(); ++var2) {
-         var1 = var1 + ((VertexFormatElement)this.elements.get(var2)).toString();
-         if(var2 != this.elements.size() - 1) {
-            var1 = var1 + " ";
-         }
-      }
+    public boolean hasColor() {
+        return this.colorElementOffset >= 0;
+    }
 
-      return var1;
-   }
+    public int getColorOffset() {
+        return this.colorElementOffset;
+    }
 
-   private boolean hasPosition() {
-      int var1 = 0;
+    public boolean hasUvOffset(int id) {
+        return this.uvOffsetsById.size() - 1 >= id;
+    }
 
-      for(int var2 = this.elements.size(); var1 < var2; ++var1) {
-         VertexFormatElement var3 = (VertexFormatElement)this.elements.get(var1);
-         if(var3.isPositionElement()) {
+    public int getUvOffsetById(int id) {
+        return this.uvOffsetsById.get(id);
+    }
+
+    public String toString() {
+        String s = "format: " + this.elements.size() + " elements: ";
+
+        for (int i = 0; i < this.elements.size(); ++i) {
+            s = s + this.elements.get(i).toString();
+
+            if (i != this.elements.size() - 1) {
+                s = s + " ";
+            }
+        }
+
+        return s;
+    }
+
+    private boolean hasPosition() {
+        int i = 0;
+
+        for (final int j = this.elements.size(); i < j; ++i) {
+            final VertexFormatElement vertexformatelement = this.elements.get(i);
+
+            if (vertexformatelement.isPositionElement()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public int func_181719_f() {
+        return this.getNextOffset() / 4;
+    }
+
+    public int getNextOffset() {
+        return this.nextOffset;
+    }
+
+    public List<VertexFormatElement> getElements() {
+        return this.elements;
+    }
+
+    public int getElementCount() {
+        return this.elements.size();
+    }
+
+    public VertexFormatElement getElement(int index) {
+        return this.elements.get(index);
+    }
+
+    public int func_181720_d(int p_181720_1_) {
+        return this.offsets.get(p_181720_1_);
+    }
+
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
             return true;
-         }
-      }
+        } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
+            final VertexFormat vertexformat = (VertexFormat) p_equals_1_;
+            return this.nextOffset == vertexformat.nextOffset && this.elements.equals(vertexformat.elements) && this.offsets.equals(vertexformat.offsets);
+        } else {
+            return false;
+        }
+    }
 
-      return false;
-   }
+    public int hashCode() {
+        int i = this.elements.hashCode();
+        i = 31 * i + this.offsets.hashCode();
+        i = 31 * i + this.nextOffset;
+        return i;
+    }
 
-   public int func_181719_f() {
-      return this.getNextOffset() / 4;
-   }
-
-   public int getNextOffset() {
-      return this.nextOffset;
-   }
-
-   public List getElements() {
-      return this.elements;
-   }
-
-   public int getElementCount() {
-      return this.elements.size();
-   }
-
-   public VertexFormatElement getElement(int var1) {
-      return (VertexFormatElement)this.elements.get(var1);
-   }
-
-   public int func_181720_d(int var1) {
-      return ((Integer)this.offsets.get(var1)).intValue();
-   }
-
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(this.getClass() != var1.getClass()) {
-         return false;
-      } else {
-         VertexFormat var2 = (VertexFormat)var1;
-         return this.nextOffset == var2.nextOffset && this.elements.equals(var2.elements) && this.offsets.equals(var2.offsets);
-      }
-   }
-
-   public int hashCode() {
-      int var1 = this.elements.hashCode();
-      var1 = 31 * var1 + this.offsets.hashCode();
-      var1 = 31 * var1 + this.nextOffset;
-      return var1;
-   }
 }

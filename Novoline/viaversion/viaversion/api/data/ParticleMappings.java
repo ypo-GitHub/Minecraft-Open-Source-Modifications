@@ -2,36 +2,35 @@ package viaversion.viaversion.api.data;
 
 import com.google.gson.JsonArray;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import viaversion.viaversion.api.data.MappingDataLoader;
-import viaversion.viaversion.api.data.Mappings;
 
 public class ParticleMappings {
-   private final Mappings mappings;
-   private final int blockId;
-   private final int fallingDustId;
-   private final int itemId;
+    private final Mappings mappings;
+    private final int blockId;
+    private final int fallingDustId;
+    private final int itemId;
 
-   public ParticleMappings(JsonArray var1, Mappings var2) {
-      this.mappings = var2;
-      Object2IntMap var3 = MappingDataLoader.arrayToMap(var1);
-      this.blockId = var3.getInt("block");
-      this.fallingDustId = var3.getInt("falling_dust");
-      this.itemId = var3.getInt("item");
-   }
+    public ParticleMappings(JsonArray oldMappings, Mappings mappings) {
+        this.mappings = mappings;
 
-   public Mappings getMappings() {
-      return this.mappings;
-   }
+        Object2IntMap<String> map = MappingDataLoader.arrayToMap(oldMappings);
+        blockId = map.getInt("block");
+        fallingDustId = map.getInt("falling_dust");
+        itemId = map.getInt("item");
+    }
 
-   public int getBlockId() {
-      return this.blockId;
-   }
+    public Mappings getMappings() {
+        return mappings;
+    }
 
-   public int getFallingDustId() {
-      return this.fallingDustId;
-   }
+    public int getBlockId() {
+        return blockId;
+    }
 
-   public int getItemId() {
-      return this.itemId;
-   }
+    public int getFallingDustId() {
+        return fallingDustId;
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
 }

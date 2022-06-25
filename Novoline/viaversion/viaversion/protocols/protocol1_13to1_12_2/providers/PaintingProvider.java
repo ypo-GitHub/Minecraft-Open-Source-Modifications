@@ -1,55 +1,52 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.providers;
 
+import viaversion.viaversion.api.platform.providers.Provider;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import net.KK;
-import net.aqQ;
 
-public class PaintingProvider implements aqQ {
-   private final Map paintings = new HashMap();
+public class PaintingProvider implements Provider {
+    private final Map<String, Integer> paintings = new HashMap<>();
 
-   public PaintingProvider() {
-      this.add("kebab");
-      this.add("aztec");
-      this.add("alban");
-      this.add("aztec2");
-      KK.b();
-      this.add("bomb");
-      this.add("plant");
-      this.add("wasteland");
-      this.add("pool");
-      this.add("courbet");
-      this.add("sea");
-      this.add("sunset");
-      this.add("creebet");
-      this.add("wanderer");
-      this.add("graham");
-      this.add("match");
-      this.add("bust");
-      this.add("stage");
-      this.add("void");
-      this.add("skullandroses");
-      this.add("wither");
-      this.add("fighters");
-      this.add("pointer");
-      this.add("pigscene");
-      this.add("burningskull");
-      this.add("skeleton");
-      this.add("donkeykong");
-   }
+    public PaintingProvider() {
+        add("kebab");
+        add("aztec");
+        add("alban");
+        add("aztec2");
+        add("bomb");
+        add("plant");
+        add("wasteland");
+        add("pool");
+        add("courbet");
+        add("sea");
+        add("sunset");
+        add("creebet");
+        add("wanderer");
+        add("graham");
+        add("match");
+        add("bust");
+        add("stage");
+        add("void");
+        add("skullandroses");
+        add("wither");
+        add("fighters");
+        add("pointer");
+        add("pigscene");
+        add("burningskull");
+        add("skeleton");
+        add("donkeykong");
+    }
 
-   private void add(String var1) {
-      this.paintings.put("minecraft:" + var1, Integer.valueOf(this.paintings.size()));
-   }
+    private void add(String motive) {
+        paintings.put("minecraft:" + motive, paintings.size());
+    }
 
-   public Optional getIntByIdentifier(String var1) {
-      String[] var2 = KK.b();
-      if(!var1.startsWith("minecraft:")) {
-         var1 = "minecraft:" + var1.toLowerCase(Locale.ROOT);
-      }
-
-      return Optional.ofNullable(this.paintings.get(var1));
-   }
+    public Optional<Integer> getIntByIdentifier(String motive) {
+        // Handle older versions
+        if (!motive.startsWith("minecraft:"))
+            motive = "minecraft:" + motive.toLowerCase(Locale.ROOT);
+        return Optional.ofNullable(paintings.get(motive));
+    }
 }

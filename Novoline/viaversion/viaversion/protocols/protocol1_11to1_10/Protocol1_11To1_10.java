@@ -1,127 +1,368 @@
 package viaversion.viaversion.protocols.protocol1_11to1_10;
 
-import net.Wx;
-import net.a75;
-import net.a7_;
-import net.a7d;
-import net.a7k;
-import net.aKA;
-import net.aKJ;
-import net.aKQ;
-import net.aKc;
-import net.aKg;
-import net.aSx;
-import net.aT9;
-import net.agN;
-import net.cA;
-import net.cT;
-import net.cw;
-import net.rX;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import viaversion.viaversion.api.PacketWrapper;
+import viaversion.viaversion.api.Pair;
+import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.entities.Entity1_11Types;
+import viaversion.viaversion.api.minecraft.chunks.Chunk;
 import viaversion.viaversion.api.protocol.Protocol;
+import viaversion.viaversion.api.remapper.PacketHandler;
+import viaversion.viaversion.api.remapper.PacketRemapper;
+import viaversion.viaversion.api.remapper.ValueCreator;
 import viaversion.viaversion.api.remapper.ValueTransformer;
-import viaversion.viaversion.api.rewriters.IdRewriteFunction;
+import viaversion.viaversion.api.rewriters.MetadataRewriter;
 import viaversion.viaversion.api.rewriters.SoundRewriter;
 import viaversion.viaversion.api.type.Type;
-import viaversion.viaversion.protocols.protocol1_11to1_10.EntityIdRewriter;
-import viaversion.viaversion.protocols.protocol1_11to1_10.Protocol1_11To1_10$1;
-import viaversion.viaversion.protocols.protocol1_11to1_10.Protocol1_11To1_10$10;
-import viaversion.viaversion.protocols.protocol1_11to1_10.Protocol1_11To1_10$11;
-import viaversion.viaversion.protocols.protocol1_11to1_10.Protocol1_11To1_10$13;
-import viaversion.viaversion.protocols.protocol1_11to1_10.Protocol1_11To1_10$2;
+import viaversion.viaversion.api.type.types.version.Types1_9;
+import viaversion.viaversion.protocols.protocol1_11to1_10.data.PotionColorMapping;
+import viaversion.viaversion.protocols.protocol1_11to1_10.metadata.MetadataRewriter1_11To1_10;
+import viaversion.viaversion.protocols.protocol1_11to1_10.packets.InventoryPackets;
+import viaversion.viaversion.protocols.protocol1_11to1_10.storage.EntityTracker1_11;
+import viaversion.viaversion.protocols.protocol1_9_1_2to1_9_3_4.types.Chunk1_9_3_4Type;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.ClientboundPackets1_9_3;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.ServerboundPackets1_9_3;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.storage.ClientWorld;
 
-public class Protocol1_11To1_10 extends Protocol {
-   private static final ValueTransformer toOldByte = new Protocol1_11To1_10$1(Type.UNSIGNED_BYTE);
+public class Protocol1_11To1_10 extends Protocol<ClientboundPackets1_9_3, ClientboundPackets1_9_3, ServerboundPackets1_9_3, ServerboundPackets1_9_3> {
+    private static final ValueTransformer<Float, Short> toOldByte = new ValueTransformer<Float, Short>(Type.UNSIGNED_BYTE) {
+        @Override
+        public Short transform(PacketWrapper wrapper, Float inputValue) throws Exception {
+            return (short) (inputValue * 16);
+        }
+    };
 
-   public Protocol1_11To1_10() {
-      super(agN.class, agN.class, Wx.class, Wx.class);
-   }
+    public Protocol1_11To1_10() {
+        super(ClientboundPackets1_9_3.class, ClientboundPackets1_9_3.class, ServerboundPackets1_9_3.class, ServerboundPackets1_9_3.class);
+    }
 
-   protected void registerPackets() {
-      aT9 var2 = new aT9(this);
-      aSx.a(this);
-      this.a(agN.SPAWN_ENTITY, new Protocol1_11To1_10$2(this, var2));
-      this.a(agN.SPAWN_MOB, new a75(this, var2));
-      (new SoundRewriter(this, this::a)).registerSound(agN.SOUND);
-      this.a(agN.COLLECT_ITEM, new a7k(this));
-      var2.registerMetadataRewriter(agN.ENTITY_METADATA, rX.a);
-      this.a(agN.ENTITY_TELEPORT, new aKg(this));
-      var2.registerEntityDestroy(agN.DESTROY_ENTITIES);
-      this.a(agN.TITLE, new aKJ(this));
-      EntityIdRewriter.b();
-      this.a(agN.BLOCK_ACTION, new aKA(this));
-      this.a(agN.BLOCK_ENTITY_DATA, new aKQ(this));
-      this.a(agN.CHUNK_DATA, new aKc(this));
-      this.a(agN.JOIN_GAME, new Protocol1_11To1_10$10(this));
-      this.a(agN.RESPAWN, new Protocol1_11To1_10$11(this));
-      this.a(agN.EFFECT, new a7d(this));
-      this.a(Wx.PLAYER_BLOCK_PLACEMENT, new Protocol1_11To1_10$13(this));
-      this.a(Wx.CHAT_MESSAGE, new a7_(this));
-   }
+    @Override
+    protected void registerPackets() {
+        MetadataRewriter metadataRewriter = new MetadataRewriter1_11To1_10(this);
 
-   private int a(int var1) {
-      String[] var2 = EntityIdRewriter.b();
-      if(var1 == 196) {
-         return -1;
-      } else {
-         if(var1 >= 85) {
-            var1 += 2;
-         }
+        InventoryPackets.register(this);
 
-         if(var1 >= 176) {
-            ++var1;
-         }
+        registerOutgoing(ClientboundPackets1_9_3.SPAWN_ENTITY, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity id
+                map(Type.UUID); // 1 - UUID
+                map(Type.BYTE); // 2 - Type
 
-         if(var1 >= 197) {
-            var1 += 8;
-         }
+                // Track Entity
+                handler(metadataRewriter.getObjectTracker());
+            }
+        });
 
-         if(var1 >= 207) {
-            --var1;
-         }
+        registerOutgoing(ClientboundPackets1_9_3.SPAWN_MOB, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity ID
+                map(Type.UUID); // 1 - Entity UUID
+                map(Type.UNSIGNED_BYTE, Type.VAR_INT); // 2 - Entity Type
+                map(Type.DOUBLE); // 3 - X
+                map(Type.DOUBLE); // 4 - Y
+                map(Type.DOUBLE); // 5 - Z
+                map(Type.BYTE); // 6 - Yaw
+                map(Type.BYTE); // 7 - Pitch
+                map(Type.BYTE); // 8 - Head Pitch
+                map(Type.SHORT); // 9 - Velocity X
+                map(Type.SHORT); // 10 - Velocity Y
+                map(Type.SHORT); // 11 - Velocity Z
+                map(Types1_9.METADATA_LIST); // 12 - Metadata
 
-         if(var1 >= 279) {
-            var1 += 9;
-         }
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        int entityId = wrapper.get(Type.VAR_INT, 0);
+                        // Change Type :)
+                        int type = wrapper.get(Type.VAR_INT, 1);
 
-         if(var1 >= 296) {
-            ++var1;
-         }
+                        Entity1_11Types.EntityType entType = MetadataRewriter1_11To1_10.rewriteEntityType(type, wrapper.get(Types1_9.METADATA_LIST, 0));
+                        if (entType != null) {
+                            wrapper.set(Type.VAR_INT, 1, entType.getId());
 
-         if(var1 >= 390) {
-            var1 += 4;
-         }
+                            // Register Type ID
+                            wrapper.user().get(EntityTracker1_11.class).addEntity(entityId, entType);
+                            metadataRewriter.handleMetadata(entityId, wrapper.get(Types1_9.METADATA_LIST, 0), wrapper.user());
+                        }
+                    }
+                });
+            }
+        });
 
-         if(var1 >= 400) {
-            var1 += 3;
-         }
+        new SoundRewriter(this, this::getNewSoundId).registerSound(ClientboundPackets1_9_3.SOUND);
 
-         if(var1 >= 450) {
-            ++var1;
-         }
+        registerOutgoing(ClientboundPackets1_9_3.COLLECT_ITEM, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Collected entity id
+                map(Type.VAR_INT); // 1 - Collector entity id
 
-         if(var1 >= 455) {
-            ++var1;
-         }
+                create(new ValueCreator() {
+                    @Override
+                    public void write(PacketWrapper wrapper) throws Exception {
+                        wrapper.write(Type.VAR_INT, 1); // 2 - Pickup Count
+                    }
+                });
+            }
+        });
 
-         if(var1 >= 470) {
-            ++var1;
-         }
+        metadataRewriter.registerMetadataRewriter(ClientboundPackets1_9_3.ENTITY_METADATA, Types1_9.METADATA_LIST);
 
-         return var1;
-      }
-   }
+        registerOutgoing(ClientboundPackets1_9_3.ENTITY_TELEPORT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Entity id
+                map(Type.DOUBLE); // 1 - x
+                map(Type.DOUBLE); // 2 - y
+                map(Type.DOUBLE); // 3 - z
+                map(Type.BYTE); // 4 - yaw
+                map(Type.BYTE); // 5 - pitch
+                map(Type.BOOLEAN); // 6 - onGround
 
-   public void init(UserConnection var1) {
-      EntityIdRewriter.b();
-      var1.a((cA)(new cw(var1)));
-      if(!var1.has(cT.class)) {
-         var1.a((cA)(new cT(var1)));
-      }
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        int entityID = wrapper.get(Type.VAR_INT, 0);
+                        if (Via.getConfig().isHologramPatch()) {
+                            EntityTracker1_11 tracker = wrapper.user().get(EntityTracker1_11.class);
+                            if (tracker.isHologram(entityID)) {
+                                Double newValue = wrapper.get(Type.DOUBLE, 1);
+                                newValue -= (Via.getConfig().getHologramYOffset());
+                                wrapper.set(Type.DOUBLE, 1, newValue);
+                            }
+                        }
+                    }
+                });
+            }
+        });
 
-   }
+        metadataRewriter.registerEntityDestroy(ClientboundPackets1_9_3.DESTROY_ENTITIES);
 
-   static ValueTransformer access$000() {
-      return toOldByte;
-   }
+        registerOutgoing(ClientboundPackets1_9_3.TITLE, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT); // 0 - Action
+
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        int action = wrapper.get(Type.VAR_INT, 0);
+
+                        // Handle the new ActionBar
+                        if (action >= 2) {
+                            wrapper.set(Type.VAR_INT, 0, action + 1);
+                        }
+                    }
+                });
+            }
+        });
+
+        registerOutgoing(ClientboundPackets1_9_3.BLOCK_ACTION, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.POSITION); // 0 - Position
+                map(Type.UNSIGNED_BYTE); // 1 - Action ID
+                map(Type.UNSIGNED_BYTE); // 2 - Action Param
+                map(Type.VAR_INT); // 3 - Block Type
+
+                // Cheap hack to ensure it's always right block
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(final PacketWrapper actionWrapper) throws Exception {
+                        if (Via.getConfig().isPistonAnimationPatch()) {
+                            int id = actionWrapper.get(Type.VAR_INT, 0);
+                            if (id == 33 || id == 29) {
+                                actionWrapper.cancel();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        registerOutgoing(ClientboundPackets1_9_3.BLOCK_ENTITY_DATA, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.POSITION); // 0 - Position
+                map(Type.UNSIGNED_BYTE); // 1 - Action
+                map(Type.NBT); // 2 - NBT data
+
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        CompoundTag tag = wrapper.get(Type.NBT, 0);
+                        if (wrapper.get(Type.UNSIGNED_BYTE, 0) == 1)
+                            EntityIdRewriter.toClientSpawner(tag);
+
+                        if (tag.contains("id"))
+                            // Handle new identifier
+                            ((StringTag) tag.get("id")).setValue(BlockEntityRewriter.toNewIdentifier((String) tag.get("id").getValue()));
+
+                    }
+                });
+            }
+        });
+
+        registerOutgoing(ClientboundPackets1_9_3.CHUNK_DATA, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        ClientWorld clientWorld = wrapper.user().get(ClientWorld.class);
+
+                        Chunk1_9_3_4Type type = new Chunk1_9_3_4Type(clientWorld);
+                        Chunk chunk = wrapper.passthrough(type);
+
+                        // Clear any other bytes (This is a workaround for a issue with 1.9.2 encoder adding nbt list)
+                        wrapper.clearInputBuffer();
+
+                        if (chunk.getBlockEntities() == null) return;
+                        for (CompoundTag tag : chunk.getBlockEntities()) {
+                            if (tag.contains("id")) {
+                                String identifier = ((StringTag) tag.get("id")).getValue();
+                                if (identifier.equals("MobSpawner")) {
+                                    EntityIdRewriter.toClientSpawner(tag);
+                                }
+
+                                // Handle new identifier
+                                ((StringTag) tag.get("id")).setValue(BlockEntityRewriter.toNewIdentifier(identifier));
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        registerOutgoing(ClientboundPackets1_9_3.JOIN_GAME, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.INT); // 0 - Entity ID
+                map(Type.UNSIGNED_BYTE); // 1 - Gamemode
+                map(Type.INT); // 2 - Dimension
+                handler(wrapper -> {
+                    ClientWorld clientChunks = wrapper.user().get(ClientWorld.class);
+                    int dimensionId = wrapper.get(Type.INT, 1);
+                    clientChunks.setEnvironment(dimensionId);
+                });
+            }
+        });
+        registerOutgoing(ClientboundPackets1_9_3.RESPAWN, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.INT);
+                handler(wrapper -> {
+                    ClientWorld clientWorld = wrapper.user().get(ClientWorld.class);
+                    int dimensionId = wrapper.get(Type.INT, 0);
+                    clientWorld.setEnvironment(dimensionId);
+                });
+            }
+        });
+
+        this.registerOutgoing(ClientboundPackets1_9_3.EFFECT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                this.map(Type.INT); //effectID
+                this.map(Type.POSITION); //pos
+                this.map(Type.INT); //effectData
+                this.map(Type.BOOLEAN); //serverwide / global
+                handler(packetWrapper -> {
+                    int effectID = packetWrapper.get(Type.INT, 0);
+                    if (effectID == 2002) {
+                        int data = packetWrapper.get(Type.INT, 1);
+                        boolean isInstant = false;
+                        Pair<Integer, Boolean> newData = PotionColorMapping.getNewData(data);
+                        if (newData == null) {
+                            Via.getPlatform().getLogger().warning("Received unknown 1.11 -> 1.10.2 potion data (" + data + ")");
+                            data = 0;
+                        } else {
+                            data = newData.getKey();
+                            isInstant = newData.getValue();
+                        }
+                        if (isInstant) {
+                            packetWrapper.set(Type.INT, 0, 2007);
+                        }
+                        packetWrapper.set(Type.INT, 1, data);
+                    }
+                });
+            }
+        });
+
+        /*
+            INCOMING PACKETS
+        */
+
+        registerIncoming(ServerboundPackets1_9_3.PLAYER_BLOCK_PLACEMENT, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.POSITION); // 0 - Location
+                map(Type.VAR_INT); // 1 - Face
+                map(Type.VAR_INT); // 2 - Hand
+
+                map(Type.FLOAT, toOldByte);
+                map(Type.FLOAT, toOldByte);
+                map(Type.FLOAT, toOldByte);
+            }
+        });
+
+        registerIncoming(ServerboundPackets1_9_3.CHAT_MESSAGE, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.STRING); // 0 - Message
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        // 100 character limit on older servers
+                        String msg = wrapper.get(Type.STRING, 0);
+                        if (msg.length() > 100) {
+                            wrapper.set(Type.STRING, 0, msg.substring(0, 100));
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private int getNewSoundId(int id) {
+        if (id == 196) // Experience orb sound got removed
+            return -1;
+
+        if (id >= 85) // Shulker boxes
+            id += 2;
+        if (id >= 176) // Guardian flop
+            id += 1;
+        if (id >= 197) // evocation things
+            id += 8;
+        if (id >= 207) // Rip the Experience orb touch sound :'(
+            id -= 1;
+        if (id >= 279) // Liama's
+            id += 9;
+        if (id >= 296) // Mule chest
+            id += 1;
+        if (id >= 390) // Vex
+            id += 4;
+        if (id >= 400) // vindication
+            id += 3;
+        if (id >= 450) // Elytra
+            id += 1;
+        if (id >= 455) // Empty bottle
+            id += 1;
+        if (id >= 470) // Totem use
+            id += 1;
+        return id;
+    }
+
+
+    @Override
+    public void init(UserConnection userConnection) {
+        // Entity tracker
+        userConnection.put(new EntityTracker1_11(userConnection));
+
+        if (!userConnection.has(ClientWorld.class))
+            userConnection.put(new ClientWorld(userConnection));
+    }
 }

@@ -1,7 +1,5 @@
 package net.minecraft.enchantment;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
@@ -12,53 +10,98 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 
 public class EnchantmentDamage extends Enchantment {
-   private static final String[] protectionName = new String[]{"all", "undead", "arthropods"};
-   private static final int[] baseEnchantability = new int[]{1, 5, 5};
-   private static final int[] levelEnchantability = new int[]{11, 8, 8};
-   private static final int[] thresholdEnchantability = new int[]{20, 20, 20};
-   public final int damageType;
+    /**
+     * Holds the name to be translated of each protection type.
+     */
+    private static final String[] protectionName = new String[]{"all", "undead", "arthropods"};
 
-   public EnchantmentDamage(int var1, ResourceLocation var2, int var3, int var4) {
-      super(var1, var2, var3, EnumEnchantmentType.WEAPON);
-      this.damageType = var4;
-   }
+    /**
+     * Holds the base factor of enchantability needed to be able to use the enchant.
+     */
+    private static final int[] baseEnchantability = new int[]{1, 5, 5};
 
-   public int getMinEnchantability(int var1) {
-      return baseEnchantability[this.damageType] + (var1 - 1) * levelEnchantability[this.damageType];
-   }
+    /**
+     * Holds how much each level increased the enchantability factor to be able to use this enchant.
+     */
+    private static final int[] levelEnchantability = new int[]{11, 8, 8};
 
-   public int getMaxEnchantability(int var1) {
-      return this.getMinEnchantability(var1) + thresholdEnchantability[this.damageType];
-   }
+    /**
+     * Used on the formula of base enchantability, this is the 'window' factor of values to be able to use thing
+     * enchant.
+     */
+    private static final int[] thresholdEnchantability = new int[]{20, 20, 20};
 
-   public int getMaxLevel() {
-      return 5;
-   }
+    /**
+     * Defines the type of damage of the enchantment, 0 = all, 1 = undead, 3 = arthropods
+     */
+    public final int damageType;
 
-   public float calcDamageByCreature(int var1, EnumCreatureAttribute var2) {
-      return this.damageType == 0?(float)var1 * 1.25F:(this.damageType == 1 && var2 == EnumCreatureAttribute.UNDEAD?(float)var1 * 2.5F:(this.damageType == 2 && var2 == EnumCreatureAttribute.ARTHROPOD?(float)var1 * 2.5F:0.0F));
-   }
+    public EnchantmentDamage(int enchID, ResourceLocation enchName, int enchWeight, int classification) {
+        super(enchID, enchName, enchWeight, EnumEnchantmentType.WEAPON);
+        this.damageType = classification;
+    }
 
-   public String getName() {
-      return "enchantment.damage." + protectionName[this.damageType];
-   }
+    /**
+     * Returns the minimal value of enchantability needed on the enchantment level passed.
+     */
+    public int getMinEnchantability(int enchantmentLevel) {
+        return baseEnchantability[this.damageType] + (enchantmentLevel - 1) * levelEnchantability[this.damageType];
+    }
 
-   public boolean canApplyTogether(Enchantment var1) {
-      return !(var1 instanceof EnchantmentDamage);
-   }
+    /**
+     * Returns the maximum value of enchantability nedded on the enchantment level passed.
+     */
+    public int getMaxEnchantability(int enchantmentLevel) {
+        return this.getMinEnchantability(enchantmentLevel) + thresholdEnchantability[this.damageType];
+    }
 
-   public boolean canApply(ItemStack var1) {
-      return var1.getItem() instanceof ItemAxe || super.canApply(var1);
-   }
+    /**
+     * Returns the maximum level that the enchantment can have.
+     */
+    public int getMaxLevel() {
+        return 5;
+    }
 
-   public void onEntityDamaged(EntityLivingBase var1, Entity var2, int var3) {
-      if(var2 instanceof EntityLivingBase) {
-         EntityLivingBase var4 = (EntityLivingBase)var2;
-         if(this.damageType == 2 && var4.getCreatureAttribute() == EnumCreatureAttribute.ARTHROPOD) {
-            int var5 = 20 + var1.getRNG().nextInt(10 * var3);
-            var4.addPotionEffect(new PotionEffect(Potion.moveSlowdown.getId(), var5, 3));
-         }
-      }
+    /**
+     * Calculates the additional damage that will be dealt by an item with this enchantment. This alternative to
+     * calcModifierDamage is sensitive to the targets EnumCreatureAttribute.
+     */
+    public float calcDamageByCreature(int level, EnumCreatureAttribute creatureType) {
+        return this.damageType == 0 ? (float) level * 1.25F : this.damageType == 1 && creatureType == EnumCreatureAttribute.UNDEAD ? (float) level * 2.5F : this.damageType == 2 && creatureType == EnumCreatureAttribute.ARTHROPOD ? (float) level * 2.5F : 0.0F;
+    }
 
-   }
+    /**
+     * Return the name of key in translation table of this enchantment.
+     */
+    public String getName() {
+        return "enchantment.damage." + protectionName[this.damageType];
+    }
+
+    /**
+     * Determines if the enchantment passed can be applyied together with this enchantment.
+     */
+    public boolean canApplyTogether(Enchantment ench) {
+        return !(ench instanceof EnchantmentDamage);
+    }
+
+    /**
+     * Determines if this enchantment can be applied to a specific ItemStack.
+     */
+    public boolean canApply(ItemStack stack) {
+        return stack.getItem() instanceof ItemAxe || super.canApply(stack);
+    }
+
+    /**
+     * Called whenever a mob is damaged with an item that has this enchantment on it.
+     */
+    public void onEntityDamaged(EntityLivingBase user, Entity target, int level) {
+        if (target instanceof EntityLivingBase) {
+            EntityLivingBase entitylivingbase = (EntityLivingBase) target;
+
+            if (this.damageType == 2 && entitylivingbase.getCreatureAttribute() == EnumCreatureAttribute.ARTHROPOD) {
+                int i = 20 + user.getRNG().nextInt(10 * level);
+                entitylivingbase.addPotionEffect(new PotionEffect(Potion.moveSlowdown.getId(), i, 3));
+            }
+        }
+    }
 }

@@ -1,169 +1,148 @@
 package viaversion.viaversion.api.rewriters;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.PacketWrapper;
+import viaversion.viaversion.api.data.MappingData;
 import viaversion.viaversion.api.protocol.ClientboundPacketType;
 import viaversion.viaversion.api.protocol.Protocol;
-import viaversion.viaversion.api.rewriters.IdRewriteFunction;
-import viaversion.viaversion.api.rewriters.MetadataRewriter;
-import viaversion.viaversion.api.rewriters.RegistryType;
-import viaversion.viaversion.api.rewriters.TagRewriter$1;
-import viaversion.viaversion.api.rewriters.TagRewriter$2;
-import viaversion.viaversion.api.rewriters.TagRewriter$TagData;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.type.Type;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TagRewriter {
-   private static final int[] EMPTY_ARRAY = new int[0];
-   private final Protocol protocol;
-   private final IdRewriteFunction entityRewriter;
-   private final List newBlockTags = new ArrayList();
-   private final List newItemTags = new ArrayList();
-   private final List newEntityTags = new ArrayList();
+    private static final int[] EMPTY_ARRAY = {};
+    private final Protocol protocol;
+    private final IdRewriteFunction entityRewriter;
+    private final List<TagData> newBlockTags = new ArrayList<>();
+    private final List<TagData> newItemTags = new ArrayList<>();
+    private final List<TagData> newEntityTags = new ArrayList<>();
+    // add fluid tag list if needed at some point
 
-   public TagRewriter(Protocol var1, @Nullable IdRewriteFunction var2) {
-      this.protocol = var1;
-      this.entityRewriter = var2;
-   }
+    public TagRewriter(Protocol protocol, @Nullable IdRewriteFunction entityRewriter) {
+        this.protocol = protocol;
+        this.entityRewriter = entityRewriter;
+    }
 
-   public void addEmptyTag(RegistryType var1, String var2) {
-      this.getNewTags(var1).add(new TagRewriter$TagData(var2, EMPTY_ARRAY, (TagRewriter$1)null));
-   }
+    /**
+     * Adds an empty tag (since the client crashes if a checked tag is not registered.)
+     */
+    public void addEmptyTag(RegistryType tagType, String id) {
+        getNewTags(tagType).add(new TagData(id, EMPTY_ARRAY));
+    }
 
-   public void addEmptyTags(RegistryType var1, String... var2) {
-      MetadataRewriter.c();
-      List var4 = this.getNewTags(var1);
-      int var6 = var2.length;
-      int var7 = 0;
-      if(var7 < var6) {
-         String var8 = var2[var7];
-         var4.add(new TagRewriter$TagData(var8, EMPTY_ARRAY, (TagRewriter$1)null));
-         ++var7;
-      }
+    public void addEmptyTags(RegistryType tagType, String... ids) {
+        List<TagData> tagList = getNewTags(tagType);
+        for (String id : ids) {
+            tagList.add(new TagData(id, EMPTY_ARRAY));
+        }
+    }
 
-   }
+    public void addTag(RegistryType tagType, String id, int... oldIds) {
+        List<TagData> newTags = getNewTags(tagType);
+        IdRewriteFunction rewriteFunction = getRewriter(tagType);
+        for (int i = 0; i < oldIds.length; i++) {
+            int oldId = oldIds[i];
+            oldIds[i] = rewriteFunction.rewrite(oldId);
+        }
+        newTags.add(new TagData(id, oldIds));
+    }
 
-   public void addTag(RegistryType var1, String var2, int... var3) {
-      MetadataRewriter.e();
-      List var5 = this.getNewTags(var1);
-      IdRewriteFunction var6 = this.getRewriter(var1);
-      int var7 = 0;
-      if(var7 < var3.length) {
-         int var8 = var3[var7];
-         var3[var7] = var6.rewrite(var8);
-         ++var7;
-      }
+    public void register(ClientboundPacketType packetType) {
+        protocol.registerOutgoing(packetType, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(wrapper -> {
+                    MappingData mappingData = protocol.getMappingData();
+                    handle(wrapper, id -> mappingData != null ? mappingData.getNewBlockId(id) : null, newBlockTags);
+                    handle(wrapper, id -> mappingData != null ? mappingData.getNewItemId(id) : null, newItemTags);
 
-      var5.add(new TagRewriter$TagData(var2, var3, (TagRewriter$1)null));
-   }
+                    if (entityRewriter == null && newEntityTags.isEmpty()) return;
 
-   public void register(ClientboundPacketType var1) {
-      this.protocol.a((ClientboundPacketType)var1, new TagRewriter$1(this));
-   }
+                    int fluidTagsSize = wrapper.passthrough(Type.VAR_INT);
+                    for (int i = 0; i < fluidTagsSize; i++) {
+                        wrapper.passthrough(Type.STRING);
+                        wrapper.passthrough(Type.VAR_INT_ARRAY_PRIMITIVE);
+                    }
 
-   private void handle(PacketWrapper var1, IdRewriteFunction var2, List var3) throws Exception {
-      MetadataRewriter.c();
-      int var5 = ((Integer)var1.read(Type.VAR_INT)).intValue();
-      var1.write(Type.VAR_INT, Integer.valueOf(var5 + var3.size()));
-      int var6 = 0;
-      if(var6 < var5) {
-         var1.passthrough(Type.STRING);
-         int[] var7 = (int[])var1.read(Type.VAR_INT_ARRAY_PRIMITIVE);
-         IntArrayList var8 = new IntArrayList(var7.length);
-         int var10 = var7.length;
-         int var11 = 0;
-         if(var11 < var10) {
-            int var12 = var7[var11];
-            int var13 = var2.rewrite(var12);
-            if(var13 != -1) {
-               var8.add(var13);
+                    handle(wrapper, entityRewriter, newEntityTags);
+                });
             }
+        });
+    }
 
-            ++var11;
-         }
+    private void handle(PacketWrapper wrapper, IdRewriteFunction rewriteFunction, List<TagData> newTags) throws Exception {
+        int tagsSize = wrapper.read(Type.VAR_INT);
+        wrapper.write(Type.VAR_INT, newTags != null ? tagsSize + newTags.size() : tagsSize); // add new tags count
 
-         var1.write(Type.VAR_INT_ARRAY_PRIMITIVE, var8.toArray(EMPTY_ARRAY));
-         var1.write(Type.VAR_INT_ARRAY_PRIMITIVE, var7);
-         ++var6;
-      }
+        for (int i = 0; i < tagsSize; i++) {
+            wrapper.passthrough(Type.STRING);
+            int[] ids = wrapper.read(Type.VAR_INT_ARRAY_PRIMITIVE);
+            if (rewriteFunction != null) {
+                // Map ids and filter out new blocks
+                IntList idList = new IntArrayList(ids.length);
+                for (int id : ids) {
+                    int mappedId = rewriteFunction.rewrite(id);
+                    if (mappedId != -1) {
+                        idList.add(mappedId);
+                    }
+                }
 
-      if(var3 != null && !var3.isEmpty()) {
-         Iterator var15 = var3.iterator();
-         if(var15.hasNext()) {
-            TagRewriter$TagData var16 = (TagRewriter$TagData)var15.next();
-            var1.write(Type.STRING, TagRewriter$TagData.access$700(var16));
-            var1.write(Type.VAR_INT_ARRAY_PRIMITIVE, TagRewriter$TagData.access$800(var16));
-         }
-      }
+                wrapper.write(Type.VAR_INT_ARRAY_PRIMITIVE, idList.toArray(EMPTY_ARRAY));
+            } else {
+                // Write the original array
+                wrapper.write(Type.VAR_INT_ARRAY_PRIMITIVE, ids);
+            }
+        }
 
-   }
+        // Send new tags if present
+        if (newTags != null && !newTags.isEmpty()) {
+            for (TagData tag : newTags) {
+                wrapper.write(Type.STRING, tag.identifier);
+                wrapper.write(Type.VAR_INT_ARRAY_PRIMITIVE, tag.entries);
+            }
+        }
+    }
 
-   private List getNewTags(RegistryType var1) {
-      switch(TagRewriter$2.$SwitchMap$viaversion$viaversion$api$rewriters$RegistryType[var1.ordinal()]) {
-      case 1:
-         return this.newBlockTags;
-      case 2:
-         return this.newItemTags;
-      case 3:
-         return this.newEntityTags;
-      case 4:
-      default:
-         return null;
-      }
-   }
+    private List<TagData> getNewTags(RegistryType tagType) {
+        switch (tagType) {
+            case BLOCK:
+                return newBlockTags;
+            case ITEM:
+                return newItemTags;
+            case ENTITY:
+                return newEntityTags;
+            case FLUID:
+            default:
+                return null;
+        }
+    }
 
-   @Nullable
-   private IdRewriteFunction getRewriter(RegistryType var1) {
-      boolean var2 = MetadataRewriter.e();
-      switch(TagRewriter$2.$SwitchMap$viaversion$viaversion$api$rewriters$RegistryType[var1.ordinal()]) {
-      case 1:
-         return this.protocol.getMappingData().getBlockMappings() != null?this::lambda$getRewriter$0:null;
-      case 2:
-         return this.protocol.getMappingData().getItemMappings() != null?this::lambda$getRewriter$1:null;
-      case 3:
-         return this.entityRewriter;
-      case 4:
-      default:
-         return null;
-      }
-   }
+    @Nullable
+    private IdRewriteFunction getRewriter(RegistryType tagType) {
+        switch (tagType) {
+            case BLOCK:
+                return protocol.getMappingData().getBlockMappings() != null ? id -> protocol.getMappingData().getNewBlockId(id) : null;
+            case ITEM:
+                return protocol.getMappingData().getItemMappings() != null ? id -> protocol.getMappingData().getNewItemId(id) : null;
+            case ENTITY:
+                return entityRewriter;
+            case FLUID:
+            default:
+                return null;
+        }
+    }
 
-   private int lambda$getRewriter$1(int var1) {
-      return this.protocol.getMappingData().getNewItemId(var1);
-   }
+    private static final class TagData {
+        private final String identifier;
+        private final int[] entries;
 
-   private int lambda$getRewriter$0(int var1) {
-      return this.protocol.getMappingData().getNewBlockId(var1);
-   }
-
-   static Protocol access$100(TagRewriter var0) {
-      return var0.protocol;
-   }
-
-   static List access$200(TagRewriter var0) {
-      return var0.newBlockTags;
-   }
-
-   static void access$300(TagRewriter var0, PacketWrapper var1, IdRewriteFunction var2, List var3) throws Exception {
-      var0.handle(var1, var2, var3);
-   }
-
-   static List access$400(TagRewriter var0) {
-      return var0.newItemTags;
-   }
-
-   static IdRewriteFunction access$500(TagRewriter var0) {
-      return var0.entityRewriter;
-   }
-
-   static List access$600(TagRewriter var0) {
-      return var0.newEntityTags;
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        private TagData(String identifier, int[] entries) {
+            this.identifier = identifier;
+            this.entries = entries;
+        }
+    }
 }

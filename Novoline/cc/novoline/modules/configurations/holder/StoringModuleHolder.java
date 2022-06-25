@@ -1,22 +1,34 @@
 package cc.novoline.modules.configurations.holder;
 
 import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.configurations.holder.ModuleHolder;
 import cc.novoline.utils.java.Checks;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public final class StoringModuleHolder extends ModuleHolder {
-   private StoringModuleHolder(String var1, AbstractModule var2) {
-      super(var1, var2);
-   }
+/**
+ * @author xDelsy
+ */
+public final class StoringModuleHolder<Module extends AbstractModule> extends ModuleHolder<Module> {
 
-   public static StoringModuleHolder of(String var0, AbstractModule var1) {
-      Checks.notBlank(var0, "name");
-      Checks.notNull(var1, "module");
-      return new StoringModuleHolder(var0, var1);
-   }
+    /* constructors */
+    private StoringModuleHolder(@NonNull String name, @NonNull Module module) {
+        super(name, module);
+    }
 
-   public void setModule(AbstractModule var1) {
-      Checks.notNull(var1, "module");
-      this.module = var1;
-   }
+    @NonNull
+    public static <Module extends AbstractModule> StoringModuleHolder<Module> of(@NonNull String name,
+                                                                                 @NonNull Module module) {
+        Checks.notBlank(name, "name");
+        Checks.notNull(module, "module");
+
+        return new StoringModuleHolder<>(name, module);
+    }
+
+    /* methods */
+    //region Lombok
+    public void setModule(@NonNull Module module) {
+        Checks.notNull(module, "module");
+        this.module = module;
+    }
+    //endregion
+
 }

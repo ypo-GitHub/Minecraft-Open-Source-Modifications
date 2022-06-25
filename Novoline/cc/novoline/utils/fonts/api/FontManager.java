@@ -1,14 +1,15 @@
 package cc.novoline.utils.fonts.api;
 
-import cc.novoline.utils.fonts.api.FontFamily;
-import cc.novoline.utils.fonts.api.FontRenderer;
-import cc.novoline.utils.fonts.api.FontType;
-
+/**
+ * @author Artyom Popov
+ * @since June 30, 2020
+ */
 @FunctionalInterface
 public interface FontManager {
-   FontFamily fontFamily(FontType var1);
 
-   default FontRenderer font(FontType var1, int var2) {
-      return this.fontFamily(var1).ofSize(var2);
-   }
+	FontFamily fontFamily(FontType fontType);
+
+	default FontRenderer font(FontType fontType, int size) {
+		return fontFamily(fontType).ofSize(size);
+	}
 }

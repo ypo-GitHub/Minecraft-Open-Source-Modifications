@@ -10,56 +10,62 @@ import net.minecraft.world.MinecraftException;
 import net.minecraft.world.WorldServer;
 
 public class CommandSaveAll extends CommandBase {
-   public String getCommandName() {
-      return "save-all";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "save-all";
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.save.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.save.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      MinecraftServer var3 = MinecraftServer.getServer();
-      var1.addChatMessage(new ChatComponentTranslation("commands.save.start", new Object[0]));
-      if(var3.getConfigurationManager() != null) {
-         var3.getConfigurationManager().saveAllPlayerData();
-      }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
+        sender.addChatMessage(new ChatComponentTranslation("commands.save.start", new Object[0]));
 
-      try {
-         for(int var4 = 0; var4 < var3.worldServers.length; ++var4) {
-            if(var3.worldServers[var4] != null) {
-               WorldServer var5 = var3.worldServers[var4];
-               boolean var6 = var5.disableLevelSaving;
-               var5.disableLevelSaving = false;
-               var5.saveAllChunks(true, (IProgressUpdate)null);
-               var5.disableLevelSaving = var6;
-            }
-         }
+        if (minecraftserver.getConfigurationManager() != null) {
+            minecraftserver.getConfigurationManager().saveAllPlayerData();
+        }
 
-         if(var2.length > 0 && "flush".equals(var2[0])) {
-            var1.addChatMessage(new ChatComponentTranslation("commands.save.flushStart", new Object[0]));
-
-            for(int var8 = 0; var8 < var3.worldServers.length; ++var8) {
-               if(var3.worldServers[var8] != null) {
-                  WorldServer var9 = var3.worldServers[var8];
-                  boolean var10 = var9.disableLevelSaving;
-                  var9.disableLevelSaving = false;
-                  var9.saveChunkData();
-                  var9.disableLevelSaving = var10;
-               }
+        try {
+            for (int i = 0; i < minecraftserver.worldServers.length; ++i) {
+                if (minecraftserver.worldServers[i] != null) {
+                    WorldServer worldserver = minecraftserver.worldServers[i];
+                    boolean flag = worldserver.disableLevelSaving;
+                    worldserver.disableLevelSaving = false;
+                    worldserver.saveAllChunks(true, (IProgressUpdate) null);
+                    worldserver.disableLevelSaving = flag;
+                }
             }
 
-            var1.addChatMessage(new ChatComponentTranslation("commands.save.flushEnd", new Object[0]));
-         }
-      } catch (MinecraftException var7) {
-         notifyOperators(var1, this, "commands.save.failed", new Object[]{var7.getMessage()});
-         return;
-      }
+            if (args.length > 0 && "flush".equals(args[0])) {
+                sender.addChatMessage(new ChatComponentTranslation("commands.save.flushStart", new Object[0]));
 
-      notifyOperators(var1, this, "commands.save.success", new Object[0]);
-   }
+                for (int j = 0; j < minecraftserver.worldServers.length; ++j) {
+                    if (minecraftserver.worldServers[j] != null) {
+                        WorldServer worldserver1 = minecraftserver.worldServers[j];
+                        boolean flag1 = worldserver1.disableLevelSaving;
+                        worldserver1.disableLevelSaving = false;
+                        worldserver1.saveChunkData();
+                        worldserver1.disableLevelSaving = flag1;
+                    }
+                }
 
-   private static MinecraftException a(MinecraftException var0) {
-      return var0;
-   }
+                sender.addChatMessage(new ChatComponentTranslation("commands.save.flushEnd", new Object[0]));
+            }
+        } catch (MinecraftException minecraftexception) {
+            notifyOperators(sender, this, "commands.save.failed", new Object[]{minecraftexception.getMessage()});
+            return;
+        }
+
+        notifyOperators(sender, this, "commands.save.success", new Object[0]);
+    }
 }

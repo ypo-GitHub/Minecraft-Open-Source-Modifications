@@ -1,26 +1,27 @@
 package net.minecraft.item;
 
 import com.google.common.collect.Sets;
-import java.util.Set;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item$ToolMaterial;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemTool;
+
+import java.util.Set;
 
 public class ItemPickaxe extends ItemTool {
-   private static final Set EFFECTIVE_ON = Sets.newHashSet(new Block[]{Blocks.activator_rail, Blocks.coal_ore, Blocks.cobblestone, Blocks.detector_rail, Blocks.diamond_block, Blocks.diamond_ore, Blocks.double_stone_slab, Blocks.golden_rail, Blocks.gold_block, Blocks.gold_ore, Blocks.ice, Blocks.iron_block, Blocks.iron_ore, Blocks.lapis_block, Blocks.lapis_ore, Blocks.lit_redstone_ore, Blocks.mossy_cobblestone, Blocks.netherrack, Blocks.packed_ice, Blocks.rail, Blocks.redstone_ore, Blocks.sandstone, Blocks.red_sandstone, Blocks.stone, Blocks.stone_slab});
+    private static final Set<Block> EFFECTIVE_ON = Sets.newHashSet(new Block[]{Blocks.activator_rail, Blocks.coal_ore, Blocks.cobblestone, Blocks.detector_rail, Blocks.diamond_block, Blocks.diamond_ore, Blocks.double_stone_slab, Blocks.golden_rail, Blocks.gold_block, Blocks.gold_ore, Blocks.ice, Blocks.iron_block, Blocks.iron_ore, Blocks.lapis_block, Blocks.lapis_ore, Blocks.lit_redstone_ore, Blocks.mossy_cobblestone, Blocks.netherrack, Blocks.packed_ice, Blocks.rail, Blocks.redstone_ore, Blocks.sandstone, Blocks.red_sandstone, Blocks.stone, Blocks.stone_slab});
 
-   protected ItemPickaxe(Item$ToolMaterial var1) {
-      super(2.0F, var1, EFFECTIVE_ON);
-   }
+    protected ItemPickaxe(Item.ToolMaterial material) {
+        super(2.0F, material, EFFECTIVE_ON);
+    }
 
-   public boolean canHarvestBlock(Block var1) {
-      return var1 == Blocks.obsidian?this.toolMaterial.getHarvestLevel() == 3:(var1 != Blocks.diamond_block && var1 != Blocks.diamond_ore?(var1 != Blocks.emerald_ore && var1 != Blocks.emerald_block?(var1 != Blocks.gold_block && var1 != Blocks.gold_ore?(var1 != Blocks.iron_block && var1 != Blocks.iron_ore?(var1 != Blocks.lapis_block && var1 != Blocks.lapis_ore?(var1 != Blocks.redstone_ore && var1 != Blocks.lit_redstone_ore?var1.getMaterial() == Material.rock || var1.getMaterial() == Material.iron || var1.getMaterial() == Material.anvil:this.toolMaterial.getHarvestLevel() >= 2):this.toolMaterial.getHarvestLevel() >= 1):this.toolMaterial.getHarvestLevel() >= 1):this.toolMaterial.getHarvestLevel() >= 2):this.toolMaterial.getHarvestLevel() >= 2):this.toolMaterial.getHarvestLevel() >= 2);
-   }
+    /**
+     * Check whether this Item can harvest the given Block
+     */
+    public boolean canHarvestBlock(Block blockIn) {
+        return blockIn == Blocks.obsidian ? this.toolMaterial.getHarvestLevel() == 3 : blockIn != Blocks.diamond_block && blockIn != Blocks.diamond_ore ? blockIn != Blocks.emerald_ore && blockIn != Blocks.emerald_block ? blockIn != Blocks.gold_block && blockIn != Blocks.gold_ore ? blockIn != Blocks.iron_block && blockIn != Blocks.iron_ore ? blockIn != Blocks.lapis_block && blockIn != Blocks.lapis_ore ? blockIn != Blocks.redstone_ore && blockIn != Blocks.lit_redstone_ore ? blockIn.getMaterial() == Material.rock || blockIn.getMaterial() == Material.iron || blockIn.getMaterial() == Material.anvil : this.toolMaterial.getHarvestLevel() >= 2 : this.toolMaterial.getHarvestLevel() >= 1 : this.toolMaterial.getHarvestLevel() >= 1 : this.toolMaterial.getHarvestLevel() >= 2 : this.toolMaterial.getHarvestLevel() >= 2 : this.toolMaterial.getHarvestLevel() >= 2;
+    }
 
-   public float getStrVsBlock(ItemStack var1, Block var2) {
-      return var2.getMaterial() != Material.iron && var2.getMaterial() != Material.anvil && var2.getMaterial() != Material.rock?super.getStrVsBlock(var1, var2):this.efficiencyOnProperMaterial;
-   }
+    public float getStrVsBlock(ItemStack stack, Block block) {
+        return block.getMaterial() != Material.iron && block.getMaterial() != Material.anvil && block.getMaterial() != Material.rock ? super.getStrVsBlock(stack, block) : this.efficiencyOnProperMaterial;
+    }
 }

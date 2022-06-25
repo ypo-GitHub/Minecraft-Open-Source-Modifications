@@ -1,9 +1,16 @@
 package cc.novoline.events.types;
 
+/**
+ * Types that can be used for typed events.
+ *
+ * @author DarkMagician6
+ * @since August 27, 2013
+ */
 public class EventType {
-   public static final byte PRE = 0;
-   public static final byte ON = 1;
-   public static final byte POST = 2;
-   public static final byte SEND = 3;
-   public static final byte RECEIVE = 4;
+
+    /**
+     * Used to define the type of a typed event.
+     */
+    public static final byte PRE = 0, ON = 1, POST = 2, SEND = 3, RECEIVE = 4;
+
 }

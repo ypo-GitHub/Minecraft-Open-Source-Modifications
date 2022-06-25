@@ -2,174 +2,149 @@ package cc.novoline.modules.visual;
 
 import cc.novoline.Novoline;
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.Render3DEvent;
 import cc.novoline.events.events.SettingEvent;
 import cc.novoline.events.events.TickUpdateEvent;
+import cc.novoline.events.events.Render3DEvent;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
-import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
-import cc.novoline.modules.configurations.property.object.BooleanProperty;
-import cc.novoline.modules.configurations.property.object.DoubleProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import cc.novoline.modules.configurations.property.object.ListProperty;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.visual.HUD;
+import cc.novoline.modules.configurations.property.object.*;
 import cc.novoline.utils.ColorUtils;
 import cc.novoline.utils.RenderUtils;
 import cc.novoline.utils.Timer;
 import com.google.common.collect.Lists;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static cc.novoline.gui.screen.setting.SettingType.*;
+import static cc.novoline.modules.EnumModuleType.VISUALS;
+import static org.lwjgl.input.Keyboard.KEY_NONE;
 
 public final class XRay extends AbstractModule {
-   public static int alpha;
-   public static boolean isEnabled;
-   public static List blockIdList = Lists.newArrayList(new Integer[]{Integer.valueOf(10), Integer.valueOf(11), Integer.valueOf(8), Integer.valueOf(9), Integer.valueOf(14), Integer.valueOf(15), Integer.valueOf(16), Integer.valueOf(21), Integer.valueOf(41), Integer.valueOf(42), Integer.valueOf(46), Integer.valueOf(48), Integer.valueOf(52), Integer.valueOf(56), Integer.valueOf(57), Integer.valueOf(61), Integer.valueOf(62), Integer.valueOf(73), Integer.valueOf(74), Integer.valueOf(84), Integer.valueOf(89), Integer.valueOf(103), Integer.valueOf(116), Integer.valueOf(117), Integer.valueOf(118), Integer.valueOf(120), Integer.valueOf(129), Integer.valueOf(133), Integer.valueOf(137), Integer.valueOf(145), Integer.valueOf(152), Integer.valueOf(153), Integer.valueOf(154)});
-   public static List blockPosList = new CopyOnWriteArrayList();
-   private Timer timer = new Timer();
-   @Property("opacity")
-   private final IntProperty opacity = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(160)).minimum(Integer.valueOf(0))).maximum(Integer.valueOf(255));
-   @Property("esp")
-   private final BooleanProperty esp = PropertyFactory.booleanTrue();
-   @Property("tracers")
-   private final BooleanProperty tracers = PropertyFactory.booleanTrue();
-   @Property("esp-ores")
-   private final ListProperty ores = PropertyFactory.createList((Object)"Diamond").acceptableValues((Object[])(new String[]{"Redstone", "Diamond", "Emerald", "Lapis", "Iron", "Coal", "Gold"}));
-   @Property("distance")
-   private final IntProperty distance = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(42)).minimum(Integer.valueOf(16))).maximum(Integer.valueOf(64));
-   @Property("chunk-update")
-   private final BooleanProperty update = PropertyFactory.booleanFalse();
-   @Property("delay")
-   private DoubleProperty delay = (DoubleProperty)((DoubleProperty)PropertyFactory.createDouble(Double.valueOf(10.0D)).minimum(Double.valueOf(1.0D))).maximum(Double.valueOf(30.0D));
 
-   public XRay(ModuleManager var1) {
-      super(var1, "XRay", "XRay", 0, EnumModuleType.VISUALS);
-      Manager.put(new Setting("ESP_ORES", "ESP Ores", SettingType.SELECTBOX, this, this.ores, this::lambda$new$0));
-      Manager.put(new Setting("OPACITY", "Opacity", SettingType.SLIDER, this, this.opacity, 5.0D));
-      Manager.put(new Setting("XRAY_DISTANCE", "Distance", SettingType.SLIDER, this, this.distance, 4.0D));
-      Manager.put(new Setting("XR_TRACERS", "Tracers", SettingType.CHECKBOX, this, this.tracers));
-      Manager.put(new Setting("XR_ESP", "ESP", SettingType.CHECKBOX, this, this.esp));
-      Manager.put(new Setting("XR_UPDATE", "Chunks Update", SettingType.CHECKBOX, this, this.update));
-      SettingType var10004 = SettingType.SLIDER;
-      DoubleProperty var10006 = this.delay;
-      BooleanProperty var10008 = this.update;
-      this.update.getClass();
-      Manager.put(new Setting("XR_DELAY", "Update Delay", var10004, this, var10006, 0.5D, var10008::get));
-   }
+    /* fields */
+    public static int alpha;
+    public static boolean isEnabled;
+    public static List<Integer> blockIdList = Lists.newArrayList(10, 11, 8, 9, 14, 15, 16, 21, 41, 42, 46, 48, 52, 56, 57, 61, 62, 73, 74, 84, 89, 103, 116, 117, 118, 120, 129, 133, 137, 145, 152, 153, 154);
+    public static List<BlockPos> blockPosList = new CopyOnWriteArrayList<>();
+    private Timer timer = new Timer();
 
-   public void onEnable() {
-      this.onToggle(true);
-   }
+    /* properties @off */
+    @Property("opacity")
+    private final IntProperty opacity = PropertyFactory.createInt(160).minimum(0).maximum(255);
+    @Property("esp")
+    private final BooleanProperty esp = PropertyFactory.booleanTrue();
+    @Property("tracers")
+    private final BooleanProperty tracers = PropertyFactory.booleanTrue();
+    @Property("esp-ores")
+    private final ListProperty ores = PropertyFactory.createList("Diamond").acceptableValues("Redstone", "Diamond", "Emerald", "Lapis", "Iron", "Coal", "Gold");
+    @Property("distance")
+    private final IntProperty distance = PropertyFactory.createInt(42).minimum(16).maximum(64);
+    @Property("chunk-update")
+    private final BooleanProperty update = PropertyFactory.booleanFalse();
+    @Property("delay")
+    private DoubleProperty delay = PropertyFactory.createDouble(10.0).minimum(1.0).maximum(30.0);
 
-   public void onDisable() {
-      this.onToggle(false);
-      this.timer.reset();
-   }
+    /* constructors @on */
+    public XRay(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "XRay", "XRay", KEY_NONE, VISUALS);
+        Manager.put(new Setting("ESP_ORES", "ESP Ores", SELECTBOX, this, this.ores, () -> esp.get() || tracers.get()));
+        Manager.put(new Setting("OPACITY", "Opacity", SLIDER, this, this.opacity, 5));
+        Manager.put(new Setting("XRAY_DISTANCE", "Distance", SLIDER, this, this.distance, 4));
+        Manager.put(new Setting("XR_TRACERS", "Tracers", CHECKBOX, this, this.tracers));
+        Manager.put(new Setting("XR_ESP", "ESP", CHECKBOX, this, this.esp));
+        Manager.put(new Setting("XR_UPDATE", "Chunks Update", CHECKBOX, this, this.update));
+        Manager.put(new Setting("XR_DELAY", "Update Delay", SLIDER, this, this.delay, 0.5));
+    }
 
-   private void onToggle(boolean var1) {
-      blockPosList.clear();
-      this.mc.renderGlobal.loadRenderers();
-      isEnabled = var1;
-   }
+    @Override
+    public void onEnable() {
+        onToggle(true);
+    }
 
-   @EventTarget
-   public void update(TickUpdateEvent var1) {
-      int var2 = HUD.e();
-      if(alpha != ((Integer)this.opacity.get()).intValue()) {
-         this.mc.renderGlobal.loadRenderers();
-         alpha = ((Integer)this.opacity.get()).intValue();
-      }
+    @Override
+    public void onDisable() {
+        onToggle(false);
+        timer.reset();
+    }
 
-      if(((Boolean)this.update.get()).booleanValue() && this.timer.delay(1000.0D * ((Double)this.delay.get()).doubleValue())) {
-         this.mc.renderGlobal.loadRenderers();
-         this.timer.reset();
-      }
+    private void onToggle(boolean enabled) {
+        blockPosList.clear();
+        mc.renderGlobal.loadRenderers();
+        isEnabled = enabled;
+    }
 
-   }
+    @EventTarget
+    public void update(TickUpdateEvent event) {
+        if (alpha != opacity.get()) {
+            mc.renderGlobal.loadRenderers();
+            alpha = opacity.get();
 
-   @EventTarget
-   public void onRender3D(Render3DEvent var1) {
-      int var2 = HUD.h();
-      if(((Boolean)this.esp.get()).booleanValue()) {
-         Iterator var3 = blockPosList.iterator();
-         if(var3.hasNext()) {
-            BlockPos var4 = (BlockPos)var3.next();
-            if(this.mc.player.getDistance((double)var4.getX(), (double)var4.getZ()) <= (double)((Integer)this.distance.get()).intValue()) {
-               Block var5 = this.mc.world.getBlockState(var4).getBlock();
-               if(var5 == Blocks.diamond_ore && this.ores.contains("Diamond")) {
-                  this.render3D(var4, 0, 255, 255);
-               }
-
-               if(var5 == Blocks.iron_ore && this.ores.contains("Iron")) {
-                  this.render3D(var4, 225, 225, 225);
-               }
-
-               if(var5 == Blocks.lapis_ore && this.ores.contains("Lapis")) {
-                  this.render3D(var4, 0, 0, 255);
-               }
-
-               if(var5 == Blocks.redstone_ore && this.ores.contains("Redstone")) {
-                  this.render3D(var4, 255, 0, 0);
-               }
-
-               if(var5 == Blocks.coal_ore && this.ores.contains("Coal")) {
-                  this.render3D(var4, 0, 30, 30);
-               }
-
-               if(var5 == Blocks.emerald_ore && this.ores.contains("Emerald")) {
-                  this.render3D(var4, 0, 255, 0);
-               }
-
-               if(var5 == Blocks.gold_ore && this.ores.contains("Gold")) {
-                  this.render3D(var4, 255, 255, 0);
-               }
+        } else if (update.get()) {
+            if (timer.delay(1000 * delay.get())) {
+                mc.renderGlobal.loadRenderers();
+                timer.reset();
             }
-         }
-      }
+        }
+    }
 
-   }
+    @EventTarget
+    public void onRender3D(Render3DEvent e) {
+        if (esp.get()) {
+            for (BlockPos pos : blockPosList) {
+                if (mc.player.getDistance(pos.getX(), pos.getZ()) <= distance.get()) {
+                    Block block = mc.world.getBlockState(pos).getBlock();
 
-   private void render3D(BlockPos var1, int var2, int var3, int var4) {
-      int var5 = HUD.e();
-      if(((Boolean)this.esp.get()).booleanValue()) {
-         RenderUtils.drawSolidBlockESP(var1, ColorUtils.getColor(var2, var3, var4));
-      }
+                    if (block == Blocks.diamond_ore && ores.contains("Diamond")) {
+                        render3D(pos, 0, 255, 255);
+                    } else if (block == Blocks.iron_ore && ores.contains("Iron")) {
+                        render3D(pos, 225, 225, 225);
+                    } else if (block == Blocks.lapis_ore && ores.contains("Lapis")) {
+                        render3D(pos, 0, 0, 255);
+                    } else if (block == Blocks.redstone_ore && ores.contains("Redstone")) {
+                        render3D(pos, 255, 0, 0);
+                    } else if (block == Blocks.coal_ore && ores.contains("Coal")) {
+                        render3D(pos, 0, 30, 30);
+                    } else if (block == Blocks.emerald_ore && ores.contains("Emerald")) {
+                        render3D(pos, 0, 255, 0);
+                    } else if (block == Blocks.gold_ore && ores.contains("Gold")) {
+                        render3D(pos, 255, 255, 0);
+                    }
+                }
+            }
+        }
+    }
 
-      if(((Boolean)this.tracers.get()).booleanValue()) {
-         RenderUtils.drawLine(var1, ColorUtils.getColor(var2, var3, var4));
-      }
+    private void render3D(BlockPos pos, int red, int green, int blue) {
+        if (esp.get()) {
+            RenderUtils.drawSolidBlockESP(pos, ColorUtils.getColor(red, green, blue));
+        }
 
-   }
+        if (tracers.get()) {
+            RenderUtils.drawLine(pos, ColorUtils.getColor(red, green, blue));
+        }
+    }
 
-   @EventTarget
-   public void onSetting(SettingEvent var1) {
-      int var2 = HUD.e();
-      if(var1.getSettingName().equals("XR_ESP") || var1.getSettingName().equals("XR_TRACERS")) {
-         blockPosList.clear();
-         this.mc.renderGlobal.loadRenderers();
-      }
+    @EventTarget
+    public void onSetting(SettingEvent event) {
+        if (event.getSettingName().equals("XR_ESP") || event.getSettingName().equals("XR_TRACERS")) {
+            blockPosList.clear();
+            mc.renderGlobal.loadRenderers();
+        }
+    }
 
-   }
+    public static boolean showESP() {
+        return Novoline.getInstance().getModuleManager().getModule(XRay.class).esp.get();
+    }
 
-   public static boolean showESP() {
-      return ((Boolean)((XRay)Novoline.getInstance().getModuleManager().getModule(XRay.class)).esp.get()).booleanValue();
-   }
-
-   public static int getDistance() {
-      return ((Integer)((XRay)Novoline.getInstance().getModuleManager().getModule(XRay.class)).distance.get()).intValue();
-   }
-
-   private Boolean lambda$new$0() {
-      int var1 = HUD.h();
-      return Boolean.valueOf(((Boolean)this.esp.get()).booleanValue() || ((Boolean)this.tracers.get()).booleanValue());
-   }
+    public static int getDistance() {
+        return Novoline.getInstance().getModuleManager().getModule(XRay.class).distance.get();
+    }
 }

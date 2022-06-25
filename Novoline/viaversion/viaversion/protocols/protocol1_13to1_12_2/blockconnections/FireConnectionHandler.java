@@ -1,117 +1,71 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
+import viaversion.viaversion.api.data.UserConnection;
+import viaversion.viaversion.api.minecraft.BlockFace;
+import viaversion.viaversion.api.minecraft.Position;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import net.abi;
-import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.api.minecraft.BlockFace;
-import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-public class FireConnectionHandler extends abi {
-   private static final String[] WOOD_TYPES = new String[]{"oak", "spruce", "birch", "jungle", "acacia", "dark_oak"};
-   private static final Map connectedBlocks = new HashMap();
-   private static final Set flammableBlocks = new HashSet();
+public class FireConnectionHandler extends ConnectionHandler {
+    private static final String[] WOOD_TYPES = {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak"};
+    private static final Map<Byte, Integer> connectedBlocks = new HashMap<>();
+    private static final Set<Integer> flammableBlocks = new HashSet<>();
 
-   private static void addWoodTypes(Set var0, String var1) {
-      String[] var3 = WOOD_TYPES;
-      abi.b();
-      int var4 = var3.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         String var6 = var3[var5];
-         var0.add("minecraft:" + var6 + var1);
-         ++var5;
-      }
+    private static void addWoodTypes(Set<String> set, String suffix) {
+        for (String woodType : WOOD_TYPES) {
+            set.add("minecraft:" + woodType + suffix);
+        }
+    }
 
-   }
+    static ConnectionData.ConnectorInitAction init() {
+        Set<String> flammabeIds = new HashSet<>();
+        flammabeIds.add("minecraft:tnt");
+        flammabeIds.add("minecraft:vine");
+        flammabeIds.add("minecraft:bookshelf");
+        flammabeIds.add("minecraft:hay_block");
+        flammabeIds.add("minecraft:deadbush");
+        addWoodTypes(flammabeIds, "_slab");
+        addWoodTypes(flammabeIds, "_log");
+        addWoodTypes(flammabeIds, "_planks");
+        addWoodTypes(flammabeIds, "_leaves");
+        addWoodTypes(flammabeIds, "_fence");
+        addWoodTypes(flammabeIds, "_fence_gate");
+        addWoodTypes(flammabeIds, "_stairs");
 
-   static ConnectionData$ConnectorInitAction init() {
-      HashSet var0 = new HashSet();
-      var0.add("minecraft:tnt");
-      var0.add("minecraft:vine");
-      var0.add("minecraft:bookshelf");
-      var0.add("minecraft:hay_block");
-      var0.add("minecraft:deadbush");
-      addWoodTypes(var0, "_slab");
-      addWoodTypes(var0, "_log");
-      addWoodTypes(var0, "_planks");
-      addWoodTypes(var0, "_leaves");
-      addWoodTypes(var0, "_fence");
-      addWoodTypes(var0, "_fence_gate");
-      addWoodTypes(var0, "_stairs");
-      FireConnectionHandler var1 = new FireConnectionHandler();
-      return FireConnectionHandler::lambda$init$0;
-   }
+        FireConnectionHandler connectionHandler = new FireConnectionHandler();
+        return blockData -> {
+            String key = blockData.getMinecraftKey();
+            if (key.contains("_wool") || key.contains("_carpet") || flammabeIds.contains(key)) {
+                flammableBlocks.add(blockData.getSavedBlockStateId());
+            } else if (key.equals("minecraft:fire")) {
+                int id = blockData.getSavedBlockStateId();
+                connectedBlocks.put(getStates(blockData), id);
+                ConnectionData.connectionHandlerMap.put(id, connectionHandler);
+            }
+        };
+    }
 
-   private static byte getStates(WrappedBlockData var0) {
-      abi.b();
-      byte var2 = 0;
-      if(var0.getValue("east").equals("true")) {
-         var2 = (byte)(var2 | 1);
-      }
+    private static byte getStates(WrappedBlockData blockData) {
+        byte states = 0;
+        if (blockData.getValue("east").equals("true")) states |= 1;
+        if (blockData.getValue("north").equals("true")) states |= 2;
+        if (blockData.getValue("south").equals("true")) states |= 4;
+        if (blockData.getValue("up").equals("true")) states |= 8;
+        if (blockData.getValue("west").equals("true")) states |= 16;
+        return states;
+    }
 
-      if(var0.getValue("north").equals("true")) {
-         var2 = (byte)(var2 | 2);
-      }
-
-      if(var0.getValue("south").equals("true")) {
-         var2 = (byte)(var2 | 4);
-      }
-
-      if(var0.getValue("up").equals("true")) {
-         var2 = (byte)(var2 | 8);
-      }
-
-      if(var0.getValue("west").equals("true")) {
-         var2 = (byte)(var2 | 16);
-      }
-
-      return var2;
-   }
-
-   public int connect(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      byte var5 = 0;
-      if(flammableBlocks.contains(Integer.valueOf(this.getBlockData(var1, var2.getRelative(BlockFace.EAST))))) {
-         var5 = (byte)(var5 | 1);
-      }
-
-      if(flammableBlocks.contains(Integer.valueOf(this.getBlockData(var1, var2.getRelative(BlockFace.NORTH))))) {
-         var5 = (byte)(var5 | 2);
-      }
-
-      if(flammableBlocks.contains(Integer.valueOf(this.getBlockData(var1, var2.getRelative(BlockFace.SOUTH))))) {
-         var5 = (byte)(var5 | 4);
-      }
-
-      if(flammableBlocks.contains(Integer.valueOf(this.getBlockData(var1, var2.getRelative(BlockFace.TOP))))) {
-         var5 = (byte)(var5 | 8);
-      }
-
-      if(flammableBlocks.contains(Integer.valueOf(this.getBlockData(var1, var2.getRelative(BlockFace.WEST))))) {
-         var5 = (byte)(var5 | 16);
-      }
-
-      return ((Integer)connectedBlocks.get(Byte.valueOf(var5))).intValue();
-   }
-
-   private static void lambda$init$0(Set var0, FireConnectionHandler var1, WrappedBlockData var2) {
-      abi.b();
-      String var4 = var2.getMinecraftKey();
-      if(var4.contains("_wool") || var4.contains("_carpet") || var0.contains(var4)) {
-         flammableBlocks.add(Integer.valueOf(var2.getSavedBlockStateId()));
-      }
-
-      if(var4.equals("minecraft:fire")) {
-         int var5 = var2.getSavedBlockStateId();
-         connectedBlocks.put(Byte.valueOf(getStates(var2)), Integer.valueOf(var5));
-         ConnectionData.connectionHandlerMap.put(var5, var1);
-      }
-
-   }
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        byte states = 0;
+        if (flammableBlocks.contains(getBlockData(user, position.getRelative(BlockFace.EAST)))) states |= 1;
+        if (flammableBlocks.contains(getBlockData(user, position.getRelative(BlockFace.NORTH)))) states |= 2;
+        if (flammableBlocks.contains(getBlockData(user, position.getRelative(BlockFace.SOUTH)))) states |= 4;
+        if (flammableBlocks.contains(getBlockData(user, position.getRelative(BlockFace.TOP)))) states |= 8;
+        if (flammableBlocks.contains(getBlockData(user, position.getRelative(BlockFace.WEST)))) states |= 16;
+        return connectedBlocks.get(states);
+    }
 }

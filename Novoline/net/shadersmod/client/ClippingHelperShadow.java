@@ -2,262 +2,264 @@ package net.shadersmod.client;
 
 import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.util.MathHelper;
-import net.shadersmod.client.SMath;
-import net.shadersmod.client.ShaderOption;
-import net.shadersmod.client.Shaders;
 
 public class ClippingHelperShadow extends ClippingHelper {
-   private static ClippingHelperShadow instance = new ClippingHelperShadow();
-   float[] frustumTest = new float[6];
-   float[][] shadowClipPlanes = new float[10][4];
-   int shadowClipPlaneCount;
-   float[] matInvMP = new float[16];
-   float[] vecIntersection = new float[4];
+    private static ClippingHelperShadow instance = new ClippingHelperShadow();
+    float[] frustumTest = new float[6];
+    float[][] shadowClipPlanes = new float[10][4];
+    int shadowClipPlaneCount;
+    float[] matInvMP = new float[16];
+    float[] vecIntersection = new float[4];
 
-   public boolean isBoxInFrustum(double var1, double var3, double var5, double var7, double var9, double var11) {
-      ShaderOption.p();
-      int var14 = 0;
-      if(var14 < this.shadowClipPlaneCount) {
-         float[] var15 = this.shadowClipPlanes[var14];
-         if(this.dot4(var15, var1, var3, var5) <= 0.0D && this.dot4(var15, var7, var3, var5) <= 0.0D && this.dot4(var15, var1, var9, var5) <= 0.0D && this.dot4(var15, var7, var9, var5) <= 0.0D && this.dot4(var15, var1, var3, var11) <= 0.0D && this.dot4(var15, var7, var3, var11) <= 0.0D && this.dot4(var15, var1, var9, var11) <= 0.0D && this.dot4(var15, var7, var9, var11) <= 0.0D) {
-            return false;
-         }
+    /**
+     * Returns true if the box is inside all 6 clipping planes, otherwise returns false.
+     */
+    public boolean isBoxInFrustum(double x1, double y1, double z1, double x2, double y2, double z2) {
+        for (int i = 0; i < this.shadowClipPlaneCount; ++i) {
+            float[] afloat = this.shadowClipPlanes[i];
 
-         ++var14;
-      }
-
-      return true;
-   }
-
-   private double dot4(float[] var1, double var2, double var4, double var6) {
-      return (double)var1[0] * var2 + (double)var1[1] * var4 + (double)var1[2] * var6 + (double)var1[3];
-   }
-
-   private double dot3(float[] var1, float[] var2) {
-      return (double)var1[0] * (double)var2[0] + (double)var1[1] * (double)var2[1] + (double)var1[2] * (double)var2[2];
-   }
-
-   public static ClippingHelper getInstance() {
-      instance.init();
-      return instance;
-   }
-
-   private void normalizePlane(float[] var1) {
-      float var2 = MathHelper.sqrt_float(var1[0] * var1[0] + var1[1] * var1[1] + var1[2] * var1[2]);
-      var1[0] /= var2;
-      var1[1] /= var2;
-      var1[2] /= var2;
-      var1[3] /= var2;
-   }
-
-   private void normalize3(float[] var1) {
-      ShaderOption.p();
-      float var3 = MathHelper.sqrt_float(var1[0] * var1[0] + var1[1] * var1[1] + var1[2] * var1[2]);
-      if(var3 == 0.0F) {
-         var3 = 1.0F;
-      }
-
-      var1[0] /= var3;
-      var1[1] /= var3;
-      var1[2] /= var3;
-   }
-
-   private void assignPlane(float[] var1, float var2, float var3, float var4, float var5) {
-      float var6 = (float)Math.sqrt((double)(var2 * var2 + var3 * var3 + var4 * var4));
-      var1[0] = var2 / var6;
-      var1[1] = var3 / var6;
-      var1[2] = var4 / var6;
-      var1[3] = var5 / var6;
-   }
-
-   private void copyPlane(float[] var1, float[] var2) {
-      var1[0] = var2[0];
-      var1[1] = var2[1];
-      var1[2] = var2[2];
-      var1[3] = var2[3];
-   }
-
-   private void cross3(float[] var1, float[] var2, float[] var3) {
-      var1[0] = var2[1] * var3[2] - var2[2] * var3[1];
-      var1[1] = var2[2] * var3[0] - var2[0] * var3[2];
-      var1[2] = var2[0] * var3[1] - var2[1] * var3[0];
-   }
-
-   private void addShadowClipPlane(float[] var1) {
-      this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], var1);
-   }
-
-   private float length(float var1, float var2, float var3) {
-      return (float)Math.sqrt((double)(var1 * var1 + var2 * var2 + var3 * var3));
-   }
-
-   private float distance(float var1, float var2, float var3, float var4, float var5, float var6) {
-      return this.length(var1 - var4, var2 - var5, var3 - var6);
-   }
-
-   private void makeShadowPlane(float[] var1, float[] var2, float[] var3, float[] var4) {
-      this.cross3(this.vecIntersection, var2, var3);
-      this.cross3(var1, this.vecIntersection, var4);
-      this.normalize3(var1);
-      float var5 = (float)this.dot3(var2, var3);
-      float var6 = (float)this.dot3(var1, var3);
-      float var7 = this.distance(var1[0], var1[1], var1[2], var3[0] * var6, var3[1] * var6, var3[2] * var6);
-      float var8 = this.distance(var2[0], var2[1], var2[2], var3[0] * var5, var3[1] * var5, var3[2] * var5);
-      float var9 = var7 / var8;
-      float var10 = (float)this.dot3(var1, var2);
-      float var11 = this.distance(var1[0], var1[1], var1[2], var2[0] * var10, var2[1] * var10, var2[2] * var10);
-      float var12 = this.distance(var3[0], var3[1], var3[2], var2[0] * var5, var2[1] * var5, var2[2] * var5);
-      float var13 = var11 / var12;
-      var1[3] = var2[3] * var9 + var3[3] * var13;
-   }
-
-   public void init() {
-      float[] var2 = this.projectionMatrix;
-      float[] var3 = this.modelviewMatrix;
-      float[] var4 = this.clippingMatrix;
-      System.arraycopy(Shaders.faProjection, 0, var2, 0, 16);
-      ShaderOption.p();
-      System.arraycopy(Shaders.faModelView, 0, var3, 0, 16);
-      SMath.multiplyMat4xMat4(var4, var3, var2);
-      this.assignPlane(this.frustum[0], var4[3] - var4[0], var4[7] - var4[4], var4[11] - var4[8], var4[15] - var4[12]);
-      this.assignPlane(this.frustum[1], var4[3] + var4[0], var4[7] + var4[4], var4[11] + var4[8], var4[15] + var4[12]);
-      this.assignPlane(this.frustum[2], var4[3] + var4[1], var4[7] + var4[5], var4[11] + var4[9], var4[15] + var4[13]);
-      this.assignPlane(this.frustum[3], var4[3] - var4[1], var4[7] - var4[5], var4[11] - var4[9], var4[15] - var4[13]);
-      this.assignPlane(this.frustum[4], var4[3] - var4[2], var4[7] - var4[6], var4[11] - var4[10], var4[15] - var4[14]);
-      this.assignPlane(this.frustum[5], var4[3] + var4[2], var4[7] + var4[6], var4[11] + var4[10], var4[15] + var4[14]);
-      float[] var5 = Shaders.shadowLightPositionVector;
-      float var6 = (float)this.dot3(this.frustum[0], var5);
-      float var7 = (float)this.dot3(this.frustum[1], var5);
-      float var8 = (float)this.dot3(this.frustum[2], var5);
-      float var9 = (float)this.dot3(this.frustum[3], var5);
-      float var10 = (float)this.dot3(this.frustum[4], var5);
-      float var11 = (float)this.dot3(this.frustum[5], var5);
-      this.shadowClipPlaneCount = 0;
-      if(var6 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0]);
-         if(var6 > 0.0F) {
-            if(var8 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[2], var5);
+            if (this.dot4(afloat, x1, y1, z1) <= 0.0D && this.dot4(afloat, x2, y1, z1) <= 0.0D && this.dot4(afloat, x1, y2, z1) <= 0.0D && this.dot4(afloat, x2, y2, z1) <= 0.0D && this.dot4(afloat, x1, y1, z2) <= 0.0D && this.dot4(afloat, x2, y1, z2) <= 0.0D && this.dot4(afloat, x1, y2, z2) <= 0.0D && this.dot4(afloat, x2, y2, z2) <= 0.0D) {
+                return false;
             }
+        }
 
-            if(var9 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[3], var5);
+        return true;
+    }
+
+    private double dot4(float[] plane, double x, double y, double z) {
+        return (double) plane[0] * x + (double) plane[1] * y + (double) plane[2] * z + (double) plane[3];
+    }
+
+    private double dot3(float[] vecA, float[] vecB) {
+        return (double) vecA[0] * (double) vecB[0] + (double) vecA[1] * (double) vecB[1] + (double) vecA[2] * (double) vecB[2];
+    }
+
+    public static ClippingHelper getInstance() {
+        instance.init();
+        return instance;
+    }
+
+    private void normalizePlane(float[] plane) {
+        float f = MathHelper.sqrt_float(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
+        plane[0] /= f;
+        plane[1] /= f;
+        plane[2] /= f;
+        plane[3] /= f;
+    }
+
+    private void normalize3(float[] plane) {
+        float f = MathHelper.sqrt_float(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
+
+        if (f == 0.0F) {
+            f = 1.0F;
+        }
+
+        plane[0] /= f;
+        plane[1] /= f;
+        plane[2] /= f;
+    }
+
+    private void assignPlane(float[] plane, float a, float b, float c, float d) {
+        float f = (float) Math.sqrt((double) (a * a + b * b + c * c));
+        plane[0] = a / f;
+        plane[1] = b / f;
+        plane[2] = c / f;
+        plane[3] = d / f;
+    }
+
+    private void copyPlane(float[] dst, float[] src) {
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
+        dst[3] = src[3];
+    }
+
+    private void cross3(float[] out, float[] a, float[] b) {
+        out[0] = a[1] * b[2] - a[2] * b[1];
+        out[1] = a[2] * b[0] - a[0] * b[2];
+        out[2] = a[0] * b[1] - a[1] * b[0];
+    }
+
+    private void addShadowClipPlane(float[] plane) {
+        this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], plane);
+    }
+
+    private float length(float x, float y, float z) {
+        return (float) Math.sqrt((double) (x * x + y * y + z * z));
+    }
+
+    private float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return this.length(x1 - x2, y1 - y2, z1 - z2);
+    }
+
+    private void makeShadowPlane(float[] shadowPlane, float[] positivePlane, float[] negativePlane, float[] vecSun) {
+        this.cross3(this.vecIntersection, positivePlane, negativePlane);
+        this.cross3(shadowPlane, this.vecIntersection, vecSun);
+        this.normalize3(shadowPlane);
+        float f = (float) this.dot3(positivePlane, negativePlane);
+        float f1 = (float) this.dot3(shadowPlane, negativePlane);
+        float f2 = this.distance(shadowPlane[0], shadowPlane[1], shadowPlane[2], negativePlane[0] * f1, negativePlane[1] * f1, negativePlane[2] * f1);
+        float f3 = this.distance(positivePlane[0], positivePlane[1], positivePlane[2], negativePlane[0] * f, negativePlane[1] * f, negativePlane[2] * f);
+        float f4 = f2 / f3;
+        float f5 = (float) this.dot3(shadowPlane, positivePlane);
+        float f6 = this.distance(shadowPlane[0], shadowPlane[1], shadowPlane[2], positivePlane[0] * f5, positivePlane[1] * f5, positivePlane[2] * f5);
+        float f7 = this.distance(negativePlane[0], negativePlane[1], negativePlane[2], positivePlane[0] * f, positivePlane[1] * f, positivePlane[2] * f);
+        float f8 = f6 / f7;
+        shadowPlane[3] = positivePlane[3] * f4 + negativePlane[3] * f8;
+    }
+
+    public void init() {
+        float[] afloat = this.projectionMatrix;
+        float[] afloat1 = this.modelviewMatrix;
+        float[] afloat2 = this.clippingMatrix;
+        System.arraycopy(Shaders.faProjection, 0, afloat, 0, 16);
+        System.arraycopy(Shaders.faModelView, 0, afloat1, 0, 16);
+        SMath.multiplyMat4xMat4(afloat2, afloat1, afloat);
+        this.assignPlane(this.frustum[0], afloat2[3] - afloat2[0], afloat2[7] - afloat2[4], afloat2[11] - afloat2[8], afloat2[15] - afloat2[12]);
+        this.assignPlane(this.frustum[1], afloat2[3] + afloat2[0], afloat2[7] + afloat2[4], afloat2[11] + afloat2[8], afloat2[15] + afloat2[12]);
+        this.assignPlane(this.frustum[2], afloat2[3] + afloat2[1], afloat2[7] + afloat2[5], afloat2[11] + afloat2[9], afloat2[15] + afloat2[13]);
+        this.assignPlane(this.frustum[3], afloat2[3] - afloat2[1], afloat2[7] - afloat2[5], afloat2[11] - afloat2[9], afloat2[15] - afloat2[13]);
+        this.assignPlane(this.frustum[4], afloat2[3] - afloat2[2], afloat2[7] - afloat2[6], afloat2[11] - afloat2[10], afloat2[15] - afloat2[14]);
+        this.assignPlane(this.frustum[5], afloat2[3] + afloat2[2], afloat2[7] + afloat2[6], afloat2[11] + afloat2[10], afloat2[15] + afloat2[14]);
+        float[] afloat3 = Shaders.shadowLightPositionVector;
+        float f = (float) this.dot3(this.frustum[0], afloat3);
+        float f1 = (float) this.dot3(this.frustum[1], afloat3);
+        float f2 = (float) this.dot3(this.frustum[2], afloat3);
+        float f3 = (float) this.dot3(this.frustum[3], afloat3);
+        float f4 = (float) this.dot3(this.frustum[4], afloat3);
+        float f5 = (float) this.dot3(this.frustum[5], afloat3);
+        this.shadowClipPlaneCount = 0;
+
+        if (f >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0]);
+
+            if (f > 0.0F) {
+                if (f2 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[2], afloat3);
+                }
+
+                if (f3 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[3], afloat3);
+                }
+
+                if (f4 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[4], afloat3);
+                }
+
+                if (f5 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[5], afloat3);
+                }
             }
+        }
 
-            if(var10 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[4], var5);
+        if (f1 >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1]);
+
+            if (f1 > 0.0F) {
+                if (f2 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[2], afloat3);
+                }
+
+                if (f3 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[3], afloat3);
+                }
+
+                if (f4 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[4], afloat3);
+                }
+
+                if (f5 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[5], afloat3);
+                }
             }
+        }
 
-            if(var11 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[0], this.frustum[5], var5);
+        if (f2 >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2]);
+
+            if (f2 > 0.0F) {
+                if (f < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[0], afloat3);
+                }
+
+                if (f1 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[1], afloat3);
+                }
+
+                if (f4 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[4], afloat3);
+                }
+
+                if (f5 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[5], afloat3);
+                }
             }
-         }
-      }
+        }
 
-      if(var7 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1]);
-         if(var7 > 0.0F) {
-            if(var8 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[2], var5);
+        if (f3 >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3]);
+
+            if (f3 > 0.0F) {
+                if (f < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[0], afloat3);
+                }
+
+                if (f1 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[1], afloat3);
+                }
+
+                if (f4 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[4], afloat3);
+                }
+
+                if (f5 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[5], afloat3);
+                }
             }
+        }
 
-            if(var9 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[3], var5);
+        if (f4 >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4]);
+
+            if (f4 > 0.0F) {
+                if (f < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[0], afloat3);
+                }
+
+                if (f1 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[1], afloat3);
+                }
+
+                if (f2 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[2], afloat3);
+                }
+
+                if (f3 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[3], afloat3);
+                }
             }
+        }
 
-            if(var10 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[4], var5);
+        if (f5 >= 0.0F) {
+            this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5]);
+
+            if (f5 > 0.0F) {
+                if (f < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[0], afloat3);
+                }
+
+                if (f1 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[1], afloat3);
+                }
+
+                if (f2 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[2], afloat3);
+                }
+
+                if (f3 < 0.0F) {
+                    this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[3], afloat3);
+                }
             }
-
-            if(var11 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[1], this.frustum[5], var5);
-            }
-         }
-      }
-
-      if(var8 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2]);
-         if(var8 > 0.0F) {
-            if(var6 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[0], var5);
-            }
-
-            if(var7 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[1], var5);
-            }
-
-            if(var10 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[4], var5);
-            }
-
-            if(var11 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[2], this.frustum[5], var5);
-            }
-         }
-      }
-
-      if(var9 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3]);
-         if(var9 > 0.0F) {
-            if(var6 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[0], var5);
-            }
-
-            if(var7 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[1], var5);
-            }
-
-            if(var10 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[4], var5);
-            }
-
-            if(var11 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[3], this.frustum[5], var5);
-            }
-         }
-      }
-
-      if(var10 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4]);
-         if(var10 > 0.0F) {
-            if(var6 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[0], var5);
-            }
-
-            if(var7 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[1], var5);
-            }
-
-            if(var8 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[2], var5);
-            }
-
-            if(var9 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[4], this.frustum[3], var5);
-            }
-         }
-      }
-
-      if(var11 >= 0.0F) {
-         this.copyPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5]);
-         if(var11 > 0.0F) {
-            if(var6 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[0], var5);
-            }
-
-            if(var7 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[1], var5);
-            }
-
-            if(var8 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[2], var5);
-            }
-
-            if(var9 < 0.0F) {
-               this.makeShadowPlane(this.shadowClipPlanes[this.shadowClipPlaneCount++], this.frustum[5], this.frustum[3], var5);
-            }
-         }
-      }
-
-   }
+        }
+    }
 }

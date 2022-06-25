@@ -1,15 +1,10 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.iV;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockBush;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -17,72 +12,98 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockNetherWart extends BlockBush {
-   public static final iV P = iV.a("age", 0, 3);
 
-   protected BlockNetherWart() {
-      super(Material.plants, MapColor.redColor);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(0)));
-      this.setTickRandomly(true);
-      float var1 = 0.5F;
-      this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
-      this.setCreativeTab((CreativeTabs)null);
-   }
+    public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 3);
 
-   protected boolean canPlaceBlockOn(Block var1) {
-      return var1 == Blocks.soul_sand;
-   }
+    protected BlockNetherWart() {
+        super(Material.plants, MapColor.redColor);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(AGE, 0));
+        this.setTickRandomly(true);
+        final float f = 0.5F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
+        this.setCreativeTab(null);
+    }
 
-   public boolean canBlockStay(World var1, BlockPos var2, IBlockState var3) {
-      return this.canPlaceBlockOn(var1.getBlockState(var2.down()).getBlock());
-   }
+    /**
+     * is the block grass, dirt or farmland
+     */
+    protected boolean canPlaceBlockOn(Block ground) {
+        return ground == Blocks.soul_sand;
+    }
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      int var5 = ((Integer)var3.getValue(P)).intValue();
-      if(var5 < 3 && var4.nextInt(10) == 0) {
-         var3 = var3.withProperty(P, Integer.valueOf(var5 + 1));
-         var1.setBlockState(var2, var3, 2);
-      }
+    public boolean canBlockStay(World worldIn, BlockPos pos, IBlockState state) {
+        return this.canPlaceBlockOn(worldIn.getBlockState(pos.down()).getBlock());
+    }
 
-      super.updateTick(var1, var2, var3, var4);
-   }
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        final int i = state.getValue(AGE);
 
-   public void dropBlockAsItemWithChance(World var1, BlockPos var2, IBlockState var3, float var4, int var5) {
-      if(!var1.isRemote) {
-         int var6 = 1;
-         if(((Integer)var3.getValue(P)).intValue() >= 3) {
-            var6 = 2 + var1.rand.nextInt(3);
-            var6 = var6 + var1.rand.nextInt(var5 + 1);
-         }
+        if (i < 3 && rand.nextInt(10) == 0) {
+            state = state.withProperty(AGE, i + 1);
+            worldIn.setBlockState(pos, state, 2);
+        }
 
-         for(int var7 = 0; var7 < var6; ++var7) {
-            spawnAsEntity(var1, var2, new ItemStack(Items.nether_wart));
-         }
-      }
+        super.updateTick(worldIn, pos, state, rand);
+    }
 
-   }
+    /**
+     * Spawns this Block's drops into the World as EntityItems.
+     */
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune) {
+        if (!worldIn.isRemote) {
+            int i = 1;
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return null;
-   }
+            if (state.getValue(AGE) >= 3) {
+                i = 2 + worldIn.rand.nextInt(3);
 
-   public int quantityDropped(Random var1) {
-      return 0;
-   }
+                if (fortune > 0) {
+                    i += worldIn.rand.nextInt(fortune + 1);
+                }
+            }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return Items.nether_wart;
-   }
+            for (int j = 0; j < i; ++j) {
+                spawnAsEntity(worldIn, pos, new ItemStack(Items.nether_wart));
+            }
+        }
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf(var1));
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return null;
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue();
-   }
+    /**
+     * Returns the quantity of items to drop on block destruction.
+     */
+    public int quantityDropped(Random random) {
+        return 0;
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return Items.nether_wart;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(AGE, meta);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(AGE);
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, AGE);
+    }
+
 }

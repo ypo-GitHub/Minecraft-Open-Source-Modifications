@@ -1,30 +1,31 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
-import net.minecraft.block.BlockDoublePlant$EnumPlantType;
+import net.minecraft.block.BlockDoublePlant;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenDoublePlant extends WorldGenerator {
-   private BlockDoublePlant$EnumPlantType field_150549_a;
+    private BlockDoublePlant.EnumPlantType field_150549_a;
 
-   public void setPlantType(BlockDoublePlant$EnumPlantType var1) {
-      this.field_150549_a = var1;
-   }
+    public void setPlantType(BlockDoublePlant.EnumPlantType p_180710_1_) {
+        this.field_150549_a = p_180710_1_;
+    }
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      boolean var4 = false;
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        boolean flag = false;
 
-      for(int var5 = 0; var5 < 64; ++var5) {
-         BlockPos var6 = var3.a(var2.nextInt(8) - var2.nextInt(8), var2.nextInt(4) - var2.nextInt(4), var2.nextInt(8) - var2.nextInt(8));
-         if(var1.isAirBlock(var6) && (!var1.provider.getHasNoSky() || var6.getY() < 254) && Blocks.double_plant.canPlaceBlockAt(var1, var6)) {
-            Blocks.double_plant.placeAt(var1, var6, this.field_150549_a, 2);
-            var4 = true;
-         }
-      }
+        for (int i = 0; i < 64; ++i) {
+            BlockPos blockpos = position.add(rand.nextInt(8) - rand.nextInt(8), rand.nextInt(4) - rand.nextInt(4), rand.nextInt(8) - rand.nextInt(8));
 
-      return var4;
-   }
+            if (worldIn.isAirBlock(blockpos) && (!worldIn.provider.getHasNoSky() || blockpos.getY() < 254) && Blocks.double_plant.canPlaceBlockAt(worldIn, blockpos)) {
+                Blocks.double_plant.placeAt(worldIn, blockpos, this.field_150549_a, 2);
+                flag = true;
+            }
+        }
+
+        return flag;
+    }
 }

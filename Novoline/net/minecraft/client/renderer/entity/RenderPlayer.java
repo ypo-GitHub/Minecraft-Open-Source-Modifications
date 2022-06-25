@@ -1,148 +1,179 @@
 package net.minecraft.client.renderer.entity;
 
-import net.a4V;
-import net.asJ;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.entity.RendererLivingEntity;
-import net.minecraft.client.renderer.entity.layers.LayerArrow;
-import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;
-import net.minecraft.client.renderer.entity.layers.LayerCape;
-import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
-import net.minecraft.client.renderer.entity.layers.LayerDeadmau5Head;
-import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.client.renderer.entity.layers.*;
 import net.minecraft.entity.player.EnumPlayerModelParts;
+import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemStack;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderPlayer extends RendererLivingEntity {
-   private boolean smallArms;
+public class RenderPlayer extends RendererLivingEntity<AbstractClientPlayer> {
 
-   public RenderPlayer(RenderManager var1) {
-      this(var1, false);
-   }
+    /**
+     * this field is used to indicate the 3-pixel wide arms
+     */
+    private boolean smallArms;
 
-   public RenderPlayer(RenderManager var1, boolean var2) {
-      super(var1, new ModelPlayer(0.0F, var2), 0.5F);
-      this.smallArms = var2;
-      this.addLayer(new LayerBipedArmor(this));
-      this.addLayer(new LayerHeldItem(this));
-      this.addLayer(new LayerArrow(this));
-      this.addLayer(new LayerDeadmau5Head(this));
-      this.addLayer(new LayerCape(this));
-      this.addLayer(new LayerCustomHead(this.getMainModel().bipedHead));
-   }
+    public RenderPlayer(RenderManager renderManager) {
+        this(renderManager, false);
+    }
 
-   public ModelPlayer getMainModel() {
-      return (ModelPlayer)super.getMainModel();
-   }
+    public RenderPlayer(RenderManager renderManager, boolean useSmallArms) {
+        super(renderManager, new ModelPlayer(0.0F, useSmallArms), 0.5F);
+        this.smallArms = useSmallArms;
+        this.addLayer(new LayerBipedArmor(this));
+        this.addLayer(new LayerHeldItem(this));
+        this.addLayer(new LayerArrow(this));
+        this.addLayer(new LayerDeadmau5Head(this));
+        this.addLayer(new LayerCape(this));
+        this.addLayer(new LayerCustomHead(this.getMainModel().bipedHead));
+    }
 
-   public void a(asJ var1, double var2, double var4, double var6, float var8, float var9) {
-      if(!var1.isUser() || this.renderManager.livingPlayer == var1) {
-         double var10 = var4;
-         if(var1.isSneaking() && !(var1 instanceof EntityPlayerSP)) {
-            var10 = var4 - 0.125D;
-         }
+    public ModelPlayer getMainModel() {
+        return (ModelPlayer) super.getMainModel();
+    }
 
-         this.b(var1);
-         super.doRender((EntityLivingBase)var1, var2, var10, var6, var8, var9);
-      }
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probability, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void doRender(AbstractClientPlayer entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        if (!entity.isUser() || this.renderManager.livingPlayer == entity) {
+            double d0 = y;
 
-   }
+            if (entity.isSneaking() && !(entity instanceof EntityPlayerSP)) {
+                d0 = y - 0.125D;
+            }
 
-   private void b(asJ var1) {
-      ModelPlayer var2 = this.getMainModel();
-      if(var1.isSpectator()) {
-         var2.setInvisible(false);
-         var2.bipedHead.showModel = true;
-         var2.bipedHeadwear.showModel = true;
-      } else {
-         ItemStack var3 = var1.inventory.getCurrentItem();
-         var2.setInvisible(true);
-         var2.bipedHeadwear.showModel = var1.isWearing(EnumPlayerModelParts.HAT);
-         var2.x.showModel = var1.isWearing(EnumPlayerModelParts.JACKET);
-         var2.t.showModel = var1.isWearing(EnumPlayerModelParts.LEFT_PANTS_LEG);
-         var2.u.showModel = var1.isWearing(EnumPlayerModelParts.RIGHT_PANTS_LEG);
-         var2.y.showModel = var1.isWearing(EnumPlayerModelParts.LEFT_SLEEVE);
-         var2.v.showModel = var1.isWearing(EnumPlayerModelParts.RIGHT_SLEEVE);
-         var2.heldItemLeft = 0;
-         var2.aimedBow = false;
-         var2.isSneak = var1.isSneaking();
-         var2.heldItemRight = 0;
-      }
+            setModelVisibilities(entity);
 
-   }
+            super.doRender(entity, x, d0, z, entityYaw, partialTicks);
+        }
+    }
 
-   protected ResourceLocation d(asJ var1) {
-      return var1.getLocationSkin();
-   }
+    private void setModelVisibilities(AbstractClientPlayer clientPlayer) {
+        ModelPlayer modelPlayer = getMainModel();
 
-   public void transformHeldFull3DItemLayer() {
-      GlStateManager.translate(0.0F, 0.1875F, 0.0F);
-   }
+        if (clientPlayer.isSpectator()) {
+            modelPlayer.setInvisible(false);
+            modelPlayer.bipedHead.showModel = true;
+            modelPlayer.bipedHeadwear.showModel = true;
+        } else {
+            ItemStack itemstack = clientPlayer.inventory.getCurrentItem();
 
-   protected void a(asJ var1, float var2) {
-      float var3 = 0.9375F;
-      GlStateManager.scale(var3, var3, var3);
-   }
+            modelPlayer.setInvisible(true);
+            modelPlayer.bipedHeadwear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.HAT);
+            modelPlayer.bipedBodyWear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.JACKET);
+            modelPlayer.bipedLeftLegwear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.LEFT_PANTS_LEG);
+            modelPlayer.bipedRightLegwear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.RIGHT_PANTS_LEG);
+            modelPlayer.bipedLeftArmwear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.LEFT_SLEEVE);
+            modelPlayer.bipedRightArmwear.showModel = clientPlayer.isWearing(EnumPlayerModelParts.RIGHT_SLEEVE);
+            modelPlayer.heldItemLeft = 0;
+            modelPlayer.aimedBow = false;
+            modelPlayer.isSneak = clientPlayer.isSneaking();
 
-   protected void a(asJ var1, double var2, double var4, double var6, String var8, float var9, double var10) {
-      if(var10 < 100.0D) {
-         Scoreboard var12 = var1.getWorldScoreboard();
-         ScoreObjective var13 = var12.getObjectiveInDisplaySlot(2);
-         Score var14 = var12.getValueFromObjective(var1.getName(), var13);
-         this.renderLivingLabel(var1, var14.getScorePoints() + " " + var13.getDisplayName(), var2, var4, var6, 64);
-         var4 += (double)((float)this.getFontRendererFromRenderManager().getHeight() * 1.15F * var9);
-      }
+            if (itemstack == null) {
+                modelPlayer.heldItemRight = 0;
+            } else {
+                modelPlayer.heldItemRight = 1;
 
-      super.renderOffsetLivingLabel(var1, var2, var4, var6, var8, var9, var10);
-   }
+                if (clientPlayer.getItemInUseCount() > 0) {
+                    EnumAction action = itemstack.getItemUseAction();
 
-   public void a(asJ var1) {
-      float var2 = 1.0F;
-      GlStateManager.color(var2, var2, var2);
-      ModelPlayer var3 = this.getMainModel();
-      this.b(var1);
-      var3.swingProgress = 0.0F;
-      var3.isSneak = false;
-      a4V.a(var3, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, var1);
-      var3.renderRightArm();
-   }
+                    if (action == EnumAction.BLOCK) {
+                        modelPlayer.heldItemRight = 3;
+                    } else if (action == EnumAction.BOW) {
+                        modelPlayer.aimedBow = true;
+                    }
+                }
+            }
+        }
+    }
 
-   public void c(asJ var1) {
-      float var2 = 1.0F;
-      GlStateManager.color(var2, var2, var2);
-      ModelPlayer var3 = this.getMainModel();
-      this.b(var1);
-      var3.isSneak = false;
-      var3.swingProgress = 0.0F;
-      a4V.a(var3, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, var1);
-      var3.renderLeftArm();
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(AbstractClientPlayer entity) {
+        return entity.getLocationSkin();
+    }
 
-   protected void a(asJ var1, double var2, double var4, double var6) {
-      if(var1.isEntityAlive() && var1.isPlayerSleeping()) {
-         super.renderLivingAt(var1, var2 + (double)var1.renderOffsetX, var4 + (double)var1.renderOffsetY, var6 + (double)var1.renderOffsetZ);
-      } else {
-         super.renderLivingAt(var1, var2, var4, var6);
-      }
+    public void transformHeldFull3DItemLayer() {
+        GlStateManager.translate(0.0F, 0.1875F, 0.0F);
+    }
 
-   }
+    /**
+     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
+     * entityLiving, partialTickTime
+     */
+    protected void preRenderCallback(AbstractClientPlayer entityLivingBase, float partialTickTime) {
+        float f = 0.9375F;
+        GlStateManager.scale(f, f, f);
+    }
 
-   protected void a(asJ var1, float var2, float var3, float var4) {
-      if(var1.isEntityAlive() && var1.isPlayerSleeping()) {
-         GlStateManager.rotate(var1.getBedOrientationInDegrees(), 0.0F, 1.0F, 0.0F);
-         GlStateManager.rotate(this.getDeathMaxRotation(var1), 0.0F, 0.0F, 1.0F);
-         GlStateManager.rotate(270.0F, 0.0F, 1.0F, 0.0F);
-      } else {
-         super.rotateCorpse(var1, var2, var3, var4);
-      }
+    protected void renderOffsetLivingLabel(AbstractClientPlayer entityIn, double x, double y, double z, String str, float p_177069_9_, double p_177069_10_) {
+        if (p_177069_10_ < 100.0D) {
+            Scoreboard scoreboard = entityIn.getWorldScoreboard();
+            ScoreObjective scoreobjective = scoreboard.getObjectiveInDisplaySlot(2);
 
-   }
+            if (scoreobjective != null) {
+                Score score = scoreboard.getValueFromObjective(entityIn.getName(), scoreobjective);
+                this.renderLivingLabel(entityIn, score.getScorePoints() + " " + scoreobjective.getDisplayName(), x, y, z, 64);
+                y += (float) this.getFontRendererFromRenderManager().getHeight() * 1.15F * p_177069_9_;
+            }
+        }
+
+        super.renderOffsetLivingLabel(entityIn, x, y, z, str, p_177069_9_, p_177069_10_);
+    }
+
+    public void renderRightArm(AbstractClientPlayer clientPlayer) {
+        float f = 1.0F;
+        GlStateManager.color(f, f, f);
+        ModelPlayer modelplayer = this.getMainModel();
+        this.setModelVisibilities(clientPlayer);
+        modelplayer.swingProgress = 0.0F;
+        modelplayer.isSneak = false;
+        modelplayer.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, clientPlayer);
+        modelplayer.renderRightArm();
+    }
+
+    public void renderLeftArm(AbstractClientPlayer clientPlayer) {
+        float f = 1.0F;
+        GlStateManager.color(f, f, f);
+        ModelPlayer modelplayer = this.getMainModel();
+        this.setModelVisibilities(clientPlayer);
+        modelplayer.isSneak = false;
+        modelplayer.swingProgress = 0.0F;
+        modelplayer.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, clientPlayer);
+        modelplayer.renderLeftArm();
+    }
+
+    /**
+     * Sets a simple glTranslate on a LivingEntity.
+     */
+    protected void renderLivingAt(AbstractClientPlayer entityLivingBaseIn, double x, double y, double z) {
+        if (entityLivingBaseIn.isEntityAlive() && entityLivingBaseIn.isPlayerSleeping()) {
+            super.renderLivingAt(entityLivingBaseIn, x + (double) entityLivingBaseIn.renderOffsetX, y + (double) entityLivingBaseIn.renderOffsetY, z + (double) entityLivingBaseIn.renderOffsetZ);
+        } else {
+            super.renderLivingAt(entityLivingBaseIn, x, y, z);
+        }
+    }
+
+    protected void rotateCorpse(AbstractClientPlayer bat, float p_77043_2_, float p_77043_3_, float partialTicks) {
+        if (bat.isEntityAlive() && bat.isPlayerSleeping()) {
+            GlStateManager.rotate(bat.getBedOrientationInDegrees(), 0.0F, 1.0F, 0.0F);
+            GlStateManager.rotate(this.getDeathMaxRotation(bat), 0.0F, 0.0F, 1.0F);
+            GlStateManager.rotate(270.0F, 0.0F, 1.0F, 0.0F);
+        } else {
+            super.rotateCorpse(bat, p_77043_2_, p_77043_3_, partialTicks);
+        }
+    }
+
 }

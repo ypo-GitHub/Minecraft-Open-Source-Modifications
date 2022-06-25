@@ -1,13 +1,18 @@
 package cc.novoline.gui;
 
+/**
+ * @author xDelsy
+ */
 public interface ElementWithBody {
-   boolean isHovered(int var1, int var2);
 
-   int getWidth();
+    boolean isHovered(int mouseX, int mouseY);
 
-   void setWidth(int var1);
+    int getWidth();
 
-   int getHeight();
+    void setWidth(int width);
 
-   void setHeight(int var1);
+    int getHeight();
+
+    void setHeight(int height);
+
 }

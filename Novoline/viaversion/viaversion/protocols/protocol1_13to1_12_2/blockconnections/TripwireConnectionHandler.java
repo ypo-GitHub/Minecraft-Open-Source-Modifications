@@ -1,80 +1,100 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import net.abi;
-import net.acE;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.TripwireConnectionHandler$TripwireData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-public class TripwireConnectionHandler extends abi {
-   private static final Map tripwireDataMap = new HashMap();
-   private static final Map connectedBlocks = new HashMap();
-   private static final Map tripwireHooks = new HashMap();
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
-   static ConnectionData$ConnectorInitAction init() {
-      TripwireConnectionHandler var0 = new TripwireConnectionHandler();
-      return TripwireConnectionHandler::lambda$init$0;
-   }
+public class TripwireConnectionHandler extends ConnectionHandler {
+    private static final Map<Integer, TripwireData> tripwireDataMap = new HashMap<>();
+    private static final Map<Byte, Integer> connectedBlocks = new HashMap<>();
+    private static final Map<Integer, BlockFace> tripwireHooks = new HashMap<>();
 
-   private static byte getStates(WrappedBlockData var0) {
-      abi.b();
-      byte var2 = 0;
-      if(var0.getValue("attached").equals("true")) {
-         var2 = (byte)(var2 | 1);
-      }
+    static ConnectionData.ConnectorInitAction init() {
+        final TripwireConnectionHandler connectionHandler = new TripwireConnectionHandler();
+        return blockData -> {
+            if (blockData.getMinecraftKey().equals("minecraft:tripwire_hook")) {
+                tripwireHooks.put(blockData.getSavedBlockStateId(), BlockFace.valueOf(blockData.getValue("facing").toUpperCase(Locale.ROOT)));
+            } else if (blockData.getMinecraftKey().equals("minecraft:tripwire")) {
+                TripwireData tripwireData = new TripwireData(
+                        blockData.getValue("attached").equals("true"),
+                        blockData.getValue("disarmed").equals("true"),
+                        blockData.getValue("powered").equals("true")
+                );
 
-      if(var0.getValue("disarmed").equals("true")) {
-         var2 = (byte)(var2 | 2);
-      }
+                tripwireDataMap.put(blockData.getSavedBlockStateId(), tripwireData);
+                connectedBlocks.put(getStates(blockData), blockData.getSavedBlockStateId());
 
-      if(var0.getValue("powered").equals("true")) {
-         var2 = (byte)(var2 | 4);
-      }
+                ConnectionData.connectionHandlerMap.put(blockData.getSavedBlockStateId(), connectionHandler);
+            }
+        };
+    }
 
-      if(var0.getValue("east").equals("true")) {
-         var2 = (byte)(var2 | 8);
-      }
+    private static byte getStates(WrappedBlockData blockData) {
+        byte b = 0;
+        if (blockData.getValue("attached").equals("true")) b |= 1;
+        if (blockData.getValue("disarmed").equals("true")) b |= 2;
+        if (blockData.getValue("powered").equals("true")) b |= 4;
+        if (blockData.getValue("east").equals("true")) b |= 8;
+        if (blockData.getValue("north").equals("true")) b |= 16;
+        if (blockData.getValue("south").equals("true")) b |= 32;
+        if (blockData.getValue("west").equals("true")) b |= 64;
+        return b;
+    }
 
-      if(var0.getValue("north").equals("true")) {
-         var2 = (byte)(var2 | 16);
-      }
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        TripwireData tripwireData = tripwireDataMap.get(blockState);
+        if (tripwireData == null) return blockState;
+        byte b = 0;
+        if (tripwireData.isAttached()) b |= 1;
+        if (tripwireData.isDisarmed()) b |= 2;
+        if (tripwireData.isPowered()) b |= 4;
 
-      if(var0.getValue("south").equals("true")) {
-         var2 = (byte)(var2 | 32);
-      }
+        int east = getBlockData(user, position.getRelative(BlockFace.EAST));
+        int north = getBlockData(user, position.getRelative(BlockFace.NORTH));
+        int south = getBlockData(user, position.getRelative(BlockFace.SOUTH));
+        int west = getBlockData(user, position.getRelative(BlockFace.WEST));
 
-      if(var0.getValue("west").equals("true")) {
-         var2 = (byte)(var2 | 64);
-      }
+        if (tripwireDataMap.containsKey(east) || tripwireHooks.get(east) == BlockFace.WEST) {
+            b |= 8;
+        }
+        if (tripwireDataMap.containsKey(north) || tripwireHooks.get(north) == BlockFace.SOUTH) {
+            b |= 16;
+        }
+        if (tripwireDataMap.containsKey(south) || tripwireHooks.get(south) == BlockFace.NORTH) {
+            b |= 32;
+        }
+        if (tripwireDataMap.containsKey(west) || tripwireHooks.get(west) == BlockFace.EAST) {
+            b |= 64;
+        }
 
-      return var2;
-   }
+        Integer newBlockState = connectedBlocks.get(b);
+        return newBlockState == null ? blockState : newBlockState;
+    }
 
-   public int connect(UserConnection var1, Position var2, int var3) {
-      abi.b();
-      TripwireConnectionHandler$TripwireData var5 = (TripwireConnectionHandler$TripwireData)tripwireDataMap.get(Integer.valueOf(var3));
-      return var3;
-   }
+    private static final class TripwireData {
+        private final boolean attached, disarmed, powered;
 
-   private static void lambda$init$0(TripwireConnectionHandler var0, WrappedBlockData var1) {
-      acE[] var2 = abi.b();
-      if(var1.getMinecraftKey().equals("minecraft:tripwire_hook")) {
-         tripwireHooks.put(Integer.valueOf(var1.getSavedBlockStateId()), BlockFace.valueOf(var1.getValue("facing").toUpperCase(Locale.ROOT)));
-      }
+        private TripwireData(final boolean attached, final boolean disarmed, final boolean powered) {
+            this.attached = attached;
+            this.disarmed = disarmed;
+            this.powered = powered;
+        }
 
-      if(var1.getMinecraftKey().equals("minecraft:tripwire")) {
-         TripwireConnectionHandler$TripwireData var3 = new TripwireConnectionHandler$TripwireData(var1.getValue("attached").equals("true"), var1.getValue("disarmed").equals("true"), var1.getValue("powered").equals("true"));
-         tripwireDataMap.put(Integer.valueOf(var1.getSavedBlockStateId()), var3);
-         connectedBlocks.put(Byte.valueOf(getStates(var1)), Integer.valueOf(var1.getSavedBlockStateId()));
-         ConnectionData.connectionHandlerMap.put(var1.getSavedBlockStateId(), var0);
-      }
+        public boolean isAttached() {
+            return attached;
+        }
 
-   }
+        public boolean isDisarmed() {
+            return disarmed;
+        }
+
+        public boolean isPowered() {
+            return powered;
+        }
+    }
 }

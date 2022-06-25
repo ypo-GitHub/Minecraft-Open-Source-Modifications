@@ -1,124 +1,215 @@
 package net.minecraft.command;
 
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandResultStats$1;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.EntityNotFoundException;
-import net.minecraft.command.ICommandSender;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.IChatComponent;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class CommandResultStats {
-   private static final int NUM_RESULT_TYPES = CommandResultStats$Type.values().length;
-   private static final String[] STRING_RESULT_TYPES = new String[NUM_RESULT_TYPES];
-   private String[] field_179675_c;
-   private String[] field_179673_d;
+    /**
+     * The number of result command result types that are possible.
+     */
+    private static final int NUM_RESULT_TYPES = CommandResultStats.Type.values().length;
+    private static final String[] STRING_RESULT_TYPES = new String[NUM_RESULT_TYPES];
+    private String[] field_179675_c;
+    private String[] field_179673_d;
 
-   public CommandResultStats() {
-      this.field_179675_c = STRING_RESULT_TYPES;
-      this.field_179673_d = STRING_RESULT_TYPES;
-   }
+    public CommandResultStats() {
+        this.field_179675_c = STRING_RESULT_TYPES;
+        this.field_179673_d = STRING_RESULT_TYPES;
+    }
 
-   public void func_179672_a(ICommandSender var1, CommandResultStats$Type var2, int var3) {
-      String var4 = this.field_179675_c[var2.getTypeID()];
-      CommandResultStats$1 var5 = new CommandResultStats$1(this, var1);
-      CommandResultStats$1 var10000 = var5;
-      String var10001 = var4;
+    public void func_179672_a(final ICommandSender sender, CommandResultStats.Type resultTypeIn, int p_179672_3_) {
+        String s = this.field_179675_c[resultTypeIn.getTypeID()];
 
-      String var6;
-      try {
-         var6 = CommandBase.getEntityName(var10000, var10001);
-      } catch (EntityNotFoundException var11) {
-         return;
-      }
+        if (s != null) {
+            ICommandSender icommandsender = new ICommandSender() {
+                public String getName() {
+                    return sender.getName();
+                }
 
-      String var7 = this.field_179673_d[var2.getTypeID()];
-      Scoreboard var8 = var1.getEntityWorld().getScoreboard();
-      ScoreObjective var9 = var8.getObjective(var7);
-      if(var8.entityHasObjective(var6, var9)) {
-         Score var10 = var8.getValueFromObjective(var6, var9);
-         var10.setScorePoints(var3);
-      }
+                public IChatComponent getDisplayName() {
+                    return sender.getDisplayName();
+                }
 
-   }
+                public void addChatMessage(IChatComponent component) {
+                    sender.addChatMessage(component);
+                }
 
-   public void readStatsFromNBT(NBTTagCompound var1) {
-      if(var1.hasKey("CommandStats", 10)) {
-         NBTTagCompound var2 = var1.getCompoundTag("CommandStats");
+                public boolean canCommandSenderUseCommand(int permLevel, String commandName) {
+                    return true;
+                }
 
-         for(CommandResultStats$Type var6 : CommandResultStats$Type.values()) {
-            String var7 = var6.getTypeName() + "Name";
-            String var8 = var6.getTypeName() + "Objective";
-            if(var2.hasKey(var7, 8) && var2.hasKey(var8, 8)) {
-               String var9 = var2.getString(var7);
-               String var10 = var2.getString(var8);
-               func_179667_a(this, var6, var9, var10);
+                public BlockPos getPosition() {
+                    return sender.getPosition();
+                }
+
+                public Vec3 getPositionVector() {
+                    return sender.getPositionVector();
+                }
+
+                public World getEntityWorld() {
+                    return sender.getEntityWorld();
+                }
+
+                public Entity getCommandSenderEntity() {
+                    return sender.getCommandSenderEntity();
+                }
+
+                public boolean sendCommandFeedback() {
+                    return sender.sendCommandFeedback();
+                }
+
+                public void setCommandStat(CommandResultStats.Type type, int amount) {
+                    sender.setCommandStat(type, amount);
+                }
+            };
+            String s1;
+
+            try {
+                s1 = CommandBase.getEntityName(icommandsender, s);
+            } catch (EntityNotFoundException var11) {
+                return;
             }
-         }
-      }
 
-   }
+            String s2 = this.field_179673_d[resultTypeIn.getTypeID()];
 
-   public void writeStatsToNBT(NBTTagCompound var1) {
-      NBTTagCompound var2 = new NBTTagCompound();
+            if (s2 != null) {
+                Scoreboard scoreboard = sender.getEntityWorld().getScoreboard();
+                ScoreObjective scoreobjective = scoreboard.getObjective(s2);
 
-      for(CommandResultStats$Type var6 : CommandResultStats$Type.values()) {
-         String var7 = this.field_179675_c[var6.getTypeID()];
-         String var8 = this.field_179673_d[var6.getTypeID()];
-         var2.setString(var6.getTypeName() + "Name", var7);
-         var2.setString(var6.getTypeName() + "Objective", var8);
-      }
-
-      if(!var2.hasNoTags()) {
-         var1.setTag("CommandStats", var2);
-      }
-
-   }
-
-   public static void func_179667_a(CommandResultStats var0, CommandResultStats$Type var1, String var2, String var3) {
-      if(!var2.isEmpty() && !var3.isEmpty()) {
-         if(var0.field_179675_c == STRING_RESULT_TYPES || var0.field_179673_d == STRING_RESULT_TYPES) {
-            var0.field_179675_c = new String[NUM_RESULT_TYPES];
-            var0.field_179673_d = new String[NUM_RESULT_TYPES];
-         }
-
-         var0.field_179675_c[var1.getTypeID()] = var2;
-         var0.field_179673_d[var1.getTypeID()] = var3;
-      } else {
-         func_179669_a(var0, var1);
-      }
-
-   }
-
-   private static void func_179669_a(CommandResultStats var0, CommandResultStats$Type var1) {
-      if(var0.field_179675_c != STRING_RESULT_TYPES && var0.field_179673_d != STRING_RESULT_TYPES) {
-         var0.field_179675_c[var1.getTypeID()] = null;
-         var0.field_179673_d[var1.getTypeID()] = null;
-         boolean var2 = true;
-
-         for(CommandResultStats$Type var6 : CommandResultStats$Type.values()) {
-            if(var0.field_179675_c[var6.getTypeID()] != null && var0.field_179673_d[var6.getTypeID()] != null) {
-               var2 = false;
-               break;
+                if (scoreobjective != null) {
+                    if (scoreboard.entityHasObjective(s1, scoreobjective)) {
+                        Score score = scoreboard.getValueFromObjective(s1, scoreobjective);
+                        score.setScorePoints(p_179672_3_);
+                    }
+                }
             }
-         }
+        }
+    }
 
-         var0.field_179675_c = STRING_RESULT_TYPES;
-         var0.field_179673_d = STRING_RESULT_TYPES;
-      }
+    public void readStatsFromNBT(NBTTagCompound tagcompound) {
+        if (tagcompound.hasKey("CommandStats", 10)) {
+            NBTTagCompound nbttagcompound = tagcompound.getCompoundTag("CommandStats");
 
-   }
+            for (CommandResultStats.Type commandresultstats$type : CommandResultStats.Type.values()) {
+                String s = commandresultstats$type.getTypeName() + "Name";
+                String s1 = commandresultstats$type.getTypeName() + "Objective";
 
-   public void func_179671_a(CommandResultStats var1) {
-      for(CommandResultStats$Type var5 : CommandResultStats$Type.values()) {
-         func_179667_a(this, var5, var1.field_179675_c[var5.getTypeID()], var1.field_179673_d[var5.getTypeID()]);
-      }
+                if (nbttagcompound.hasKey(s, 8) && nbttagcompound.hasKey(s1, 8)) {
+                    String s2 = nbttagcompound.getString(s);
+                    String s3 = nbttagcompound.getString(s1);
+                    func_179667_a(this, commandresultstats$type, s2, s3);
+                }
+            }
+        }
+    }
 
-   }
+    public void writeStatsToNBT(NBTTagCompound tagcompound) {
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-   private static EntityNotFoundException a(EntityNotFoundException var0) {
-      return var0;
-   }
+        for (CommandResultStats.Type commandresultstats$type : CommandResultStats.Type.values()) {
+            String s = this.field_179675_c[commandresultstats$type.getTypeID()];
+            String s1 = this.field_179673_d[commandresultstats$type.getTypeID()];
+
+            if (s != null && s1 != null) {
+                nbttagcompound.setString(commandresultstats$type.getTypeName() + "Name", s);
+                nbttagcompound.setString(commandresultstats$type.getTypeName() + "Objective", s1);
+            }
+        }
+
+        if (!nbttagcompound.hasNoTags()) {
+            tagcompound.setTag("CommandStats", nbttagcompound);
+        }
+    }
+
+    public static void func_179667_a(CommandResultStats stats, CommandResultStats.Type resultType, String p_179667_2_, String p_179667_3_) {
+        if (p_179667_2_ != null && !p_179667_2_.isEmpty() && p_179667_3_ != null && !p_179667_3_.isEmpty()) {
+            if (stats.field_179675_c == STRING_RESULT_TYPES || stats.field_179673_d == STRING_RESULT_TYPES) {
+                stats.field_179675_c = new String[NUM_RESULT_TYPES];
+                stats.field_179673_d = new String[NUM_RESULT_TYPES];
+            }
+
+            stats.field_179675_c[resultType.getTypeID()] = p_179667_2_;
+            stats.field_179673_d[resultType.getTypeID()] = p_179667_3_;
+        } else {
+            func_179669_a(stats, resultType);
+        }
+    }
+
+    private static void func_179669_a(CommandResultStats resultStatsIn, CommandResultStats.Type resultTypeIn) {
+        if (resultStatsIn.field_179675_c != STRING_RESULT_TYPES && resultStatsIn.field_179673_d != STRING_RESULT_TYPES) {
+            resultStatsIn.field_179675_c[resultTypeIn.getTypeID()] = null;
+            resultStatsIn.field_179673_d[resultTypeIn.getTypeID()] = null;
+            boolean flag = true;
+
+            for (CommandResultStats.Type commandresultstats$type : CommandResultStats.Type.values()) {
+                if (resultStatsIn.field_179675_c[commandresultstats$type.getTypeID()] != null && resultStatsIn.field_179673_d[commandresultstats$type.getTypeID()] != null) {
+                    flag = false;
+                    break;
+                }
+            }
+
+            if (flag) {
+                resultStatsIn.field_179675_c = STRING_RESULT_TYPES;
+                resultStatsIn.field_179673_d = STRING_RESULT_TYPES;
+            }
+        }
+    }
+
+    public void func_179671_a(CommandResultStats resultStatsIn) {
+        for (CommandResultStats.Type commandresultstats$type : CommandResultStats.Type.values()) {
+            func_179667_a(this, commandresultstats$type, resultStatsIn.field_179675_c[commandresultstats$type.getTypeID()], resultStatsIn.field_179673_d[commandresultstats$type.getTypeID()]);
+        }
+    }
+
+    public enum Type {
+        SUCCESS_COUNT(0, "SuccessCount"),
+        AFFECTED_BLOCKS(1, "AffectedBlocks"),
+        AFFECTED_ENTITIES(2, "AffectedEntities"),
+        AFFECTED_ITEMS(3, "AffectedItems"),
+        QUERY_RESULT(4, "QueryResult");
+
+        final int typeID;
+        final String typeName;
+
+        Type(int id, String name) {
+            this.typeID = id;
+            this.typeName = name;
+        }
+
+        public int getTypeID() {
+            return this.typeID;
+        }
+
+        public String getTypeName() {
+            return this.typeName;
+        }
+
+        public static String[] getTypeNames() {
+            String[] astring = new String[values().length];
+            int i = 0;
+
+            for (CommandResultStats.Type commandresultstats$type : values()) {
+                astring[i++] = commandresultstats$type.getTypeName();
+            }
+
+            return astring;
+        }
+
+        public static CommandResultStats.Type getTypeByName(String name) {
+            for (CommandResultStats.Type commandresultstats$type : values()) {
+                if (commandresultstats$type.getTypeName().equals(name)) {
+                    return commandresultstats$type;
+                }
+            }
+
+            return null;
+        }
+    }
 }

@@ -1,7 +1,5 @@
 package net.minecraft.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -22,93 +20,107 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 
 public class BlockBeacon extends BlockContainer {
-   public BlockBeacon() {
-      super(Material.glass, MapColor.diamondColor);
-      this.setHardness(3.0F);
-      this.setCreativeTab(CreativeTabs.tabMisc);
-   }
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityBeacon();
-   }
+    public BlockBeacon() {
+        super(Material.glass, MapColor.diamondColor);
+        this.setHardness(3.0F);
+        this.setCreativeTab(CreativeTabs.tabMisc);
+    }
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var1.isRemote) {
-         TileEntity var9 = var1.getTileEntity(var2);
-         if(var9 instanceof TileEntityBeacon) {
-            var4.displayGUIChest((TileEntityBeacon)var9);
-            var4.triggerAchievement(StatList.field_181730_N);
-         }
-      }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityBeacon();
+    }
 
-      return true;
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+            if (tileentity instanceof TileEntityBeacon) {
+                playerIn.displayGUIChest((TileEntityBeacon) tileentity);
+                playerIn.triggerAchievement(StatList.field_181730_N);
+            }
 
-   public boolean isFullCube() {
-      return false;
-   }
+        }
+        return true;
+    }
 
-   public int getRenderType() {
-      return 3;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void onBlockPlacedBy(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4, ItemStack var5) {
-      super.onBlockPlacedBy(var1, var2, var3, var4, var5);
-      if(var5.hasDisplayName()) {
-         TileEntity var6 = var1.getTileEntity(var2);
-         if(var6 instanceof TileEntityBeacon) {
-            ((TileEntityBeacon)var6).setName(var5.getDisplayName());
-         }
-      }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   }
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return 3;
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      TileEntity var5 = var1.getTileEntity(var2);
-      if(var5 instanceof TileEntityBeacon) {
-         ((TileEntityBeacon)var5).updateBeacon();
-         var1.addBlockEvent(var2, this, 1, 0);
-      }
+    /**
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
+     */
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
 
-   }
+        if (stack.hasDisplayName()) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+            if (tileentity instanceof TileEntityBeacon) {
+                ((TileEntityBeacon) tileentity).setName(stack.getDisplayName());
+            }
+        }
+    }
 
-   public static void updateColorAsync(World var0, BlockPos var1) {
-      HttpUtil.field_180193_a.submit(BlockBeacon::lambda$updateColorAsync$1);
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   private static void lambda$updateColorAsync$1(World var0, BlockPos var1) {
-      Chunk var2 = var0.getChunkFromBlockCoords(var1);
-      int var3 = var1.getY() - 1;
+        if (tileentity instanceof TileEntityBeacon) {
+            ((TileEntityBeacon) tileentity).updateBeacon();
+            worldIn.addBlockEvent(pos, this, 1, 0);
+        }
+    }
 
-      while(true) {
-         BlockPos var4 = new BlockPos(var1.getX(), var3, var1.getZ());
-         if(!var2.canSeeSky(var4)) {
-            return;
-         }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
 
-         IBlockState var5 = var0.getBlockState(var4);
-         if(var5.getBlock() == Blocks.beacon) {
-            ((WorldServer)var0).addScheduledTask(BlockBeacon::lambda$null$0);
-         }
+    public static void updateColorAsync(final World worldIn, final BlockPos glassPos) {
+        HttpUtil.field_180193_a.submit(() -> {
+            final Chunk chunk = worldIn.getChunkFromBlockCoords(glassPos);
 
-         --var3;
-      }
-   }
+            for (int i = glassPos.getY() - 1; i >= 0; --i) {
+                final BlockPos blockpos = new BlockPos(glassPos.getX(), i, glassPos.getZ());
 
-   private static void lambda$null$0(World var0, BlockPos var1) {
-      TileEntity var2 = var0.getTileEntity(var1);
-      if(var2 instanceof TileEntityBeacon) {
-         ((TileEntityBeacon)var2).updateBeacon();
-         var0.addBlockEvent(var1, Blocks.beacon, 1, 0);
-      }
+                if (!chunk.canSeeSky(blockpos)) {
+                    break;
+                }
 
-   }
+                final IBlockState iblockstate = worldIn.getBlockState(blockpos);
+
+                if (iblockstate.getBlock() == Blocks.beacon) {
+                    ((WorldServer) worldIn).addScheduledTask(() -> {
+                        final TileEntity tileentity = worldIn.getTileEntity(blockpos);
+
+                        if (tileentity instanceof TileEntityBeacon) {
+                            ((TileEntityBeacon) tileentity).updateBeacon();
+                            worldIn.addBlockEvent(blockpos, Blocks.beacon, 1, 0);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
 }

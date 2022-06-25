@@ -1,146 +1,222 @@
 package net.minecraft.world.chunk.storage;
 
-import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.chunk.NibbleArray;
 import net.optifine.Reflector;
 
+import java.util.List;
+
 public class ExtendedBlockStorage {
-   private int yBase;
-   private int blockRefCount;
-   private int tickRefCount;
-   private char[] data;
-   private NibbleArray blocklightArray;
-   private NibbleArray skylightArray;
-   private static final String b = "CL_00000375";
+    /**
+     * Contains the bottom-most Y block represented by this ExtendedBlockStorage. Typically a multiple of 16.
+     */
+    private int yBase;
 
-   public ExtendedBlockStorage(int var1, boolean var2) {
-      this.yBase = var1;
-      this.data = new char[4096];
-      this.blocklightArray = new NibbleArray();
-      this.skylightArray = new NibbleArray();
-   }
+    /**
+     * A total count of the number of non-air blocks in this block storage's Chunk.
+     */
+    private int blockRefCount;
 
-   public IBlockState get(int var1, int var2, int var3) {
-      IBlockState var4 = (IBlockState)Block.BLOCK_STATE_IDS.getByValue(this.data[var2 << 8 | var3 << 4 | var1]);
-      return var4;
-   }
+    /**
+     * Contains the number of blocks in this block storage's parent chunk that require random ticking. Used to cull the
+     * Chunk from random tick updates for performance reasons.
+     */
+    private int tickRefCount;
+    private char[] data;
 
-   public void set(int var1, int var2, int var3, IBlockState var4) {
-      if(Reflector.IExtendedBlockState.isInstance(var4)) {
-         var4 = (IBlockState)Reflector.f(var4, Reflector.m, new Object[0]);
-      }
+    /**
+     * The NibbleArray containing a block of Block-light data.
+     */
+    private NibbleArray blocklightArray;
 
-      IBlockState var5 = this.get(var1, var2, var3);
-      Block var6 = var5.getBlock();
-      Block var7 = var4.getBlock();
-      if(var6 != Blocks.air) {
-         --this.blockRefCount;
-         if(var6.getTickRandomly()) {
-            --this.tickRefCount;
-         }
-      }
+    /**
+     * The NibbleArray containing a block of Sky-light data.
+     */
+    private NibbleArray skylightArray;
+    private static final String __OBFID = "CL_00000375";
 
-      if(var7 != Blocks.air) {
-         ++this.blockRefCount;
-         if(var7.getTickRandomly()) {
-            ++this.tickRefCount;
-         }
-      }
+    public ExtendedBlockStorage(int y, boolean storeSkylight) {
+        this.yBase = y;
+        this.data = new char[4096];
+        this.blocklightArray = new NibbleArray();
 
-      this.data[var2 << 8 | var3 << 4 | var1] = (char)Block.BLOCK_STATE_IDS.get(var4);
-   }
+        if (storeSkylight) {
+            this.skylightArray = new NibbleArray();
+        }
+    }
 
-   public Block getBlockByExtId(int var1, int var2, int var3) {
-      return this.get(var1, var2, var3).getBlock();
-   }
+    public IBlockState get(int x, int y, int z) {
+        IBlockState iblockstate = (IBlockState) Block.BLOCK_STATE_IDS.getByValue(this.data[y << 8 | z << 4 | x]);
+        return iblockstate != null ? iblockstate : Blocks.air.getDefaultState();
+    }
 
-   public int getExtBlockMetadata(int var1, int var2, int var3) {
-      IBlockState var4 = this.get(var1, var2, var3);
-      return var4.getBlock().getMetaFromState(var4);
-   }
+    public void set(int x, int y, int z, IBlockState state) {
+        if (Reflector.IExtendedBlockState.isInstance(state)) {
+            state = (IBlockState) Reflector.call(state, Reflector.IExtendedBlockState_getClean, new Object[0]);
+        }
 
-   public boolean isEmpty() {
-      return this.blockRefCount == 0;
-   }
+        IBlockState iblockstate = this.get(x, y, z);
+        Block block = iblockstate.getBlock();
+        Block block1 = state.getBlock();
 
-   public boolean getNeedsRandomTick() {
-      return this.tickRefCount > 0;
-   }
+        if (block != Blocks.air) {
+            --this.blockRefCount;
 
-   public int getYLocation() {
-      return this.yBase;
-   }
-
-   public void setExtSkylightValue(int var1, int var2, int var3, int var4) {
-      this.skylightArray.set(var1, var2, var3, var4);
-   }
-
-   public int getExtSkylightValue(int var1, int var2, int var3) {
-      return this.skylightArray.get(var1, var2, var3);
-   }
-
-   public void setExtBlocklightValue(int var1, int var2, int var3, int var4) {
-      this.blocklightArray.set(var1, var2, var3, var4);
-   }
-
-   public int getExtBlocklightValue(int var1, int var2, int var3) {
-      return this.blocklightArray.get(var1, var2, var3);
-   }
-
-   public void removeInvalidBlocks() {
-      List var1 = Block.BLOCK_STATE_IDS.getObjectList();
-      int var2 = var1.size();
-      int var3 = 0;
-      int var4 = 0;
-
-      for(int var5 = 0; var5 < 16; ++var5) {
-         int var6 = var5 << 8;
-
-         for(int var7 = 0; var7 < 16; ++var7) {
-            int var8 = var6 | var7 << 4;
-
-            for(int var9 = 0; var9 < 16; ++var9) {
-               char var10 = this.data[var8 | var9];
-               ++var3;
-               if(var10 < var2) {
-                  IBlockState var11 = (IBlockState)var1.get(var10);
-                  Block var12 = var11.getBlock();
-                  if(var12.getTickRandomly()) {
-                     ++var4;
-                  }
-               }
+            if (block.getTickRandomly()) {
+                --this.tickRefCount;
             }
-         }
-      }
+        }
 
-      this.blockRefCount = var3;
-      this.tickRefCount = var4;
-   }
+        if (block1 != Blocks.air) {
+            ++this.blockRefCount;
 
-   public char[] getData() {
-      return this.data;
-   }
+            if (block1.getTickRandomly()) {
+                ++this.tickRefCount;
+            }
+        }
 
-   public void setData(char[] var1) {
-      this.data = var1;
-   }
+        this.data[y << 8 | z << 4 | x] = (char) Block.BLOCK_STATE_IDS.get(state);
+    }
 
-   public NibbleArray getBlocklightArray() {
-      return this.blocklightArray;
-   }
+    /**
+     * Returns the block for a location in a chunk, with the extended ID merged from a byte array and a NibbleArray to
+     * form a full 12-bit block ID.
+     */
+    public Block getBlockByExtId(int x, int y, int z) {
+        return this.get(x, y, z).getBlock();
+    }
 
-   public NibbleArray getSkylightArray() {
-      return this.skylightArray;
-   }
+    /**
+     * Returns the metadata associated with the block at the given coordinates in this ExtendedBlockStorage.
+     */
+    public int getExtBlockMetadata(int x, int y, int z) {
+        IBlockState iblockstate = this.get(x, y, z);
+        return iblockstate.getBlock().getMetaFromState(iblockstate);
+    }
 
-   public void setBlocklightArray(NibbleArray var1) {
-      this.blocklightArray = var1;
-   }
+    /**
+     * Returns whether or not this block storage's Chunk is fully empty, based on its internal reference count.
+     */
+    public boolean isEmpty() {
+        return this.blockRefCount == 0;
+    }
 
-   public void setSkylightArray(NibbleArray var1) {
-      this.skylightArray = var1;
-   }
+    /**
+     * Returns whether or not this block storage's Chunk will require random ticking, used to avoid looping through
+     * random block ticks when there are no blocks that would randomly tick.
+     */
+    public boolean getNeedsRandomTick() {
+        return this.tickRefCount > 0;
+    }
+
+    /**
+     * Returns the Y location of this ExtendedBlockStorage.
+     */
+    public int getYLocation() {
+        return this.yBase;
+    }
+
+    /**
+     * Sets the saved Sky-light value in the extended block storage structure.
+     */
+    public void setExtSkylightValue(int x, int y, int z, int value) {
+        this.skylightArray.set(x, y, z, value);
+    }
+
+    /**
+     * Gets the saved Sky-light value in the extended block storage structure.
+     */
+    public int getExtSkylightValue(int x, int y, int z) {
+        return this.skylightArray.get(x, y, z);
+    }
+
+    /**
+     * Sets the saved Block-light value in the extended block storage structure.
+     */
+    public void setExtBlocklightValue(int x, int y, int z, int value) {
+        this.blocklightArray.set(x, y, z, value);
+    }
+
+    /**
+     * Gets the saved Block-light value in the extended block storage structure.
+     */
+    public int getExtBlocklightValue(int x, int y, int z) {
+        return this.blocklightArray.get(x, y, z);
+    }
+
+    public void removeInvalidBlocks() {
+        List list = Block.BLOCK_STATE_IDS.getObjectList();
+        int i = list.size();
+        int j = 0;
+        int k = 0;
+
+        for (int l = 0; l < 16; ++l) {
+            int i1 = l << 8;
+
+            for (int j1 = 0; j1 < 16; ++j1) {
+                int k1 = i1 | j1 << 4;
+
+                for (int l1 = 0; l1 < 16; ++l1) {
+                    int i2 = this.data[k1 | l1];
+
+                    if (i2 > 0) {
+                        ++j;
+
+                        if (i2 < i) {
+                            IBlockState iblockstate = (IBlockState) list.get(i2);
+
+                            if (iblockstate != null) {
+                                Block block = iblockstate.getBlock();
+
+                                if (block.getTickRandomly()) {
+                                    ++k;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        this.blockRefCount = j;
+        this.tickRefCount = k;
+    }
+
+    public char[] getData() {
+        return this.data;
+    }
+
+    public void setData(char[] dataArray) {
+        this.data = dataArray;
+    }
+
+    /**
+     * Returns the NibbleArray instance containing Block-light data.
+     */
+    public NibbleArray getBlocklightArray() {
+        return this.blocklightArray;
+    }
+
+    /**
+     * Returns the NibbleArray instance containing Sky-light data.
+     */
+    public NibbleArray getSkylightArray() {
+        return this.skylightArray;
+    }
+
+    /**
+     * Sets the NibbleArray instance used for Block-light values in this particular storage block.
+     */
+    public void setBlocklightArray(NibbleArray newBlocklightArray) {
+        this.blocklightArray = newBlocklightArray;
+    }
+
+    /**
+     * Sets the NibbleArray instance used for Sky-light values in this particular storage block.
+     */
+    public void setSkylightArray(NibbleArray newSkylightArray) {
+        this.skylightArray = newSkylightArray;
+    }
 }

@@ -1,26 +1,36 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S46PacketSetCompressionLevel implements Packet {
-   private int compressionLevel;
+import java.io.IOException;
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.compressionLevel = var1.readVarIntFromBuffer();
-   }
+public class S46PacketSetCompressionLevel implements Packet<INetHandlerPlayClient> {
+    private int compressionLevel;
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.compressionLevel);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.compressionLevel = buf.readVarIntFromBuffer();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleSetCompressionLevel(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.compressionLevel);
+    }
 
-   public int getCompressionLevel() {
-      return this.compressionLevel;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleSetCompressionLevel(this);
+    }
+
+    public int getCompressionLevel() {
+        return this.compressionLevel;
+    }
 }

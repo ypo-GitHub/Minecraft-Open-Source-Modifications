@@ -1,144 +1,169 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate.commented;
+
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.SimpleConfigurationNode;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import net.acE;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.SimpleConfigurationNode;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 
+/**
+ * Basic implementation of {@link CommentedConfigurationNode}.
+ */
 public class SimpleCommentedConfigurationNode extends SimpleConfigurationNode implements CommentedConfigurationNode {
-   private String comment = null;
-   private static boolean g;
 
-   public static SimpleCommentedConfigurationNode root() {
-      return root(ConfigurationOptions.defaults());
-   }
+    private String comment = null;
 
-   public static SimpleCommentedConfigurationNode root(ConfigurationOptions var0) {
-      return new SimpleCommentedConfigurationNode((Object)null, (SimpleConfigurationNode)null, var0);
-   }
+    @NonNull
+    public static SimpleCommentedConfigurationNode root() {
+        return root(ConfigurationOptions.defaults());
+    }
 
-   protected SimpleCommentedConfigurationNode(Object var1, SimpleConfigurationNode var2, ConfigurationOptions var3) {
-      super(var1, var2, var3);
-   }
+    @NonNull
+    public static SimpleCommentedConfigurationNode root(@NonNull ConfigurationOptions options) {
+        return new SimpleCommentedConfigurationNode(null, null, options);
+    }
 
-   protected SimpleCommentedConfigurationNode(SimpleConfigurationNode var1, SimpleConfigurationNode var2) {
-      super(var1, var2);
-   }
+    protected SimpleCommentedConfigurationNode(@Nullable Object path, @Nullable SimpleConfigurationNode parent, @NonNull ConfigurationOptions options) {
+        super(path, parent, options);
+    }
 
-   public Optional getComment() {
-      return Optional.ofNullable(this.comment);
-   }
+    protected SimpleCommentedConfigurationNode(@Nullable SimpleConfigurationNode parent, @NonNull SimpleConfigurationNode copyOf) {
+        super(parent, copyOf);
+    }
 
-   public SimpleCommentedConfigurationNode setComment(String var1) {
-      this.attachIfNecessary();
-      this.comment = var1;
-      return this;
-   }
+    @NonNull
+    @Override
+    public Optional<String> getComment() {
+        return Optional.ofNullable(comment);
+    }
 
-   public SimpleCommentedConfigurationNode getParent() {
-      return (SimpleCommentedConfigurationNode)super.getParent();
-   }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode setComment(@Nullable String comment) {
+        attachIfNecessary();
+        this.comment = comment;
+        return this;
+    }
 
-   protected SimpleCommentedConfigurationNode createNode(Object var1) {
-      return new SimpleCommentedConfigurationNode(var1, this, this.getOptions());
-   }
+    // Methods from superclass overridden to have correct return types
 
-   public SimpleCommentedConfigurationNode setValue(Object var1) {
-      boolean var2 = d();
-      if(var1 instanceof CommentedConfigurationNode && ((CommentedConfigurationNode)var1).getComment().isPresent()) {
-         this.setComment((String)((CommentedConfigurationNode)var1).getComment().get());
-      }
+    @Nullable
+    @Override
+    public SimpleCommentedConfigurationNode getParent() {
+        return (SimpleCommentedConfigurationNode) super.getParent();
+    }
 
-      return (SimpleCommentedConfigurationNode)super.setValue(var1);
-   }
+    @Override
+    protected SimpleCommentedConfigurationNode createNode(Object path) {
+        return new SimpleCommentedConfigurationNode(path, this, getOptions());
+    }
 
-   public SimpleCommentedConfigurationNode mergeValuesFrom(ConfigurationNode var1) {
-      boolean var2 = d();
-      if(var1 instanceof CommentedConfigurationNode) {
-         Optional var3 = ((CommentedConfigurationNode)var1).getComment();
-         if(this.comment == null && var3.isPresent()) {
-            this.comment = (String)var3.get();
-         }
-      }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode setValue(@Nullable Object value) {
+        if (value instanceof CommentedConfigurationNode && ((CommentedConfigurationNode) value).getComment().isPresent()) {
+            setComment(((CommentedConfigurationNode) value).getComment().get());
+        }
+        return (SimpleCommentedConfigurationNode) super.setValue(value);
+    }
 
-      return (SimpleCommentedConfigurationNode)super.mergeValuesFrom(var1);
-   }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode mergeValuesFrom(@NonNull ConfigurationNode other) {
+        if (other instanceof CommentedConfigurationNode) {
+            Optional<String> otherComment = ((CommentedConfigurationNode) other).getComment();
 
-   public SimpleCommentedConfigurationNode getNode(Object... var1) {
-      return (SimpleCommentedConfigurationNode)super.getNode(var1);
-   }
+            if (comment == null && otherComment.isPresent()) {
+                comment = otherComment.get();
+            }
+        }
 
-   public List getChildrenList() {
-      return super.getChildrenList();
-   }
+        return (SimpleCommentedConfigurationNode) super.mergeValuesFrom(other);
+    }
 
-   public Map getChildrenMap() {
-      return super.getChildrenMap();
-   }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode getNode(@NonNull Object... path) {
+        return (SimpleCommentedConfigurationNode) super.getNode(path);
+    }
 
-   public SimpleCommentedConfigurationNode getAppendedNode() {
-      return (SimpleCommentedConfigurationNode)super.getAppendedNode();
-   }
+    @NonNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<? extends SimpleCommentedConfigurationNode> getChildrenList() {
+        return (List<SimpleCommentedConfigurationNode>) super.getChildrenList();
+    }
 
-   public SimpleCommentedConfigurationNode copy() {
-      return this.copy((SimpleConfigurationNode)null);
-   }
+    @NonNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<Object, ? extends SimpleCommentedConfigurationNode> getChildrenMap() {
+        return (Map<Object, SimpleCommentedConfigurationNode>) super.getChildrenMap();
+    }
 
-   protected SimpleCommentedConfigurationNode copy(SimpleConfigurationNode var1) {
-      SimpleCommentedConfigurationNode var2 = new SimpleCommentedConfigurationNode(var1, this);
-      var2.comment = this.comment;
-      return var2;
-   }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode getAppendedNode() {
+        return (SimpleCommentedConfigurationNode) super.getAppendedNode();
+    }
 
-   public boolean equals(Object var1) {
-      boolean var2 = d();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof SimpleCommentedConfigurationNode)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         SimpleCommentedConfigurationNode var3 = (SimpleCommentedConfigurationNode)var1;
-         return Objects.equals(this.comment, var3.comment);
-      }
-   }
+    @NonNull
+    @Override
+    public SimpleCommentedConfigurationNode copy() {
+        return copy(null);
+    }
 
-   public int hashCode() {
-      d();
-      int var2 = super.hashCode();
-      var2 = 31 * var2 + Objects.hashCode(this.comment);
-      if(acE.b() == null) {
-         b(false);
-      }
+    @NonNull
+    @Override
+    protected SimpleCommentedConfigurationNode copy(@Nullable SimpleConfigurationNode parent) {
+        SimpleCommentedConfigurationNode copy = new SimpleCommentedConfigurationNode(parent, this);
+        copy.comment = this.comment;
+        return copy;
+    }
 
-      return var2;
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SimpleCommentedConfigurationNode)) return false;
+        if (!super.equals(o)) return false;
 
-   public String toString() {
-      boolean var1 = d();
-      return "SimpleCommentedConfigurationNode{super=" + super.toString() + ", comment=" + this.comment + '}';
-   }
+        SimpleCommentedConfigurationNode that = (SimpleCommentedConfigurationNode) o;
+        if (!Objects.equals(comment, that.comment)) return false;
+        return true;
+    }
 
-   public static void b(boolean var0) {
-      g = var0;
-   }
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(comment);
+        return result;
+    }
 
-   public static boolean d() {
-      return g;
-   }
+    @Override
+    public String toString() {
+        return "SimpleCommentedConfigurationNode{" + "super=" + super.toString() + ", comment=" + comment + '}';
+    }
 
-   public static boolean a() {
-      boolean var0 = d();
-      return true;
-   }
-
-   static {
-      b(true);
-   }
 }

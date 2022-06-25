@@ -1,38 +1,37 @@
 package viaversion.viaversion.api.type.types.version;
 
 import io.netty.buffer.ByteBuf;
-import java.nio.ByteOrder;
-import net.aes;
 import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 import viaversion.viaversion.api.type.Type;
 
-public class ChunkSectionType1_8 extends Type {
-   public ChunkSectionType1_8() {
-      super("Chunk Section Type", ChunkSection.class);
-   }
+import java.nio.ByteOrder;
 
-   public ChunkSection read(ByteBuf var1) throws Exception {
-      aes.b();
-      ChunkSection var3 = new ChunkSection();
-      var3.addPaletteEntry(0);
-      ByteBuf var4 = var1.order(ByteOrder.LITTLE_ENDIAN);
-      int var5 = 0;
-      if(var5 < 4096) {
-         short var6 = var4.readShort();
-         int var7 = var6 >> 4;
-         int var8 = var6 & 15;
-         var3.setBlock(var5, var7, var8);
-         ++var5;
-      }
+public class ChunkSectionType1_8 extends Type<ChunkSection> {
 
-      return var3;
-   }
+    public ChunkSectionType1_8() {
+        super("Chunk Section Type", ChunkSection.class);
+    }
 
-   public void write(ByteBuf var1, ChunkSection var2) throws Exception {
-      throw new UnsupportedOperationException();
-   }
+    @Override
+    public ChunkSection read(ByteBuf buffer) throws Exception {
+        ChunkSection chunkSection = new ChunkSection();
+        // 0 index needs to be air in 1.9
+        chunkSection.addPaletteEntry(0);
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        ByteBuf littleEndianView = buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        for (int i = 0; i < ChunkSection.SIZE; i++) {
+            int mask = littleEndianView.readShort();
+            int type = mask >> 4;
+            int data = mask & 0xF;
+            chunkSection.setBlock(i, type, data);
+        }
+
+        return chunkSection;
+    }
+
+    @Override
+    public void write(ByteBuf buffer, ChunkSection chunkSection) throws Exception {
+        throw new UnsupportedOperationException();
+    }
 }

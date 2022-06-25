@@ -7,114 +7,254 @@ import cc.novoline.events.events.Render3DEvent;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.visual.DMGParticle$Location;
-import cc.novoline.modules.visual.DMGParticle$Particles;
-import cc.novoline.modules.visual.HUD;
 import cc.novoline.utils.RenderUtils;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Consumer;
+import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.util.BlockPos;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.opengl.GL11;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+
 public class DMGParticle extends AbstractModule {
-   private final HashMap healthMap = new HashMap();
-   private final List particles = new ArrayList();
 
-   public DMGParticle(ModuleManager var1) {
-      super(var1, "DamageParticles", "Damage Particles", EnumModuleType.VISUALS, "");
-   }
+    private final HashMap<EntityLivingBase, Float> healthMap = new HashMap<>();
+    private final List<Particles> particles = new ArrayList<>();
 
-   @EventTarget
-   public void onLivingUpdate(LivingUpdateEvent var1) {
-      HUD.e();
-      EntityLivingBase var3 = (EntityLivingBase)var1.getEntity();
-      if(var3 != this.mc.player) {
-         if(!this.healthMap.containsKey(var3)) {
-            this.healthMap.put(var3, Float.valueOf(var3.getHealth()));
-         }
+    public DMGParticle(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "DamageParticles", "Damage Particles", EnumModuleType.VISUALS, "");
+    }
 
-         float var4 = ((Float)this.healthMap.get(var3)).floatValue();
-         float var5 = var3.getHealth();
-         if(var4 != var5) {
-            boolean var6 = var5 > var4;
-            boolean var7 = var3.hurtResistantTime < 18 || this.mc.player.motionY < 0.0D && !this.mc.player.onGround;
-            String var8 = var6?"§a":(var7?"§c":"§e");
-            String var9 = var4 - var5 < 0.0F?var8 + a((double)((var4 - var5) * -1.0F), 1):var8 + a((double)(var4 - var5), 1);
-            DMGParticle$Location var10 = new DMGParticle$Location(var3);
-            var10.setY(var3.getEntityBoundingBox().minY + (var3.getEntityBoundingBox().maxY - var3.getEntityBoundingBox().minY) / 2.0D);
-            var10.setX(var10.getX() - 0.5D + (double)(new Random(System.currentTimeMillis())).nextInt(5) * 0.1D);
-            var10.setZ(var10.getZ() - 0.5D + (double)(new Random(System.currentTimeMillis() + 1L)).nextInt(5) * 0.1D);
-            this.particles.add(new DMGParticle$Particles(var10, var9));
-            this.healthMap.remove(var3);
-            this.healthMap.put(var3, Float.valueOf(var3.getHealth()));
-         }
+    @EventTarget
+    public void onLivingUpdate(LivingUpdateEvent e) {
+        EntityLivingBase entity = (EntityLivingBase) e.getEntity();
+        if (entity == this.mc.player) return;
+        if (!this.healthMap.containsKey(entity)) this.healthMap.put(entity, entity.getHealth());
+        float floatValue = this.healthMap.get(entity);
+        float health = entity.getHealth();
+        if (floatValue != health) {
+            boolean heal = health > floatValue;
+            boolean crit = entity.hurtResistantTime < 18 || mc.player.motionY < 0 && !mc.player.onGround;
+            String color = heal ? "\247a" : crit ? "\247c" : "\247e";
+            String text = floatValue - health < 0.0f ? color + roundToPlace((floatValue - health) * -1.0f, 1) : color + roundToPlace(floatValue - health, 1);
+            Location location = new Location(entity);
+            location.setY(entity.getEntityBoundingBox().minY + (entity.getEntityBoundingBox().maxY - entity.getEntityBoundingBox().minY) / 2.0);
+            location.setX(location.getX() - 0.5 + new Random(System.currentTimeMillis()).nextInt(5) * 0.1);
+            location.setZ(location.getZ() - 0.5 + new Random(System.currentTimeMillis() + 1).nextInt(5) * 0.1);
+            this.particles.add(new Particles(location, text));
+            this.healthMap.remove(entity);
+            this.healthMap.put(entity, entity.getHealth());
+        }
+    }
 
-      }
-   }
+    @EventTarget
+    public void onRender(Render3DEvent e) {
+        for (Particles p : this.particles) {
+            double x = p.location.getX();
+            double n = x - mc.getRenderManager().renderPosX;
+            double y = p.location.getY();
+            double n2 = y - mc.getRenderManager().renderPosY;
+            double z = p.location.getZ();
+            double n3 = z - mc.getRenderManager().renderPosZ;
+            GlStateManager.pushMatrix();
+            GlStateManager.enablePolygonOffset();
+            GlStateManager.doPolygonOffset(1.0f, -1500000.0f);
+            GlStateManager.translate((float) n, (float) n2, (float) n3);
+            GlStateManager.rotate(-this.mc.getRenderManager().playerViewY, 0.0f, 1.0f, 0.0f);
+            float textY = this.mc.gameSettings.thirdPersonView == 2 ? -1.0F : 1.0F;
+            GlStateManager.rotate(this.mc.getRenderManager().playerViewX, textY, 0.0f, 0.0f);
+            final double size = 0.03;
+            GlStateManager.scale(-size, -size, size);
+            RenderUtils.enableGL2D();
+            RenderUtils.disableGL2D();
+            GL11.glDepthMask(false);
+            mc.fontRendererObj.drawStringWithShadow(p.text, (float) -(this.mc.fontRendererObj.getStringWidth(p.text) / 2), (float) -(this.mc.fontRendererObj.getHeight() - 1), 0);
+            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            GL11.glDepthMask(true);
+            GlStateManager.doPolygonOffset(1.0f, 1500000.0f);
+            GlStateManager.disablePolygonOffset();
+            GlStateManager.disableBlend();
+            GlStateManager.popMatrix();
+        }
+    }
 
-   @EventTarget
-   public void onRender(Render3DEvent var1) {
-      HUD.e();
-      Iterator var3 = this.particles.iterator();
-      if(var3.hasNext()) {
-         DMGParticle$Particles var4 = (DMGParticle$Particles)var3.next();
-         double var5 = var4.location.getX();
-         double var7 = var5 - this.mc.getRenderManager().renderPosX;
-         double var9 = var4.location.getY();
-         double var11 = var9 - this.mc.getRenderManager().renderPosY;
-         double var13 = var4.location.getZ();
-         double var15 = var13 - this.mc.getRenderManager().renderPosZ;
-         GlStateManager.pushMatrix();
-         GlStateManager.enablePolygonOffset();
-         GlStateManager.doPolygonOffset(1.0F, -1500000.0F);
-         GlStateManager.translate((float)var7, (float)var11, (float)var15);
-         GlStateManager.rotate(-this.mc.getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
-         float var17 = this.mc.gameSettings.thirdPersonView == 2?-1.0F:1.0F;
-         GlStateManager.rotate(this.mc.getRenderManager().playerViewX, var17, 0.0F, 0.0F);
-         double var18 = 0.03D;
-         GlStateManager.scale(-0.03D, -0.03D, 0.03D);
-         RenderUtils.enableGL2D();
-         RenderUtils.disableGL2D();
-         GL11.glDepthMask(false);
-         this.mc.fontRendererObj.drawStringWithShadow(var4.text, (float)(-(this.mc.fontRendererObj.d(var4.text) / 2)), (float)(-(this.mc.fontRendererObj.getHeight() - 1)), 0);
-         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-         GL11.glDepthMask(true);
-         GlStateManager.doPolygonOffset(1.0F, 1500000.0F);
-         GlStateManager.disablePolygonOffset();
-         GlStateManager.disableBlend();
-         GlStateManager.popMatrix();
-      }
+    public static double roundToPlace(double p_roundToPlace_0_, int p_roundToPlace_2_) {
+        if (p_roundToPlace_2_ < 0) throw new IllegalArgumentException();
+        return new BigDecimal(p_roundToPlace_0_).setScale(p_roundToPlace_2_, RoundingMode.HALF_UP).doubleValue();
+    }
 
-   }
+    @EventTarget
+    public void onUpdate(PlayerUpdateEvent eventUpdate) {
+        this.particles.forEach(update -> {
+            ++update.ticks;
+            if (update.ticks <= 10) update.location.setY(update.location.getY() + update.ticks * 0.005);
+            if (update.ticks > 20) this.particles.remove(update);
+        });
+    }
 
-   public static double a(double var0, int var2) {
-      throw new IllegalArgumentException();
-   }
+    public static class Particles {
+        public int ticks;
+        public Location location;
+        public String text;
 
-   @EventTarget
-   public void onUpdate(PlayerUpdateEvent var1) {
-      this.particles.forEach(this::lambda$onUpdate$0);
-   }
+        public Particles(final Location location, final String text) {
+            this.location = location;
+            this.text = text;
+            this.ticks = 0;
+        }
 
-   private void lambda$onUpdate$0(DMGParticle$Particles var1) {
-      HUD.h();
-      ++var1.ticks;
-      if(var1.ticks <= 10) {
-         var1.location.setY(var1.location.getY() + (double)var1.ticks * 0.005D);
-      }
+    }
 
-      if(var1.ticks > 20) {
-         this.particles.remove(var1);
-      }
+    public static class Location {
+        private double x;
+        private double y;
+        private double z;
+        private float yaw;
+        private float pitch;
 
-   }
+        public Location(double x, double y, double z, float yaw, float pitch) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.yaw = yaw;
+            this.pitch = pitch;
+        }
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+        public Location(double x, double y, double z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.yaw = 0.0F;
+            this.pitch = 0.0F;
+        }
+
+        public Location(BlockPos pos) {
+            this.x = pos.getX();
+            this.y = pos.getY();
+            this.z = pos.getZ();
+            this.yaw = 0.0F;
+            this.pitch = 0.0F;
+        }
+
+        public Location(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.yaw = 0.0F;
+            this.pitch = 0.0F;
+        }
+
+        public Location(EntityLivingBase entity) {
+            this.x = entity.posX;
+            this.y = entity.posY;
+            this.z = entity.posZ;
+            this.yaw = 0.0f;
+            this.pitch = 0.0f;
+        }
+
+        public Location add(int x, int y, int z) {
+            this.x += x;
+            this.y += y;
+            this.z += z;
+            return this;
+        }
+
+        public Location add(double x, double y, double z) {
+            this.x += x;
+            this.y += y;
+            this.z += z;
+            return this;
+        }
+
+        public Location subtract(int x, int y, int z) {
+            this.x -= x;
+            this.y -= y;
+            this.z -= z;
+            return this;
+        }
+
+        public Location subtract(double x, double y, double z) {
+            this.x -= x;
+            this.y -= y;
+            this.z -= z;
+            return this;
+        }
+
+        public Block getBlock() {
+            return Minecraft.getInstance().world.getBlockState(this.toBlockPos()).getBlock();
+        }
+
+        public double getX() {
+            return this.x;
+        }
+
+        public Location setX(double x) {
+            this.x = x;
+            return this;
+        }
+
+        public double getY() {
+            return this.y;
+        }
+
+        public Location setY(double y) {
+            this.y = y;
+            return this;
+        }
+
+        public double getZ() {
+            return this.z;
+        }
+
+        public Location setZ(double z) {
+            this.z = z;
+            return this;
+        }
+
+        public float getYaw() {
+            return this.yaw;
+        }
+
+        public Location setYaw(float yaw) {
+            this.yaw = yaw;
+            return this;
+        }
+
+        public float getPitch() {
+            return this.pitch;
+        }
+
+        public Location setPitch(float pitch) {
+            this.pitch = pitch;
+            return this;
+        }
+
+        public static Location fromBlockPos(BlockPos blockPos) {
+            return new Location(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+        }
+
+        public BlockPos toBlockPos() {
+            return new BlockPos(this.getX(), this.getY(), this.getZ());
+        }
+
+        public double distanceTo(Location loc) {
+            double dx = loc.x - this.x;
+            double dz = loc.z - this.z;
+            double dy = loc.y - this.y;
+            return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        public double distanceToY(Location loc) {
+            double dy = loc.y - this.y;
+            return Math.sqrt(dy * dy);
+        }
+    }
+
 }

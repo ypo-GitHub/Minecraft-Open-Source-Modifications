@@ -1,6 +1,5 @@
 package net.minecraft.block;
 
-import net.minecraft.block.BlockCrops;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -9,19 +8,26 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BlockPotato extends BlockCrops {
-   protected Item getSeed() {
-      return Items.potato;
-   }
 
-   protected Item getCrop() {
-      return Items.potato;
-   }
+    protected Item getSeed() {
+        return Items.potato;
+    }
 
-   public void dropBlockAsItemWithChance(World var1, BlockPos var2, IBlockState var3, float var4, int var5) {
-      super.dropBlockAsItemWithChance(var1, var2, var3, var4, var5);
-      if(!var1.isRemote && ((Integer)var3.getValue(P)).intValue() >= 7 && var1.rand.nextInt(50) == 0) {
-         spawnAsEntity(var1, var2, new ItemStack(Items.poisonous_potato));
-      }
+    protected Item getCrop() {
+        return Items.potato;
+    }
 
-   }
+    /**
+     * Spawns this Block's drops into the World as EntityItems.
+     */
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune) {
+        super.dropBlockAsItemWithChance(worldIn, pos, state, chance, fortune);
+
+        if (!worldIn.isRemote) {
+            if (state.getValue(AGE) >= 7 && worldIn.rand.nextInt(50) == 0) {
+                spawnAsEntity(worldIn, pos, new ItemStack(Items.poisonous_potato));
+            }
+        }
+    }
+
 }

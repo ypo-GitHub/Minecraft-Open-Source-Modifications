@@ -1,10 +1,7 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.iV;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -13,114 +10,135 @@ import net.minecraft.item.Item;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Plane;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockReed extends Block {
-   public static final iV P = iV.a("age", 0, 15);
 
-   protected BlockReed() {
-      super(Material.plants);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(0)));
-      float var1 = 0.375F;
-      this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.0F, 0.875F);
-      this.setTickRandomly(true);
-   }
+    public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 15);
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      if((var1.getBlockState(var2.down()).getBlock() == Blocks.reeds || this.checkForDrop(var1, var2, var3)) && var1.isAirBlock(var2.up())) {
-         int var5;
-         for(var5 = 1; var1.getBlockState(var2.down(var5)).getBlock() == this; ++var5) {
-            ;
-         }
+    protected BlockReed() {
+        super(Material.plants);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(AGE, 0));
+        final float f = 0.375F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 1.0F, 0.5F + f);
+        this.setTickRandomly(true);
+    }
 
-         if(var5 < 3) {
-            int var6 = ((Integer)var3.getValue(P)).intValue();
-            if(var6 == 15) {
-               var1.setBlockState(var2.up(), this.getDefaultState());
-               var1.setBlockState(var2, var3.withProperty(P, Integer.valueOf(0)), 4);
-            } else {
-               var1.setBlockState(var2, var3.withProperty(P, Integer.valueOf(var6 + 1)), 4);
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        if (worldIn.getBlockState(pos.down()).getBlock() == Blocks.reeds || this.checkForDrop(worldIn, pos, state)) {
+            if (worldIn.isAirBlock(pos.up())) {
+                int i;
+
+                for (i = 1; worldIn.getBlockState(pos.down(i)).getBlock() == this; ++i) {
+                }
+
+                if (i < 3) {
+                    final int j = state.getValue(AGE);
+
+                    if (j == 15) {
+                        worldIn.setBlockState(pos.up(), this.getDefaultState());
+                        worldIn.setBlockState(pos, state.withProperty(AGE, 0), 4);
+                    } else {
+                        worldIn.setBlockState(pos, state.withProperty(AGE, j + 1), 4);
+                    }
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        final Block block = worldIn.getBlockState(pos.down()).getBlock();
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      Block var3 = var1.getBlockState(var2.down()).getBlock();
-      if(var3 == this) {
-         return true;
-      } else if(var3 != Blocks.grass && var3 != Blocks.dirt && var3 != Blocks.sand) {
-         return false;
-      } else {
-         for(Object var5 : EnumFacing$Plane.HORIZONTAL) {
-            if(var1.getBlockState(var2.offset((EnumFacing)var5).down()).getBlock().getMaterial() == Material.water) {
-               return true;
+        if (block == this) {
+            return true;
+        } else if (block != Blocks.grass && block != Blocks.dirt && block != Blocks.sand) {
+            return false;
+        } else {
+            for (Object enumfacing : EnumFacing.Plane.HORIZONTAL) {
+                if (worldIn.getBlockState(pos.offset((EnumFacing) enumfacing).down()).getBlock().getMaterial() == Material.water) {
+                    return true;
+                }
             }
-         }
 
-         return false;
-      }
-   }
+            return false;
+        }
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      this.checkForDrop(var1, var2, var3);
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        this.checkForDrop(worldIn, pos, state);
+    }
 
-   protected final boolean checkForDrop(World var1, BlockPos var2, IBlockState var3) {
-      if(this.canBlockStay(var1, var2)) {
-         return true;
-      } else {
-         this.dropBlockAsItem(var1, var2, var3, 0);
-         var1.setBlockToAir(var2);
-         return false;
-      }
-   }
+    protected final boolean checkForDrop(World worldIn, BlockPos pos, IBlockState state) {
+        if (this.canBlockStay(worldIn, pos)) {
+            return true;
+        } else {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
+            return false;
+        }
+    }
 
-   public boolean canBlockStay(World var1, BlockPos var2) {
-      return this.canPlaceBlockAt(var1, var2);
-   }
+    public boolean canBlockStay(World worldIn, BlockPos pos) {
+        return this.canPlaceBlockAt(worldIn, pos);
+    }
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      return null;
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        return null;
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Items.reeds;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Items.reeds;
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return Items.reeds;
-   }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return Items.reeds;
+    }
 
-   public int colorMultiplier(IBlockAccess var1, BlockPos var2, int var3) {
-      return var1.getBiomeGenForCoords(var2).getGrassColorAtPos(var2);
-   }
+    public int colorMultiplier(IBlockAccess worldIn, BlockPos pos, int renderPass) {
+        return worldIn.getBiomeGenForCoords(pos).getGrassColorAtPos(pos);
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf(var1));
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(AGE, meta);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue();
-   }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(AGE);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, AGE);
+    }
+
 }

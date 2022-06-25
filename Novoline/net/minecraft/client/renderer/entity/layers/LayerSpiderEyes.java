@@ -3,7 +3,6 @@ package net.minecraft.client.renderer.entity.layers;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.RenderSpider;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntitySpider;
 import net.minecraft.util.ResourceLocation;
@@ -11,49 +10,51 @@ import net.optifine.Config;
 import net.shadersmod.client.Shaders;
 
 public class LayerSpiderEyes implements LayerRenderer {
-   private static final ResourceLocation SPIDER_EYES = new ResourceLocation("textures/entity/spider_eyes.png");
-   private final RenderSpider spiderRenderer;
-   private static final String c = "CL_00002410";
+    private static final ResourceLocation SPIDER_EYES = new ResourceLocation("textures/entity/spider_eyes.png");
+    private final RenderSpider spiderRenderer;
+    private static final String __OBFID = "CL_00002410";
 
-   public LayerSpiderEyes(RenderSpider var1) {
-      this.spiderRenderer = var1;
-   }
+    public LayerSpiderEyes(RenderSpider spiderRendererIn) {
+        this.spiderRenderer = spiderRendererIn;
+    }
 
-   public void doRenderLayer(EntitySpider var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      this.spiderRenderer.bindTexture(SPIDER_EYES);
-      GlStateManager.enableBlend();
-      GlStateManager.disableAlpha();
-      GlStateManager.blendFunc(1, 1);
-      if(var1.isInvisible()) {
-         GlStateManager.depthMask(false);
-      } else {
-         GlStateManager.depthMask(true);
-      }
+    public void doRenderLayer(EntitySpider entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        this.spiderRenderer.bindTexture(SPIDER_EYES);
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.blendFunc(1, 1);
 
-      char var9 = '\uf0f0';
-      int var10 = var9 % 65536;
-      int var11 = var9 / 65536;
-      OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)var10 / 1.0F, (float)var11 / 1.0F);
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      if(Config.isShaders()) {
-         Shaders.beginSpiderEyes();
-      }
+        if (entitylivingbaseIn.isInvisible()) {
+            GlStateManager.depthMask(false);
+        } else {
+            GlStateManager.depthMask(true);
+        }
 
-      this.spiderRenderer.getMainModel().render(var1, var2, var3, var5, var6, var7, var8);
-      int var12 = var1.getBrightnessForRender(var4);
-      var10 = var12 % 65536;
-      var11 = var12 / 65536;
-      OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)var10 / 1.0F, (float)var11 / 1.0F);
-      this.spiderRenderer.func_177105_a(var1, var4);
-      GlStateManager.disableBlend();
-      GlStateManager.enableAlpha();
-   }
+        char c0 = 61680;
+        int i = c0 % 65536;
+        int j = c0 / 65536;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) i / 1.0F, (float) j / 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
-   public boolean shouldCombineTextures() {
-      return false;
-   }
+        if (Config.isShaders()) {
+            Shaders.beginSpiderEyes();
+        }
 
-   public void doRenderLayer(EntityLivingBase var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      this.doRenderLayer((EntitySpider)var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+        this.spiderRenderer.getMainModel().render(entitylivingbaseIn, p_177141_2_, p_177141_3_, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+        int k = entitylivingbaseIn.getBrightnessForRender(partialTicks);
+        i = k % 65536;
+        j = k / 65536;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) i / 1.0F, (float) j / 1.0F);
+        this.spiderRenderer.func_177105_a(entitylivingbaseIn, partialTicks);
+        GlStateManager.disableBlend();
+        GlStateManager.enableAlpha();
+    }
+
+    public boolean shouldCombineTextures() {
+        return false;
+    }
+
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        this.doRenderLayer((EntitySpider) entitylivingbaseIn, p_177141_2_, p_177141_3_, partialTicks, p_177141_5_, p_177141_6_, p_177141_7_, scale);
+    }
 }

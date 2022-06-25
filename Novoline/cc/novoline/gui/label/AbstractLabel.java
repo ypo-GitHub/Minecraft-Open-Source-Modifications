@@ -1,91 +1,91 @@
 package cc.novoline.gui.label;
 
 import cc.novoline.gui.AbstractElement;
-import cc.novoline.gui.label.Label;
 import cc.novoline.utils.fonts.api.FontRenderer;
 import java.util.Objects;
-import net.acE;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractLabel extends AbstractElement implements Label {
-   protected String text;
-   protected int color;
-   protected FontRenderer fontRenderer;
-   private static acE[] h;
 
-   public AbstractLabel(String var1, int var2, FontRenderer var3, int var4, int var5) {
-      super(var4, var5);
-      this.text = var1;
-      this.color = var2;
-      a();
-      this.fontRenderer = var3;
-      if(acE.b() == null) {
-         b(new acE[5]);
-      }
+    /* fields */
+    @Nullable
+    protected String text;
+    protected int color;
+    @NonNull
+    protected FontRenderer fontRenderer;
 
-   }
+    /* constructors */
+    public AbstractLabel(@Nullable String text, int color, @NonNull FontRenderer fontRenderer, int x, int y) {
+        super(x, y);
+        this.text = text;
+        this.color = color;
+        this.fontRenderer = fontRenderer;
+    }
 
-   public AbstractLabel(String var1, int var2, FontRenderer var3) {
-      this(var1, var2, var3, 0, 0);
-   }
+    public AbstractLabel(@Nullable String text, int color, @NonNull FontRenderer fontRenderer) {
+        this(text, color, fontRenderer, 0, 0);
+    }
 
-   public void onDraw(int var1, int var2) {
-      this.fontRenderer.drawString(this.text, (float)this.x, (float)this.y, this.color);
-   }
+    /* methods */
+    @Override
+    public void onDraw(int mouseX, int mouseY) {
+        this.fontRenderer.drawString(this.text, this.x, this.y, this.color);
+    }
 
-   public String getText() {
-      return this.text;
-   }
+    //region Lombok
+    @Override
+    @Nullable
+    public String getText() {
+        return this.text;
+    }
 
-   public void setText(String var1) {
-      this.text = var1;
-   }
+    @Override
+    public void setText(@Nullable String text) {
+        this.text = text;
+    }
 
-   public int getColor() {
-      return this.color;
-   }
+    @Override
+    public int getColor() {
+        return this.color;
+    }
 
-   public void setColor(int var1) {
-      this.color = var1;
-   }
+    @Override
+    public void setColor(int color) {
+        this.color = color;
+    }
 
-   public FontRenderer getFontRenderer() {
-      return this.fontRenderer;
-   }
+    @Override
+    @NonNull
+    public FontRenderer getFontRenderer() {
+        return this.fontRenderer;
+    }
 
-   public void setFontRenderer(FontRenderer var1) {
-      this.fontRenderer = var1;
-   }
+    @Override
+    public void setFontRenderer(@NonNull FontRenderer fontRenderer) {
+        this.fontRenderer = fontRenderer;
+    }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = a();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractLabel)) {
-         return false;
-      } else {
-         AbstractLabel var3 = (AbstractLabel)var1;
-         return Objects.equals(this.text, var3.text) && this.fontRenderer.equals(var3.fontRenderer);
-      }
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractLabel)) return false;
+        final AbstractLabel that = (AbstractLabel) o;
+        return Objects.equals(this.text, that.text) && this.fontRenderer.equals(that.fontRenderer);
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{this.text, this.fontRenderer});
-   }
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.text, this.fontRenderer);
+    }
 
-   public String toString() {
-      acE[] var1 = a();
-      return "AbstractLabel{text=\'" + this.text + '\'' + ", color=" + this.color + ", fontRenderer=" + this.fontRenderer + '}';
-   }
+    @Override
+    public String toString() {
+        return "AbstractLabel{" + "text='" + this.text + '\'' + ", color=" + this.color + ", fontRenderer=" + this.fontRenderer + '}';
+    }
+    //endregion
 
-   public static void b(acE[] var0) {
-      h = var0;
-   }
-
-   public static acE[] a() {
-      return h;
-   }
-
-   static {
-      b(new acE[4]);
-   }
 }

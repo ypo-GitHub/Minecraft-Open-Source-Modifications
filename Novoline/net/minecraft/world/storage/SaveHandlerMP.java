@@ -1,48 +1,73 @@
 package net.minecraft.world.storage;
 
-import java.io.File;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.MinecraftException;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.chunk.storage.IChunkLoader;
-import net.minecraft.world.storage.IPlayerFileData;
-import net.minecraft.world.storage.ISaveHandler;
-import net.minecraft.world.storage.WorldInfo;
+
+import java.io.File;
 
 public class SaveHandlerMP implements ISaveHandler {
-   public WorldInfo loadWorldInfo() {
-      return null;
-   }
+    /**
+     * Loads and returns the world info
+     */
+    public WorldInfo loadWorldInfo() {
+        return null;
+    }
 
-   public void checkSessionLock() throws MinecraftException {
-   }
+    /**
+     * Checks the session lock to prevent save collisions
+     */
+    public void checkSessionLock() throws MinecraftException {
+    }
 
-   public IChunkLoader getChunkLoader(WorldProvider var1) {
-      return null;
-   }
+    /**
+     * initializes and returns the chunk loader for the specified world provider
+     */
+    public IChunkLoader getChunkLoader(WorldProvider provider) {
+        return null;
+    }
 
-   public void saveWorldInfoWithPlayer(WorldInfo var1, NBTTagCompound var2) {
-   }
+    /**
+     * Saves the given World Info with the given NBTTagCompound as the Player.
+     */
+    public void saveWorldInfoWithPlayer(WorldInfo worldInformation, NBTTagCompound tagCompound) {
+    }
 
-   public void saveWorldInfo(WorldInfo var1) {
-   }
+    /**
+     * used to update level.dat from old format to MCRegion format
+     */
+    public void saveWorldInfo(WorldInfo worldInformation) {
+    }
 
-   public IPlayerFileData getPlayerNBTManager() {
-      return null;
-   }
+    public IPlayerFileData getPlayerNBTManager() {
+        return null;
+    }
 
-   public void flush() {
-   }
+    /**
+     * Called to flush all changes to disk, waiting for them to complete.
+     */
+    public void flush() {
+    }
 
-   public File getMapFileFromName(String var1) {
-      return null;
-   }
+    /**
+     * Gets the file location of the given map
+     */
+    public File getMapFileFromName(String mapName) {
+        return null;
+    }
 
-   public String getWorldDirectoryName() {
-      return "none";
-   }
+    /**
+     * Returns the name of the directory where world information is saved.
+     */
+    public String getWorldDirectoryName() {
+        return "none";
+    }
 
-   public File getWorldDirectory() {
-      return null;
-   }
+    /**
+     * Gets the File object corresponding to the base directory of this world.
+     */
+    public File getWorldDirectory() {
+        return null;
+    }
 }

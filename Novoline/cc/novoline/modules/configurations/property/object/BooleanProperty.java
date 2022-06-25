@@ -1,61 +1,67 @@
 package cc.novoline.modules.configurations.property.object;
 
 import cc.novoline.modules.configurations.property.AbstractProperty;
-import cc.novoline.modules.configurations.property.object.BooleanProperty$ImmutableBooleanProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
 import cc.novoline.utils.java.Lazy;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class BooleanProperty extends AbstractProperty {
-   private static final Lazy TRUE = Lazy.createThreadSafe(BooleanProperty::lambda$static$0);
-   private static final Lazy FALSE = Lazy.createThreadSafe(BooleanProperty::lambda$static$1);
+/**
+ * @author xDelsy
+ */
+public class BooleanProperty extends AbstractProperty<Boolean> {
 
-   public BooleanProperty(@Nullable Boolean var1) {
-      super(Boolean.valueOf(var1.booleanValue()));
-   }
+    /* fields */
+    private static final Lazy<BooleanProperty> TRUE = Lazy.createThreadSafe(() -> new ImmutableBooleanProperty(true));
+    private static final Lazy<BooleanProperty> FALSE = Lazy.createThreadSafe(() -> new ImmutableBooleanProperty(false));
 
-   public BooleanProperty() {
-      this(Boolean.valueOf(false));
-   }
+    /* constructors */
+    public BooleanProperty(@Nullable Boolean value) {
+        super(value != null ? value : false);
+    }
 
-   @NotNull
-   public static BooleanProperty of(@Nullable Boolean var0) {
-      return new BooleanProperty(var0);
-   }
+    public BooleanProperty() {
+        this(false);
+    }
 
-   @NotNull
-   public static BooleanProperty create() {
-      return new BooleanProperty();
-   }
+    public static @NotNull BooleanProperty of(@Nullable Boolean value) {
+        return new BooleanProperty(value);
+    }
 
-   public static BooleanProperty alwaysTrue() {
-      return (BooleanProperty)TRUE.get();
-   }
+    public static @NotNull BooleanProperty create() {
+        return new BooleanProperty();
+    }
 
-   public static BooleanProperty alwaysFalse() {
-      return (BooleanProperty)FALSE.get();
-   }
+    /* methods */
+    public static BooleanProperty alwaysTrue() {
+        return TRUE.get();
+    }
 
-   public void setTrue() {
-      this.set(Boolean.valueOf(true));
-   }
+    public static BooleanProperty alwaysFalse() {
+        return FALSE.get();
+    }
 
-   public void setFalse() {
-      this.set(Boolean.valueOf(false));
-   }
+    public void setTrue() {
+        set(true);
+    }
 
-   public void invert() {
-      int[] var1 = IntProperty.a();
-      this.value = Boolean.valueOf(this.value == null || !((Boolean)this.value).booleanValue());
-   }
+    public void setFalse() {
+        set(false);
+    }
 
-   private static BooleanProperty lambda$static$1() {
-      return new BooleanProperty$ImmutableBooleanProperty(Boolean.valueOf(false));
-   }
+    public void invert() {
+        this.value = value == null || !value;
+    }
 
-   private static BooleanProperty lambda$static$0() {
-      return new BooleanProperty$ImmutableBooleanProperty(Boolean.valueOf(true));
-   }
+    /* inner classes */
+    private static final class ImmutableBooleanProperty extends BooleanProperty {
+
+        private ImmutableBooleanProperty(@Nullable Boolean value) {
+            super(value);
+        }
+
+        @Override
+        public void set(@Nullable Boolean value) {
+            throw new UnsupportedOperationException("Tried to change immutable property");
+        }
+    }
 }

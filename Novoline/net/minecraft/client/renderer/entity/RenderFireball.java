@@ -4,8 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.entity.Render;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -13,44 +11,53 @@ import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.init.Items;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderFireball extends Render {
-   private float scale;
+public class RenderFireball extends Render<EntityFireball> {
+    private float scale;
 
-   public RenderFireball(RenderManager var1, float var2) {
-      super(var1);
-      this.scale = var2;
-   }
+    public RenderFireball(RenderManager renderManagerIn, float scaleIn) {
+        super(renderManagerIn);
+        this.scale = scaleIn;
+    }
 
-   public void doRender(EntityFireball var1, double var2, double var4, double var6, float var8, float var9) {
-      GlStateManager.pushMatrix();
-      this.bindEntityTexture(var1);
-      GlStateManager.translate((float)var2, (float)var4, (float)var6);
-      GlStateManager.enableRescaleNormal();
-      GlStateManager.scale(this.scale, this.scale, this.scale);
-      TextureAtlasSprite var10 = Minecraft.getInstance().getRenderItem().getItemModelMesher().getParticleIcon(Items.fire_charge);
-      Tessellator var11 = Tessellator.getInstance();
-      WorldRenderer var12 = var11.getWorldRenderer();
-      float var13 = var10.getMinU();
-      float var14 = var10.getMaxU();
-      float var15 = var10.getMinV();
-      float var16 = var10.getMaxV();
-      float var17 = 1.0F;
-      float var18 = 0.5F;
-      float var19 = 0.25F;
-      GlStateManager.rotate(180.0F - this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
-      GlStateManager.rotate(-this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
-      var12.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
-      var12.pos(-0.5D, -0.25D, 0.0D).tex((double)var13, (double)var16).normal(0.0F, 1.0F, 0.0F).endVertex();
-      var12.pos(0.5D, -0.25D, 0.0D).tex((double)var14, (double)var16).normal(0.0F, 1.0F, 0.0F).endVertex();
-      var12.pos(0.5D, 0.75D, 0.0D).tex((double)var14, (double)var15).normal(0.0F, 1.0F, 0.0F).endVertex();
-      var12.pos(-0.5D, 0.75D, 0.0D).tex((double)var13, (double)var15).normal(0.0F, 1.0F, 0.0F).endVertex();
-      var11.draw();
-      GlStateManager.disableRescaleNormal();
-      GlStateManager.popMatrix();
-      super.doRender(var1, var2, var4, var6, var8, var9);
-   }
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void doRender(EntityFireball entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        GlStateManager.pushMatrix();
+        this.bindEntityTexture(entity);
+        GlStateManager.translate((float) x, (float) y, (float) z);
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.scale(this.scale, this.scale, this.scale);
+        TextureAtlasSprite textureatlassprite = Minecraft.getInstance().getRenderItem().getItemModelMesher().getParticleIcon(Items.fire_charge);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        float f = textureatlassprite.getMinU();
+        float f1 = textureatlassprite.getMaxU();
+        float f2 = textureatlassprite.getMinV();
+        float f3 = textureatlassprite.getMaxV();
+        float f4 = 1.0F;
+        float f5 = 0.5F;
+        float f6 = 0.25F;
+        GlStateManager.rotate(180.0F - this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(-this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
+        worldrenderer.pos(-0.5D, -0.25D, 0.0D).tex((double) f, (double) f3).normal(0.0F, 1.0F, 0.0F).endVertex();
+        worldrenderer.pos(0.5D, -0.25D, 0.0D).tex((double) f1, (double) f3).normal(0.0F, 1.0F, 0.0F).endVertex();
+        worldrenderer.pos(0.5D, 0.75D, 0.0D).tex((double) f1, (double) f2).normal(0.0F, 1.0F, 0.0F).endVertex();
+        worldrenderer.pos(-0.5D, 0.75D, 0.0D).tex((double) f, (double) f2).normal(0.0F, 1.0F, 0.0F).endVertex();
+        tessellator.draw();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.popMatrix();
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
+    }
 
-   protected ResourceLocation getEntityTexture(EntityFireball var1) {
-      return TextureMap.locationBlocksTexture;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityFireball entity) {
+        return TextureMap.locationBlocksTexture;
+    }
 }

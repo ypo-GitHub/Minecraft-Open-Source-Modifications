@@ -1,88 +1,145 @@
 package cc.novoline.modules;
 
-import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.Config$1;
+import cc.novoline.modules.configurations.property.Property;
 import cc.novoline.modules.configurations.property.mapper.PropertyMapperFactory;
 import cc.novoline.modules.exceptions.LoadConfigException;
 import cc.novoline.modules.serializers.PropertySerializer;
 import com.google.common.reflect.TypeToken;
+import com.typesafe.config.ConfigException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import net.Ea;
-import net.a6t;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import java.util.concurrent.ThreadLocalRandom;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author xDelsy
+ */
 public final class Config {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Path file;
-   private final HoconConfigurationLoader loader;
-   private ConfigurationNode rootNode;
 
-   private Config(@NotNull Path var1) {
-      this.file = var1;
-      this.loader = ((a6t)((a6t)HoconConfigurationLoader.b().setDefaultOptions(this.defaultOptions())).setPath(this.file)).a();
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   @NotNull
-   private ConfigurationOptions defaultOptions() {
-      ConfigurationOptions var1 = ConfigurationOptions.defaults().setObjectMapperFactory(new PropertyMapperFactory());
-      Ea var2 = TypeSerializers.b();
-      var2.a((TypeToken)(new Config$1(this)), new PropertySerializer());
-      var2 = TypeSerializers.a().a(var2);
-      var1 = var1.a(var2);
-      return var1;
-   }
+    /* fields */
+    private final Path file;
+    private final HoconConfigurationLoader loader;
+    private ConfigurationNode rootNode;
 
-   @NotNull
-   public static Config fromPath(@NotNull Path var0) {
-      return new Config(var0);
-   }
+    /* constructors */
+    private Config(@NotNull Path path) {
+        this.file = path;
+        this.loader = HoconConfigurationLoader.builder().setDefaultOptions(defaultOptions()).setPath(file).build();
+    }
 
-   @NotNull
-   public ConfigurationNode getNode(String var1) {
-      AbstractModule.d();
-      ConfigurationNode var3 = this.getRootNode();
-      if(var1 != null && !var1.trim().isEmpty()) {
-         return var3.getNode(new Object[]{var1});
-      } else {
-         throw new IllegalArgumentException("version may not be blank!");
-      }
-   }
+    private @NotNull ConfigurationOptions defaultOptions() {
+        ConfigurationOptions options = ConfigurationOptions.defaults()
+                .setObjectMapperFactory(new PropertyMapperFactory());
+        TypeSerializerCollection serializers = TypeSerializers.newCollection();
+        serializers.registerType(new TypeToken<Property<?>>() {
+        }, new PropertySerializer());
+        serializers = TypeSerializers.getDefaultSerializers().and(serializers);
+        options = options.setSerializers(serializers);
 
-   public void load() throws LoadConfigException {
-      // $FF: Couldn't be decompiled
-   }
+        return options;
+    }
 
-   public void save() throws IOException {
-      try {
-         this.loader.save(this.getRootNode());
-      } catch (IOException var2) {
-         throw new IOException("An error occurred while saving the config!", var2);
-      }
-   }
+    /* methods */
+    public static @NotNull Config fromPath(@NotNull Path path) {
+        return new Config(path);
+    }
 
-   @NotNull
-   public HoconConfigurationLoader getLoader() {
-      return this.loader;
-   }
+    public @NotNull ConfigurationNode getNode(String version) {
+        ConfigurationNode rootNode = getRootNode();
 
-   @NotNull
-   public ConfigurationNode getRootNode() {
-      int[] var1 = AbstractModule.d();
-      return this.rootNode;
-   }
+        if (version == null || version.trim().isEmpty()) {
+            throw new IllegalArgumentException("version may not be blank!");
+        }
 
-   public void setRootNode(@NotNull ConfigurationNode var1) {
-      this.rootNode = var1;
-   }
+        return rootNode.getNode(version);
+    }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    public void load() throws LoadConfigException {
+        Path file = this.file;
+
+        try {
+            if(Files.notExists(file)) {
+                try {
+                    Path parent = file.getParent();
+
+                    if(parent != null) {
+                        Files.createDirectories(parent);
+                    }
+
+                    Files.createFile(file);
+                } catch(IOException e) {
+                    throw new IOException("Cannot create new file: " + file.getFileName(), e);
+                }
+            }
+
+            if(Files.isDirectory(file)) {
+                try {
+                    Files.move(file,
+                            file.resolveSibling(file.getFileName() + "-" + Math.abs(ThreadLocalRandom.current().nextInt())),
+                            REPLACE_EXISTING);
+                    Files.createFile(file);
+
+                    load();
+                    return;
+                } catch(IOException e) {
+                    throw new LoadConfigException("An error occurred while renaming a folder with the same name as config's", e);
+                }
+            }
+
+            this.rootNode = loader.load();
+        } catch(Throwable t) {
+            if(t.getCause() instanceof ConfigException) {
+                try {
+                    Files.move(file,
+                            file.resolveSibling(file.getFileName() + "-" + Math.abs(ThreadLocalRandom.current().nextInt())),
+                            REPLACE_EXISTING);
+                    Files.createFile(file);
+
+                    load();
+                    return;
+                } catch(IOException e1) {
+                    throw new LoadConfigException("An error occurred while renaming the config file", e1);
+                }
+            }
+
+            throw new LoadConfigException("An error occurred while setting up the config!", t);
+        }
+    }
+
+    public void save() throws IOException {
+        try {
+            loader.save(getRootNode());
+        } catch (IOException e) {
+            throw new IOException("An error occurred while saving the config!", e);
+        }
+    }
+
+    //region Lombok
+    @NotNull
+    public HoconConfigurationLoader getLoader() {
+        return loader;
+    }
+
+    @NotNull
+    public ConfigurationNode getRootNode() {
+        if (rootNode == null) throw new IllegalStateException("config is not loaded yet!");
+        return rootNode;
+    }
+
+    public void setRootNode(@NotNull ConfigurationNode rootNode) {
+        this.rootNode = rootNode;
+    }
+    //endregion
+
 }

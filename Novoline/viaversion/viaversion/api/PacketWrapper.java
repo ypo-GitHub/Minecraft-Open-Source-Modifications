@@ -5,13 +5,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import net.a66;
-import viaversion.viaversion.api.Pair;
-import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.protocol.Protocol;
 import viaversion.viaversion.api.remapper.ValueCreator;
@@ -20,418 +16,544 @@ import viaversion.viaversion.api.type.TypeConverter;
 import viaversion.viaversion.exception.CancelException;
 import viaversion.viaversion.exception.InformativeException;
 import viaversion.viaversion.packets.Direction;
+import viaversion.viaversion.packets.State;
 import viaversion.viaversion.util.PipelineUtil;
 
 public class PacketWrapper {
-   public static final int PASSTHROUGH_ID = 1000;
-   private static final Protocol[] PROTOCOL_ARRAY = new Protocol[0];
-   private final ByteBuf inputBuffer;
-   private final UserConnection userConnection;
-   private boolean send;
-   private int id;
-   private final LinkedList readableObjects;
-   private final List packetValues;
-   private static boolean h;
 
-   public PacketWrapper(int var1, ByteBuf var2, UserConnection var3) {
-      k();
-      super();
-      this.send = true;
-      this.id = -1;
-      this.readableObjects = new LinkedList();
-      this.packetValues = new ArrayList();
-      this.id = var1;
-      this.inputBuffer = var2;
-      this.userConnection = var3;
-   }
+    public static final int PASSTHROUGH_ID = 1000;
+    private static final Protocol[] PROTOCOL_ARRAY = new Protocol[0];
 
-   public Object get(Type var1, int var2) throws Exception {
-      f();
-      int var4 = 0;
-      Iterator var5 = this.packetValues.iterator();
-      if(var5.hasNext()) {
-         Pair var6 = (Pair)var5.next();
-         if(var6.getKey() == var1) {
-            if(var4 == var2) {
-               return var6.getValue();
+    private final ByteBuf inputBuffer;
+    private final UserConnection userConnection;
+    private boolean send = true;
+    private int id = -1;
+    private final LinkedList<Pair<Type, Object>> readableObjects = new LinkedList<>();
+    private final List<Pair<Type, Object>> packetValues = new ArrayList<>();
+
+    public PacketWrapper(int packetID, ByteBuf inputBuffer, UserConnection userConnection) {
+        this.id = packetID;
+        this.inputBuffer = inputBuffer;
+        this.userConnection = userConnection;
+    }
+
+    /**
+     * Get a part from the output
+     *
+     * @param type  The type of the part you wish to get.
+     * @param <T>   The return type of the type you wish to get.
+     * @param index The index of the part (relative to the type)
+     * @return The requested type or throws ArrayIndexOutOfBounds
+     * @throws InformativeException If it fails to find it, an exception will be thrown.
+     */
+    public <T> T get(Type<T> type, int index) throws Exception {
+        int currentIndex = 0;
+        for (Pair<Type, Object> packetValue : packetValues) {
+            if (packetValue.getKey() == type) { // Ref check
+                if (currentIndex == index) {
+                    return (T) packetValue.getValue();
+                }
+                currentIndex++;
             }
+        }
 
-            ++var4;
-         }
-      }
+        Exception e = new ArrayIndexOutOfBoundsException("Could not find type " + type.getTypeName() + " at " + index);
+        throw new InformativeException(e).set("Type", type.getTypeName()).set("Index", index).set("Packet ID", getId()).set("Data", packetValues);
+    }
 
-      ArrayIndexOutOfBoundsException var8 = new ArrayIndexOutOfBoundsException("Could not find type " + var1.getTypeName() + " at " + var2);
-      throw (new InformativeException(var8)).set("Type", var1.getTypeName()).set("Index", Integer.valueOf(var2)).set("Packet ID", Integer.valueOf(this.getId())).set("Data", this.packetValues);
-   }
-
-   public boolean is(Type var1, int var2) {
-      k();
-      int var4 = 0;
-      Iterator var5 = this.packetValues.iterator();
-      if(var5.hasNext()) {
-         Pair var6 = (Pair)var5.next();
-         if(var6.getKey() == var1) {
-            if(var4 == var2) {
-               return true;
+    /**
+     * Check if a type is at an index
+     *
+     * @param type  The type of the part you wish to get.
+     * @param index The index of the part (relative to the type)
+     * @return True if the type is at the index
+     */
+    public boolean is(Type type, int index) {
+        int currentIndex = 0;
+        for (Pair<Type, Object> packetValue : packetValues) {
+            if (packetValue.getKey() == type) { // Ref check
+                if (currentIndex == index) {
+                    return true;
+                }
+                currentIndex++;
             }
+        }
+        return false;
+    }
 
-            ++var4;
-         }
-      }
-
-      return false;
-   }
-
-   public boolean isReadable(Type var1, int var2) {
-      f();
-      int var4 = 0;
-      Iterator var5 = this.readableObjects.iterator();
-      if(var5.hasNext()) {
-         Pair var6 = (Pair)var5.next();
-         if(((Type)var6.getKey()).getBaseClass() == var1.getBaseClass()) {
-            if(var4 == var2) {
-               return true;
+    /**
+     * Check if a type is at an index
+     *
+     * @param type  The type of the part you wish to get.
+     * @param index The index of the part (relative to the type)
+     * @return True if the type is at the index
+     */
+    public boolean isReadable(Type type, int index) {
+        int currentIndex = 0;
+        for (Pair<Type, Object> packetValue : readableObjects) {
+            if (packetValue.getKey().getBaseClass() == type.getBaseClass()) { // Ref check
+                if (currentIndex == index) {
+                    return true;
+                }
+                currentIndex++;
             }
+        }
+        return false;
+    }
 
-            ++var4;
-         }
-      }
 
-      return false;
-   }
-
-   public void set(Type var1, int var2, Object var3) throws Exception {
-      f();
-      int var5 = 0;
-      Iterator var6 = this.packetValues.iterator();
-      if(var6.hasNext()) {
-         Pair var7 = (Pair)var6.next();
-         if(var7.getKey() == var1) {
-            if(var5 == var2) {
-               var7.setValue(var3);
-               return;
+    /**
+     * Set a currently existing part in the output
+     *
+     * @param type  The type of the part you wish to set.
+     * @param <T>   The return type of the type you wish to set.
+     * @param index The index of the part (relative to the type)
+     * @param value The value of the part you wish to set it to.
+     * @throws InformativeException If it fails to set it, an exception will be thrown.
+     */
+    public <T> void set(Type<T> type, int index, T value) throws Exception {
+        int currentIndex = 0;
+        for (Pair<Type, Object> packetValue : packetValues) {
+            if (packetValue.getKey() == type) { // Ref check
+                if (currentIndex == index) {
+                    packetValue.setValue(value);
+                    return;
+                }
+                currentIndex++;
             }
+        }
+        Exception e = new ArrayIndexOutOfBoundsException("Could not find type " + type.getTypeName() + " at " + index);
+        throw new InformativeException(e).set("Type", type.getTypeName()).set("Index", index).set("Packet ID", getId());
+    }
 
-            ++var5;
-         }
-      }
-
-      ArrayIndexOutOfBoundsException var9 = new ArrayIndexOutOfBoundsException("Could not find type " + var1.getTypeName() + " at " + var2);
-      throw (new InformativeException(var9)).set("Type", var1.getTypeName()).set("Index", Integer.valueOf(var2)).set("Packet ID", Integer.valueOf(this.getId()));
-   }
-
-   public Object read(Type var1) throws Exception {
-      boolean var2 = f();
-      if(var1 == Type.NOTHING) {
-         return null;
-      } else if(this.readableObjects.isEmpty()) {
-         Preconditions.checkNotNull(this.inputBuffer, "This packet does not have an input buffer.");
-
-         try {
-            return var1.read(this.inputBuffer);
-         } catch (Exception var6) {
-            throw (new InformativeException(var6)).set("Type", var1.getTypeName()).set("Packet ID", Integer.valueOf(this.getId())).set("Data", this.packetValues);
-         }
-      } else {
-         Pair var3 = (Pair)this.readableObjects.poll();
-         Type var4 = (Type)var3.getKey();
-         if(!var4.equals(var1) && (!var1.getBaseClass().equals(var4.getBaseClass()) || !var1.getOutputClass().equals(var4.getOutputClass()))) {
-            if(var4 == Type.NOTHING) {
-               return this.read(var1);
+    /**
+     * Read a type from the input.
+     *
+     * @param type The type you wish to read
+     * @param <T>  The return type of the type you wish to read.
+     * @return The requested type
+     * @throws InformativeException If it fails to read
+     */
+    public <T> T read(Type<T> type) throws Exception {
+        if (type == Type.NOTHING) return null;
+        if (readableObjects.isEmpty()) {
+            Preconditions.checkNotNull(inputBuffer, "This packet does not have an input buffer.");
+            // We could in the future log input read values, but honestly for things like bulk maps, mem waste D:
+            try {
+                return type.read(inputBuffer);
+            } catch (Exception e) {
+                throw new InformativeException(e).set("Type", type.getTypeName()).set("Packet ID", getId()).set("Data", packetValues);
+            }
+        } else {
+            Pair<Type, Object> read = readableObjects.poll();
+            Type rtype = read.getKey();
+            if (rtype.equals(type) || (type.getBaseClass().equals(rtype.getBaseClass()) && type.getOutputClass().equals(rtype.getOutputClass()))) {
+                return (T) read.getValue();
             } else {
-               IOException var5 = new IOException("Unable to read type " + var1.getTypeName() + ", found " + ((Type)var3.getKey()).getTypeName());
-               throw (new InformativeException(var5)).set("Type", var1.getTypeName()).set("Packet ID", Integer.valueOf(this.getId())).set("Data", this.packetValues);
+                if (rtype == Type.NOTHING) {
+                    return read(type); // retry
+                } else {
+                    Exception e = new IOException("Unable to read type " + type.getTypeName() + ", found " + read.getKey().getTypeName());
+                    throw new InformativeException(e).set("Type", type.getTypeName()).set("Packet ID", getId()).set("Data", packetValues);
+                }
             }
-         } else {
-            return var3.getValue();
-         }
-      }
-   }
+        }
+    }
 
-   public void write(Type var1, Object var2) {
-      boolean var3 = k();
-      if(!var1.getOutputClass().isAssignableFrom(var2.getClass())) {
-         if(var1 instanceof TypeConverter) {
-            var2 = ((TypeConverter)var1).from(var2);
-         }
-
-         Via.getPlatform().getLogger().warning("Possible type mismatch: " + var2.getClass().getName() + " -> " + var1.getOutputClass());
-      }
-
-      this.packetValues.add(new Pair(var1, var2));
-   }
-
-   public Object passthrough(Type var1) throws Exception {
-      Object var2 = this.read(var1);
-      this.write(var1, var2);
-      return var2;
-   }
-
-   public void passthroughAll() throws Exception {
-      f();
-      this.packetValues.addAll(this.readableObjects);
-      this.readableObjects.clear();
-      if(this.inputBuffer.readableBytes() > 0) {
-         this.passthrough(Type.REMAINING_BYTES);
-      }
-
-   }
-
-   public void writeToBuffer(ByteBuf var1) throws Exception {
-      boolean var2 = k();
-      if(this.id != -1) {
-         Type.VAR_INT.writePrimitive(var1, this.id);
-      }
-
-      if(!this.readableObjects.isEmpty()) {
-         this.packetValues.addAll(this.readableObjects);
-         this.readableObjects.clear();
-      }
-
-      int var3 = 0;
-      Iterator var4 = this.packetValues.iterator();
-      if(var4.hasNext()) {
-         Pair var5 = (Pair)var4.next();
-
-         try {
-            Object var6 = var5.getValue();
-            if(var6 != null && !((Type)var5.getKey()).getOutputClass().isAssignableFrom(var6.getClass())) {
-               if(var5.getKey() instanceof TypeConverter) {
-                  var6 = ((TypeConverter)var5.getKey()).from(var6);
-               }
-
-               Via.getPlatform().getLogger().warning("Possible type mismatch: " + var6.getClass().getName() + " -> " + ((Type)var5.getKey()).getOutputClass());
+    /**
+     * Write a type to the output.
+     *
+     * @param type  The type to write.
+     * @param <T>   The return type of the type you wish to write.
+     * @param value The value of the type to write.
+     */
+    public <T> void write(Type<T> type, T value) {
+        if (value != null) {
+            if (!type.getOutputClass().isAssignableFrom(value.getClass())) {
+                // attempt conversion
+                if (type instanceof TypeConverter) {
+                    value = (T) ((TypeConverter) type).from(value);
+                } else {
+                    Via.getPlatform().getLogger().warning("Possible type mismatch: " + value.getClass().getName() + " -> " + type.getOutputClass());
+                }
             }
+        }
+        packetValues.add(new Pair<Type, Object>(type, value));
+    }
 
-            ((Type)var5.getKey()).write(var1, var6);
-         } catch (Exception var7) {
-            throw (new InformativeException(var7)).set("Index", Integer.valueOf(var3)).set("Type", ((Type)var5.getKey()).getTypeName()).set("Packet ID", Integer.valueOf(this.getId())).set("Data", this.packetValues);
-         }
+    /**
+     * Take a value from the input and write to the output.
+     *
+     * @param type The type to read and write.
+     * @param <T>  The return type of the type you wish to pass through.
+     * @return The type which was read/written.
+     * @throws Exception If it failed to read or write
+     */
+    public <T> T passthrough(Type<T> type) throws Exception {
+        T value = read(type);
+        write(type, value);
+        return value;
+    }
 
-         ++var3;
-      }
+    /**
+     * Take all the inputs and write them to the output.
+     *
+     * @throws Exception If it failed to read or write
+     */
+    public void passthroughAll() throws Exception {
+        // Copy previous objects
+        packetValues.addAll(readableObjects);
+        readableObjects.clear();
+        // If the buffer has readable bytes, copy them.
+        if (inputBuffer.readableBytes() > 0) {
+            passthrough(Type.REMAINING_BYTES);
+        }
+    }
 
-      this.writeRemaining(var1);
-   }
+    /**
+     * Write the current output to a buffer.
+     *
+     * @param buffer The buffer to write to.
+     * @throws InformativeException Throws an exception if it fails to write a value.
+     */
+    public void writeToBuffer(ByteBuf buffer) throws Exception {
+        if (id != -1) {
+            Type.VAR_INT.writePrimitive(buffer, id);
+        }
+        if (!readableObjects.isEmpty()) {
+            packetValues.addAll(readableObjects);
+            readableObjects.clear();
+        }
 
-   public void clearInputBuffer() {
-      boolean var1 = k();
-      if(this.inputBuffer != null) {
-         this.inputBuffer.clear();
-      }
-
-      this.readableObjects.clear();
-   }
-
-   public void clearPacket() {
-      this.clearInputBuffer();
-      this.packetValues.clear();
-   }
-
-   private void writeRemaining(ByteBuf var1) {
-      boolean var2 = k();
-      if(this.inputBuffer != null) {
-         var1.writeBytes(this.inputBuffer, this.inputBuffer.readableBytes());
-      }
-
-   }
-
-   public void send(Class var1, boolean var2) throws Exception {
-      this.send(var1, var2, false);
-   }
-
-   public void send(Class var1, boolean var2, boolean var3) throws Exception {
-      boolean var4 = k();
-      if(!this.isCancelled()) {
-         try {
-            ByteBuf var5 = this.constructPacket(var1, var2, Direction.OUTGOING);
-            this.user().sendRawPacket(var5, var3);
-         } catch (Exception var6) {
-            if(!PipelineUtil.containsCause(var6, CancelException.class)) {
-               throw var6;
+        int index = 0;
+        for (Pair<Type, Object> packetValue : packetValues) {
+            try {
+                Object value = packetValue.getValue();
+                if (value != null) {
+                    if (!packetValue.getKey().getOutputClass().isAssignableFrom(value.getClass())) {
+                        // attempt conversion
+                        if (packetValue.getKey() instanceof TypeConverter) {
+                            value = ((TypeConverter) packetValue.getKey()).from(value);
+                        } else {
+                            Via.getPlatform().getLogger().warning("Possible type mismatch: " + value.getClass().getName() + " -> " + packetValue.getKey().getOutputClass());
+                        }
+                    }
+                }
+                packetValue.getKey().write(buffer, value);
+            } catch (Exception e) {
+                throw new InformativeException(e).set("Index", index).set("Type", packetValue.getKey().getTypeName()).set("Packet ID", getId()).set("Data", packetValues);
             }
-         }
-      }
+            index++;
+        }
+        writeRemaining(buffer);
+    }
 
-   }
+    /**
+     * Clear the input buffer / readable objects
+     */
+    public void clearInputBuffer() {
+        if (inputBuffer != null) {
+            inputBuffer.clear();
+        }
+        readableObjects.clear(); // :(
+    }
 
-   private ByteBuf constructPacket(Class var1, boolean var2, Direction var3) throws Exception {
-      k();
-      Protocol[] var5 = (Protocol[])this.user().getProtocolInfo().getPipeline().pipes().toArray(PROTOCOL_ARRAY);
-      boolean var6 = var3 == Direction.OUTGOING;
-      int var7 = -1;
-      int var8 = 0;
-      if(var8 < var5.length) {
-         if(var5[var8].getClass() == var1) {
-            var7 = var8;
-         }
+    /**
+     * Clear the packet, used if you have to change the packet completely
+     */
+    public void clearPacket() {
+        clearInputBuffer();
+        packetValues.clear();
+    }
 
-         ++var8;
-      }
+    private void writeRemaining(ByteBuf output) {
+        if (inputBuffer != null) {
+            output.writeBytes(inputBuffer, inputBuffer.readableBytes());
+        }
+    }
 
-      if(var7 == -1) {
-         throw new NoSuchElementException(var1.getCanonicalName());
-      } else {
-         if(var2) {
-            var7 = var6?var7 - 1:var7 + 1;
-         }
+    /**
+     * Send this packet to the associated user.
+     * Be careful not to send packets twice.
+     * (Sends it after current)
+     *
+     * @param packetProtocol      The protocol version of the packet.
+     * @param skipCurrentPipeline Skip the current pipeline
+     * @throws Exception if it fails to write
+     */
+    public void send(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+        send(packetProtocol, skipCurrentPipeline, false);
+    }
 
-         this.resetReader();
-         this.a(var3, this.user().getProtocolInfo().e(), var7, var5, var6);
-         ByteBuf var10 = this.inputBuffer == null?this.user().getChannel().alloc().buffer():this.inputBuffer.alloc().buffer();
-         this.writeToBuffer(var10);
-         return var10;
-      }
-   }
-
-   public void send(Class var1) throws Exception {
-      this.send(var1, true);
-   }
-
-   public ChannelFuture sendFuture(Class var1) throws Exception {
-      boolean var2 = f();
-      if(!this.isCancelled()) {
-         ByteBuf var3 = this.constructPacket(var1, true, Direction.OUTGOING);
-         return this.user().sendRawPacketFuture(var3);
-      } else {
-         return this.user().getChannel().newFailedFuture(new Exception("Cancelled packet"));
-      }
-   }
-
-   /** @deprecated */
-   @Deprecated
-   public void j() throws Exception {
-      boolean var1 = f();
-      if(!this.isCancelled()) {
-         ByteBuf var2 = this.inputBuffer == null?this.user().getChannel().alloc().buffer():this.inputBuffer.alloc().buffer();
-         this.writeToBuffer(var2);
-         this.user().sendRawPacket(var2);
-      }
-
-   }
-
-   public PacketWrapper create(int var1) {
-      return new PacketWrapper(var1, (ByteBuf)null, this.user());
-   }
-
-   public PacketWrapper create(int var1, ValueCreator var2) throws Exception {
-      PacketWrapper var3 = this.create(var1);
-      var2.write(var3);
-      return var3;
-   }
-
-   public PacketWrapper a(Direction var1, a66 var2, int var3, List var4, boolean var5) throws Exception {
-      k();
-      Protocol[] var7 = (Protocol[])var4.toArray(PROTOCOL_ARRAY);
-      return this.a(var1, var2, var5?var7.length - 1:var3, var7, var5);
-   }
-
-   public PacketWrapper a(Direction var1, a66 var2, int var3, List var4) throws Exception {
-      return this.a(var1, var2, var3, (Protocol[])var4.toArray(PROTOCOL_ARRAY), false);
-   }
-
-   private PacketWrapper a(Direction var1, a66 var2, int var3, Protocol[] var4, boolean var5) throws Exception {
-      boolean var6 = f();
-      if(var5) {
-         var4[var3].a(var1, var2, this);
-         this.resetReader();
-         int var7 = var3 - 1;
-      }
-
-      if(var3 < var4.length) {
-         var4[var3].a(var1, var2, this);
-         this.resetReader();
-         int var8 = var3 + 1;
-      }
-
-      return this;
-   }
-
-   public void cancel() {
-      this.send = false;
-   }
-
-   public boolean isCancelled() {
-      boolean var1 = f();
-      return !this.send;
-   }
-
-   public UserConnection user() {
-      return this.userConnection;
-   }
-
-   public void resetReader() {
-      this.packetValues.addAll(this.readableObjects);
-      this.readableObjects.clear();
-      this.readableObjects.addAll(this.packetValues);
-      this.packetValues.clear();
-   }
-
-   /** @deprecated */
-   @Deprecated
-   public void g() throws Exception {
-      boolean var1 = f();
-      if(!this.isCancelled()) {
-         ByteBuf var2 = this.inputBuffer == null?this.user().getChannel().alloc().buffer():this.inputBuffer.alloc().buffer();
-         this.writeToBuffer(var2);
-         this.user().sendRawPacketToServer(var2, true);
-      }
-
-   }
-
-   public void sendToServer(Class var1, boolean var2, boolean var3) throws Exception {
-      boolean var4 = k();
-      if(!this.isCancelled()) {
-         try {
-            ByteBuf var5 = this.constructPacket(var1, var2, Direction.INCOMING);
-            this.user().sendRawPacketToServer(var5, var3);
-         } catch (Exception var6) {
-            if(!PipelineUtil.containsCause(var6, CancelException.class)) {
-               throw var6;
+    /**
+     * Send this packet to the associated user.
+     * Be careful not to send packets twice.
+     * (Sends it after current)
+     *
+     * @param packetProtocol      The protocol version of the packet.
+     * @param skipCurrentPipeline Skip the current pipeline
+     * @param currentThread       Run in the same thread
+     * @throws Exception if it fails to write
+     */
+    public void send(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, boolean currentThread) throws Exception {
+        if (!isCancelled()) {
+            try {
+                ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+                user().sendRawPacket(output, currentThread);
+            } catch (Exception e) {
+                if (!PipelineUtil.containsCause(e, CancelException.class)) {
+                    throw e;
+                }
             }
-         }
-      }
+        }
+    }
 
-   }
+    /**
+     * Let the packet go through the protocol pipes and write it to ByteBuf
+     *
+     * @param packetProtocol      The protocol version of the packet.
+     * @param skipCurrentPipeline Skip the current pipeline
+     * @return Packet buffer
+     * @throws Exception if it fails to write
+     */
+    private ByteBuf constructPacket(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, Direction direction) throws Exception {
+        // Apply current pipeline - for outgoing protocol, the collection will be reversed in the apply method
+        Protocol[] protocols = user().getProtocolInfo().getPipeline().pipes().toArray(PROTOCOL_ARRAY);
+        boolean reverse = direction == Direction.OUTGOING;
+        int index = -1;
+        for (int i = 0; i < protocols.length; i++) {
+            if (protocols[i].getClass() == packetProtocol) {
+                index = i;
+                break;
+            }
+        }
 
-   public void sendToServer(Class var1, boolean var2) throws Exception {
-      this.sendToServer(var1, var2, false);
-   }
+        if (index == -1) {
+            // The given protocol is not in the pipeline
+            throw new NoSuchElementException(packetProtocol.getCanonicalName());
+        }
 
-   public void sendToServer(Class var1) throws Exception {
-      this.sendToServer(var1, true);
-   }
+        if (skipCurrentPipeline) {
+            index = reverse ? index - 1 : index + 1;
+        }
 
-   public int getId() {
-      return this.id;
-   }
+        // Reset reader before we start
+        resetReader();
 
-   public void setId(int var1) {
-      this.id = var1;
-   }
+        // Apply other protocols
+        apply(direction, user().getProtocolInfo().getState(), index, protocols, reverse);
+        ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
+        writeToBuffer(output);
+        return output;
+    }
 
-   public String toString() {
-      return "PacketWrapper{packetValues=" + this.packetValues + ", readableObjects=" + this.readableObjects + ", id=" + this.id + '}';
-   }
+    /**
+     * Send this packet to the associated user.
+     * Be careful not to send packets twice.
+     * (Sends it after current)
+     *
+     * @param packetProtocol The protocol version of the packet.
+     * @throws Exception if it fails to write
+     */
+    public void send(Class<? extends Protocol> packetProtocol) throws Exception {
+        send(packetProtocol, true);
+    }
 
-   static {
-      b(true);
-   }
+    /**
+     * Send this packet to the associated user.
+     * Be careful not to send packets twice.
+     * (Sends it after current)
+     * Also returns the packets ChannelFuture
+     *
+     * @param packetProtocol The protocol version of the packet.
+     * @return The packets ChannelFuture
+     * @throws Exception if it fails to write
+     */
+    public ChannelFuture sendFuture(Class<? extends Protocol> packetProtocol) throws Exception {
+        if (!isCancelled()) {
+            ByteBuf output = constructPacket(packetProtocol, true, Direction.OUTGOING);
+            return user().sendRawPacketFuture(output);
+        }
+        return user().getChannel().newFailedFuture(new Exception("Cancelled packet"));
+    }
 
-   public static void b(boolean var0) {
-      h = var0;
-   }
+    /**
+     * Send this packet to the associated user.
+     * Be careful not to send packets twice.
+     * (Sends it after current)
+     * <b>This method is no longer used, it's favoured to use {@link #send(Class)} as it will handle the pipeline properly.</b>
+     *
+     * @throws Exception if it fails to write
+     */
+    @Deprecated
+    public void send() throws Exception {
+        if (!isCancelled()) {
+            // Send
+            ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
+            writeToBuffer(output);
+            user().sendRawPacket(output);
+        }
+    }
 
-   public static boolean f() {
-      return h;
-   }
+    /**
+     * Create a new packet for the target of this packet.
+     *
+     * @param packetID The ID of the new packet
+     * @return The newly created packet wrapper
+     */
+    public PacketWrapper create(int packetID) {
+        return new PacketWrapper(packetID, null, user());
+    }
 
-   public static boolean k() {
-      boolean var0 = f();
-      return true;
-   }
+    /**
+     * Create a new packet with values.
+     *
+     * @param packetID The ID of the new packet
+     * @param init     A ValueCreator to write to the packet.
+     * @return The newly created packet wrapper
+     * @throws Exception If it failed to write the values from the ValueCreator.
+     */
+    public PacketWrapper create(int packetID, ValueCreator init) throws Exception {
+        PacketWrapper wrapper = create(packetID);
+        init.write(wrapper);
+        return wrapper;
+    }
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    /**
+     * Applies a pipeline from an index to the wrapper.
+     *
+     * @param direction protocol direction
+     * @param state     protocol state
+     * @param index     index to start from, will be reversed depending on the reverse parameter
+     * @param pipeline  protocol pipeline
+     * @param reverse   whether the array should be looped in reverse, will also reverse the given index
+     * @return The current packetwrapper
+     * @throws Exception If it fails to transform a packet, exception will be thrown
+     */
+    public PacketWrapper apply(Direction direction, State state, int index, List<Protocol> pipeline, boolean reverse) throws Exception {
+        Protocol[] array = pipeline.toArray(PROTOCOL_ARRAY);
+        return apply(direction, state, reverse ? array.length - 1 : index, array, reverse); // Copy to prevent from removal
+    }
+
+    /**
+     * @see #apply(Direction, State, int, List, boolean)
+     */
+    public PacketWrapper apply(Direction direction, State state, int index, List<Protocol> pipeline) throws Exception {
+        return apply(direction, state, index, pipeline.toArray(PROTOCOL_ARRAY), false);
+    }
+
+    private PacketWrapper apply(Direction direction, State state, int index, Protocol[] pipeline, boolean reverse) throws Exception {
+        // Reset the reader after every transformation for the packetWrapper, so it can be recycled across packets
+        if (reverse) {
+            for (int i = index; i >= 0; i--) {
+                pipeline[i].transform(direction, state, this);
+                resetReader();
+            }
+        } else {
+            for (int i = index; i < pipeline.length; i++) {
+                pipeline[i].transform(direction, state, this);
+                resetReader();
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Cancel this packet from sending
+     */
+    public void cancel() {
+        this.send = false;
+    }
+
+    /**
+     * Check if this packet is cancelled.
+     *
+     * @return True if the packet won't be sent.
+     */
+    public boolean isCancelled() {
+        return !this.send;
+    }
+
+    /**
+     * Get the user associated with this Packet
+     *
+     * @return The user
+     */
+    public UserConnection user() {
+        return this.userConnection;
+    }
+
+    /**
+     * Reset the reader, so that it can be read again.
+     */
+    public void resetReader() {
+        // Move readable objects are packet values
+        this.packetValues.addAll(readableObjects);
+        this.readableObjects.clear();
+        // Move all packet values to the readable for next packet.
+        this.readableObjects.addAll(packetValues);
+        this.packetValues.clear();
+    }
+
+    /**
+     * Send the current packet to the server.
+     * (Ensure the ID is suitable for viaversion)
+     *
+     * @throws Exception If it failed to write
+     */
+    @Deprecated
+    public void sendToServer() throws Exception {
+        if (!isCancelled()) {
+            ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
+            writeToBuffer(output);
+
+            user().sendRawPacketToServer(output, true);
+        }
+    }
+
+    /**
+     * Send this packet to the server.
+     *
+     * @param packetProtocol      The protocol version of the packet.
+     * @param skipCurrentPipeline Skip the current pipeline
+     * @param currentThread       Run in the same thread
+     * @throws Exception if it fails to write
+     */
+    public void sendToServer(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, boolean currentThread) throws Exception {
+        if (!isCancelled()) {
+            try {
+                ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
+                user().sendRawPacketToServer(output, currentThread);
+            } catch (Exception e) {
+                if (!PipelineUtil.containsCause(e, CancelException.class)) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    public void sendToServer(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+        sendToServer(packetProtocol, skipCurrentPipeline, false);
+    }
+
+    public void sendToServer(Class<? extends Protocol> packetProtocol) throws Exception {
+        sendToServer(packetProtocol, true);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "PacketWrapper{" +
+                "packetValues=" + packetValues +
+                ", readableObjects=" + readableObjects +
+                ", id=" + id +
+                '}';
+    }
 }

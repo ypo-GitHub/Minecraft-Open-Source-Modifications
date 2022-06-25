@@ -1,91 +1,100 @@
 package net.minecraft.command;
 
-import java.util.List;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.CommandResultStats$Type;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.GameRules;
-import net.minecraft.world.GameRules$ValueType;
+
+import java.util.List;
 
 public class CommandGameRule extends CommandBase {
-   public String getCommandName() {
-      return "gamerule";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "gamerule";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.gamerule.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.gamerule.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      GameRules var3 = this.getGameRules();
-      String var4 = var2.length > 0?var2[0]:"";
-      String var5 = var2.length > 1?buildString(var2, 1):"";
-      switch(var2.length) {
-      case 0:
-         var1.addChatMessage(new ChatComponentText(joinNiceString(var3.getRules())));
-         break;
-      case 1:
-         if(!var3.hasRule(var4)) {
-            throw new CommandException("commands.gamerule.norule", new Object[]{var4});
-         }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        GameRules gamerules = this.getGameRules();
+        String s = args.length > 0 ? args[0] : "";
+        String s1 = args.length > 1 ? buildString(args, 1) : "";
 
-         String var6 = var3.a(var4);
-         var1.addChatMessage((new ChatComponentText(var4)).appendText(" = ").appendText(var6));
-         var1.setCommandStat(CommandResultStats$Type.QUERY_RESULT, var3.getInt(var4));
-         break;
-      default:
-         if(var3.areSameType(var4, GameRules$ValueType.BOOLEAN_VALUE) && !"true".equals(var5) && !"false".equals(var5)) {
-            throw new CommandException("commands.generic.boolean.invalid", new Object[]{var5});
-         }
+        switch (args.length) {
+            case 0:
+                sender.addChatMessage(new ChatComponentText(joinNiceString(gamerules.getRules())));
+                break;
 
-         var3.setOrCreateGameRule(var4, var5);
-         func_175773_a(var3, var4);
-         notifyOperators(var1, this, "commands.gamerule.success", new Object[0]);
-      }
+            case 1:
+                if (!gamerules.hasRule(s)) {
+                    throw new CommandException("commands.gamerule.norule", new Object[]{s});
+                }
 
-   }
+                String s2 = gamerules.getString(s);
+                sender.addChatMessage(new ChatComponentText(s).appendText(" = ").appendText(s2));
+                sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, gamerules.getInt(s));
+                break;
 
-   public static void func_175773_a(GameRules var0, String var1) {
-      if("reducedDebugInfo".equals(var1)) {
-         byte var2 = (byte)(var0.getBoolean(var1)?22:23);
+            default:
+                if (gamerules.areSameType(s, GameRules.ValueType.BOOLEAN_VALUE) && !"true".equals(s1) && !"false".equals(s1)) {
+                    throw new CommandException("commands.generic.boolean.invalid", new Object[]{s1});
+                }
 
-         for(EntityPlayerMP var4 : MinecraftServer.getServer().getConfigurationManager().func_181057_v()) {
-            var4.playerNetServerHandler.sendPacket(new S19PacketEntityStatus(var4, var2));
-         }
-      }
+                gamerules.setOrCreateGameRule(s, s1);
+                func_175773_a(gamerules, s);
+                notifyOperators(sender, this, "commands.gamerule.success", new Object[0]);
+        }
+    }
 
-   }
+    public static void func_175773_a(GameRules p_175773_0_, String p_175773_1_) {
+        if ("reducedDebugInfo".equals(p_175773_1_)) {
+            byte b0 = (byte) (p_175773_0_.getBoolean(p_175773_1_) ? 22 : 23);
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      if(var2.length == 1) {
-         return getListOfStringsMatchingLastWord(var2, this.getGameRules().getRules());
-      } else {
-         if(var2.length == 2) {
-            GameRules var4 = this.getGameRules();
-            if(var4.areSameType(var2[0], GameRules$ValueType.BOOLEAN_VALUE)) {
-               return getListOfStringsMatchingLastWord(var2, new String[]{"true", "false"});
+            for (EntityPlayerMP entityplayermp : MinecraftServer.getServer().getConfigurationManager().func_181057_v()) {
+                entityplayermp.playerNetServerHandler.sendPacket(new S19PacketEntityStatus(entityplayermp, b0));
             }
-         }
+        }
+    }
 
-         return null;
-      }
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        if (args.length == 1) {
+            return getListOfStringsMatchingLastWord(args, this.getGameRules().getRules());
+        } else {
+            if (args.length == 2) {
+                GameRules gamerules = this.getGameRules();
 
-   private GameRules getGameRules() {
-      return MinecraftServer.getServer().worldServerForDimension(0).getGameRules();
-   }
+                if (gamerules.areSameType(args[0], GameRules.ValueType.BOOLEAN_VALUE)) {
+                    return getListOfStringsMatchingLastWord(args, new String[]{"true", "false"});
+                }
+            }
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+            return null;
+        }
+    }
+
+    /**
+     * Return the game rule set this command should be able to manipulate.
+     */
+    private GameRules getGameRules() {
+        return MinecraftServer.getServer().worldServerForDimension(0).getGameRules();
+    }
 }

@@ -1,114 +1,118 @@
+/*
+ * Copyright (c) 2016 Matsv
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package viaversion.viabackwards.api.entities.meta;
 
-import net.yb;
-import org.jetbrains.annotations.Nullable;
-import viaversion.viabackwards.api.entities.meta.MetaHandler;
 import viaversion.viabackwards.api.exceptions.RemovedValueException;
+import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.entities.EntityType;
 import viaversion.viaversion.api.minecraft.metadata.Metadata;
 
 public class MetaHandlerSettings {
-   private EntityType filterType;
-   private boolean filterFamily;
-   private int filterIndex = -1;
-   private MetaHandler handler;
+    private EntityType filterType;
+    private boolean filterFamily;
+    private int filterIndex = -1;
+    private MetaHandler handler;
 
-   public MetaHandlerSettings filter(EntityType var1) {
-      return this.filter(var1, this.filterFamily, this.filterIndex);
-   }
+    public MetaHandlerSettings filter(EntityType type) {
+        return filter(type, filterFamily, filterIndex);
+    }
 
-   public MetaHandlerSettings filter(EntityType var1, boolean var2) {
-      return this.filter(var1, var2, this.filterIndex);
-   }
+    public MetaHandlerSettings filter(EntityType type, boolean filterFamily) {
+        return filter(type, filterFamily, filterIndex);
+    }
 
-   public MetaHandlerSettings filter(int var1) {
-      return this.filter(this.filterType, this.filterFamily, var1);
-   }
+    public MetaHandlerSettings filter(int index) {
+        return filter(filterType, filterFamily, index);
+    }
 
-   public MetaHandlerSettings filter(EntityType var1, int var2) {
-      return this.filter(var1, this.filterFamily, var2);
-   }
+    public MetaHandlerSettings filter(EntityType type, int index) {
+        return filter(type, filterFamily, index);
+    }
 
-   public MetaHandlerSettings filter(EntityType var1, boolean var2, int var3) {
-      this.filterType = var1;
-      this.filterFamily = var2;
-      this.filterIndex = var3;
-      return this;
-   }
+    public MetaHandlerSettings filter(EntityType type, boolean filterFamily, int index) {
+        this.filterType = type;
+        this.filterFamily = filterFamily;
+        this.filterIndex = index;
+        return this;
+    }
 
-   public void handle(@Nullable MetaHandler var1) {
-      this.handler = var1;
-   }
+    public void handle(@Nullable MetaHandler handler) {
+        this.handler = handler;
+    }
 
-   public void handleIndexChange(int var1) {
-      this.handle(MetaHandlerSettings::lambda$handleIndexChange$0);
-   }
+    public void handleIndexChange(final int newIndex) {
+        handle(e -> {
+            Metadata data = e.getData();
+            data.setId(newIndex);
+            return data;
+        });
+    }
 
-   public void removed() {
-      this.handle(MetaHandlerSettings::lambda$removed$1);
-   }
+    public void removed() {
+        handle(e -> {
+            throw RemovedValueException.EX;
+        });
+    }
 
-   public boolean hasHandler() {
-      return this.handler != null;
-   }
+    public boolean hasHandler() {
+        return handler != null;
+    }
 
-   public boolean hasType() {
-      return this.filterType != null;
-   }
+    public boolean hasType() {
+        return filterType != null;
+    }
 
-   public boolean hasIndex() {
-      String var1 = yb.g();
-      return this.filterIndex > -1;
-   }
+    public boolean hasIndex() {
+        return filterIndex > -1;
+    }
 
-   public boolean isFilterFamily() {
-      return this.filterFamily;
-   }
+    public boolean isFilterFamily() {
+        return filterFamily;
+    }
 
-   public boolean isGucci(EntityType var1, Metadata var2) {
-      String var3 = yb.g();
-      if(!this.hasHandler()) {
-         return false;
-      } else {
-         if(this.hasType()) {
-            if(this.filterFamily) {
-               if(!var1.isOrHasParent(this.filterType)) {
-                  return false;
-               }
-            } else if(!this.filterType.is(var1)) {
-               return false;
-            }
-         }
+    /**
+     * Returns true if the metadata should be handled by this object.
+     *
+     * @param type     entity type
+     * @param metadata metadata
+     * @return true if gucci
+     */
+    public boolean isGucci(EntityType type, Metadata metadata) {
+        if (!hasHandler()) return false;
+        if (hasType() && (filterFamily ? !type.isOrHasParent(filterType) : !filterType.is(type))) {
+            return false;
+        }
+        return !hasIndex() || metadata.getId() == filterIndex;
+    }
 
-         return !this.hasIndex() || var2.getId() == this.filterIndex;
-      }
-   }
+    public EntityType getFilterType() {
+        return filterType;
+    }
 
-   public EntityType getFilterType() {
-      return this.filterType;
-   }
+    public int getFilterIndex() {
+        return filterIndex;
+    }
 
-   public int getFilterIndex() {
-      return this.filterIndex;
-   }
+    @Nullable
+    public MetaHandler getHandler() {
+        return handler;
+    }
 
-   @Nullable
-   public MetaHandler getHandler() {
-      return this.handler;
-   }
-
-   public String toString() {
-      String var1 = yb.g();
-      return "MetaHandlerSettings{filterType=" + this.filterType + ", filterFamily=" + this.filterFamily + ", filterIndex=" + this.filterIndex + ", handler=" + this.handler + '}';
-   }
-
-   private static Metadata lambda$removed$1(yb var0) throws RemovedValueException {
-      throw RemovedValueException.EX;
-   }
-
-   private static Metadata lambda$handleIndexChange$0(int var0, yb var1) throws RemovedValueException {
-      Metadata var2 = var1.i();
-      var2.setId(var0);
-      return var2;
-   }
+    @Override
+    public String toString() {
+        return "MetaHandlerSettings{" +
+                "filterType=" + filterType +
+                ", filterFamily=" + filterFamily +
+                ", filterIndex=" + filterIndex +
+                ", handler=" + handler +
+                '}';
+    }
 }

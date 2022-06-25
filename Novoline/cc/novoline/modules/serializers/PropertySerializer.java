@@ -1,70 +1,68 @@
 package cc.novoline.modules.serializers;
 
 import cc.novoline.modules.configurations.property.Property;
-import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.serializers.PropertySerializer$1;
-import cc.novoline.modules.serializers.PropertySerializer$2;
+import cc.novoline.modules.configurations.property.object.ListProperty;
 import com.google.common.reflect.TypeToken;
-import java.util.Collection;
-import net.X9;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public final class PropertySerializer implements TypeSerializer {
-   private static int[] b;
+import java.util.Collection;
+import java.util.List;
 
-   public void serialize(TypeToken var1, Property var2, ConfigurationNode var3) {
-      int[] var4 = b();
-      if(var2.get() == null) {
-         var3.setValue((Object)null);
-      } else {
-         var3.setValue(var2.get());
-      }
-   }
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.*;
 
-   public Property deserialize(TypeToken var1, ConfigurationNode var2) throws X9 {
-      int[] var3 = b();
-      switch(PropertySerializer$2.$SwitchMap$ninja$leaping$configurate$ValueType[var2.getValueType().ordinal()]) {
-      case 1:
-         return PropertyFactory.createList((Collection)var2.getList((TypeToken)(new PropertySerializer$1(this))));
-      case 2:
-         Object var4 = var2.getValue();
-         if(var4 instanceof CharSequence) {
-            return PropertyFactory.createString(var4.toString());
-         } else if(var4 instanceof Integer) {
-            return PropertyFactory.createInt(Integer.valueOf(((Integer)var4).intValue()));
-         } else if(var4 instanceof Double) {
-            return PropertyFactory.createDouble(Double.valueOf(((Double)var4).doubleValue()));
-         } else if(var4 instanceof Boolean) {
-            return PropertyFactory.createBoolean(Boolean.valueOf(((Boolean)var4).booleanValue()));
-         } else if(var4 instanceof Float) {
-            return PropertyFactory.createFloat(Float.valueOf(((Float)var4).floatValue()));
-         } else if(var4 instanceof Long) {
-            return PropertyFactory.createLong(Long.valueOf(((Long)var4).longValue()));
-         }
-      default:
-         return null;
-      case 3:
-         throw new X9("Unable to deserialize map property");
-      }
-   }
+/**
+ * @author xDelsy
+ */
+public final class PropertySerializer implements TypeSerializer<Property<?>> {
 
-   public static void b(int[] var0) {
-      b = var0;
-   }
+    @Override
+    public void serialize(@NonNull TypeToken<?> type, @Nullable Property<?> obj, @NonNull ConfigurationNode node) {
+        if (obj == null || obj.get() == null) {
+            node.setValue(null);
+            return;
+        }
 
-   public static int[] b() {
-      return b;
-   }
+        node.setValue(obj.get());
+    }
 
-   private static X9 a(X9 var0) {
-      return var0;
-   }
+    @Override
+    @Nullable
+    public Property<?> deserialize(@NonNull TypeToken<?> type,
+                                   @NonNull ConfigurationNode node) throws ObjectMappingException {
+        switch (node.getValueType()) {
+            case LIST:
+                return createList(
+                        (Collection<ListProperty<?>>) node.getList(new TypeToken<List<ListProperty<?>>>() {
+                        }));
 
-   static {
-      if(b() != null) {
-         b(new int[3]);
-      }
+            case SCALAR:
+                final Object value = node.getValue();
 
-   }
+                if (value instanceof CharSequence) {
+                    return createString(value.toString());
+                } else if (value instanceof Integer) {
+                    return createInt((int) value);
+                } else if (value instanceof Double) {
+                    return createDouble((double) value);
+                } else if (value instanceof Boolean) {
+                    return createBoolean((boolean) value);
+                } else if (value instanceof Float) {
+                    return createFloat((float) value);
+                } else if (value instanceof Long) {
+                    return createLong((long) value);
+                }
+
+                break;
+
+            case MAP:
+                throw new ObjectMappingException("Unable to deserialize map property");
+        }
+
+        return null;
+    }
+
 }

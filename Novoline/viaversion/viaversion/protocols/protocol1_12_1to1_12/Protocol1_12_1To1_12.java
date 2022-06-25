@@ -1,17 +1,17 @@
 package viaversion.viaversion.protocols.protocol1_12_1to1_12;
 
-import net.aEb;
-import net.azW;
-import net.lV;
-import net.r;
 import viaversion.viaversion.api.protocol.Protocol;
+import viaversion.viaversion.protocols.protocol1_12to1_11_1.ClientboundPackets1_12;
+import viaversion.viaversion.protocols.protocol1_12to1_11_1.ServerboundPackets1_12;
 
-public class Protocol1_12_1To1_12 extends Protocol {
-   public Protocol1_12_1To1_12() {
-      super(lV.class, azW.class, aEb.class, r.class);
-   }
+public class Protocol1_12_1To1_12 extends Protocol<ClientboundPackets1_12, ClientboundPackets1_12_1, ServerboundPackets1_12, ServerboundPackets1_12_1> {
 
-   protected void registerPackets() {
-      this.cancelIncoming(r.CRAFT_RECIPE_REQUEST);
-   }
+    public Protocol1_12_1To1_12() {
+        super(ClientboundPackets1_12.class, ClientboundPackets1_12_1.class, ServerboundPackets1_12.class, ServerboundPackets1_12_1.class);
+    }
+
+    @Override
+    protected void registerPackets() {
+        cancelIncoming(ServerboundPackets1_12_1.CRAFT_RECIPE_REQUEST);
+    }
 }

@@ -1,21 +1,38 @@
 package viaversion.viaversion.api.minecraft;
 
 public interface BlockChangeRecord {
-   byte getSectionX();
 
-   byte getSectionY();
+    /**
+     * @return relative x coordinate within the chunk section
+     */
+    byte getSectionX();
 
-   byte getSectionZ();
+    /**
+     * @return relative y coordinate within the chunk section
+     */
+    byte getSectionY();
 
-   short getY(int var1);
+    /**
+     * @return relative z coordinate within the chunk section
+     */
+    byte getSectionZ();
 
-   /** @deprecated */
-   @Deprecated
-   default short getY() {
-      return this.getY(-1);
-   }
+    /**
+     * @param chunkSectionY chunk section
+     * @return absolute y coordinate
+     */
+    short getY(int chunkSectionY);
 
-   int getBlockId();
+    /**
+     * @return absolute y coordinate
+     * @deprecated 1.16+ stores the relative y coordinate
+     */
+    @Deprecated
+    default short getY() {
+        return getY(-1);
+    }
 
-   void setBlockId(int var1);
+    int getBlockId();
+
+    void setBlockId(int blockId);
 }

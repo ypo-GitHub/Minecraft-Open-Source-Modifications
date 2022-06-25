@@ -2,74 +2,65 @@ package net.minecraft.item;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
-import net.minecraft.block.BlockDoor$EnumDoorHalf;
-import net.minecraft.block.BlockDoor$EnumHingePosition;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class ItemDoor extends Item {
-   private Block block;
+    private Block block;
 
-   public ItemDoor(Block var1) {
-      this.block = var1;
-      this.setCreativeTab(CreativeTabs.tabRedstone);
-   }
+    public ItemDoor(Block block) {
+        this.block = block;
+        this.setCreativeTab(CreativeTabs.tabRedstone);
+    }
 
-   public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, BlockPos var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var5 != EnumFacing.UP) {
-         return false;
-      } else {
-         IBlockState var9 = var3.getBlockState(var4);
-         Block var10 = var9.getBlock();
-         if(!var10.isReplaceable(var3, var4)) {
-            var4 = var4.offset(var5);
-         }
-
-         if(!var2.a(var4, var5, var1)) {
+    /**
+     * Called when a Block is right-clicked with this Item
+     */
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (side != EnumFacing.UP) {
             return false;
-         } else if(!this.block.canPlaceBlockAt(var3, var4)) {
-            return false;
-         } else {
-            placeDoor(var3, var4, EnumFacing.fromAngle((double)var2.rotationYaw), this.block);
-            --var1.stackSize;
-            return true;
-         }
-      }
-   }
+        } else {
+            IBlockState iblockstate = worldIn.getBlockState(pos);
+            Block block = iblockstate.getBlock();
 
-   public static void placeDoor(World var0, BlockPos var1, EnumFacing var2, Block var3) {
-      BlockPos var4 = var1.offset(var2.rotateY());
-      BlockPos var5 = var1.offset(var2.rotateYCCW());
-      int var6 = (var0.getBlockState(var5).getBlock().isNormalCube()?1:0) + (var0.getBlockState(var5.up()).getBlock().isNormalCube()?1:0);
-      int var7 = (var0.getBlockState(var4).getBlock().isNormalCube()?1:0) + (var0.getBlockState(var4.up()).getBlock().isNormalCube()?1:0);
-      if(var0.getBlockState(var5).getBlock() != var3 && var0.getBlockState(var5.up()).getBlock() != var3) {
-         boolean var14 = false;
-      } else {
-         boolean var10000 = true;
-      }
+            if (!block.isReplaceable(worldIn, pos)) {
+                pos = pos.offset(side);
+            }
 
-      if(var0.getBlockState(var4).getBlock() != var3 && var0.getBlockState(var4.up()).getBlock() != var3) {
-         boolean var16 = false;
-      } else {
-         boolean var15 = true;
-      }
+            if (!playerIn.canPlayerEdit(pos, side, stack)) {
+                return false;
+            } else if (!this.block.canPlaceBlockAt(worldIn, pos)) {
+                return false;
+            } else {
+                placeDoor(worldIn, pos, EnumFacing.fromAngle((double) playerIn.rotationYaw), this.block);
+                --stack.stackSize;
+                return true;
+            }
+        }
+    }
 
-      boolean var10 = false;
-      if(var7 > var6) {
-         var10 = true;
-      }
+    public static void placeDoor(World worldIn, BlockPos pos, EnumFacing facing, Block door) {
+        BlockPos blockpos = pos.offset(facing.rotateY());
+        BlockPos blockpos1 = pos.offset(facing.rotateYCCW());
+        int i = (worldIn.getBlockState(blockpos1).getBlock().isNormalCube() ? 1 : 0) + (worldIn.getBlockState(blockpos1.up()).getBlock().isNormalCube() ? 1 : 0);
+        int j = (worldIn.getBlockState(blockpos).getBlock().isNormalCube() ? 1 : 0) + (worldIn.getBlockState(blockpos.up()).getBlock().isNormalCube() ? 1 : 0);
+        boolean flag = worldIn.getBlockState(blockpos1).getBlock() == door || worldIn.getBlockState(blockpos1.up()).getBlock() == door;
+        boolean flag1 = worldIn.getBlockState(blockpos).getBlock() == door || worldIn.getBlockState(blockpos.up()).getBlock() == door;
+        boolean flag2 = false;
 
-      BlockPos var11 = var1.up();
-      IBlockState var12 = var3.getDefaultState().withProperty(BlockDoor.FACING, var2).withProperty(BlockDoor.HINGE, BlockDoor$EnumHingePosition.RIGHT);
-      var0.setBlockState(var1, var12.withProperty(BlockDoor.HALF, BlockDoor$EnumDoorHalf.LOWER), 2);
-      var0.setBlockState(var11, var12.withProperty(BlockDoor.HALF, BlockDoor$EnumDoorHalf.UPPER), 2);
-      var0.notifyNeighborsOfStateChange(var1, var3);
-      var0.notifyNeighborsOfStateChange(var11, var3);
-   }
+        if (flag && !flag1 || j > i) {
+            flag2 = true;
+        }
+
+        BlockPos blockpos2 = pos.up();
+        IBlockState iblockstate = door.getDefaultState().withProperty(BlockDoor.FACING, facing).withProperty(BlockDoor.HINGE, flag2 ? BlockDoor.EnumHingePosition.RIGHT : BlockDoor.EnumHingePosition.LEFT);
+        worldIn.setBlockState(pos, iblockstate.withProperty(BlockDoor.HALF, BlockDoor.EnumDoorHalf.LOWER), 2);
+        worldIn.setBlockState(blockpos2, iblockstate.withProperty(BlockDoor.HALF, BlockDoor.EnumDoorHalf.UPPER), 2);
+        worldIn.notifyNeighborsOfStateChange(pos, door);
+        worldIn.notifyNeighborsOfStateChange(blockpos2, door);
+    }
 }

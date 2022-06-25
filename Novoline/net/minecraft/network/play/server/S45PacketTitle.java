@@ -1,91 +1,125 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
-import net.minecraft.network.play.server.S45PacketTitle$Type;
 import net.minecraft.util.IChatComponent;
 
-public class S45PacketTitle implements Packet {
-   private S45PacketTitle$Type type;
-   private IChatComponent message;
-   private int fadeInTime;
-   private int displayTime;
-   private int fadeOutTime;
+import java.io.IOException;
 
-   public S45PacketTitle() {
-   }
+public class S45PacketTitle implements Packet<INetHandlerPlayClient> {
+    private S45PacketTitle.Type type;
+    private IChatComponent message;
+    private int fadeInTime;
+    private int displayTime;
+    private int fadeOutTime;
 
-   public S45PacketTitle(S45PacketTitle$Type var1, IChatComponent var2) {
-      this(var1, var2, -1, -1, -1);
-   }
+    public S45PacketTitle() {
+    }
 
-   public S45PacketTitle(int var1, int var2, int var3) {
-      this(S45PacketTitle$Type.TIMES, (IChatComponent)null, var1, var2, var3);
-   }
+    public S45PacketTitle(S45PacketTitle.Type type, IChatComponent message) {
+        this(type, message, -1, -1, -1);
+    }
 
-   public S45PacketTitle(S45PacketTitle$Type var1, IChatComponent var2, int var3, int var4, int var5) {
-      this.type = var1;
-      this.message = var2;
-      this.fadeInTime = var3;
-      this.displayTime = var4;
-      this.fadeOutTime = var5;
-   }
+    public S45PacketTitle(int fadeInTime, int displayTime, int fadeOutTime) {
+        this(S45PacketTitle.Type.TIMES, (IChatComponent) null, fadeInTime, displayTime, fadeOutTime);
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.type = (S45PacketTitle$Type)var1.readEnumValue(S45PacketTitle$Type.class);
-      if(this.type == S45PacketTitle$Type.TITLE || this.type == S45PacketTitle$Type.SUBTITLE) {
-         this.message = var1.readChatComponent();
-      }
+    public S45PacketTitle(S45PacketTitle.Type type, IChatComponent message, int fadeInTime, int displayTime, int fadeOutTime) {
+        this.type = type;
+        this.message = message;
+        this.fadeInTime = fadeInTime;
+        this.displayTime = displayTime;
+        this.fadeOutTime = fadeOutTime;
+    }
 
-      if(this.type == S45PacketTitle$Type.TIMES) {
-         this.fadeInTime = var1.readInt();
-         this.displayTime = var1.readInt();
-         this.fadeOutTime = var1.readInt();
-      }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.type = (S45PacketTitle.Type) buf.readEnumValue(S45PacketTitle.Type.class);
 
-   }
+        if (this.type == S45PacketTitle.Type.TITLE || this.type == S45PacketTitle.Type.SUBTITLE) {
+            this.message = buf.readChatComponent();
+        }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeEnumValue(this.type);
-      if(this.type == S45PacketTitle$Type.TITLE || this.type == S45PacketTitle$Type.SUBTITLE) {
-         var1.writeChatComponent(this.message);
-      }
+        if (this.type == S45PacketTitle.Type.TIMES) {
+            this.fadeInTime = buf.readInt();
+            this.displayTime = buf.readInt();
+            this.fadeOutTime = buf.readInt();
+        }
+    }
 
-      if(this.type == S45PacketTitle$Type.TIMES) {
-         var1.writeInt(this.fadeInTime);
-         var1.writeInt(this.displayTime);
-         var1.writeInt(this.fadeOutTime);
-      }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeEnumValue(this.type);
 
-   }
+        if (this.type == S45PacketTitle.Type.TITLE || this.type == S45PacketTitle.Type.SUBTITLE) {
+            buf.writeChatComponent(this.message);
+        }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleTitle(this);
-   }
+        if (this.type == S45PacketTitle.Type.TIMES) {
+            buf.writeInt(this.fadeInTime);
+            buf.writeInt(this.displayTime);
+            buf.writeInt(this.fadeOutTime);
+        }
+    }
 
-   public S45PacketTitle$Type getType() {
-      return this.type;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleTitle(this);
+    }
 
-   public IChatComponent getMessage() {
-      return this.message;
-   }
+    public S45PacketTitle.Type getType() {
+        return this.type;
+    }
 
-   public int getFadeInTime() {
-      return this.fadeInTime;
-   }
+    public IChatComponent getMessage() {
+        return this.message;
+    }
 
-   public int getDisplayTime() {
-      return this.displayTime;
-   }
+    public int getFadeInTime() {
+        return this.fadeInTime;
+    }
 
-   public int getFadeOutTime() {
-      return this.fadeOutTime;
-   }
+    public int getDisplayTime() {
+        return this.displayTime;
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public int getFadeOutTime() {
+        return this.fadeOutTime;
+    }
+
+    public enum Type {
+        TITLE,
+        SUBTITLE,
+        TIMES,
+        CLEAR,
+        RESET;
+
+        public static S45PacketTitle.Type byName(String name) {
+            for (S45PacketTitle.Type s45packettitle$type : values()) {
+                if (s45packettitle$type.name().equalsIgnoreCase(name)) {
+                    return s45packettitle$type;
+                }
+            }
+
+            return TITLE;
+        }
+
+        public static String[] getNames() {
+            String[] astring = new String[values().length];
+            int i = 0;
+
+            for (S45PacketTitle.Type s45packettitle$type : values()) {
+                astring[i++] = s45packettitle$type.name().toLowerCase();
+            }
+
+            return astring;
+        }
+    }
 }

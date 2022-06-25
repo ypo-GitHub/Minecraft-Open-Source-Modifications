@@ -1,12 +1,6 @@
 package viaversion.viarewind.protocol.protocol1_8to1_9.types;
 
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import net.aF7;
-import net.acE;
-import net.cT;
-import viaversion.viarewind.protocol.protocol1_8to1_9.types.ChunkSectionType1_8;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.minecraft.Environment;
 import viaversion.viaversion.api.minecraft.chunks.Chunk;
@@ -14,137 +8,115 @@ import viaversion.viaversion.api.minecraft.chunks.Chunk1_8;
 import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 import viaversion.viaversion.api.type.PartialType;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.storage.ClientWorld;
 
-public class Chunk1_8Type extends PartialType {
-   private static final Type CHUNK_SECTION_TYPE = new ChunkSectionType1_8();
+import java.util.ArrayList;
+import java.util.logging.Level;
 
-   public Chunk1_8Type(cT var1) {
-      super(var1, "Chunk", Chunk.class);
-   }
+public class Chunk1_8Type extends PartialType<Chunk, ClientWorld> {
+    private static final Type<ChunkSection> CHUNK_SECTION_TYPE = new ChunkSectionType1_8();
 
-   public Chunk a(ByteBuf var1, cT var2) throws Exception {
-      int var4 = var1.readInt();
-      aF7.c();
-      int var5 = var1.readInt();
-      boolean var6 = var1.readByte() != 0;
-      int var7 = var1.readUnsignedShort();
-      int var8 = Type.VAR_INT.readPrimitive(var1);
-      if(var7 == 0 && var6) {
-         if(var8 >= 256) {
-            var1.readerIndex(var1.readerIndex() + 256);
-         }
+    public Chunk1_8Type(ClientWorld param) {
+        super(param, "Chunk", Chunk.class);
+    }
 
-         return new Chunk1_8(var4, var5);
-      } else {
-         ChunkSection[] var9 = new ChunkSection[16];
-         int[] var10 = null;
-         int var11 = var1.readerIndex();
-         int var12 = 0;
-         if(var12 < 16) {
-            if((var7 & 1 << var12) != 0) {
-               var9[var12] = (ChunkSection)CHUNK_SECTION_TYPE.read(var1);
+    @Override
+    public Chunk read(ByteBuf input, ClientWorld world) throws Exception {
+        // Copied from ViaVersion, removed some things
+        int chunkX = input.readInt();
+        int chunkZ = input.readInt();
+        boolean groundUp = input.readByte() != 0;
+        int bitmask = input.readUnsignedShort();
+        int dataLength = Type.VAR_INT.readPrimitive(input);
+
+	    if (bitmask == 0 && groundUp) {
+		    // This is a chunks unload packet
+		    if (dataLength >= 256) {  //1.8 likes to send biome data in unload packets?!
+			    input.readerIndex(input.readerIndex() + 256);
+		    }
+		    return new Chunk1_8(chunkX, chunkZ);
+	    }
+
+        // Data to be read
+        ChunkSection[] sections = new ChunkSection[16];
+        int[] biomeData = null;
+
+        int startIndex = input.readerIndex();
+
+        // Read blocks
+        for (int i = 0; i < 16; i++) {
+            if ((bitmask & 1 << i) == 0) continue;
+            sections[i] = CHUNK_SECTION_TYPE.read(input);
+        }
+
+        // Read block light
+        for (int i = 0; i < 16; i++) {
+            if ((bitmask & 1 << i) == 0) continue;
+            sections[i].readBlockLight(input);
+        }
+
+        // Read sky light
+        int bytesLeft = dataLength - (input.readerIndex() - startIndex);
+        if (bytesLeft >= ChunkSection.LIGHT_LENGTH) {
+            for (int i = 0; i < 16; i++) {
+                if ((bitmask & 1 << i) == 0) continue;
+                sections[i].readSkyLight(input);
+                bytesLeft -= ChunkSection.LIGHT_LENGTH;
             }
+        }
 
-            ++var12;
-         }
-
-         var12 = 0;
-         if(var12 < 16) {
-            if((var7 & 1 << var12) != 0) {
-               var9[var12].readBlockLight(var1);
+        // Read biome data
+        if (bytesLeft >= 256) {
+            biomeData = new int[256];
+            for (int i = 0; i < 256; i++) {
+                biomeData[i] = input.readByte() & 0xFF;
             }
+            bytesLeft -= 256;
+        }
 
-            ++var12;
-         }
+        // Check remaining bytes
+        if (bytesLeft > 0) {
+            Via.getPlatform().getLogger().log(Level.WARNING, bytesLeft + " Bytes left after reading chunks! (" + groundUp + ")");
+        }
 
-         var12 = var8 - (var1.readerIndex() - var11);
-         if(var12 >= 2048) {
-            int var13 = 0;
-            if(var13 < 16) {
-               if((var7 & 1 << var13) != 0) {
-                  var9[var13].readSkyLight(var1);
-                  var12 -= 2048;
-               }
+        // Return chunks
+        return new Chunk1_8(chunkX, chunkZ, groundUp, bitmask, sections, biomeData, new ArrayList<>());
+    }
 
-               ++var13;
+    @Override
+    public void write(ByteBuf output, ClientWorld world, Chunk chunk) throws Exception {
+        ByteBuf buf = output.alloc().buffer();
+
+        for (int i = 0; i < chunk.getSections().length; i++) {
+            if ((chunk.getBitmask() & 1 << i) == 0) continue;
+            CHUNK_SECTION_TYPE.write(buf, chunk.getSections()[i]);
+        }
+
+        for (int i = 0; i < chunk.getSections().length; i++) {
+            if ((chunk.getBitmask() & 1 << i) == 0) continue;
+            chunk.getSections()[i].writeBlockLight(buf);
+        }
+
+        boolean skyLight = world.getEnvironment() == Environment.NORMAL;
+        if (skyLight) {
+            for (int i = 0; i < chunk.getSections().length; i++) {
+                if ((chunk.getBitmask() & 1 << i) == 0) continue;
+                chunk.getSections()[i].writeSkyLight(buf);
             }
-         }
+        }
 
-         if(var12 >= 256) {
-            var10 = new int[256];
-            int var19 = 0;
-            if(var19 < 256) {
-               var10[var19] = var1.readByte() & 255;
-               ++var19;
+        if (chunk.isFullChunk() && chunk.isBiomeData()) {
+            for (int biome : chunk.getBiomeData()) {
+                buf.writeByte((byte) biome);
             }
+        }
 
-            var12 -= 256;
-         }
-
-         Via.getPlatform().getLogger().log(Level.WARNING, var12 + " Bytes left after reading chunks! (" + var6 + ")");
-         Chunk1_8 var10000 = new Chunk1_8(var4, var5, var6, var7, var9, var10, new ArrayList());
-         if(acE.b() == null) {
-            aF7.b(false);
-         }
-
-         return var10000;
-      }
-   }
-
-   public void a(ByteBuf var1, cT var2, Chunk var3) throws Exception {
-      aF7.d();
-      ByteBuf var5 = var1.alloc().buffer();
-      int var6 = 0;
-      if(var6 < var3.getSections().length) {
-         if((var3.getBitmask() & 1 << var6) != 0) {
-            CHUNK_SECTION_TYPE.write(var5, var3.getSections()[var6]);
-         }
-
-         ++var6;
-      }
-
-      var6 = 0;
-      if(var6 < var3.getSections().length) {
-         if((var3.getBitmask() & 1 << var6) != 0) {
-            var3.getSections()[var6].writeBlockLight(var5);
-         }
-
-         ++var6;
-      }
-
-      var6 = var2.a() == Environment.NORMAL;
-      if(var6) {
-         int var7 = 0;
-         if(var7 < var3.getSections().length) {
-            if((var3.getBitmask() & 1 << var7) != 0) {
-               var3.getSections()[var7].writeSkyLight(var5);
-            }
-
-            ++var7;
-         }
-      }
-
-      if(var3.isFullChunk() && var3.isBiomeData()) {
-         int[] var16 = var3.getBiomeData();
-         int var8 = var16.length;
-         int var9 = 0;
-         if(var9 < var8) {
-            int var10 = var16[var9];
-            var5.writeByte((byte)var10);
-            ++var9;
-         }
-      }
-
-      var1.writeInt(var3.getX());
-      var1.writeInt(var3.getZ());
-      var1.writeBoolean(var3.isFullChunk());
-      var1.writeShort(var3.getBitmask());
-      Type.VAR_INT.writePrimitive(var1, var5.readableBytes());
-      var1.writeBytes(var5, var5.readableBytes());
-      var5.release();
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        output.writeInt(chunk.getX());
+        output.writeInt(chunk.getZ());
+        output.writeBoolean(chunk.isFullChunk());
+        output.writeShort(chunk.getBitmask());
+        Type.VAR_INT.writePrimitive(output, buf.readableBytes());
+        output.writeBytes(buf, buf.readableBytes());
+        buf.release();
+    }
 }

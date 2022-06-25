@@ -1,43 +1,94 @@
 package net.minecraft.event;
 
-import net.minecraft.event.HoverEvent$Action;
+import com.google.common.collect.Maps;
 import net.minecraft.util.IChatComponent;
 
+import java.util.Map;
+
 public class HoverEvent {
-   private final HoverEvent$Action action;
-   private final IChatComponent value;
+    private final HoverEvent.Action action;
+    private final IChatComponent value;
 
-   public HoverEvent(HoverEvent$Action var1, IChatComponent var2) {
-      this.action = var1;
-      this.value = var2;
-   }
+    public HoverEvent(HoverEvent.Action actionIn, IChatComponent valueIn) {
+        this.action = actionIn;
+        this.value = valueIn;
+    }
 
-   public HoverEvent$Action getAction() {
-      return this.action;
-   }
+    /**
+     * Gets the action to perform when this event is raised.
+     */
+    public HoverEvent.Action getAction() {
+        return this.action;
+    }
 
-   public IChatComponent getValue() {
-      return this.value;
-   }
+    /**
+     * Gets the value to perform the action on when this event is raised.  For example, if the action is "show item",
+     * this would be the item to show.
+     */
+    public IChatComponent getValue() {
+        return this.value;
+    }
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(this.getClass() == var1.getClass()) {
-         HoverEvent var2 = (HoverEvent)var1;
-         return this.action != var2.action?false:(this.value != null?this.value.equals(var2.value):var2.value == null);
-      } else {
-         return false;
-      }
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
+            return true;
+        } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
+            HoverEvent hoverevent = (HoverEvent) p_equals_1_;
 
-   public String toString() {
-      return "HoverEvent{action=" + this.action + ", value=\'" + this.value + '\'' + '}';
-   }
+            if (this.action != hoverevent.action) {
+                return false;
+            } else {
+                if (this.value != null) {
+                    return this.value.equals(hoverevent.value);
+                } else return hoverevent.value == null;
 
-   public int hashCode() {
-      int var1 = this.action.hashCode();
-      var1 = 31 * var1 + (this.value != null?this.value.hashCode():0);
-      return var1;
-   }
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public String toString() {
+        return "HoverEvent{action=" + this.action + ", value=\'" + this.value + '\'' + '}';
+    }
+
+    public int hashCode() {
+        int i = this.action.hashCode();
+        i = 31 * i + (this.value != null ? this.value.hashCode() : 0);
+        return i;
+    }
+
+    public enum Action {
+        SHOW_TEXT("show_text", true),
+        SHOW_ACHIEVEMENT("show_achievement", true),
+        SHOW_ITEM("show_item", true),
+        SHOW_ENTITY("show_entity", true);
+
+        private static final Map<String, HoverEvent.Action> nameMapping = Maps.<String, HoverEvent.Action>newHashMap();
+        private final boolean allowedInChat;
+        private final String canonicalName;
+
+        Action(String canonicalNameIn, boolean allowedInChatIn) {
+            this.canonicalName = canonicalNameIn;
+            this.allowedInChat = allowedInChatIn;
+        }
+
+        public boolean shouldAllowInChat() {
+            return this.allowedInChat;
+        }
+
+        public String getCanonicalName() {
+            return this.canonicalName;
+        }
+
+        public static HoverEvent.Action getValueByCanonicalName(String canonicalNameIn) {
+            return (HoverEvent.Action) nameMapping.get(canonicalNameIn);
+        }
+
+        static {
+            for (HoverEvent.Action hoverevent$action : values()) {
+                nameMapping.put(hoverevent$action.getCanonicalName(), hoverevent$action);
+            }
+        }
+    }
 }

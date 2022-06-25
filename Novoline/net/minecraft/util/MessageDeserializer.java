@@ -5,7 +5,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import java.io.IOException;
 import java.util.List;
-import net.minecraft.network.EnumConnectionState;
 import net.minecraft.network.EnumPacketDirection;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -17,24 +16,47 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageDeserializer extends ByteToMessageDecoder {
-   private static final Logger c = LogManager.getLogger();
-   private static final Marker b = MarkerManager.getMarker("PACKET_RECEIVED", NetworkManager.logMarkerPackets);
-   private final EnumPacketDirection direction;
 
-   public MessageDeserializer(EnumPacketDirection var1) {
-      this.direction = var1;
-   }
+	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Marker RECEIVED_PACKET_MARKER = MarkerManager.getMarker("PACKET_RECEIVED", NetworkManager.logMarkerPackets);
 
-   protected void decode(@NotNull ChannelHandlerContext var1, @NotNull ByteBuf var2, @NotNull List var3) throws Exception {
-      if(var2.readableBytes() != 0) {
-         PacketBuffer var4 = new PacketBuffer(var2);
-         int var5 = var4.readVarIntFromBuffer();
-         Packet var6 = ((EnumConnectionState)var1.channel().attr(NetworkManager.attrKeyConnectionState).get()).getPacket(this.direction, var5);
-         throw new IOException("Bad packet id " + var5);
-      }
-   }
+	private final EnumPacketDirection direction;
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+	public MessageDeserializer(EnumPacketDirection direction) {
+		this.direction = direction;
+	}
+
+	@Override
+	protected void decode(@NotNull ChannelHandlerContext ctx,
+						  @NotNull ByteBuf byteBuf,
+						  @NotNull List<Object> out) throws Exception {
+		if (byteBuf.readableBytes() != 0) {
+			PacketBuffer packetbuffer = new PacketBuffer(byteBuf);
+			int i = packetbuffer.readVarIntFromBuffer();
+			Packet<?> packet = ctx.channel().attr(NetworkManager.attrKeyConnectionState).get().getPacket(direction, i);
+
+			if (packet == null) {
+				throw new IOException("Bad packet id " + i);
+			} else {
+				packet.readPacketData(packetbuffer);
+
+				if(packetbuffer.readableBytes() > 0) {
+					throw new IOException(
+							"Packet " + ctx.channel().attr(NetworkManager.attrKeyConnectionState).get().getId() + "/" + i + " ("
+									+ packet.getClass().getCanonicalName() + ") was larger than I expected, found "
+									+ packetbuffer.readableBytes() + " bytes extra whilst reading packet " + i);
+				} else {
+					out.add(packet);
+
+					if(LOGGER.isDebugEnabled()) {
+						LOGGER.debug(RECEIVED_PACKET_MARKER,
+								" IN: [{}:{}] {}",
+								ctx.channel().attr(NetworkManager.attrKeyConnectionState).get(),
+								i,
+								packet.getClass().getName());
+					}
+				}
+			}
+		}
+	}
 }

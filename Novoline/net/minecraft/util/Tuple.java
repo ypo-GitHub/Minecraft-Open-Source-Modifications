@@ -1,19 +1,25 @@
 package net.minecraft.util;
 
-public class Tuple {
-   private Object a;
-   private Object b;
+public class Tuple<A, B> {
+    private A a;
+    private B b;
 
-   public Tuple(Object var1, Object var2) {
-      this.a = var1;
-      this.b = var2;
-   }
+    public Tuple(A aIn, B bIn) {
+        this.a = aIn;
+        this.b = bIn;
+    }
 
-   public Object getFirst() {
-      return this.a;
-   }
+    /**
+     * Get the first Object in the Tuple
+     */
+    public A getFirst() {
+        return this.a;
+    }
 
-   public Object getSecond() {
-      return this.b;
-   }
+    /**
+     * Get the second Object in the Tuple
+     */
+    public B getSecond() {
+        return this.b;
+    }
 }

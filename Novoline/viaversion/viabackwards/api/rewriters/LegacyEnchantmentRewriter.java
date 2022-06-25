@@ -1,158 +1,127 @@
 package viaversion.viabackwards.api.rewriters;
 
-import com.github.steveice10.opennbt.tag.builtin.ByteTag;
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import com.github.steveice10.opennbt.tag.builtin.IntTag;
-import com.github.steveice10.opennbt.tag.builtin.ListTag;
-import com.github.steveice10.opennbt.tag.builtin.ShortTag;
-import com.github.steveice10.opennbt.tag.builtin.StringTag;
-import com.github.steveice10.opennbt.tag.builtin.Tag;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import net.acE;
-import net.aqu;
-import viaversion.viabackwards.api.rewriters.EnchantmentRewriter;
+import com.github.steveice10.opennbt.tag.builtin.*;
+
+import java.util.*;
 
 public class LegacyEnchantmentRewriter {
-   private final Map enchantmentMappings = new HashMap();
-   private final String nbtTagName;
-   private Set hideLevelForEnchants;
 
-   public LegacyEnchantmentRewriter(String var1) {
-      this.nbtTagName = var1;
-   }
+    private final Map<Short, String> enchantmentMappings = new HashMap<>();
+    private final String nbtTagName;
+    private Set<Short> hideLevelForEnchants;
 
-   public void registerEnchantment(int var1, String var2) {
-      this.enchantmentMappings.put(Short.valueOf((short)var1), var2);
-   }
+    public LegacyEnchantmentRewriter(String nbtTagName) {
+        this.nbtTagName = nbtTagName;
+    }
 
-   public void rewriteEnchantmentsToClient(CompoundTag var1, boolean var2) {
-      int var3 = aqu.d();
-      String var4 = "StoredEnchantments";
-      ListTag var5 = (ListTag)var1.get(var4);
-      ListTag var6 = new ListTag(this.nbtTagName + "|" + var4, CompoundTag.class);
-      ArrayList var7 = new ArrayList();
-      Iterator var8 = var5.clone().iterator();
-      if(var8.hasNext()) {
-         Tag var9 = (Tag)var8.next();
-         Short var10 = (Short)((CompoundTag)var9).get("id").getValue();
-         String var11 = (String)this.enchantmentMappings.get(var10);
-         if(var11 != null) {
-            var5.remove(var9);
-            Number var12 = (Number)((CompoundTag)var9).get("lvl").getValue();
-            if(this.hideLevelForEnchants != null && this.hideLevelForEnchants.contains(var10)) {
-               var7.add(new StringTag("", var11));
+    public void registerEnchantment(int id, String replacementLore) {
+        enchantmentMappings.put((short) id, replacementLore);
+    }
+
+    public void rewriteEnchantmentsToClient(CompoundTag tag, boolean storedEnchant) {
+        String key = storedEnchant ? "StoredEnchantments" : "ench";
+        ListTag enchantments = tag.get(key);
+        ListTag remappedEnchantments = new ListTag(nbtTagName + "|" + key, CompoundTag.class);
+        List<Tag> lore = new ArrayList<>();
+        for (Tag enchantmentEntry : enchantments.clone()) {
+            Short newId = (Short) ((CompoundTag) enchantmentEntry).get("id").getValue();
+            String enchantmentName = enchantmentMappings.get(newId);
+            if (enchantmentName != null) {
+                enchantments.remove(enchantmentEntry);
+                Number level = (Number) ((CompoundTag) enchantmentEntry).get("lvl").getValue();
+                if (hideLevelForEnchants != null && hideLevelForEnchants.contains(newId)) {
+                    lore.add(new StringTag("", enchantmentName));
+                } else {
+                    lore.add(new StringTag("", enchantmentName + " " + EnchantmentRewriter.getRomanNumber(level.shortValue())));
+                }
+                remappedEnchantments.add(enchantmentEntry);
+            }
+        }
+        if (!lore.isEmpty()) {
+            if (!storedEnchant && enchantments.size() == 0) {
+                CompoundTag dummyEnchantment = new CompoundTag("");
+                dummyEnchantment.put(new ShortTag("id", (short) 0));
+                dummyEnchantment.put(new ShortTag("lvl", (short) 0));
+                enchantments.add(dummyEnchantment);
+
+                tag.put(new ByteTag(nbtTagName + "|dummyEnchant"));
+
+                IntTag hideFlags = tag.get("HideFlags");
+                if (hideFlags == null) {
+                    hideFlags = new IntTag("HideFlags");
+                } else {
+                    tag.put(new IntTag(nbtTagName + "|oldHideFlags", hideFlags.getValue()));
+                }
+
+                int flags = hideFlags.getValue() | 1;
+                hideFlags.setValue(flags);
+                tag.put(hideFlags);
             }
 
-            var7.add(new StringTag("", var11 + " " + EnchantmentRewriter.getRomanNumber(var12.shortValue())));
-            var6.add(var9);
-         }
-      }
+            tag.put(remappedEnchantments);
 
-      if(!var7.isEmpty()) {
-         if(!var2 && var5.size() == 0) {
-            CompoundTag var13 = new CompoundTag("");
-            var13.put(new ShortTag("id", (short)0));
-            var13.put(new ShortTag("lvl", (short)0));
-            var5.add(var13);
-            var1.put(new ByteTag(this.nbtTagName + "|dummyEnchant"));
-            IntTag var15 = (IntTag)var1.get("HideFlags");
-            if(var15 == null) {
-               var15 = new IntTag("HideFlags");
+            CompoundTag display = tag.get("display");
+            if (display == null) {
+                tag.put(display = new CompoundTag("display"));
+            }
+            ListTag loreTag = display.get("Lore");
+            if (loreTag == null) {
+                display.put(loreTag = new ListTag("Lore", StringTag.class));
             }
 
-            var1.put(new IntTag(this.nbtTagName + "|oldHideFlags", var15.getValue().intValue()));
-            int var17 = var15.getValue().intValue() | 1;
-            var15.setValue(var17);
-            var1.put(var15);
-         }
+            lore.addAll(loreTag.getValue());
+            loreTag.setValue(lore);
+        }
+    }
 
-         var1.put(var6);
-         CompoundTag var14 = (CompoundTag)var1.get("display");
-         if(var14 == null) {
-            var1.put(var14 = new CompoundTag("display"));
-         }
+    public void rewriteEnchantmentsToServer(CompoundTag tag, boolean storedEnchant) {
+        String key = storedEnchant ? "StoredEnchantments" : "ench";
+        ListTag remappedEnchantments = tag.get(nbtTagName + "|" + key);
+        ListTag enchantments = tag.get(key);
+        if (enchantments == null) {
+            enchantments = new ListTag(key, CompoundTag.class);
+        }
 
-         ListTag var16 = (ListTag)var14.get("Lore");
-         if(var16 == null) {
-            var14.put(var16 = new ListTag("Lore", StringTag.class));
-         }
-
-         var7.addAll(var16.getValue());
-         var16.setValue(var7);
-      }
-
-   }
-
-   public void rewriteEnchantmentsToServer(CompoundTag var1, boolean var2) {
-      int var3 = aqu.d();
-      String var4 = "StoredEnchantments";
-      ListTag var5 = (ListTag)var1.get(this.nbtTagName + "|" + var4);
-      ListTag var6 = (ListTag)var1.get(var4);
-      if(var6 == null) {
-         var6 = new ListTag(var4, CompoundTag.class);
-      }
-
-      if(var1.remove(this.nbtTagName + "|dummyEnchant") != null) {
-         Iterator var7 = var6.clone().iterator();
-         if(var7.hasNext()) {
-            Tag var8 = (Tag)var7.next();
-            Short var9 = (Short)((CompoundTag)var8).get("id").getValue();
-            Short var10 = (Short)((CompoundTag)var8).get("lvl").getValue();
-            if(var9.shortValue() == 0 && var10.shortValue() == 0) {
-               var6.remove(var8);
+        if (!storedEnchant && tag.remove(nbtTagName + "|dummyEnchant") != null) {
+            for (Tag enchantment : enchantments.clone()) {
+                Short id = (Short) ((CompoundTag) enchantment).get("id").getValue();
+                Short level = (Short) ((CompoundTag) enchantment).get("lvl").getValue();
+                if (id == 0 && level == 0) {
+                    enchantments.remove(enchantment);
+                }
             }
-         }
 
-         IntTag var12 = (IntTag)var1.remove(this.nbtTagName + "|oldHideFlags");
-         if(var12 != null) {
-            var1.put(new IntTag("HideFlags", var12.getValue().intValue()));
-         }
+            IntTag hideFlags = tag.remove(nbtTagName + "|oldHideFlags");
+            if (hideFlags != null) {
+                tag.put(new IntTag("HideFlags", hideFlags.getValue()));
+            } else {
+                tag.remove("HideFlags");
+            }
+        }
 
-         var1.remove("HideFlags");
-      }
+        CompoundTag display = tag.get("display");
+        // A few null checks just to be safe, though they shouldn't actually be
+        ListTag lore = display != null ? display.get("Lore") : null;
+        for (Tag enchantment : remappedEnchantments.clone()) {
+            enchantments.add(enchantment);
+            if (lore != null && lore.size() != 0) {
+                lore.remove(lore.get(0));
+            }
+        }
+        if (lore != null && lore.size() == 0) {
+            display.remove("Lore");
+            if (display.isEmpty()) {
+                tag.remove("display");
+            }
+        }
+        tag.put(enchantments);
+        tag.remove(remappedEnchantments.getName());
+    }
 
-      CompoundTag var13 = (CompoundTag)var1.get("display");
-      ListTag var14 = var13 != null?(ListTag)var13.get("Lore"):null;
-      Iterator var15 = var5.clone().iterator();
-      if(var15.hasNext()) {
-         Tag var16 = (Tag)var15.next();
-         var6.add(var16);
-         if(var14 != null && var14.size() != 0) {
-            var14.remove(var14.get(0));
-         }
-      }
-
-      if(var14 != null && var14.size() == 0) {
-         var13.remove("Lore");
-         if(var13.isEmpty()) {
-            var1.remove("display");
-         }
-      }
-
-      var1.put(var6);
-      var1.remove(var5.getName());
-      if(acE.b() == null) {
-         ++var3;
-         aqu.b(var3);
-      }
-
-   }
-
-   public void setHideLevelForEnchants(int... var1) {
-      this.hideLevelForEnchants = new HashSet();
-      int var2 = aqu.d();
-      int var4 = var1.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         int var6 = var1[var5];
-         this.hideLevelForEnchants.add(Short.valueOf((short)var6));
-         ++var5;
-      }
-
-   }
+    public void setHideLevelForEnchants(int... enchants) {
+        this.hideLevelForEnchants = new HashSet<>();
+        for (int enchant : enchants) {
+            hideLevelForEnchants.add((short) enchant);
+        }
+    }
 }

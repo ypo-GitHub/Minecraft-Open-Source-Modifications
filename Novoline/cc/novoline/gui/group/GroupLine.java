@@ -1,5 +1,10 @@
 package cc.novoline.gui.group;
 
-public interface GroupLine {
-   String getText(Object var1);
+/**
+ * @author xDelsy
+ */
+public interface GroupLine<T> {
+
+    String getText(T t);
+
 }

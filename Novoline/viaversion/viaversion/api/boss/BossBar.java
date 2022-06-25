@@ -1,86 +1,202 @@
 package viaversion.viaversion.api.boss;
 
-import java.util.Set;
-import java.util.UUID;
-import net.acE;
 import viaversion.viaversion.api.Via;
-import viaversion.viaversion.api.boss.BossColor;
-import viaversion.viaversion.api.boss.BossFlag;
-import viaversion.viaversion.api.boss.BossStyle;
 import viaversion.viaversion.api.data.UserConnection;
 
-public abstract class BossBar {
-   private static acE[] b;
+import java.util.Set;
+import java.util.UUID;
 
-   public abstract String getTitle();
+public abstract class BossBar<T> {
 
-   public abstract BossBar setTitle(String var1);
+    /**
+     * Get the current title
+     *
+     * @return the title
+     */
+    public abstract String getTitle();
 
-   public abstract float getHealth();
+    /**
+     * Change the title
+     *
+     * @param title Title can be in either JSON or just text
+     * @return The BossBar object
+     */
+    public abstract BossBar setTitle(String title);
 
-   public abstract BossBar setHealth(float var1);
+    /**
+     * Get the health
+     *
+     * @return float between 0F - 1F
+     */
+    public abstract float getHealth();
 
-   public abstract BossColor getColor();
+    /**
+     * Change the health
+     *
+     * @param health this float has to be between 0F - 1F
+     * @return The BossBar object
+     */
+    public abstract BossBar setHealth(float health);
 
-   public abstract BossBar setColor(BossColor var1);
+    /**
+     * Get the bossbar color
+     *
+     * @return The colour
+     */
+    public abstract BossColor getColor();
 
-   public abstract BossStyle getStyle();
+    /**
+     * Yay colors!
+     *
+     * @param color Whatever color you want!
+     * @return The BossBar object
+     */
+    public abstract BossBar setColor(BossColor color);
 
-   public abstract BossBar setStyle(BossStyle var1);
+    /**
+     * Get the bosbar style
+     *
+     * @return BossStyle
+     */
+    public abstract BossStyle getStyle();
 
-   /** @deprecated */
-   @Deprecated
-   public BossBar b(Object var1) {
-      throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
-   }
+    /**
+     * Change the bosbar style
+     *
+     * @param style BossStyle
+     * @return The BossBar object
+     */
+    public abstract BossBar setStyle(BossStyle style);
 
-   public abstract BossBar b(UUID var1);
+    /**
+     * Show the bossbar to a player.
+     *
+     * @param player The player
+     * @return The BossBar object
+     * @deprecated Deprecated use UUID's instead of Player objects {@link #addPlayer(UUID)}
+     */
+    @Deprecated
+    public BossBar addPlayer(T player) {
+        throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
+    }
 
-   public abstract BossBar addConnection(UserConnection var1);
+    /**
+     * Show the bossbar to a player (uuid). This only works for frontend connections. Use #addConnection(UserConnection) for other types.
+     *
+     * @param player uuid of the player
+     * @return The BossBar object
+     */
+    public abstract BossBar addPlayer(UUID player);
 
-   /** @deprecated */
-   @Deprecated
-   public BossBar addPlayers(Object... var1) {
-      throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
-   }
+    /**
+     * Show the bossbar to a player connection.
+     *
+     * @param conn UserConnection of the connection
+     * @return The BossBar object
+     */
+    public abstract BossBar addConnection(UserConnection conn);
 
-   /** @deprecated */
-   @Deprecated
-   public BossBar a(Object var1) {
-      throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
-   }
+    /**
+     * add multiple players
+     *
+     * @param players list of players
+     * @return The BossBar object
+     * @deprecated Deprecated use UUID's instead of Player objects {@link #addPlayer(UUID)}
+     */
+    @Deprecated
+    public BossBar addPlayers(T... players) {
+        throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
+    }
 
-   public abstract BossBar a(UUID var1);
+    /**
+     * Remove the bossbar from a player
+     *
+     * @param player The player
+     * @return The BossBar object
+     * @deprecated Deprecated use UUID's instead of Player objects {@link #removePlayer(UUID)}
+     */
+    @Deprecated
+    public BossBar removePlayer(T player) {
+        throw new UnsupportedOperationException("This method is not implemented for the platform " + Via.getPlatform().getPlatformName());
+    }
 
-   public abstract BossBar removeConnection(UserConnection var1);
+    /**
+     * Removes the bossbar from a player. This only works for frontend connections. For others types, use #removeConnection(UserConnection)
+     *
+     * @param uuid The players UUID
+     * @return The BossBar object
+     */
+    public abstract BossBar removePlayer(UUID uuid);
 
-   public abstract BossBar addFlag(BossFlag var1);
+    /**
+     * Removes the bossbar from a player connection.
+     *
+     * @param conn The UserConnection
+     * @return The BossBar object
+     */
+    public abstract BossBar removeConnection(UserConnection conn);
 
-   public abstract BossBar removeFlag(BossFlag var1);
+    /**
+     * Add flags
+     *
+     * @param flag The flag to add
+     * @return The BossBar object
+     */
+    public abstract BossBar addFlag(BossFlag flag);
 
-   public abstract boolean hasFlag(BossFlag var1);
+    /**
+     * Remove flags.
+     *
+     * @param flag The flag to remove
+     * @return The BossBar object
+     */
+    public abstract BossBar removeFlag(BossFlag flag);
 
-   public abstract Set getPlayers();
+    /**
+     * @param flag The flag to check against
+     * @return True if it has the flag
+     */
+    public abstract boolean hasFlag(BossFlag flag);
 
-   public abstract Set getConnections();
+    /**
+     * Get players. Only returns UUIDs which are front-end. For all connections, use #getConnections()
+     *
+     * @return UUIDS from players (sorry I lied)
+     */
+    public abstract Set<UUID> getPlayers();
 
-   public abstract BossBar show();
+    /**
+     * Get UserConnections.
+     *
+     * @return UserConnection from players
+     */
+    public abstract Set<UserConnection> getConnections();
 
-   public abstract BossBar hide();
+    /**
+     * Show the bossbar to everyone (In the getPlayer set)
+     *
+     * @return The BossBar object
+     */
+    public abstract BossBar show();
 
-   public abstract boolean isVisible();
+    /**
+     * Hide the bossbar from everyone (In the getPlayer set)
+     *
+     * @return The BossBar object
+     */
+    public abstract BossBar hide();
 
-   public abstract UUID getId();
+    /**
+     * Is it visible?
+     *
+     * @return visibility changable with show() and hide()
+     */
+    public abstract boolean isVisible();
 
-   public static void b(acE[] var0) {
-      b = var0;
-   }
-
-   public static acE[] e() {
-      return b;
-   }
-
-   static {
-      b((acE[])null);
-   }
+    /**
+     * Get the UUID of this bossbar
+     *
+     * @return Unique Id for this bossbar
+     */
+    public abstract UUID getId();
 }

@@ -1,98 +1,100 @@
 package net.shadersmod.client;
 
-import java.util.ArrayList;
 import net.minecraft.client.gui.GuiSlot;
 import net.optifine.Lang;
-import net.shadersmod.client.GuiShaders;
-import net.shadersmod.client.ShaderOption;
-import net.shadersmod.client.Shaders;
+
+import java.util.ArrayList;
 
 class GuiSlotShaders extends GuiSlot {
-   private ArrayList shaderslist;
-   private int selectedIndex;
-   private long lastClickedCached = 0L;
-   final GuiShaders shadersGui;
+    private ArrayList shaderslist;
+    private int selectedIndex;
+    private long lastClickedCached = 0L;
+    final GuiShaders shadersGui;
 
-   public GuiSlotShaders(GuiShaders var1, int var2, int var3, int var4, int var5, int var6) {
-      super(var1.getMc(), var2, var3, var4, var5, var6);
-      this.shadersGui = var1;
-      this.updateList();
-      this.amountScrolled = 0.0F;
-      int var7 = this.selectedIndex * var6;
-      int var8 = (var5 - var4) / 2;
-      if(var7 > var8) {
-         this.scrollBy(var7 - var8);
-      }
+    public GuiSlotShaders(GuiShaders par1GuiShaders, int width, int height, int top, int bottom, int slotHeight) {
+        super(par1GuiShaders.getMc(), width, height, top, bottom, slotHeight);
+        this.shadersGui = par1GuiShaders;
+        this.updateList();
+        this.amountScrolled = 0.0F;
+        int i = this.selectedIndex * slotHeight;
+        int j = (bottom - top) / 2;
 
-   }
+        if (i > j) {
+            this.scrollBy(i - j);
+        }
+    }
 
-   public int getListWidth() {
-      return this.width - 20;
-   }
+    /**
+     * Gets the width of the list
+     */
+    public int getListWidth() {
+        return this.width - 20;
+    }
 
-   public void updateList() {
-      this.shaderslist = Shaders.listOfShaders();
-      ShaderOption.p();
-      this.selectedIndex = 0;
-      int var2 = 0;
-      int var3 = this.shaderslist.size();
-      if(var2 < var3) {
-         if(((String)this.shaderslist.get(var2)).equals(Shaders.currentshadername)) {
-            this.selectedIndex = var2;
-         }
+    public void updateList() {
+        this.shaderslist = Shaders.listOfShaders();
+        this.selectedIndex = 0;
+        int i = 0;
 
-         ++var2;
-      }
+        for (int j = this.shaderslist.size(); i < j; ++i) {
+            if (((String) this.shaderslist.get(i)).equals(Shaders.currentshadername)) {
+                this.selectedIndex = i;
+                break;
+            }
+        }
+    }
 
-   }
+    protected int getSize() {
+        return this.shaderslist.size();
+    }
 
-   protected int getSize() {
-      return this.shaderslist.size();
-   }
+    /**
+     * The element in the slot that was clicked, boolean for whether it was double clicked or not
+     */
+    protected void elementClicked(int index, boolean doubleClicked, int mouseX, int mouseY) {
+        if (index != this.selectedIndex || this.lastClicked != this.lastClickedCached) {
+            this.selectedIndex = index;
+            this.lastClickedCached = this.lastClicked;
+            Shaders.setShaderPack((String) this.shaderslist.get(index));
+            Shaders.uninit();
+            this.shadersGui.updateButtons();
+        }
+    }
 
-   protected void elementClicked(int var1, boolean var2, int var3, int var4) {
-      String[] var5 = ShaderOption.p();
-      if(var1 != this.selectedIndex || this.lastClicked != this.lastClickedCached) {
-         this.selectedIndex = var1;
-         this.lastClickedCached = this.lastClicked;
-         Shaders.setShaderPack((String)this.shaderslist.get(var1));
-         Shaders.uninit();
-         this.shadersGui.updateButtons();
-      }
+    /**
+     * Returns true if the element passed in is currently selected
+     */
+    protected boolean isSelected(int index) {
+        return index == this.selectedIndex;
+    }
 
-   }
+    protected int getScrollBarX() {
+        return this.width - 6;
+    }
 
-   protected boolean isSelected(int var1) {
-      String[] var2 = ShaderOption.p();
-      return var1 == this.selectedIndex;
-   }
+    /**
+     * Return the height of the content being scrolled
+     */
+    protected int getContentHeight() {
+        return this.getSize() * 18;
+    }
 
-   protected int getScrollBarX() {
-      return this.width - 6;
-   }
+    protected void drawBackground() {
+    }
 
-   protected int getContentHeight() {
-      return this.getSize() * 18;
-   }
+    protected void drawSlot(int index, int posX, int posY, int contentY, int mouseX, int mouseY) {
+        String s = (String) this.shaderslist.get(index);
 
-   protected void drawBackground() {
-   }
+        if (s.equals(Shaders.packNameNone)) {
+            s = Lang.get("of.options.shaders.packNone");
+        } else if (s.equals(Shaders.packNameDefault)) {
+            s = Lang.get("of.options.shaders.packDefault");
+        }
 
-   protected void drawSlot(int var1, int var2, int var3, int var4, int var5, int var6) {
-      ShaderOption.p();
-      String var8 = (String)this.shaderslist.get(var1);
-      if(var8.equals(Shaders.packNameNone)) {
-         var8 = Lang.get("of.options.shaders.packNone");
-      }
+        this.shadersGui.drawCenteredString(s, this.width / 2, posY + 1, 16777215);
+    }
 
-      if(var8.equals(Shaders.packNameDefault)) {
-         var8 = Lang.get("of.options.shaders.packDefault");
-      }
-
-      this.shadersGui.drawCenteredString(var8, this.width / 2, var3 + 1, 16777215);
-   }
-
-   public int getSelectedIndex() {
-      return this.selectedIndex;
-   }
+    public int getSelectedIndex() {
+        return this.selectedIndex;
+    }
 }

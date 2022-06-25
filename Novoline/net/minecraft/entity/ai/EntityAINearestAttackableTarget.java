@@ -2,57 +2,113 @@ package net.minecraft.entity.ai;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import java.util.Collections;
-import java.util.List;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.ai.EntityAINearestAttackableTarget$1;
-import net.minecraft.entity.ai.EntityAINearestAttackableTarget$Sorter;
-import net.minecraft.entity.ai.EntityAITarget;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EntitySelectors;
 
-public class EntityAINearestAttackableTarget extends EntityAITarget {
-   protected final Class targetClass;
-   private final int targetChance;
-   protected final EntityAINearestAttackableTarget$Sorter theNearestAttackableTargetSorter;
-   protected Predicate targetEntitySelector;
-   protected EntityLivingBase targetEntity;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
-   public EntityAINearestAttackableTarget(EntityCreature var1, Class var2, boolean var3) {
-      this(var1, var2, var3, false);
-   }
+public class EntityAINearestAttackableTarget<T extends EntityLivingBase> extends EntityAITarget {
+    protected final Class<T> targetClass;
+    private final int targetChance;
 
-   public EntityAINearestAttackableTarget(EntityCreature var1, Class var2, boolean var3, boolean var4) {
-      this(var1, var2, 10, var3, var4, (Predicate)null);
-   }
+    /**
+     * Instance of EntityAINearestAttackableTargetSorter.
+     */
+    protected final EntityAINearestAttackableTarget.Sorter theNearestAttackableTargetSorter;
+    protected Predicate<? super T> targetEntitySelector;
+    protected EntityLivingBase targetEntity;
 
-   public EntityAINearestAttackableTarget(EntityCreature var1, Class var2, int var3, boolean var4, boolean var5, Predicate var6) {
-      super(var1, var4, var5);
-      this.targetClass = var2;
-      this.targetChance = var3;
-      this.theNearestAttackableTargetSorter = new EntityAINearestAttackableTarget$Sorter(var1);
-      this.setMutexBits(1);
-      this.targetEntitySelector = new EntityAINearestAttackableTarget$1(this, var6);
-   }
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, boolean checkSight) {
+        this(creature, classTarget, checkSight, false);
+    }
 
-   public boolean shouldExecute() {
-      if(this.targetChance > 0 && this.taskOwner.getRNG().nextInt(this.targetChance) != 0) {
-         return false;
-      } else {
-         double var1 = this.getTargetDistance();
-         List var3 = this.taskOwner.worldObj.getEntitiesWithinAABB(this.targetClass, this.taskOwner.getEntityBoundingBox().expand(var1, 4.0D, var1), Predicates.and(this.targetEntitySelector, EntitySelectors.NOT_SPECTATING));
-         Collections.sort(var3, this.theNearestAttackableTargetSorter);
-         if(var3.isEmpty()) {
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, boolean checkSight, boolean onlyNearby) {
+        this(creature, classTarget, 10, checkSight, onlyNearby, (Predicate<? super T>) null);
+    }
+
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, int chance, boolean checkSight, boolean onlyNearby, final Predicate<? super T> targetSelector) {
+        super(creature, checkSight, onlyNearby);
+        this.targetClass = classTarget;
+        this.targetChance = chance;
+        this.theNearestAttackableTargetSorter = new EntityAINearestAttackableTarget.Sorter(creature);
+        this.setMutexBits(1);
+        this.targetEntitySelector = new Predicate<T>() {
+            public boolean apply(T p_apply_1_) {
+                if (targetSelector != null && !targetSelector.apply(p_apply_1_)) {
+                    return false;
+                } else {
+                    if (p_apply_1_ instanceof EntityPlayer) {
+                        double d0 = EntityAINearestAttackableTarget.this.getTargetDistance();
+
+                        if (p_apply_1_.isSneaking()) {
+                            d0 *= 0.800000011920929D;
+                        }
+
+                        if (p_apply_1_.isInvisible()) {
+                            float f = ((EntityPlayer) p_apply_1_).getArmorVisibility();
+
+                            if (f < 0.1F) {
+                                f = 0.1F;
+                            }
+
+                            d0 *= (double) (0.7F * f);
+                        }
+
+                        if ((double) p_apply_1_.getDistanceToEntity(EntityAINearestAttackableTarget.this.taskOwner) > d0) {
+                            return false;
+                        }
+                    }
+
+                    return EntityAINearestAttackableTarget.this.isSuitableTarget(p_apply_1_, false);
+                }
+            }
+        };
+    }
+
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        if (this.targetChance > 0 && this.taskOwner.getRNG().nextInt(this.targetChance) != 0) {
             return false;
-         } else {
-            this.targetEntity = (EntityLivingBase)var3.get(0);
-            return true;
-         }
-      }
-   }
+        } else {
+            double d0 = this.getTargetDistance();
+            List<T> list = this.taskOwner.worldObj.<T>getEntitiesWithinAABB(this.targetClass, this.taskOwner.getEntityBoundingBox().expand(d0, 4.0D, d0), Predicates.<T>and(this.targetEntitySelector, EntitySelectors.NOT_SPECTATING));
+            Collections.sort(list, this.theNearestAttackableTargetSorter);
 
-   public void startExecuting() {
-      this.taskOwner.setAttackTarget(this.targetEntity);
-      super.startExecuting();
-   }
+            if (list.isEmpty()) {
+                return false;
+            } else {
+                this.targetEntity = (EntityLivingBase) list.get(0);
+                return true;
+            }
+        }
+    }
+
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.taskOwner.setAttackTarget(this.targetEntity);
+        super.startExecuting();
+    }
+
+    public static class Sorter implements Comparator<Entity> {
+        private final Entity theEntity;
+
+        public Sorter(Entity theEntityIn) {
+            this.theEntity = theEntityIn;
+        }
+
+        public int compare(Entity p_compare_1_, Entity p_compare_2_) {
+            double d0 = this.theEntity.getDistanceSqToEntity(p_compare_1_);
+            double d1 = this.theEntity.getDistanceSqToEntity(p_compare_2_);
+            return d0 < d1 ? -1 : d0 > d1 ? 1 : 0;
+        }
+    }
 }

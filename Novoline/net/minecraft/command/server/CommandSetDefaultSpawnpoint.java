@@ -1,6 +1,5 @@
 package net.minecraft.command.server;
 
-import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -9,41 +8,52 @@ import net.minecraft.network.play.server.S05PacketSpawnPosition;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 
+import java.util.List;
+
 public class CommandSetDefaultSpawnpoint extends CommandBase {
-   public String getCommandName() {
-      return "setworldspawn";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "setworldspawn";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 2;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 2;
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.setworldspawn.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.setworldspawn.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      BlockPos var3;
-      if(var2.length == 0) {
-         var3 = getCommandSenderAsPlayer(var1).getPosition();
-      } else {
-         if(var2.length != 3 || var1.getEntityWorld() == null) {
-            throw new WrongUsageException("commands.setworldspawn.usage", new Object[0]);
-         }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        BlockPos blockpos;
 
-         var3 = parseBlockPos(var1, var2, 0, true);
-      }
+        if (args.length == 0) {
+            blockpos = getCommandSenderAsPlayer(sender).getPosition();
+        } else {
+            if (args.length != 3 || sender.getEntityWorld() == null) {
+                throw new WrongUsageException("commands.setworldspawn.usage", new Object[0]);
+            }
 
-      var1.getEntityWorld().setSpawnPoint(var3);
-      MinecraftServer.getServer().getConfigurationManager().sendPacketToAllPlayers(new S05PacketSpawnPosition(var3));
-      notifyOperators(var1, this, "commands.setworldspawn.success", new Object[]{Integer.valueOf(var3.getX()), Integer.valueOf(var3.getY()), Integer.valueOf(var3.getZ())});
-   }
+            blockpos = parseBlockPos(sender, args, 0, true);
+        }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length > 0 && var2.length <= 3?b(var2, 0, var3):null;
-   }
+        sender.getEntityWorld().setSpawnPoint(blockpos);
+        MinecraftServer.getServer().getConfigurationManager().sendPacketToAllPlayers(new S05PacketSpawnPosition(blockpos));
+        notifyOperators(sender, this, "commands.setworldspawn.success", new Object[]{blockpos.getX(), blockpos.getY(), blockpos.getZ()});
+    }
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length > 0 && args.length <= 3 ? func_175771_a(args, 0, pos) : null;
+    }
 }

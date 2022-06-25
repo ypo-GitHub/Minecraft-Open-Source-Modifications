@@ -1,61 +1,68 @@
 package net.minecraft.client.renderer.texture;
 
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.texture.ITextureObject;
-import net.minecraft.client.renderer.texture.TextureUtil;
+import org.lwjgl.opengl.GL11;
 import net.shadersmod.client.MultiTexID;
 import net.shadersmod.client.ShadersTex;
-import org.lwjgl.opengl.GL11;
 
 public abstract class AbstractTexture implements ITextureObject {
-   protected int glTextureId = -1;
-   protected boolean blur;
-   protected boolean mipmap;
-   protected boolean blurLast;
-   protected boolean mipmapLast;
-   private static final String a = "CL_00001047";
-   public MultiTexID multiTex;
+    protected int glTextureId = -1;
+    protected boolean blur;
+    protected boolean mipmap;
+    protected boolean blurLast;
+    protected boolean mipmapLast;
+    private static final String __OBFID = "CL_00001047";
+    public MultiTexID multiTex;
 
-   public void setBlurMipmapDirect(boolean var1, boolean var2) {
-      this.blur = var1;
-      this.mipmap = var2;
-      boolean var3 = true;
-      boolean var4 = true;
-      short var5 = 9987;
-      short var6 = 9729;
-      GlStateManager.bindTexture(this.getGlTextureId());
-      GL11.glTexParameteri(3553, 10241, var5);
-      GL11.glTexParameteri(3553, 10240, var6);
-   }
+    public void setBlurMipmapDirect(boolean p_174937_1_, boolean p_174937_2_) {
+        this.blur = p_174937_1_;
+        this.mipmap = p_174937_2_;
+        boolean flag = true;
+        boolean flag1 = true;
+        int i;
+        short short1;
 
-   public void setBlurMipmap(boolean var1, boolean var2) {
-      this.blurLast = this.blur;
-      this.mipmapLast = this.mipmap;
-      this.setBlurMipmapDirect(var1, var2);
-   }
+        if (p_174937_1_) {
+            i = p_174937_2_ ? 9987 : 9729;
+            short1 = 9729;
+        } else {
+            i = p_174937_2_ ? 9986 : 9728;
+            short1 = 9728;
+        }
 
-   public void restoreLastBlurMipmap() {
-      this.setBlurMipmapDirect(this.blurLast, this.mipmapLast);
-   }
+        GlStateManager.bindTexture(this.getGlTextureId());
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, i);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, short1);
+    }
 
-   public int getGlTextureId() {
-      if(this.glTextureId == -1) {
-         this.glTextureId = TextureUtil.glGenTextures();
-      }
+    public void setBlurMipmap(boolean p_174936_1_, boolean p_174936_2_) {
+        this.blurLast = this.blur;
+        this.mipmapLast = this.mipmap;
+        this.setBlurMipmapDirect(p_174936_1_, p_174936_2_);
+    }
 
-      return this.glTextureId;
-   }
+    public void restoreLastBlurMipmap() {
+        this.setBlurMipmapDirect(this.blurLast, this.mipmapLast);
+    }
 
-   public void deleteGlTexture() {
-      ShadersTex.deleteTextures(this, this.glTextureId);
-      if(this.glTextureId != -1) {
-         TextureUtil.deleteTexture(this.glTextureId);
-         this.glTextureId = -1;
-      }
+    public int getGlTextureId() {
+        if (this.glTextureId == -1) {
+            this.glTextureId = TextureUtil.glGenTextures();
+        }
 
-   }
+        return this.glTextureId;
+    }
 
-   public MultiTexID getMultiTexID() {
-      return ShadersTex.getMultiTexID(this);
-   }
+    public void deleteGlTexture() {
+        ShadersTex.deleteTextures(this, this.glTextureId);
+
+        if (this.glTextureId != -1) {
+            TextureUtil.deleteTexture(this.glTextureId);
+            this.glTextureId = -1;
+        }
+    }
+
+    public MultiTexID getMultiTexID() {
+        return ShadersTex.getMultiTexID(this);
+    }
 }

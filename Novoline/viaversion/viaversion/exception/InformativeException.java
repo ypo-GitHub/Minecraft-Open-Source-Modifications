@@ -1,69 +1,50 @@
 package viaversion.viaversion.exception;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import net.acE;
 
 public class InformativeException extends Exception {
-   private final Map info = new HashMap();
-   private int sources;
-   private static int[] c;
+    private final Map<String, Object> info = new HashMap<>();
+    private int sources;
 
-   public InformativeException(Throwable var1) {
-      super(var1);
-   }
+    public InformativeException(Throwable cause) {
+        super(cause);
+    }
 
-   public InformativeException set(String var1, Object var2) {
-      this.info.put(var1, var2);
-      return this;
-   }
+    public InformativeException set(String key, Object value) {
+        info.put(key, value);
+        return this;
+    }
 
-   public InformativeException addSource(Class var1) {
-      int[] var2 = b();
-      InformativeException var10000 = this.set("Source " + this.sources++, this.getSource(var1));
-      if(acE.b() == null) {
-         b(new int[5]);
-      }
+    public InformativeException addSource(Class<?> sourceClazz) {
+        return set("Source " + sources++, getSource(sourceClazz));
+    }
 
-      return var10000;
-   }
+    private String getSource(Class<?> sourceClazz) {
+        if (sourceClazz.isAnonymousClass()) {
+            return sourceClazz.getName() + " (Anonymous)";
+        } else {
+            return sourceClazz.getName();
+        }
+    }
 
-   private String getSource(Class var1) {
-      int[] var2 = b();
-      return var1.isAnonymousClass()?var1.getName() + " (Anonymous)":var1.getName();
-   }
+    @Override
+    public String getMessage() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Please post this error to https://github.com/ViaVersion/ViaVersion/issues\n{");
+        int i = 0;
+        for (Map.Entry<String, Object> entry : info.entrySet()) {
+            builder.append(i == 0 ? "" : ", ").append(entry.getKey()).append(": ").append(entry.getValue().toString());
+            i++;
+        }
+        builder.append("}\nActual Error: ");
 
-   public String getMessage() {
-      StringBuilder var2 = new StringBuilder();
-      var2.append("Please post this error to https://github.com/ViaVersion/ViaVersion/issues\n{");
-      b();
-      int var3 = 0;
-      Iterator var4 = this.info.entrySet().iterator();
-      if(var4.hasNext()) {
-         Entry var5 = (Entry)var4.next();
-         var2.append("").append((String)var5.getKey()).append(": ").append(var5.getValue().toString());
-         ++var3;
-      }
+        return builder.toString();
+    }
 
-      var2.append("}\nActual Error: ");
-      return var2.toString();
-   }
-
-   public synchronized Throwable fillInStackTrace() {
-      return this;
-   }
-
-   public static void b(int[] var0) {
-      c = var0;
-   }
-
-   public static int[] b() {
-      return c;
-   }
-
-   static {
-      b((int[])null);
-   }
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        // Don't record this stack
+        return this;
+    }
 }

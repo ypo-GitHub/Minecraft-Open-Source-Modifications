@@ -1,53 +1,72 @@
 package cc.novoline.modules.configurations.property.object;
 
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class DoubleProperty extends AbstractNumberProperty {
-   public DoubleProperty(@Nullable Double var1) {
-      super(var1);
-   }
+/**
+ * @author xDelsy
+ */
+public final class DoubleProperty extends AbstractNumberProperty<DoubleProperty, Double> {
 
-   public DoubleProperty() {
-      super(Double.valueOf(0.0D));
-   }
+    /* constructors */
+    public DoubleProperty(@Nullable Double value) {
+        super(value);
+    }
 
-   @NotNull
-   public static DoubleProperty of(@Nullable Double var0) {
-      return new DoubleProperty(var0);
-   }
+    public DoubleProperty() {
+        super(0.0D);
+    }
 
-   @NotNull
-   public static DoubleProperty create() {
-      return new DoubleProperty();
-   }
+    public static @NotNull DoubleProperty of(@Nullable Double value) {
+        return new DoubleProperty(value);
+    }
 
-   protected void e(@Nullable Double var1) {
-      this.value = Double.valueOf(((Double)this.value).doubleValue() + var1.doubleValue());
-   }
+    public static @NotNull DoubleProperty create() {
+        return new DoubleProperty();
+    }
 
-   protected void a(@Nullable Double var1) {
-      this.value = Double.valueOf(((Double)this.value).doubleValue() - var1.doubleValue());
-   }
+    /* methods */
+    @Override
+    protected void add(@Nullable Double number) {
+        this.value += number;
+    }
 
-   protected boolean greaterThan(@Nullable Double var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?this.value != null:(this.value == null?true:((Double)this.value).doubleValue() > var1.doubleValue());
-   }
+    @Override
+    protected void subtract(@Nullable Double number) {
+        this.value -= number;
+    }
 
-   protected boolean lessThan(@Nullable Double var1) {
-      int[] var2 = IntProperty.a();
-      return var1 == null?false:(this.value == null?true:((Double)this.value).doubleValue() < var1.doubleValue());
-   }
+    @Override
+    protected boolean greaterThan(@Nullable Double number) {
+        if (number == null) {
+            return value != null;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value > number;
+        }
+    }
 
-   protected boolean inLimits(@NotNull Double var1) {
-      int[] var2 = IntProperty.a();
-      return (this.minimum == null || var1.doubleValue() >= ((Double)this.minimum).doubleValue()) && (this.maximum == null || var1.doubleValue() <= ((Double)this.maximum).doubleValue());
-   }
+    @Override
+    protected boolean lessThan(@Nullable Double number) {
+        if (number == null) {
+            return false;
+        } else if (value == null) {
+            return true;
+        } else {
+            return value < number;
+        }
+    }
 
-   protected DoubleProperty self() {
-      return this;
-   }
+    @Override
+    protected boolean inLimits(@NotNull Double number) {
+        return (minimum == null || number >= minimum) && (maximum == null || number <= maximum);
+    }
+
+    @Override
+    protected DoubleProperty self() {
+        return this;
+    }
+
 }

@@ -1,124 +1,99 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types;
 
 import io.netty.buffer.ByteBuf;
-import java.util.zip.Deflater;
-import net.cT;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.types.Particle;
 import viaversion.viaversion.api.minecraft.Environment;
 import viaversion.viaversion.api.minecraft.chunks.Chunk;
 import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 import viaversion.viaversion.api.type.PartialType;
+import viaversion.viaversion.protocols.protocol1_9_3to1_9_1_2.storage.ClientWorld;
 
-public class Chunk1_7_10Type extends PartialType {
-   public Chunk1_7_10Type(cT var1) {
-      super(var1, "Chunk", Chunk.class);
-   }
+import java.util.zip.Deflater;
 
-   public Chunk a(ByteBuf var1, cT var2) throws Exception {
-      throw new UnsupportedOperationException();
-   }
+public class Chunk1_7_10Type extends PartialType<Chunk, ClientWorld> {
 
-   public void a(ByteBuf var1, cT var2, Chunk var3) throws Exception {
-      var1.writeInt(var3.getX());
-      Particle.b();
-      var1.writeInt(var3.getZ());
-      var1.writeBoolean(var3.isFullChunk());
-      var1.writeShort(var3.getBitmask());
-      var1.writeShort(0);
-      ByteBuf var5 = var1.alloc().buffer();
-      ByteBuf var6 = var1.alloc().buffer();
-      int var7 = 0;
-      if(var7 < var3.getSections().length) {
-         if((var3.getBitmask() & 1 << var7) != 0) {
-            ChunkSection var8 = var3.getSections()[var7];
-            int var9 = 0;
-            if(var9 < 16) {
-               int var10 = 0;
-               if(var10 < 16) {
-                  int var11 = 0;
-                  int var12 = 0;
-                  if(var12 < 16) {
-                     int var13 = var8.getFlatBlock(var12, var9, var10);
-                     var5.writeByte(var13 >> 4);
-                     int var14 = var13 & 15;
-                     if(var12 % 2 == 0) {
-                        var11 = var14;
-                     }
+    public Chunk1_7_10Type(ClientWorld param) {
+        super(param, "Chunk", Chunk.class);
+    }
 
-                     var6.writeByte(var14 << 4 | var11);
-                     ++var12;
-                  }
+    @Override
+    public Chunk read(ByteBuf byteBuf, ClientWorld clientWorld) throws Exception {
+        throw new UnsupportedOperationException();
+    }
 
-                  ++var10;
-               }
+    @Override
+    public void write(ByteBuf output, ClientWorld clientWorld, Chunk chunk) throws Exception {
+        output.writeInt(chunk.getX());
+        output.writeInt(chunk.getZ());
+        output.writeBoolean(chunk.isFullChunk());
+        output.writeShort(chunk.getBitmask());
+        output.writeShort(0);
 
-               ++var9;
+        ByteBuf dataToCompress = output.alloc().buffer();
+
+        // Half byte per block data
+        ByteBuf blockData = output.alloc().buffer();
+
+        for (int i = 0; i < chunk.getSections().length; i++) {
+            if ((chunk.getBitmask() & 1 << i) == 0) continue;
+            ChunkSection section = chunk.getSections()[i];
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    int previousData = 0;
+                    for (int x = 0; x < 16; x++) {
+                        int block = section.getFlatBlock(x, y, z);
+                        dataToCompress.writeByte(block >> 4);
+
+                        int data = block & 0xF;
+                        if (x % 2 == 0) {
+                            previousData = data;
+                        } else {
+                            blockData.writeByte((data << 4) | previousData);
+                        }
+                    }
+                }
             }
-         }
+        }
+        dataToCompress.writeBytes(blockData);
+        blockData.release();
 
-         ++var7;
-      }
+        for (int i = 0; i < chunk.getSections().length; i++) {
+            if ((chunk.getBitmask() & 1 << i) == 0) continue;
+            chunk.getSections()[i].writeBlockLight(dataToCompress);
+        }
 
-      var5.writeBytes(var6);
-      var6.release();
-      var7 = 0;
-      if(var7 < var3.getSections().length) {
-         if((var3.getBitmask() & 1 << var7) != 0) {
-            var3.getSections()[var7].writeBlockLight(var5);
-         }
-
-         ++var7;
-      }
-
-      var7 = var2 != null && var2.a() == Environment.NORMAL;
-      if(var7) {
-         int var22 = 0;
-         if(var22 < var3.getSections().length) {
-            if((var3.getBitmask() & 1 << var22) != 0) {
-               var3.getSections()[var22].writeSkyLight(var5);
+        boolean skyLight = clientWorld != null && clientWorld.getEnvironment() == Environment.NORMAL;
+        if (skyLight) {
+            for (int i = 0; i < chunk.getSections().length; i++) {
+                if ((chunk.getBitmask() & 1 << i) == 0) continue;
+                chunk.getSections()[i].writeSkyLight(dataToCompress);
             }
+        }
 
-            ++var22;
-         }
-      }
+        if (chunk.isFullChunk() && chunk.isBiomeData()) {
+            for (int biome : chunk.getBiomeData()) {
+                dataToCompress.writeByte((byte) biome);
+            }
+        }
 
-      if(var3.isFullChunk() && var3.isBiomeData()) {
-         int[] var24 = var3.getBiomeData();
-         int var27 = var24.length;
-         int var30 = 0;
-         if(var30 < var27) {
-            int var33 = var24[var30];
-            var5.writeByte((byte)var33);
-            ++var30;
-         }
-      }
+        dataToCompress.readerIndex(0);
+        byte[] data = new byte[dataToCompress.readableBytes()];
+        dataToCompress.readBytes(data);
+        dataToCompress.release();
 
-      var5.readerIndex(0);
-      byte[] var25 = new byte[var5.readableBytes()];
-      var5.readBytes(var25);
-      var5.release();
-      Deflater var28 = new Deflater(4);
-      Deflater var10000 = var28;
-      byte[] var10001 = var25;
-      byte var10002 = 0;
-      byte[] var10003 = var25;
+        Deflater deflater = new Deflater(4); // todo let user choose compression
+        byte[] compressedData;
+        int compressedSize;
+        try {
+            deflater.setInput(data, 0, data.length);
+            deflater.finish();
+            compressedData = new byte[data.length];
+            compressedSize = deflater.deflate(compressedData);
+        } finally {
+            deflater.end();
+        }
 
-      byte[] var32;
-      int var34;
-      try {
-         var10000.setInput(var10001, var10002, var10003.length);
-         var28.finish();
-         var32 = new byte[var25.length];
-         var34 = var28.deflate(var32);
-      } finally {
-         var28.end();
-      }
+        output.writeInt(compressedSize);
 
-      var1.writeInt(var34);
-      var1.writeBytes(var32, 0, var34);
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        output.writeBytes(compressedData, 0, compressedSize);
+    }
 }

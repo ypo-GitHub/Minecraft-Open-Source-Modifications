@@ -1,8 +1,6 @@
 package net.minecraft.block;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -20,96 +18,120 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
 public class BlockTNT extends Block {
-   public static final PropertyBool EXPLODE = PropertyBool.create("explode");
 
-   public BlockTNT() {
-      super(Material.tnt);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(EXPLODE, Boolean.FALSE));
-      this.setCreativeTab(CreativeTabs.tabRedstone);
-   }
+    public static final PropertyBool EXPLODE = PropertyBool.create("explode");
 
-   public void onBlockAdded(World var1, BlockPos var2, IBlockState var3) {
-      super.onBlockAdded(var1, var2, var3);
-      if(var1.isBlockPowered(var2)) {
-         this.onBlockDestroyedByPlayer(var1, var2, var3.withProperty(EXPLODE, Boolean.TRUE));
-         var1.setBlockToAir(var2);
-      }
+    public BlockTNT() {
+        super(Material.tnt);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(EXPLODE, Boolean.FALSE));
+        this.setCreativeTab(CreativeTabs.tabRedstone);
+    }
 
-   }
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
+        super.onBlockAdded(worldIn, pos, state);
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      if(var1.isBlockPowered(var2)) {
-         this.onBlockDestroyedByPlayer(var1, var2, var3.withProperty(EXPLODE, Boolean.TRUE));
-         var1.setBlockToAir(var2);
-      }
+        if (worldIn.isBlockPowered(pos)) {
+            this.onBlockDestroyedByPlayer(worldIn, pos, state.withProperty(EXPLODE, Boolean.TRUE));
+            worldIn.setBlockToAir(pos);
+        }
+    }
 
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        if (worldIn.isBlockPowered(pos)) {
+            this.onBlockDestroyedByPlayer(worldIn, pos, state.withProperty(EXPLODE, Boolean.TRUE));
+            worldIn.setBlockToAir(pos);
+        }
+    }
 
-   public void onBlockDestroyedByExplosion(World var1, BlockPos var2, Explosion var3) {
-      if(!var1.isRemote) {
-         EntityTNTPrimed var4 = new EntityTNTPrimed(var1, (double)((float)var2.getX() + 0.5F), (double)var2.getY(), (double)((float)var2.getZ() + 0.5F), var3.getExplosivePlacedBy());
-         var4.fuse = var1.rand.nextInt(var4.fuse / 4) + var4.fuse / 8;
-         var1.spawnEntityInWorld(var4);
-      }
+    /**
+     * Called when this Block is destroyed by an Explosion
+     */
+    public void onBlockDestroyedByExplosion(World worldIn, BlockPos pos, Explosion explosionIn) {
+        if (!worldIn.isRemote) {
+            final EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(worldIn, (float) pos.getX() + 0.5F, pos.getY(), (float) pos.getZ() + 0.5F, explosionIn.getExplosivePlacedBy());
+            entitytntprimed.fuse = worldIn.rand.nextInt(entitytntprimed.fuse / 4) + entitytntprimed.fuse / 8;
+            worldIn.spawnEntityInWorld(entitytntprimed);
+        }
+    }
 
-   }
+    /**
+     * Called when a player destroys this Block
+     */
+    public void onBlockDestroyedByPlayer(World worldIn, BlockPos pos, IBlockState state) {
+        this.explode(worldIn, pos, state, null);
+    }
 
-   public void onBlockDestroyedByPlayer(World var1, BlockPos var2, IBlockState var3) {
-      this.explode(var1, var2, var3, (EntityLivingBase)null);
-   }
-
-   public void explode(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4) {
-      if(!var1.isRemote && ((Boolean)var3.getValue(EXPLODE)).booleanValue()) {
-         EntityTNTPrimed var5 = new EntityTNTPrimed(var1, (double)((float)var2.getX() + 0.5F), (double)var2.getY(), (double)((float)var2.getZ() + 0.5F), var4);
-         var1.spawnEntityInWorld(var5);
-         var1.playSoundAtEntity(var5, "game.tnt.primed", 1.0F, 1.0F);
-      }
-
-   }
-
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var4.getCurrentEquippedItem() != null) {
-         Item var9 = var4.getCurrentEquippedItem().getItem();
-         if(var9 == Items.flint_and_steel || var9 == Items.fire_charge) {
-            this.explode(var1, var2, var3.withProperty(EXPLODE, Boolean.TRUE), var4);
-            var1.setBlockToAir(var2);
-            if(var9 == Items.flint_and_steel) {
-               var4.getCurrentEquippedItem().damageItem(1, var4);
-            } else if(!var4.abilities.isCreative()) {
-               --var4.getCurrentEquippedItem().stackSize;
+    public void explode(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase igniter) {
+        if (!worldIn.isRemote) {
+            if (state.getValue(EXPLODE)) {
+                final EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(worldIn, (float) pos.getX() + 0.5F, pos.getY(), (float) pos.getZ() + 0.5F, igniter);
+                worldIn.spawnEntityInWorld(entitytntprimed);
+                worldIn.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1.0F, 1.0F);
             }
+        }
+    }
 
-            return true;
-         }
-      }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (playerIn.getCurrentEquippedItem() != null) {
+            final Item item = playerIn.getCurrentEquippedItem().getItem();
 
-      return super.onBlockActivated(var1, var2, var3, var4, var5, var6, var7, var8);
-   }
+            if (item == Items.flint_and_steel || item == Items.fire_charge) {
+                this.explode(worldIn, pos, state.withProperty(EXPLODE, Boolean.TRUE), playerIn);
+                worldIn.setBlockToAir(pos);
 
-   public void onEntityCollidedWithBlock(World var1, BlockPos var2, IBlockState var3, Entity var4) {
-      if(!var1.isRemote && var4 instanceof EntityArrow) {
-         EntityArrow var5 = (EntityArrow)var4;
-         if(var5.isBurning()) {
-            this.explode(var1, var2, var1.getBlockState(var2).withProperty(EXPLODE, Boolean.TRUE), var5.shootingEntity instanceof EntityLivingBase?(EntityLivingBase)var5.shootingEntity:null);
-            var1.setBlockToAir(var2);
-         }
-      }
+                if (item == Items.flint_and_steel) {
+                    playerIn.getCurrentEquippedItem().damageItem(1, playerIn);
+                } else if (!playerIn.abilities.isCreative()) {
+                    --playerIn.getCurrentEquippedItem().stackSize;
+                }
 
-   }
+                return true;
+            }
+        }
 
-   public boolean canDropFromExplosion(Explosion var1) {
-      return false;
-   }
+        return super.onBlockActivated(worldIn, pos, state, playerIn, side, hitX, hitY, hitZ);
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(EXPLODE, Boolean.valueOf((var1 & 1) > 0));
-   }
+    /**
+     * Called When an Entity Collided with the Block
+     */
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn) {
+        if (!worldIn.isRemote && entityIn instanceof EntityArrow) {
+            final EntityArrow entityarrow = (EntityArrow) entityIn;
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Boolean)var1.getValue(EXPLODE)).booleanValue()?1:0;
-   }
+            if (entityarrow.isBurning()) {
+                this.explode(worldIn, pos, worldIn.getBlockState(pos).withProperty(EXPLODE, Boolean.TRUE), entityarrow.shootingEntity instanceof EntityLivingBase ? (EntityLivingBase) entityarrow.shootingEntity : null);
+                worldIn.setBlockToAir(pos);
+            }
+        }
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{EXPLODE});
-   }
+    /**
+     * Return whether this block can drop from an explosion.
+     */
+    public boolean canDropFromExplosion(Explosion explosionIn) {
+        return false;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(EXPLODE, (meta & 1) > 0);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(EXPLODE) ? 1 : 0;
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, EXPLODE);
+    }
+
 }

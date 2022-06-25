@@ -1,68 +1,70 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenLiquids extends WorldGenerator {
-   private Block block;
+    private Block block;
 
-   public WorldGenLiquids(Block var1) {
-      this.block = var1;
-   }
+    public WorldGenLiquids(Block p_i45465_1_) {
+        this.block = p_i45465_1_;
+    }
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      if(var1.getBlockState(var3.up()).getBlock() != Blocks.stone) {
-         return false;
-      } else if(var1.getBlockState(var3.down()).getBlock() != Blocks.stone) {
-         return false;
-      } else if(var1.getBlockState(var3).getBlock().getMaterial() != Material.air && var1.getBlockState(var3).getBlock() != Blocks.stone) {
-         return false;
-      } else {
-         int var4 = 0;
-         if(var1.getBlockState(var3.west()).getBlock() == Blocks.stone) {
-            ++var4;
-         }
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        if (worldIn.getBlockState(position.up()).getBlock() != Blocks.stone) {
+            return false;
+        } else if (worldIn.getBlockState(position.down()).getBlock() != Blocks.stone) {
+            return false;
+        } else if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.air && worldIn.getBlockState(position).getBlock() != Blocks.stone) {
+            return false;
+        } else {
+            int i = 0;
 
-         if(var1.getBlockState(var3.east()).getBlock() == Blocks.stone) {
-            ++var4;
-         }
+            if (worldIn.getBlockState(position.west()).getBlock() == Blocks.stone) {
+                ++i;
+            }
 
-         if(var1.getBlockState(var3.north()).getBlock() == Blocks.stone) {
-            ++var4;
-         }
+            if (worldIn.getBlockState(position.east()).getBlock() == Blocks.stone) {
+                ++i;
+            }
 
-         if(var1.getBlockState(var3.south()).getBlock() == Blocks.stone) {
-            ++var4;
-         }
+            if (worldIn.getBlockState(position.north()).getBlock() == Blocks.stone) {
+                ++i;
+            }
 
-         int var5 = 0;
-         if(var1.isAirBlock(var3.west())) {
-            ++var5;
-         }
+            if (worldIn.getBlockState(position.south()).getBlock() == Blocks.stone) {
+                ++i;
+            }
 
-         if(var1.isAirBlock(var3.east())) {
-            ++var5;
-         }
+            int j = 0;
 
-         if(var1.isAirBlock(var3.north())) {
-            ++var5;
-         }
+            if (worldIn.isAirBlock(position.west())) {
+                ++j;
+            }
 
-         if(var1.isAirBlock(var3.south())) {
-            ++var5;
-         }
+            if (worldIn.isAirBlock(position.east())) {
+                ++j;
+            }
 
-         if(var4 == 3 && var5 == 1) {
-            var1.setBlockState(var3, this.block.getDefaultState(), 2);
-            var1.forceBlockUpdateTick(this.block, var3, var2);
-         }
+            if (worldIn.isAirBlock(position.north())) {
+                ++j;
+            }
 
-         return true;
-      }
-   }
+            if (worldIn.isAirBlock(position.south())) {
+                ++j;
+            }
+
+            if (i == 3 && j == 1) {
+                worldIn.setBlockState(position, this.block.getDefaultState(), 2);
+                worldIn.forceBlockUpdateTick(this.block, position, rand);
+            }
+
+            return true;
+        }
+    }
 }

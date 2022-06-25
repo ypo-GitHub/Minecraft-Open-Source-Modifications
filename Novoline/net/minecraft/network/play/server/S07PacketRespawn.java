@@ -1,72 +1,78 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.world.EnumDifficulty;
-import net.minecraft.world.WorldSettings$GameType;
+import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
 
-public class S07PacketRespawn implements Packet {
-   private int dimensionID;
-   private EnumDifficulty difficulty;
-   private WorldSettings$GameType gameType;
-   private WorldType worldType;
+import java.io.IOException;
 
-   public S07PacketRespawn() {
-   }
+public class S07PacketRespawn implements Packet<INetHandlerPlayClient> {
+    private int dimensionID;
+    private EnumDifficulty difficulty;
+    private WorldSettings.GameType gameType;
+    private WorldType worldType;
 
-   public S07PacketRespawn(int var1, EnumDifficulty var2, WorldType var3, WorldSettings$GameType var4) {
-      this.dimensionID = var1;
-      this.difficulty = var2;
-      this.gameType = var4;
-      this.worldType = var3;
-   }
+    public S07PacketRespawn() {
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleRespawn(this);
-   }
+    public S07PacketRespawn(int dimensionIDIn, EnumDifficulty difficultyIn, WorldType worldTypeIn, WorldSettings.GameType gameTypeIn) {
+        this.dimensionID = dimensionIDIn;
+        this.difficulty = difficultyIn;
+        this.gameType = gameTypeIn;
+        this.worldType = worldTypeIn;
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.dimensionID = var1.readInt();
-      this.difficulty = EnumDifficulty.getDifficultyEnum(var1.readUnsignedByte());
-      this.gameType = WorldSettings$GameType.getByID(var1.readUnsignedByte());
-      this.worldType = WorldType.parseWorldType(var1.a(16));
-      if(this.worldType == null) {
-         this.worldType = WorldType.DEFAULT;
-      }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleRespawn(this);
+    }
 
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.dimensionID = buf.readInt();
+        this.difficulty = EnumDifficulty.getDifficultyEnum(buf.readUnsignedByte());
+        this.gameType = WorldSettings.GameType.getByID(buf.readUnsignedByte());
+        this.worldType = WorldType.parseWorldType(buf.readStringFromBuffer(16));
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeInt(this.dimensionID);
-      var1.writeByte(this.difficulty.getDifficultyId());
-      var1.writeByte(this.gameType.getID());
-      var1.writeString(this.worldType.getWorldTypeName());
-   }
+        if (this.worldType == null) {
+            this.worldType = WorldType.DEFAULT;
+        }
+    }
 
-   public int getDimensionID() {
-      return this.dimensionID;
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeInt(this.dimensionID);
+        buf.writeByte(this.difficulty.getDifficultyId());
+        buf.writeByte(this.gameType.getID());
+        buf.writeString(this.worldType.getWorldTypeName());
+    }
 
-   public EnumDifficulty getDifficulty() {
-      return this.difficulty;
-   }
+    public int getDimensionID() {
+        return this.dimensionID;
+    }
 
-   public WorldSettings$GameType getGameType() {
-      return this.gameType;
-   }
+    public EnumDifficulty getDifficulty() {
+        return this.difficulty;
+    }
 
-   public WorldType getWorldType() {
-      return this.worldType;
-   }
+    public WorldSettings.GameType getGameType() {
+        return this.gameType;
+    }
 
-   public void setGameType(WorldSettings$GameType var1) {
-      this.gameType = var1;
-   }
+    public WorldType getWorldType() {
+        return this.worldType;
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    public void setGameType(WorldSettings.GameType gameType) {
+        this.gameType = gameType;
+    }
 }

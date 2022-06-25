@@ -1,148 +1,261 @@
 package ninja.leaping.configurate;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.UnmodifiableIterator;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
-import net.Ea;
-import net.aIp;
-import net.acE;
-import ninja.leaping.configurate.ValueType;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.DefaultObjectMapperFactory;
 import ninja.leaping.configurate.objectmapping.ObjectMapperFactory;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
+import ninja.leaping.configurate.util.MapFactories;
 import ninja.leaping.configurate.util.MapFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This object is a holder for general configuration options.
+ *
+ * <p>This is meant to hold options that are used in configuring how the configuration data
+ * structures are handled, rather than the serialization configuration that is located in
+ * {@link ConfigurationLoader}s.</p>
+ *
+ * <p>This class is immutable.</p>
+ */
 public class ConfigurationOptions {
-   private final MapFactory mapFactory;
-   private final String header;
-   private final Ea f;
-   private final ImmutableSet acceptedTypes;
-   private final ObjectMapperFactory objectMapperFactory;
-   private final boolean shouldCopyDefaults;
 
-   private ConfigurationOptions(@NotNull MapFactory var1, @Nullable String var2, @NotNull Ea var3, @Nullable Set var4, @NotNull ObjectMapperFactory var5, boolean var6) {
-      this.mapFactory = var1;
-      this.header = var2;
-      ValueType.b();
-      this.f = var3;
-      this.acceptedTypes = var4 == null?null:ImmutableSet.copyOf(var4);
-      this.objectMapperFactory = var5;
-      this.shouldCopyDefaults = var6;
-   }
+    private final MapFactory mapFactory;
+    private final String header;
+    private final TypeSerializerCollection serializers;
+    private final ImmutableSet<Class<?>> acceptedTypes;
+    private final ObjectMapperFactory objectMapperFactory;
+    private final boolean shouldCopyDefaults;
 
-   @NotNull
-   public static ConfigurationOptions defaults() {
-      return new ConfigurationOptions(aIp.b(), (String)null, TypeSerializers.a(), (Set)null, DefaultObjectMapperFactory.getInstance(), false);
-   }
+    private ConfigurationOptions(@NotNull MapFactory mapFactory,
+                                 @Nullable String header,
+                                 @NotNull TypeSerializerCollection serializers,
+                                 @Nullable Set<Class<?>> acceptedTypes,
+                                 @NotNull ObjectMapperFactory objectMapperFactory,
+                                 boolean shouldCopyDefaults) {
+        this.mapFactory = mapFactory;
+        this.header = header;
+        this.serializers = serializers;
+        this.acceptedTypes = acceptedTypes == null ? null : ImmutableSet.copyOf(acceptedTypes);
+        this.objectMapperFactory = objectMapperFactory;
+        this.shouldCopyDefaults = shouldCopyDefaults;
+    }
 
-   @NotNull
-   public MapFactory getMapFactory() {
-      return this.mapFactory;
-   }
+    /**
+     * Create a new options object with defaults set
+     *
+     * @return A new default options object
+     */
+    @NotNull
+    public static ConfigurationOptions defaults() {
+        return new ConfigurationOptions(MapFactories.insertionOrdered(), null, TypeSerializers.getDefaultSerializers(), null, DefaultObjectMapperFactory.getInstance(), false);
+    }
 
-   @NotNull
-   public ConfigurationOptions setMapFactory(@NotNull MapFactory var1) {
-      ValueType.b();
-      Objects.requireNonNull(var1, "mapFactory");
-      return this.mapFactory == var1?this:new ConfigurationOptions(var1, this.header, this.f, this.acceptedTypes, this.objectMapperFactory, this.shouldCopyDefaults);
-   }
+    /**
+     * Gets the {@link MapFactory} specified in these options.
+     *
+     * @return The map factory
+     */
+    @NotNull
+    public MapFactory getMapFactory() {
+        return mapFactory;
+    }
 
-   @Nullable
-   public String getHeader() {
-      return this.header;
-   }
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified {@link MapFactory}
+     * set, and all other settings copied from this instance.
+     *
+     * @param mapFactory The new factory to use to create a map
+     * @return The new options object
+     */
+    @NotNull
+    public ConfigurationOptions setMapFactory(@NotNull MapFactory mapFactory) {
+        requireNonNull(mapFactory, "mapFactory");
+        if (this.mapFactory == mapFactory) {
+            return this;
+        }
+        return new ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
 
-   @NotNull
-   public ConfigurationOptions setHeader(@Nullable String var1) {
-      acE[] var2 = ValueType.b();
-      return Objects.equals(this.header, var1)?this:new ConfigurationOptions(this.mapFactory, var1, this.f, this.acceptedTypes, this.objectMapperFactory, this.shouldCopyDefaults);
-   }
+    /**
+     * Gets the header specified in these options.
+     *
+     * @return The current header. Lines are split by \n,
+     */
+    @Nullable
+    public String getHeader() {
+        return this.header;
+    }
 
-   @NotNull
-   public Ea f() {
-      return this.f;
-   }
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified header
+     * set, and all other settings copied from this instance.
+     *
+     * @param header The new header to use
+     * @return The new options object
+     */
+    @NotNull
+    public ConfigurationOptions setHeader(@Nullable String header) {
+        if (Objects.equals(this.header, header)) {
+            return this;
+        }
 
-   @NotNull
-   public ConfigurationOptions a(@NotNull Ea var1) {
-      ValueType.b();
-      Objects.requireNonNull(var1, "serializers");
-      return this.f == var1?this:new ConfigurationOptions(this.mapFactory, this.header, var1, this.acceptedTypes, this.objectMapperFactory, this.shouldCopyDefaults);
-   }
+        return new ninja.leaping.configurate.ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
 
-   @NotNull
-   public ObjectMapperFactory getObjectMapperFactory() {
-      return this.objectMapperFactory;
-   }
+    /**
+     * Gets the {@link TypeSerializerCollection} specified in these options.
+     *
+     * @return The type serializers
+     */
+    @NotNull
+    public TypeSerializerCollection getSerializers() {
+        return this.serializers;
+    }
 
-   @NotNull
-   public ConfigurationOptions setObjectMapperFactory(@NotNull ObjectMapperFactory var1) {
-      ValueType.b();
-      Objects.requireNonNull(var1, "factory");
-      return this.objectMapperFactory == var1?this:new ConfigurationOptions(this.mapFactory, this.header, this.f, this.acceptedTypes, var1, this.shouldCopyDefaults);
-   }
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified {@link TypeSerializerCollection}
+     * set, and all other settings copied from this instance.
+     *
+     * @param serializers The serializers to use
+     * @return The new options object
+     */
+    @NotNull
+    public ConfigurationOptions setSerializers(@NotNull TypeSerializerCollection serializers) {
+        requireNonNull(serializers, "serializers");
+        if (this.serializers == serializers) {
+            return this;
+        }
+        return new ninja.leaping.configurate.ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
 
-   public boolean acceptsType(@NotNull Class var1) {
-      ValueType.b();
-      Objects.requireNonNull(var1, "type");
-      if(this.acceptedTypes == null) {
-         return true;
-      } else if(this.acceptedTypes.contains(var1)) {
-         return true;
-      } else {
-         UnmodifiableIterator var3 = this.acceptedTypes.iterator();
-         if(var3.hasNext()) {
-            Class var4 = (Class)var3.next();
-            if(var4.isAssignableFrom(var1)) {
-               return true;
+    /**
+     * Gets the {@link ObjectMapperFactory} specified in these options.
+     *
+     * @return The factory used to construct ObjectMapper instances
+     */
+    @NotNull
+    public ObjectMapperFactory getObjectMapperFactory() {
+        return this.objectMapperFactory;
+    }
+
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified {@link ObjectMapperFactory}
+     * set, and all other settings copied from this instance.
+     *
+     * @param objectMapperFactory The factory to use to produce object mapper instances. Must not be null
+     * @return updated options object
+     */
+    @NotNull
+    public ConfigurationOptions setObjectMapperFactory(@NotNull ObjectMapperFactory objectMapperFactory) {
+        requireNonNull(objectMapperFactory, "factory");
+
+        if (this.objectMapperFactory == objectMapperFactory) {
+            return this;
+        }
+
+        return new ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
+
+    /**
+     * Gets whether objects of the provided type are accepted as values for nodes with this as
+     * their options object.
+     *
+     * @param type The type to check
+     * @return Whether the type is accepted
+     */
+    public boolean acceptsType(@NotNull Class<?> type) {
+        requireNonNull(type, "type");
+
+        if (this.acceptedTypes == null) {
+            return true;
+        }
+        if (this.acceptedTypes.contains(type)) {
+            return true;
+        }
+
+        for (Class<?> clazz : this.acceptedTypes) {
+            if (clazz.isAssignableFrom(type)) {
+                return true;
             }
-         }
+        }
 
-         return false;
-      }
-   }
+        return false;
+    }
 
-   @NotNull
-   public ConfigurationOptions setAcceptedTypes(@Nullable Set var1) {
-      acE[] var2 = ValueType.b();
-      return Objects.equals(this.acceptedTypes, var1)?this:new ConfigurationOptions(this.mapFactory, this.header, this.f, var1, this.objectMapperFactory, this.shouldCopyDefaults);
-   }
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified accepted types
+     * set, and all other settings copied from this instance.
+     *
+     * <p>'Accepted types' are types which are accepted as native values for the configuration.</p>
+     *
+     * <p>Null indicates that all types are accepted.</p>
+     *
+     * @param acceptedTypes The types that will be accepted to a call to {@link ConfigurationNode#setValue(Object)}
+     * @return updated options object
+     */
+    @NotNull
+    public ConfigurationOptions setAcceptedTypes(@Nullable Set<Class<?>> acceptedTypes) {
+        if (Objects.equals(this.acceptedTypes, acceptedTypes)) {
+            return this;
+        }
 
-   public boolean shouldCopyDefaults() {
-      return this.shouldCopyDefaults;
-   }
+        return new ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
 
-   @NotNull
-   public ConfigurationOptions setShouldCopyDefaults(boolean var1) {
-      acE[] var2 = ValueType.b();
-      return this.shouldCopyDefaults == var1?this:new ConfigurationOptions(this.mapFactory, this.header, this.f, this.acceptedTypes, this.objectMapperFactory, var1);
-   }
+    /**
+     * Gets whether or not default parameters provided to {@link ConfigurationNode} getter methods
+     * should be set to the node when used.
+     *
+     * @return Whether defaults should be copied into value
+     */
+    public boolean shouldCopyDefaults() {
+        return shouldCopyDefaults;
+    }
 
-   @Nullable
-   public ImmutableSet getAcceptedTypes() {
-      return this.acceptedTypes;
-   }
+    /**
+     * Creates a new {@link ninja.leaping.configurate.ConfigurationOptions} instance, with the specified 'copy defaults' setting
+     * set, and all other settings copied from this instance.
+     *
+     * @param shouldCopyDefaults whether to copy defaults
+     * @return updated options object
+     * @see #shouldCopyDefaults() for information on what this method does
+     */
+    @NotNull
+    public ConfigurationOptions setShouldCopyDefaults(boolean shouldCopyDefaults) {
+        if (this.shouldCopyDefaults == shouldCopyDefaults) {
+            return this;
+        }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = ValueType.b();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof ConfigurationOptions)) {
-         return false;
-      } else {
-         ConfigurationOptions var3 = (ConfigurationOptions)var1;
-         return Objects.equals(Boolean.valueOf(this.shouldCopyDefaults), Boolean.valueOf(var3.shouldCopyDefaults)) && Objects.equals(this.mapFactory, var3.mapFactory) && Objects.equals(this.header, var3.header) && Objects.equals(this.f, var3.f) && Objects.equals(this.acceptedTypes, var3.acceptedTypes) && Objects.equals(this.objectMapperFactory, var3.objectMapperFactory);
-      }
-   }
+        return new ConfigurationOptions(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{this.mapFactory, this.header, this.f, this.acceptedTypes, this.objectMapperFactory, Boolean.valueOf(this.shouldCopyDefaults)});
-   }
+    @Nullable
+    public ImmutableSet<Class<?>> getAcceptedTypes() {
+        return this.acceptedTypes;
+    }
 
-   public String toString() {
-      return "ConfigurationOptions{mapFactory=" + this.mapFactory + ", header=\'" + this.header + '\'' + ", serializers=" + this.f + ", acceptedTypes=" + this.acceptedTypes + ", objectMapperFactory=" + this.objectMapperFactory + ", shouldCopyDefaults=" + this.shouldCopyDefaults + '}';
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConfigurationOptions)) return false;
+        ConfigurationOptions that = (ConfigurationOptions) o;
+        return Objects.equals(shouldCopyDefaults, that.shouldCopyDefaults) && Objects.equals(mapFactory, that.mapFactory) && Objects.equals(header, that.header) && Objects.equals(serializers, that.serializers) && Objects.equals(acceptedTypes, that.acceptedTypes) && Objects.equals(objectMapperFactory, that.objectMapperFactory);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mapFactory, header, serializers, acceptedTypes, objectMapperFactory, shouldCopyDefaults);
+    }
+
+    @Override
+    public String toString() {
+        return "ConfigurationOptions{" + "mapFactory=" + mapFactory + ", header='" + header + '\'' + ", serializers=" + serializers + ", acceptedTypes=" + acceptedTypes + ", objectMapperFactory=" + objectMapperFactory + ", shouldCopyDefaults=" + shouldCopyDefaults + '}';
+    }
+
 }

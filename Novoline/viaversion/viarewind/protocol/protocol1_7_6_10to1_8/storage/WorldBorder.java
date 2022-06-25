@@ -1,193 +1,192 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
-import io.netty.buffer.ByteBuf;
-import net.aRi;
-import net.cA;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.EntityTracker;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.PlayerPosition;
-import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage.WorldBorder$Side;
-import viaversion.viarewind.utils.PacketUtil;
 import viaversion.viarewind.utils.Tickable;
+import viaversion.viarewind.protocol.protocol1_7_6_10to1_8.Protocol1_7_6_10TO1_8;
+import viaversion.viarewind.utils.PacketUtil;
 import viaversion.viaversion.api.PacketWrapper;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.type.Type;
 
-public class WorldBorder extends cA implements Tickable {
-   private double x;
-   private double z;
-   private double oldDiameter;
-   private double newDiameter;
-   private long lerpTime;
-   private long lerpStartTime;
-   private int portalTeleportBoundary;
-   private int warningTime;
-   private int warningBlocks;
-   private boolean init = false;
-   private final int VIEW_DISTANCE = 16;
+public class WorldBorder extends StoredObject implements Tickable {
+	private double x, z;
+	private double oldDiameter, newDiameter;
+	private long lerpTime;
+	private long lerpStartTime;
+	private int portalTeleportBoundary;
+	private int warningTime, warningBlocks;
+	private boolean init = false;
 
-   public WorldBorder(UserConnection var1) {
-      super(var1);
-   }
+	private final int VIEW_DISTANCE = 16;
 
-   public void tick() {
-      String var1 = EntityTracker.b();
-      if(this.isInit()) {
-         this.sendPackets();
-      }
-   }
+	public WorldBorder(UserConnection user) {
+		super(user);
+	}
 
-   private void sendPackets() {
-      EntityTracker.b();
-      PlayerPosition var2 = (PlayerPosition)this.d().b(PlayerPosition.class);
-      double var3 = this.getSize() / 2.0D;
-      WorldBorder$Side[] var5 = WorldBorder$Side.values();
-      int var6 = var5.length;
-      int var7 = 0;
-      if(var7 < var6) {
-         WorldBorder$Side var8 = var5[var7];
-         if(WorldBorder$Side.access$000(var8) != 0) {
-            double var11 = var2.e();
-            double var13 = this.z;
-            Math.abs(this.x + var3 * (double)WorldBorder$Side.access$000(var8) - var2.g());
-         }
+	@Override
+	public void tick() {
+		if (!isInit()) {
+			return;
+		}
 
-         double var35 = this.x;
-         double var34 = var2.g();
-         double var9 = Math.abs(this.z + var3 * (double)WorldBorder$Side.access$100(var8) - var2.e());
-         if(var9 < 16.0D) {
-            double var15 = Math.sqrt(256.0D - var9 * var9);
-            double var17 = Math.ceil(var34 - var15);
-            double var19 = Math.floor(var34 + var15);
-            double var21 = Math.ceil(var2.f() - var15);
-            double var23 = Math.floor(var2.f() + var15);
-            if(var17 < var35 - var3) {
-               var17 = Math.ceil(var35 - var3);
-            }
+		sendPackets();
+	}
 
-            if(var19 > var35 + var3) {
-               var19 = Math.floor(var35 + var3);
-            }
+	private enum Side {
+		NORTH(0, -1),
+		EAST(1, 0),
+		SOUTH(0, 1),
+		WEST(-1, 0),
+		;
 
-            if(var21 < 0.0D) {
-               var21 = 0.0D;
-            }
+		private int modX;
+		private int modZ;
 
-            double var25 = (var17 + var19) / 2.0D;
-            double var27 = (var21 + var23) / 2.0D;
-            int var29 = (int)Math.floor((var19 - var17) * (var23 - var21) * 0.5D);
-            double var30 = 2.5D;
-            PacketWrapper var32 = new PacketWrapper(42, (ByteBuf)null, this.d());
-            var32.write(Type.STRING, "fireworksSpark");
-            var32.write(Type.FLOAT, Float.valueOf((float)(WorldBorder$Side.access$000(var8) != 0?this.x + var3 * (double)WorldBorder$Side.access$000(var8):var25)));
-            var32.write(Type.FLOAT, Float.valueOf((float)var27));
-            var32.write(Type.FLOAT, Float.valueOf((float)(WorldBorder$Side.access$000(var8) == 0?this.z + var3 * (double)WorldBorder$Side.access$100(var8):var25)));
-            var32.write(Type.FLOAT, Float.valueOf((float)(WorldBorder$Side.access$000(var8) != 0?0.0D:(var19 - var17) / var30)));
-            var32.write(Type.FLOAT, Float.valueOf((float)((var23 - var21) / var30)));
-            var32.write(Type.FLOAT, Float.valueOf((float)(WorldBorder$Side.access$000(var8) == 0?0.0D:(var19 - var17) / var30)));
-            var32.write(Type.FLOAT, Float.valueOf(0.0F));
-            var32.write(Type.INT, Integer.valueOf(var29));
-            PacketUtil.sendPacket(var32, aRi.class, true, true);
-         }
+		Side(int modX, int modZ) {
+			this.modX = modX;
+			this.modZ = modZ;
+		}
+	}
 
-         ++var7;
-      }
+	private void sendPackets() {
+		PlayerPosition position = getUser().get(PlayerPosition.class);
 
-   }
+		double radius = getSize() / 2.0;
 
-   private boolean isInit() {
-      return this.init;
-   }
+		for (Side side : Side.values()) {
+			double d;
+			double pos;
+			double center;
+			if (side.modX!=0) {
+				pos = position.getPosZ();
+				center = z;
+				d = Math.abs(x + radius * side.modX - position.getPosX());
+			} else {
+				center = x;
+				pos = position.getPosX();
+				d = Math.abs(z + radius * side.modZ - position.getPosZ());
+			}
+			if (d >= VIEW_DISTANCE) continue;
 
-   public void init(double var1, double var3, double var5, double var7, long var9, int var11, int var12, int var13) {
-      this.x = var1;
-      this.z = var3;
-      this.oldDiameter = var5;
-      this.newDiameter = var7;
-      this.lerpTime = var9;
-      this.portalTeleportBoundary = var11;
-      this.warningTime = var12;
-      this.warningBlocks = var13;
-      this.init = true;
-   }
+			double r = Math.sqrt(VIEW_DISTANCE * VIEW_DISTANCE - d * d);
 
-   public double getX() {
-      return this.x;
-   }
+			double minH = Math.ceil(pos - r);
+			double maxH = Math.floor(pos + r);
+			double minV = Math.ceil(position.getPosY() - r);
+			double maxV = Math.floor(position.getPosY() + r);
 
-   public double getZ() {
-      return this.z;
-   }
+			if (minH<center-radius) minH = Math.ceil(center-radius);
+			if (maxH>center+radius) maxH = Math.floor(center+radius);
+			if (minV<0.0) minV = 0.0;
 
-   public void setCenter(double var1, double var3) {
-      this.x = var1;
-      this.z = var3;
-   }
+			double centerH = (minH+maxH) / 2.0;
+			double centerV = (minV+maxV) / 2.0;
 
-   public double getOldDiameter() {
-      return this.oldDiameter;
-   }
+			int a = (int) Math.floor((maxH-minH) * (maxV-minV) * 0.5);
 
-   public double getNewDiameter() {
-      return this.newDiameter;
-   }
+			double b = 2.5;
 
-   public long getLerpTime() {
-      return this.lerpTime;
-   }
+			PacketWrapper particles = new PacketWrapper(0x2A, null, getUser());
+			particles.write(Type.STRING, "fireworksSpark");
+			particles.write(Type.FLOAT, (float)(side.modX!=0 ? x + (radius * side.modX) : centerH));
+			particles.write(Type.FLOAT, (float)centerV);
+			particles.write(Type.FLOAT, (float)(side.modX==0 ? z + (radius * side.modZ) : centerH));
+			particles.write(Type.FLOAT, (float)(side.modX!=0 ? 0f : (maxH-minH) / b));
+			particles.write(Type.FLOAT, (float)((maxV-minV) / b));
+			particles.write(Type.FLOAT, (float)(side.modX==0 ? 0f : (maxH-minH) / b));
+			particles.write(Type.FLOAT, 0f);
+			particles.write(Type.INT, a);
 
-   public void lerpSize(double var1, double var3, long var5) {
-      this.oldDiameter = var1;
-      this.newDiameter = var3;
-      this.lerpTime = var5;
-      this.lerpStartTime = System.currentTimeMillis();
-   }
+			PacketUtil.sendPacket(particles, Protocol1_7_6_10TO1_8.class, true, true);
+		}
+	}
 
-   public void setSize(double var1) {
-      this.oldDiameter = var1;
-      this.newDiameter = var1;
-      this.lerpTime = 0L;
-   }
+	private boolean isInit() {
+		return init;
+	}
 
-   public double getSize() {
-      String var1 = EntityTracker.b();
-      if(this.lerpTime == 0L) {
-         return this.newDiameter;
-      } else {
-         long var2 = System.currentTimeMillis() - this.lerpStartTime;
-         double var4 = (double)var2 / (double)this.lerpTime;
-         if(var4 > 1.0D) {
-            var4 = 1.0D;
-         }
+	public void init(double x, double z, double oldDiameter, double newDiameter, long lerpTime, int portalTeleportBoundary, int warningTime, int warningBlocks) {
+		this.x = x;
+		this.z = z;
+		this.oldDiameter = oldDiameter;
+		this.newDiameter = newDiameter;
+		this.lerpTime = lerpTime;
+		this.portalTeleportBoundary = portalTeleportBoundary;
+		this.warningTime = warningTime;
+		this.warningBlocks = warningBlocks;
+		init = true;
+	}
 
-         if(var4 < 0.0D) {
-            var4 = 0.0D;
-         }
+	public double getX() {
+		return x;
+	}
 
-         return this.oldDiameter + (this.newDiameter - this.oldDiameter) * var4;
-      }
-   }
+	public double getZ() {
+		return z;
+	}
 
-   public int getPortalTeleportBoundary() {
-      return this.portalTeleportBoundary;
-   }
+	public void setCenter(double x, double z) {
+		this.x = x;
+		this.z = z;
+	}
 
-   public void setPortalTeleportBoundary(int var1) {
-      this.portalTeleportBoundary = var1;
-   }
+	public double getOldDiameter() {
+		return oldDiameter;
+	}
 
-   public int getWarningTime() {
-      return this.warningTime;
-   }
+	public double getNewDiameter() {
+		return newDiameter;
+	}
 
-   public void setWarningTime(int var1) {
-      this.warningTime = var1;
-   }
+	public long getLerpTime() {
+		return lerpTime;
+	}
 
-   public int getWarningBlocks() {
-      return this.warningBlocks;
-   }
+	public void lerpSize(double oldDiameter, double newDiameter, long lerpTime) {
+		this.oldDiameter = oldDiameter;
+		this.newDiameter = newDiameter;
+		this.lerpTime = lerpTime;
+		this.lerpStartTime = System.currentTimeMillis();
+	}
 
-   public void setWarningBlocks(int var1) {
-      this.warningBlocks = var1;
-   }
+	public void setSize(double size) {
+		this.oldDiameter = size;
+		this.newDiameter = size;
+		this.lerpTime = 0;
+	}
+
+	public double getSize() {
+		if (lerpTime==0) return newDiameter;
+
+		long time = System.currentTimeMillis() - lerpStartTime;
+		double percent = ((double)(time) / (double)(lerpTime));
+		if (percent>1.0d) percent = 1.0d;
+		else if (percent<0.0d) percent = 0.0d;
+
+		return oldDiameter + (newDiameter-oldDiameter) * percent;
+	}
+
+	public int getPortalTeleportBoundary() {
+		return portalTeleportBoundary;
+	}
+
+	public void setPortalTeleportBoundary(int portalTeleportBoundary) {
+		this.portalTeleportBoundary = portalTeleportBoundary;
+	}
+
+	public int getWarningTime() {
+		return warningTime;
+	}
+
+	public void setWarningTime(int warningTime) {
+		this.warningTime = warningTime;
+	}
+
+	public int getWarningBlocks() {
+		return warningBlocks;
+	}
+
+	public void setWarningBlocks(int warningBlocks) {
+		this.warningBlocks = warningBlocks;
+	}
 }

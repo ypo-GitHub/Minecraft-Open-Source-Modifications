@@ -1,6 +1,5 @@
 package cc.novoline.events.events;
 
-import cc.novoline.events.events.Event;
 import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.configurations.property.AbstractNumberProperty;
@@ -9,80 +8,82 @@ import cc.novoline.modules.configurations.property.object.ListProperty;
 import cc.novoline.modules.configurations.property.object.StringProperty;
 
 public class SettingEvent implements Event {
-   private BooleanProperty booleanProperty;
-   private StringProperty stringProperty;
-   private AbstractNumberProperty numberProperty;
-   private ListProperty listProperty;
-   private final AbstractModule module;
-   private final String settingName;
-   private String displayName;
-   private final SettingType settingType;
 
-   public SettingEvent(AbstractModule var1, String var2, BooleanProperty var3) {
-      this.module = var1;
-      this.settingName = var2;
-      this.settingType = SettingType.CHECKBOX;
-      this.booleanProperty = var3;
-   }
+    private BooleanProperty booleanProperty;
+    private StringProperty stringProperty;
+    private AbstractNumberProperty numberProperty;
+    private ListProperty<String> listProperty;
+    private final AbstractModule module;
+    private final String settingName;
+    private String displayName;
+    private final SettingType settingType;
 
-   public SettingEvent(AbstractModule var1, String var2, String var3, BooleanProperty var4) {
-      this.module = var1;
-      this.settingName = var2;
-      this.displayName = var3;
-      this.settingType = SettingType.CHECKBOX;
-      this.booleanProperty = var4;
-   }
 
-   public SettingEvent(AbstractModule var1, String var2, StringProperty var3) {
-      this.module = var1;
-      this.settingName = var2;
-      this.settingType = SettingType.COMBOBOX;
-      this.stringProperty = var3;
-   }
+    public SettingEvent(AbstractModule module, String settingName, BooleanProperty booleanProperty) {
+        this.module = module;
+        this.settingName = settingName;
+        this.settingType = SettingType.CHECKBOX;
+        this.booleanProperty = booleanProperty;
+    }
 
-   public SettingEvent(AbstractModule var1, String var2, AbstractNumberProperty var3) {
-      this.module = var1;
-      this.settingName = var2;
-      this.settingType = SettingType.SLIDER;
-      this.numberProperty = var3;
-   }
+    public SettingEvent(AbstractModule module, String settingName, String displayName, BooleanProperty booleanProperty) {
+        this.module = module;
+        this.settingName = settingName;
+        this.displayName = displayName;
+        this.settingType = SettingType.CHECKBOX;
+        this.booleanProperty = booleanProperty;
+    }
 
-   public SettingEvent(AbstractModule var1, String var2, ListProperty var3) {
-      this.module = var1;
-      this.settingName = var2;
-      this.settingType = SettingType.SELECTBOX;
-      this.listProperty = var3;
-   }
+    public SettingEvent(AbstractModule module, String settingName, StringProperty stringProperty) {
+        this.module = module;
+        this.settingName = settingName;
+        this.settingType = SettingType.COMBOBOX;
+        this.stringProperty = stringProperty;
+    }
 
-   public BooleanProperty getBooleanProperty() {
-      return this.booleanProperty;
-   }
+    public SettingEvent(AbstractModule module, String settingName, AbstractNumberProperty numberProperty) {
+        this.module = module;
+        this.settingName = settingName;
+        this.settingType = SettingType.SLIDER;
+        this.numberProperty = numberProperty;
+    }
 
-   public StringProperty getStringProperty() {
-      return this.stringProperty;
-   }
+    public SettingEvent(AbstractModule module, String settingName, ListProperty<String> listProperty) {
+        this.module = module;
+        this.settingName = settingName;
+        this.settingType = SettingType.SELECTBOX;
+        this.listProperty = listProperty;
+    }
 
-   public AbstractNumberProperty getNumberProperty() {
-      return this.numberProperty;
-   }
+    public BooleanProperty getBooleanProperty() {
+        return booleanProperty;
+    }
 
-   public ListProperty getListProperty() {
-      return this.listProperty;
-   }
+    public StringProperty getStringProperty() {
+        return stringProperty;
+    }
 
-   public String getSettingName() {
-      return this.settingName;
-   }
+    public AbstractNumberProperty getNumberProperty() {
+        return numberProperty;
+    }
 
-   public SettingType getSettingType() {
-      return this.settingType;
-   }
+    public ListProperty<String> getListProperty() {
+        return listProperty;
+    }
 
-   public AbstractModule getModule() {
-      return this.module;
-   }
+    public String getSettingName() {
+        return settingName;
+    }
 
-   public String getDisplayName() {
-      return this.displayName;
-   }
+    public SettingType getSettingType() {
+        return settingType;
+    }
+
+    public AbstractModule getModule() {
+        return module;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }

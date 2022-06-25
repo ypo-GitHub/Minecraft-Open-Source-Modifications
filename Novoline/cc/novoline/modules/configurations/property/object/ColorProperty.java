@@ -1,101 +1,108 @@
 package cc.novoline.modules.configurations.property.object;
 
-import cc.novoline.modules.configurations.property.object.IntProperty;
-import java.awt.Color;
+import java.awt.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ColorProperty extends IntProperty {
-   public ColorProperty(@Nullable Integer var1) {
-      super(var1);
-   }
 
-   @NotNull
-   public static ColorProperty of(@Nullable Integer var0) {
-      return new ColorProperty(var0);
-   }
+    /* constructors */
+    public ColorProperty(@Nullable Integer value) {
+        super(value);
+    }
 
-   public void set(@Nullable Integer var1) {
-      this.setARGB(var1);
-   }
+    public static @NotNull ColorProperty of(@Nullable Integer value) {
+        return new ColorProperty(value);
+    }
 
-   public void d(@Nullable Integer var1) {
-      int[] var2 = IntProperty.a();
-      this.value = var1;
-   }
+    @Override
+    public void set(@Nullable Integer value) {
+        setARGB(value);
+    }
 
-   @Nullable
-   public Integer getARGB() {
-      return (Integer)this.value;
-   }
+    public void setRGBA(@Nullable Integer value) {
+        if (value == null) {
+            this.value = value;
+            return;
+        }
 
-   public void setARGB(@Nullable Integer var1) {
-      this.value = var1;
-   }
+        this.value = value >>> 8 | (value & 0xFF) << 24;
+    }
 
-   public Integer get() {
-      return this.getARGB();
-   }
+    @Nullable
+    public Integer getARGB() {
+        return value;
+    }
 
-   public int h() {
-      int[] var1 = IntProperty.a();
-      return this.value != null?((Integer)this.value).intValue() >>> 16 & 255:0;
-   }
+    /* methods */
+    public void setARGB(@Nullable Integer value) {
+        this.value = value;
+    }
 
-   public int f() {
-      int[] var1 = IntProperty.a();
-      return this.value != null?((Integer)this.value).intValue() >>> 8 & 255:0;
-   }
+    @Override
+    public Integer get() {
+        return getARGB();
+    }
 
-   public int c() {
-      int[] var1 = IntProperty.a();
-      return this.value != null?((Integer)this.value).intValue() & 255:0;
-   }
+    public int getRed() {
+        return value != null ? value >>> 16 & 0xFF : 0;
+    }
 
-   public int getAlpha() {
-      int[] var1 = IntProperty.a();
-      return this.value != null?((Integer)this.value).intValue() >>> 24:0;
-   }
+    public int getGreen() {
+        return value != null ? value >>> 8 & 0xFF : 0;
+    }
 
-   @Nullable
-   public Color getAwtColor() {
-      return this.value == null?null:new Color(((Integer)this.value).intValue(), true);
-   }
+    public int getBlue() {
+        return value != null ? value & 0xFF : 0;
+    }
 
-   public float[] getHSB() {
-      int[] var1 = IntProperty.a();
-      if(this.value == null) {
-         return new float[]{0.0F, 0.0F, 0.0F};
-      } else {
-         float[] var2 = new float[3];
-         int var6 = Math.max(((Integer)this.value).intValue() >>> 16 & 255, ((Integer)this.value).intValue() >>> 8 & 255);
-         if((((Integer)this.value).intValue() & 255) > var6) {
-            var6 = ((Integer)this.value).intValue() & 255;
-         }
+    public int getAlpha() {
+        return value != null ? value >>> 24 : 0;
+    }
 
-         int var7 = Math.min(((Integer)this.value).intValue() >>> 16 & 255, ((Integer)this.value).intValue() >>> 8 & 255);
-         if((((Integer)this.value).intValue() & 255) < var7) {
-            var7 = ((Integer)this.value).intValue() & 255;
-         }
+    @Nullable
+    public Color getAwtColor() {
+        if (value == null) return null;
+        return new Color(value, true);
+    }
 
-         float var4 = (float)var6 / 255.0F;
-         float var3 = var6 != 0?(float)(var6 - var7) / (float)var6:0.0F;
-         if(var3 == 0.0F) {
-            float var5 = 0.0F;
-         }
+    public float[] getHSB() {
+        if (value == null) return new float[]{0.0F, 0.0F, 0.0F};
+        float[] hsbValues = new float[3];
 
-         float var8 = (float)(var6 - (((Integer)this.value).intValue() >>> 16 & 255)) / (float)(var6 - var7);
-         float var9 = (float)(var6 - (((Integer)this.value).intValue() >>> 8 & 255)) / (float)(var6 - var7);
-         float var10 = (float)(var6 - (((Integer)this.value).intValue() & 255)) / (float)(var6 - var7);
-         float var11 = ((((Integer)this.value).intValue() >>> 16 & 255) == var6?var10 - var9:((((Integer)this.value).intValue() >>> 8 & 255) == var6?2.0F + var8 - var10:4.0F + var9 - var8)) / 6.0F;
-         if(var11 < 0.0F) {
-            ++var11;
-         }
+        float saturation, brightness;
+        float hue;
 
-         var2[0] = var11;
-         var2[1] = var3;
-         var2[2] = var4;
-         return var2;
-      }
-   }
+        int cMax = max(value >>> 16 & 0xFF, value >>> 8 & 0xFF);
+        if ((value & 0xFF) > cMax) cMax = value & 0xFF;
+
+        int cMin = min(value >>> 16 & 0xFF, value >>> 8 & 0xFF);
+        if ((value & 0xFF) < cMin) cMin = value & 0xFF;
+
+        brightness = (float) cMax / 255.0F;
+        saturation = cMax != 0 ? (float) (cMax - cMin) / (float) cMax : 0;
+
+        if (saturation == 0) {
+            hue = 0;
+        } else {
+            float redC = (float) (cMax - (value >>> 16 & 0xFF)) / (float) (cMax - cMin), // @off
+                    greenC = (float) (cMax - (value >>> 8 & 0xFF)) / (float) (cMax - cMin),
+                    blueC = (float) (cMax - (value & 0xFF)) / (float) (cMax - cMin); // @on
+
+            hue = ((value >>> 16 & 0xFF) == cMax ?
+                    blueC - greenC :
+                    (value >>> 8 & 0xFF) == cMax ? 2.0F + redC - blueC : 4.0F + greenC - redC) / 6.0F;
+
+            if (hue < 0) hue += 1.0F;
+        }
+
+        hsbValues[0] = hue;
+        hsbValues[1] = saturation;
+        hsbValues[2] = brightness;
+
+        return hsbValues;
+    }
+
 }

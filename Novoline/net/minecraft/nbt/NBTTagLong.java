@@ -3,75 +3,86 @@ package net.minecraft.nbt;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTBase$NBTPrimitive;
-import net.minecraft.nbt.NBTSizeTracker;
 
-public class NBTTagLong extends NBTBase$NBTPrimitive {
-   private long data;
+public class NBTTagLong extends NBTBase.NBTPrimitive {
 
-   NBTTagLong() {
-   }
+    /**
+     * The long value for the tag.
+     */
+    private long data;
 
-   public NBTTagLong(long var1) {
-      this.data = var1;
-   }
+    NBTTagLong() {
+    }
 
-   void write(DataOutput var1) throws IOException {
-      var1.writeLong(this.data);
-   }
+    public NBTTagLong(long data) {
+        this.data = data;
+    }
 
-   void read(DataInput var1, int var2, NBTSizeTracker var3) throws IOException {
-      var3.read(128L);
-      this.data = var1.readLong();
-   }
+    /**
+     * Write the actual data contents of the tag, implemented in NBT extension classes
+     */
+    void write(DataOutput output) throws IOException {
+        output.writeLong(this.data);
+    }
 
-   public byte getId() {
-      return (byte)4;
-   }
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException {
+        sizeTracker.read(128L);
+        this.data = input.readLong();
+    }
 
-   public String toString() {
-      return "" + this.data + "L";
-   }
+    /**
+     * Gets the type byte for the tag.
+     */
+    public byte getId() {
+        return (byte) 4;
+    }
 
-   public NBTBase copy() {
-      return new NBTTagLong(this.data);
-   }
+    public String toString() {
+        return "" + this.data + "L";
+    }
 
-   public boolean equals(Object var1) {
-      if(super.equals(var1)) {
-         NBTTagLong var2 = (NBTTagLong)var1;
-         return this.data == var2.data;
-      } else {
-         return false;
-      }
-   }
+    /**
+     * Creates a clone of the tag.
+     */
+    public NBTBase copy() {
+        return new NBTTagLong(this.data);
+    }
 
-   public int hashCode() {
-      return super.hashCode() ^ (int)(this.data ^ this.data >>> 32);
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (super.equals(p_equals_1_)) {
+            NBTTagLong nbttaglong = (NBTTagLong) p_equals_1_;
+            return this.data == nbttaglong.data;
+        } else {
+            return false;
+        }
+    }
 
-   public long getLong() {
-      return this.data;
-   }
+    public int hashCode() {
+        return super.hashCode() ^ (int) (this.data ^ this.data >>> 32);
+    }
 
-   public int getInt() {
-      return (int)this.data;
-   }
+    public long getLong() {
+        return this.data;
+    }
 
-   public short getShort() {
-      return (short)((int)(this.data & 65535L));
-   }
+    public int getInt() {
+        return (int) this.data;
+    }
 
-   public byte getByte() {
-      return (byte)((int)(this.data & 255L));
-   }
+    public short getShort() {
+        return (short) (int) (this.data & 65535L);
+    }
 
-   public double getDouble() {
-      return (double)this.data;
-   }
+    public byte getByte() {
+        return (byte) (int) (this.data & 255L);
+    }
 
-   public float getFloat() {
-      return (float)this.data;
-   }
+    public double getDouble() {
+        return (double) this.data;
+    }
+
+    public float getFloat() {
+        return (float) this.data;
+    }
+
 }

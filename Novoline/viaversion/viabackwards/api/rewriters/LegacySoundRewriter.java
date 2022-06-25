@@ -2,69 +2,86 @@ package viaversion.viabackwards.api.rewriters;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.aqu;
-import net.ayd;
-import viaversion.viabackwards.api.rewriters.LegacySoundRewriter$SoundData;
+import viaversion.viabackwards.api.BackwardsProtocol;
 
-/** @deprecated */
 @Deprecated
-public abstract class LegacySoundRewriter extends aqu {
-   protected final Int2ObjectMap soundRewrites = new Int2ObjectOpenHashMap(64);
+public abstract class LegacySoundRewriter<T extends BackwardsProtocol> extends Rewriter<T> {
+    protected final Int2ObjectMap<SoundData> soundRewrites = new Int2ObjectOpenHashMap<>(64);
 
-   protected LegacySoundRewriter(ayd var1) {
-      super(var1);
-   }
+    protected LegacySoundRewriter(T protocol) {
+        super(protocol);
+    }
 
-   public LegacySoundRewriter$SoundData added(int var1, int var2) {
-      return this.added(var1, var2, -1.0F);
-   }
+    public SoundData added(int id, int replacement) {
+        return added(id, replacement, -1);
+    }
 
-   public LegacySoundRewriter$SoundData added(int var1, int var2, float var3) {
-      LegacySoundRewriter$SoundData var4 = new LegacySoundRewriter$SoundData(var2, true, var3, true);
-      this.soundRewrites.put(var1, var4);
-      return var4;
-   }
+    public SoundData added(int id, int replacement, float newPitch) {
+        SoundData data = new SoundData(replacement, true, newPitch, true);
+        soundRewrites.put(id, data);
+        return data;
+    }
 
-   public LegacySoundRewriter$SoundData removed(int var1) {
-      LegacySoundRewriter$SoundData var2 = new LegacySoundRewriter$SoundData(-1, false, -1.0F, false);
-      this.soundRewrites.put(var1, var2);
-      return var2;
-   }
+    public SoundData removed(int id) {
+        SoundData data = new SoundData(-1, false, -1, false);
+        soundRewrites.put(id, data);
+        return data;
+    }
 
-   public int handleSounds(int var1) {
-      int var3 = var1;
-      aqu.d();
-      LegacySoundRewriter$SoundData var4 = (LegacySoundRewriter$SoundData)this.soundRewrites.get(var1);
-      if(var4 != null) {
-         return var4.getReplacementSound();
-      } else {
-         ObjectIterator var5 = this.soundRewrites.int2ObjectEntrySet().iterator();
-         if(var5.hasNext()) {
-            Entry var6 = (Entry)var5.next();
-            if(var1 > var6.getIntKey()) {
-               if(((LegacySoundRewriter$SoundData)var6.getValue()).isAdded()) {
-                  var3 = var1 - 1;
-               }
+    public int handleSounds(int soundId) {
+        int newSoundId = soundId;
+        SoundData data = soundRewrites.get(soundId);
+        if (data != null) return data.getReplacementSound();
 
-               ++var3;
+        for (Int2ObjectMap.Entry<SoundData> entry : soundRewrites.int2ObjectEntrySet()) {
+            if (soundId > entry.getIntKey()) {
+                if (entry.getValue().isAdded()) {
+                    newSoundId--;
+                } else {
+                    newSoundId++;
+                }
             }
-         }
+        }
+        return newSoundId;
+    }
 
-         return var3;
-      }
-   }
+    public boolean hasPitch(int soundId) {
+        SoundData data = soundRewrites.get(soundId);
+        return data != null && data.isChangePitch();
+    }
 
-   public boolean hasPitch(int var1) {
-      aqu.d();
-      LegacySoundRewriter$SoundData var3 = (LegacySoundRewriter$SoundData)this.soundRewrites.get(var1);
-      return var3 != null && var3.isChangePitch();
-   }
+    public float handlePitch(int soundId) {
+        SoundData data = soundRewrites.get(soundId);
+        return data != null ? data.getNewPitch() : 1F;
+    }
 
-   public float handlePitch(int var1) {
-      aqu.d();
-      LegacySoundRewriter$SoundData var3 = (LegacySoundRewriter$SoundData)this.soundRewrites.get(var1);
-      return var3 != null?var3.getNewPitch():1.0F;
-   }
+    public static final class SoundData {
+        private final int replacementSound;
+        private final boolean changePitch;
+        private final float newPitch;
+        private final boolean added;
+
+        public SoundData(int replacementSound, boolean changePitch, float newPitch, boolean added) {
+            this.replacementSound = replacementSound;
+            this.changePitch = changePitch;
+            this.newPitch = newPitch;
+            this.added = added;
+        }
+
+        public int getReplacementSound() {
+            return replacementSound;
+        }
+
+        public boolean isChangePitch() {
+            return changePitch;
+        }
+
+        public float getNewPitch() {
+            return newPitch;
+        }
+
+        public boolean isAdded() {
+            return added;
+        }
+    }
 }

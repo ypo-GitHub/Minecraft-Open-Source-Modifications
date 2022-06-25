@@ -2,27 +2,32 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelMagmaCube;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.monster.EntityMagmaCube;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderMagmaCube extends RenderLiving {
-   private static final ResourceLocation magmaCubeTextures = new ResourceLocation("textures/entity/slime/magmacube.png");
+public class RenderMagmaCube extends RenderLiving<EntityMagmaCube> {
+    private static final ResourceLocation magmaCubeTextures = new ResourceLocation("textures/entity/slime/magmacube.png");
 
-   public RenderMagmaCube(RenderManager var1) {
-      super(var1, new ModelMagmaCube(), 0.25F);
-   }
+    public RenderMagmaCube(RenderManager renderManagerIn) {
+        super(renderManagerIn, new ModelMagmaCube(), 0.25F);
+    }
 
-   protected ResourceLocation getEntityTexture(EntityMagmaCube var1) {
-      return magmaCubeTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntityMagmaCube entity) {
+        return magmaCubeTextures;
+    }
 
-   protected void preRenderCallback(EntityMagmaCube var1, float var2) {
-      int var3 = var1.getSlimeSize();
-      float var4 = (var1.prevSquishFactor + (var1.squishFactor - var1.prevSquishFactor) * var2) / ((float)var3 * 0.5F + 1.0F);
-      float var5 = 1.0F / (var4 + 1.0F);
-      float var6 = (float)var3;
-      GlStateManager.scale(var5 * var6, 1.0F / var5 * var6, var5 * var6);
-   }
+    /**
+     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
+     * entityLiving, partialTickTime
+     */
+    protected void preRenderCallback(EntityMagmaCube entityLivingBase, float partialTickTime) {
+        int i = entityLivingBase.getSlimeSize();
+        float f = (entityLivingBase.prevSquishFactor + (entityLivingBase.squishFactor - entityLivingBase.prevSquishFactor) * partialTickTime) / ((float) i * 0.5F + 1.0F);
+        float f1 = 1.0F / (f + 1.0F);
+        float f2 = (float) i;
+        GlStateManager.scale(f1 * f2, 1.0F / f1 * f2, f1 * f2);
+    }
 }

@@ -2,47 +2,47 @@ package viaversion.viaversion.api.type.types;
 
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
-import java.nio.charset.StandardCharsets;
-import net.Gh;
-import net.acE;
 import viaversion.viaversion.api.type.Type;
 
-public class StringType extends Type {
-   private static final int maxJavaCharUtf8Length = Character.toString('\uffff').getBytes(StandardCharsets.UTF_8).length;
-   private final int maxLength;
+import java.nio.charset.StandardCharsets;
 
-   public StringType() {
-      this(32767);
-   }
+public class StringType extends Type<String> {
+    // String#length() (used to limit the string in Minecraft source code) uses char[]#length
+    private static final int maxJavaCharUtf8Length = Character.toString(Character.MAX_VALUE)
+            .getBytes(StandardCharsets.UTF_8).length;
+    private final int maxLength;
 
-   public StringType(int var1) {
-      super("String", String.class);
-      this.maxLength = var1;
-   }
+    public StringType() {
+        this(Short.MAX_VALUE);
+    }
 
-   public String read(ByteBuf var1) throws Exception {
-      Gh.b();
-      int var3 = Type.VAR_INT.readPrimitive(var1);
-      Preconditions.checkArgument(var3 <= this.maxLength * maxJavaCharUtf8Length, "Cannot receive string longer than Short.MAX_VALUE * " + maxJavaCharUtf8Length + " bytes (got %s bytes)", new Object[]{Integer.valueOf(var3)});
-      String var4 = var1.toString(var1.readerIndex(), var3, StandardCharsets.UTF_8);
-      var1.skipBytes(var3);
-      Preconditions.checkArgument(var4.length() <= this.maxLength, "Cannot receive string longer than Short.MAX_VALUE characters (got %s bytes)", new Object[]{Integer.valueOf(var4.length())});
-      return var4;
-   }
+    public StringType(int maxLength) {
+        super("String", String.class);
+        this.maxLength = maxLength;
+    }
 
-   public void write(ByteBuf var1, String var2) throws Exception {
-      String var3 = Gh.b();
-      Preconditions.checkArgument(var2.length() <= this.maxLength, "Cannot send string longer than Short.MAX_VALUE (got %s characters)", new Object[]{Integer.valueOf(var2.length())});
-      byte[] var4 = var2.getBytes(StandardCharsets.UTF_8);
-      Type.VAR_INT.writePrimitive(var1, var4.length);
-      var1.writeBytes(var4);
-      if(acE.b() == null) {
-         Gh.b("uzF6x");
-      }
+    @Override
+    public String read(ByteBuf buffer) throws Exception {
+        int len = Type.VAR_INT.readPrimitive(buffer);
 
-   }
+        Preconditions.checkArgument(len <= maxLength * maxJavaCharUtf8Length,
+                "Cannot receive string longer than Short.MAX_VALUE * "  + maxJavaCharUtf8Length + " bytes (got %s bytes)", len);
 
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+        String string = buffer.toString(buffer.readerIndex(), len, StandardCharsets.UTF_8);
+        buffer.skipBytes(len);
+
+        Preconditions.checkArgument(string.length() <= maxLength,
+                "Cannot receive string longer than Short.MAX_VALUE characters (got %s bytes)", string.length());
+
+        return string;
+    }
+
+    @Override
+    public void write(ByteBuf buffer, String object) throws Exception {
+        Preconditions.checkArgument(object.length() <= maxLength, "Cannot send string longer than Short.MAX_VALUE (got %s characters)", object.length());
+
+        byte[] b = object.getBytes(StandardCharsets.UTF_8);
+        Type.VAR_INT.writePrimitive(buffer, b.length);
+        buffer.writeBytes(b);
+    }
 }

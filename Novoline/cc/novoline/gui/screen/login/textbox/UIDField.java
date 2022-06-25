@@ -2,11 +2,7 @@ package cc.novoline.gui.screen.login.textbox;
 
 import cc.novoline.utils.RenderUtils;
 import cc.novoline.utils.Timer;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_16;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_20;
-import java.awt.Color;
-import net.acE;
-import net.pD;
+import cc.novoline.utils.fonts.impl.Fonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -15,144 +11,139 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.input.Mouse;
 
+import java.awt.*;
+
 public class UIDField extends GuiTextField {
-   private final String shit;
-   private int color;
-   private int textColor;
-   private final Timer timer = new Timer();
 
-   public UIDField(int var1, FontRenderer var2, int var3, int var4, int var5, int var6, String var7) {
-      super(var1, var2, var3, var4, var5, var6);
-      this.shit = var7;
-   }
+    private final String shit;
+    private int color, textColor;
+    private final Timer timer = new Timer();
 
-   public void drawTextBox() {
-      boolean var1 = pD.c();
-      if(this.getVisible()) {
-         ScaledResolution var2 = new ScaledResolution(Minecraft.getInstance());
-         int var3 = var2.getScaledWidth();
-         int var4 = var2.getScaledHeight();
-         int var5 = Mouse.getX() * var3 / Minecraft.getInstance().displayWidth;
-         int var6 = var4 - Mouse.getY() * var4 / Minecraft.getInstance().displayHeight - 1;
-         boolean var7 = (float)var5 >= this.xPosition && (float)var6 >= this.yPosition && (float)var5 < this.xPosition + (float)this.width && (float)var6 < this.yPosition + (float)this.height;
-         RenderUtils.drawBorderedRect(this.xPosition, this.yPosition, this.xPosition + (float)this.width, this.yPosition + (float)this.height, 0.1F, this.color != -1 || !var7 && !this.isFocused?(new Color(0, 0, 0, 50)).getRGB():(new Color(0, 0, 0, 100)).getRGB(), (new Color(0, 0, 0, 50)).getRGB());
-         Fonts$SF$SF_16.SF_16.drawString("User-ID", this.xPosition + 5.0F, this.yPosition + 5.0F, this.textColor);
-         int var8 = this.isEnabled?this.enabledColor:this.disabledColor;
-         int var9 = this.cursorPosition - this.lineScrollOffset;
-         int var10 = this.selectionEnd - this.lineScrollOffset;
-         String var11 = Fonts$SF$SF_20.SF_20.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
-         boolean var12 = var9 >= 0 && var9 <= var11.length();
-         boolean var13 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && var12;
-         int var14 = this.enableBackgroundDrawing?(int)this.xPosition + 4:(int)this.xPosition;
-         int var15 = this.enableBackgroundDrawing?(int)this.yPosition + (this.height - 8) / 2:(int)this.yPosition;
-         int var16 = var14;
-         if(var10 > var11.length()) {
-            var10 = var11.length();
-         }
+    public UIDField(int componentId, FontRenderer fontRenderer, int x, int y, int width, int height, String shit) {
+        super(componentId, fontRenderer, x, y, width, height);
+        this.shit = shit;
+    }
 
-         if(!var11.isEmpty()) {
-            String var17 = var11.substring(0, var9);
-            var16 = (int)Fonts$SF$SF_20.SF_20.drawString(var17, (double)(this.xPosition + 5.0F), (double)(this.yPosition + 17.0F), this.textColor, this.color != -1);
-         }
+    @Override
+    public void drawTextBox() {
+        if (this.getVisible()) {
+            final ScaledResolution scaledresolution = new ScaledResolution(Minecraft.getInstance());
+            int lmx = scaledresolution.getScaledWidth();
+            int imy = scaledresolution.getScaledHeight();
+            final int mouseX = Mouse.getX() * lmx / Minecraft.getInstance().displayWidth;
+            final int mouseY = imy - Mouse.getY() * imy / Minecraft.getInstance().displayHeight - 1;
+            boolean hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+            RenderUtils.drawBorderedRect(xPosition, yPosition, xPosition + width, yPosition + height, 0.1f,color == 0xffffffff && (hovered || isFocused) ? new Color(0, 0, 0,100).getRGB() : new Color(0, 0, 0,50).getRGB(), new Color(0,0,0,50).getRGB());
+            Fonts.SF.SF_16.SF_16.drawString("User-ID", xPosition + 5, yPosition + 5, textColor);
+            int i = this.isEnabled ? this.enabledColor : this.disabledColor;
+            int j = this.cursorPosition - this.lineScrollOffset;
+            int k = this.selectionEnd - this.lineScrollOffset;
+            String s = Fonts.SF.SF_20.SF_20.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
+            boolean flag = j >= 0 && j <= s.length();
+            boolean flag1 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && flag;
+            int l = this.enableBackgroundDrawing ? (int) this.xPosition + 4 : (int) this.xPosition;
+            int i1 = this.enableBackgroundDrawing ? (int) this.yPosition + (this.height - 8) / 2 : (int) this.yPosition;
+            int j1 = l;
 
-         boolean var20 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
-         int var18 = var16;
-         if(!var12) {
-            var18 = var9 > 0?var14 + this.width:var14;
-         }
-
-         if(var20) {
-            var18 = var16 - 1;
-            --var16;
-         }
-
-         if(!var11.isEmpty() && var12 && var9 < var11.length()) {
-            Fonts$SF$SF_20.SF_20.drawString(var11.substring(var9), (double)((float)var16), (double)((float)var15), var8, true);
-         }
-
-         if(var13) {
-            if(var20) {
-               Gui.drawRect(var18, var15 - 1, var18 + 1, var15 + 1 + this.fontRendererInstance.getHeight(), -3092272);
+            if (k > s.length()) {
+                k = s.length();
             }
 
-            Fonts$SF$SF_20.SF_20.drawString("_", (double)(this.xPosition + 5.0F + (float)(this.getText().isEmpty()?0:Fonts$SF$SF_20.SF_20.stringWidth(this.getText()) + 1)), (double)(this.yPosition + 17.0F), var8, true);
-         }
+            if (!s.isEmpty()) {
+                String s1 = flag ? s.substring(0, j) : s;
+                j1 = (int) Fonts.SF.SF_20.SF_20.drawString(s1, xPosition + 5, yPosition + 17, textColor, color != 0xffffffff);
+            }
 
-         if(var10 != var9) {
-            int var19 = var14 + Fonts$SF$SF_20.SF_20.stringWidth(var11.substring(0, var10));
-            this.drawCursorVertical(var18, var15 - 1, var19 - 1, var15 + 1 + this.fontRendererInstance.getHeight());
-         }
-      }
+            boolean flag2 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
+            int k1 = j1;
 
-   }
+            if (!flag) {
+                k1 = j > 0 ? l + this.width : l;
+            } else if (flag2) {
+                k1 = j1 - 1;
+                --j1;
+            }
 
-   public void setColor(int var1) {
-      this.color = var1;
-   }
+            if (!s.isEmpty() && flag && j < s.length()) {
+                Fonts.SF.SF_20.SF_20.drawString(s.substring(j), (float) j1, (float) i1, i, true);
+            }
 
-   public void setTextColor(int var1) {
-      this.textColor = var1;
-   }
+            if (flag1) {
+                if (flag2) {
+                    Gui.drawRect(k1, i1 - 1, k1 + 1, i1 + 1 + this.fontRendererInstance.getHeight(), -3092272);
+                } else {
+                    Fonts.SF.SF_20.SF_20.drawString("_", xPosition + 5 + (getText().isEmpty() ? 0 : Fonts.SF.SF_20.SF_20.stringWidth(getText()) + 1), yPosition + 17, i, true);
+                }
+            }
 
-   public void mouseClicked(int var1, int var2, int var3) {
-      boolean var4 = pD.c();
-      boolean var5 = (float)var1 >= this.xPosition && (float)var1 < this.xPosition + (float)this.width && (float)var2 >= this.yPosition && (float)var2 < this.yPosition + (float)this.height;
-      if(this.canLoseFocus) {
-         this.setFocused(var5);
-      }
+            if (k != j) {
+                int l1 = l + Fonts.SF.SF_20.SF_20.stringWidth(s.substring(0, k));
+                this.drawCursorVertical(k1, i1 - 1, l1 - 1, i1 + 1 + this.fontRendererInstance.getHeight());
+            }
+        }
+    }
 
-      if(this.isFocused && var5 && var3 == 0) {
-         int var6 = var1 - (int)this.xPosition;
-         if(this.enableBackgroundDrawing) {
-            var6 -= 4;
-         }
+    public void setColor(int color) {
+        this.color = color;
+    }
 
-         String var7 = Fonts$SF$SF_20.SF_20.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
-         this.setCursorPosition(Fonts$SF$SF_20.SF_20.trimStringToWidth(var7, var6).length() + this.lineScrollOffset);
-      }
+    public void setTextColor(int textColor) {
+        this.textColor = textColor;
+    }
 
-      if(acE.b() == null) {
-         pD.b(false);
-      }
+    @Override
+    public void mouseClicked(int p_146192_1_, int p_146192_2_, int p_146192_3_) {
+        boolean flag = p_146192_1_ >= this.xPosition && p_146192_1_ < this.xPosition + this.width && p_146192_2_ >= this.yPosition && p_146192_2_ < this.yPosition + this.height;
 
-   }
+        if (canLoseFocus) {
+            setFocused(flag);
+        }
 
-   public void setSelectionPos(int var1) {
-      pD.b();
-      int var3 = this.text.length();
-      if(var1 > var3) {
-         var1 = var3;
-      }
+        if (this.isFocused && flag && p_146192_3_ == 0) {
+            int i = p_146192_1_ - (int) this.xPosition;
 
-      if(var1 < 0) {
-         var1 = 0;
-      }
+            if (this.enableBackgroundDrawing) {
+                i -= 4;
+            }
 
-      this.selectionEnd = var1;
-      if(this.lineScrollOffset > var3) {
-         this.lineScrollOffset = var3;
-      }
+            final String s = Fonts.SF.SF_20.SF_20.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
+            setCursorPosition(Fonts.SF.SF_20.SF_20.trimStringToWidth(s, i).length() + this.lineScrollOffset);
+        }
+    }
 
-      int var4 = this.getWidth();
-      String var5 = Fonts$SF$SF_20.SF_20.trimStringToWidth(this.text.substring(this.lineScrollOffset), var4);
-      int var6 = var5.length() + this.lineScrollOffset;
-      if(var1 == this.lineScrollOffset) {
-         this.lineScrollOffset -= Fonts$SF$SF_20.SF_20.trimStringToWidth(this.text, var4, true).length();
-      }
+    @Override
+    public void setSelectionPos(int p_146199_1_) {
+        final int i = text.length();
 
-      if(var1 > var6) {
-         this.lineScrollOffset += var1 - var6;
-      }
+        if (p_146199_1_ > i) p_146199_1_ = i;
+        if (p_146199_1_ < 0) p_146199_1_ = 0;
 
-      if(var1 <= this.lineScrollOffset) {
-         this.lineScrollOffset -= this.lineScrollOffset - var1;
-      }
+        this.selectionEnd = p_146199_1_;
 
-      this.lineScrollOffset = MathHelper.clamp_int(this.lineScrollOffset, 0, var3);
-   }
+        if (lineScrollOffset > i) {
+            this.lineScrollOffset = i;
+        }
 
-   public void updateCoordinates(float var1, float var2) {
-      this.xPosition = var1;
-      this.yPosition = var2;
-   }
+        final int j = getWidth();
+        final String s = Fonts.SF.SF_20.SF_20.trimStringToWidth(text.substring(lineScrollOffset), j);
+        final int k = s.length() + lineScrollOffset;
+
+        if (p_146199_1_ == lineScrollOffset) {
+            this.lineScrollOffset -= Fonts.SF.SF_20.SF_20.trimStringToWidth(text, j, true).length();
+        }
+
+        if (p_146199_1_ > k) {
+            this.lineScrollOffset += p_146199_1_ - k;
+        } else if (p_146199_1_ <= this.lineScrollOffset) {
+            this.lineScrollOffset -= lineScrollOffset - p_146199_1_;
+        }
+
+        this.lineScrollOffset = MathHelper.clamp_int(lineScrollOffset, 0, i);
+    }
+
+    public void updateCoordinates(float x, float y) {
+        xPosition = x;
+        yPosition = y;
+    }
+
 }

@@ -1,37 +1,65 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.util.MathHelper;
 
 public class EntityAILookIdle extends EntityAIBase {
-   private EntityLiving idleEntity;
-   private double lookX;
-   private double lookZ;
-   private int idleTime;
 
-   public EntityAILookIdle(EntityLiving var1) {
-      this.idleEntity = var1;
-      this.setMutexBits(3);
-   }
+    /**
+     * The entity that is looking idle.
+     */
+    private EntityLiving idleEntity;
 
-   public boolean shouldExecute() {
-      return this.idleEntity.getRNG().nextFloat() < 0.02F;
-   }
+    /**
+     * X offset to look at
+     */
+    private double lookX;
 
-   public boolean continueExecuting() {
-      return this.idleTime >= 0;
-   }
+    /**
+     * Z offset to look at
+     */
+    private double lookZ;
 
-   public void startExecuting() {
-      double var1 = 6.283185307179586D * this.idleEntity.getRNG().nextDouble();
-      this.lookX = (double)MathHelper.cos(var1);
-      this.lookZ = (double)MathHelper.sin(var1);
-      this.idleTime = 20 + this.idleEntity.getRNG().nextInt(20);
-   }
+    /**
+     * A decrementing tick that stops the entity from being idle once it reaches 0.
+     */
+    private int idleTime;
 
-   public void updateTask() {
-      --this.idleTime;
-      this.idleEntity.getLookHelper().setLookPosition(this.idleEntity.posX + this.lookX, this.idleEntity.posY + (double)this.idleEntity.getEyeHeight(), this.idleEntity.posZ + this.lookZ, 10.0F, (float)this.idleEntity.getVerticalFaceSpeed());
-   }
+    public EntityAILookIdle(EntityLiving entityLiving) {
+        this.idleEntity = entityLiving;
+        this.setMutexBits(3);
+    }
+
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        return this.idleEntity.getRNG().nextFloat() < 0.02F;
+    }
+
+    /**
+     * Returns whether an in-progress EntityAIBase should continue executing
+     */
+    public boolean continueExecuting() {
+        return this.idleTime >= 0;
+    }
+
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        double d0 = Math.PI * 2D * this.idleEntity.getRNG().nextDouble();
+        this.lookX = MathHelper.cos(d0);
+        this.lookZ = MathHelper.sin(d0);
+        this.idleTime = 20 + this.idleEntity.getRNG().nextInt(20);
+    }
+
+    /**
+     * Updates the task
+     */
+    public void updateTask() {
+        --this.idleTime;
+        this.idleEntity.getLookHelper().setLookPosition(this.idleEntity.posX + this.lookX, this.idleEntity.posY + (double) this.idleEntity.getEyeHeight(), this.idleEntity.posZ + this.lookZ, 10.0F, (float) this.idleEntity.getVerticalFaceSpeed());
+    }
+
 }

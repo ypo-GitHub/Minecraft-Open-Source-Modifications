@@ -1,26 +1,27 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenCactus extends WorldGenerator {
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      for(int var4 = 0; var4 < 10; ++var4) {
-         BlockPos var5 = var3.a(var2.nextInt(8) - var2.nextInt(8), var2.nextInt(4) - var2.nextInt(4), var2.nextInt(8) - var2.nextInt(8));
-         if(var1.isAirBlock(var5)) {
-            int var6 = 1 + var2.nextInt(var2.nextInt(3) + 1);
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        for (int i = 0; i < 10; ++i) {
+            BlockPos blockpos = position.add(rand.nextInt(8) - rand.nextInt(8), rand.nextInt(4) - rand.nextInt(4), rand.nextInt(8) - rand.nextInt(8));
 
-            for(int var7 = 0; var7 < var6; ++var7) {
-               if(Blocks.cactus.canBlockStay(var1, var5)) {
-                  var1.setBlockState(var5.up(var7), Blocks.cactus.getDefaultState(), 2);
-               }
+            if (worldIn.isAirBlock(blockpos)) {
+                int j = 1 + rand.nextInt(rand.nextInt(3) + 1);
+
+                for (int k = 0; k < j; ++k) {
+                    if (Blocks.cactus.canBlockStay(worldIn, blockpos)) {
+                        worldIn.setBlockState(blockpos.up(k), Blocks.cactus.getDefaultState(), 2);
+                    }
+                }
             }
-         }
-      }
+        }
 
-      return true;
-   }
+        return true;
+    }
 }

@@ -1,74 +1,74 @@
 package cc.novoline.modules.player;
 
 import cc.novoline.events.EventTarget;
-import cc.novoline.events.events.EventState;
-import cc.novoline.events.events.MotionUpdateEvent;
-import cc.novoline.events.events.TickUpdateEvent;
+import cc.novoline.events.events.LoadWorldEvent;
+import cc.novoline.events.events.PacketEvent;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
-import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
-import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.configurations.annotation.Property;
-import cc.novoline.modules.configurations.property.object.BooleanProperty;
-import cc.novoline.modules.configurations.property.object.IntProperty;
+import cc.novoline.modules.configurations.property.object.FloatProperty;
 import cc.novoline.modules.configurations.property.object.PropertyFactory;
-import cc.novoline.modules.configurations.property.object.StringProperty;
-import cc.novoline.modules.player.Freecam;
-import net.minecraft.network.play.client.C03PacketPlayer$C04PacketPlayerPosition;
+import cc.novoline.modules.move.Scaffold;
+import cc.novoline.utils.Timer;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.client.C03PacketPlayer;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static cc.novoline.gui.screen.setting.SettingType.SLIDER;
+import static cc.novoline.modules.EnumModuleType.PLAYER;
 
 public final class AntiVoid extends AbstractModule {
-   private boolean x;
-   @Property("mode")
-   private final StringProperty y = PropertyFactory.createString("Edit").acceptableValues(new String[]{"Motion", "Edit", "Packet"});
-   @Property("fall-dist")
-   private final IntProperty z = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(20)).minimum(Integer.valueOf(5))).maximum(Integer.valueOf(50));
-   @Property("void-check")
-   private final BooleanProperty A = PropertyFactory.createBoolean(Boolean.valueOf(true));
 
-   public AntiVoid(ModuleManager var1) {
-      super(var1, "AntiVoid", "Anti Void", EnumModuleType.PLAYER, "do not fall retard");
-      Manager.put(new Setting("AV_MODE", "Mode", SettingType.COMBOBOX, this, this.y));
-      Manager.put(new Setting("AV_VOID_CHECK", "Void Check", SettingType.CHECKBOX, this, this.A));
-      Manager.put(new Setting("AV_FALL_DIST", "Fall Distance", SettingType.SLIDER, this, this.z, 1.0D));
-   }
+    private double x, y, z;
+    private Timer pullTimer = new Timer();
+    private List<Packet> packets = new CopyOnWriteArrayList();
 
-   @EventTarget
-   public void a(MotionUpdateEvent var1) {
-      int[] var2 = Freecam.a();
-      if(var1.getState() == EventState.PRE) {
-         if((!this.mc.player.isBlockUnder() || !((Boolean)this.A.get()).booleanValue()) && this.mc.player.fallDistance > (float)((Integer)this.z.get()).intValue()) {
-            if(!this.x) {
-               return;
+    @Property("pull-ms")
+    private FloatProperty pull_milliseconds = PropertyFactory.createFloat(1000.0F).minimum(1000.0F).maximum(3000.0F);
+
+    public AntiVoid(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "AntiVoid", "Anti Void", PLAYER, "do not fall retard");
+        Manager.put(new Setting("AV_PULLMS", "Pull MS", SLIDER, this, pull_milliseconds, 100));
+    }
+
+    @EventTarget
+    public void onPacket(PacketEvent event) {
+        if (event.getState() == PacketEvent.State.OUTGOING) {
+            if (event.getPacket() instanceof C03PacketPlayer) {
+                C03PacketPlayer packet = (C03PacketPlayer) event.getPacket();
+
+                if (packet.isOnGround()) {
+                    x = packet.getX();
+                    y = packet.getY();
+                    z = packet.getZ();
+                    pullTimer.reset();
+
+                } else if (!isEnabled(Scaffold.class) && !mc.player.isBlockUnder()) {
+                    event.setCancelled(true);
+                    packets.add(event.getPacket());
+                    if (pullTimer.delay(pull_milliseconds.get()) && mc.player.motionY < 0) {
+                        mc.player.setPosition(x, y, z);
+                        packets.clear();
+                    }
+                }
+
+                if (!isEnabled(Scaffold.class) && (packet.isOnGround() || mc.player.isBlockUnder())) {
+                    if (!packets.isEmpty()) {
+                        packets.forEach(this::sendPacketNoEvent);
+                        packets.clear();
+                    }
+                }
             }
+        }
+    }
 
-            if(this.y.equals("Packet")) {
-               this.sendPacketNoEvent(new C03PacketPlayer$C04PacketPlayerPosition(var1.getX(), var1.getY() + (double)this.mc.player.fallDistance, var1.getZ(), var1.isOnGround()));
-            }
-
-            if(this.y.equals("Edit")) {
-               var1.setY(var1.getY() + (double)this.mc.player.fallDistance);
-            }
-
-            if(this.y.equals("Motion")) {
-               this.mc.player.motionY = 4.0D;
-            }
-
-            this.x = false;
-         }
-
-         this.x = true;
-      }
-
-   }
-
-   @EventTarget
-   public void a(TickUpdateEvent var1) {
-      this.setSuffix((String)this.y.get());
-   }
-
-   public void onEnable() {
-      this.setSuffix((String)this.y.get());
-   }
+    @EventTarget
+    public void onLoad(LoadWorldEvent event) {
+        pullTimer.reset();
+    }
 }

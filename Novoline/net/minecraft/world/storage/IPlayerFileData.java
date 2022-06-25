@@ -4,9 +4,18 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 
 public interface IPlayerFileData {
-   void writePlayerData(EntityPlayer var1);
+    /**
+     * Writes the player data to disk from the specified PlayerEntityMP.
+     */
+    void writePlayerData(EntityPlayer player);
 
-   NBTTagCompound readPlayerData(EntityPlayer var1);
+    /**
+     * Reads the player data from disk into the specified PlayerEntityMP.
+     */
+    NBTTagCompound readPlayerData(EntityPlayer player);
 
-   String[] getAvailablePlayerDat();
+    /**
+     * Returns an array of usernames for which player.dat exists for.
+     */
+    String[] getAvailablePlayerDat();
 }

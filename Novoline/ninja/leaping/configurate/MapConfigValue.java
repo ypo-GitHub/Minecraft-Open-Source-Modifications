@@ -1,113 +1,162 @@
+/*
+ * Configurate
+ * Copyright (C) zml and Configurate contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ninja.leaping.configurate;
 
-import java.util.Iterator;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
-import net.acE;
-import ninja.leaping.configurate.ConfigValue;
-import ninja.leaping.configurate.SimpleConfigurationNode;
-import ninja.leaping.configurate.ValueType;
 
+/**
+ * A {@link ConfigValue} which holds a map of values.
+ */
 class MapConfigValue extends ConfigValue {
-   volatile ConcurrentMap values = this.newMap();
 
-   public MapConfigValue(SimpleConfigurationNode var1) {
-      super(var1);
-   }
+    volatile ConcurrentMap<Object, SimpleConfigurationNode> values;
 
-   ValueType getType() {
-      return ValueType.MAP;
-   }
+    public MapConfigValue(SimpleConfigurationNode holder) {
+        super(holder);
+        values = newMap();
+    }
 
-   private ConcurrentMap newMap() {
-      return this.holder.getOptions().getMapFactory().create();
-   }
+    @Override
+    ValueType getType() {
+        return ValueType.MAP;
+    }
 
-   public Object getValue() {
-      LinkedHashMap var2 = new LinkedHashMap();
-      ValueType.b();
-      Iterator var3 = this.values.entrySet().iterator();
-      if(var3.hasNext()) {
-         Entry var4 = (Entry)var3.next();
-         var2.put(var4.getKey(), ((SimpleConfigurationNode)var4.getValue()).getValue());
-      }
+    private ConcurrentMap<Object, SimpleConfigurationNode> newMap() {
+        return holder.getOptions().getMapFactory().create();
+    }
 
-      return var2;
-   }
+    @Nullable
+    @Override
+    public Object getValue() {
+        Map<Object, Object> value = new LinkedHashMap<>();
+        for (Map.Entry<Object, ? extends SimpleConfigurationNode> ent : values.entrySet()) {
+            value.put(ent.getKey(), ent.getValue().getValue()); // unwrap key from the backing node
+        }
+        return value;
+    }
 
-   public void setValue(Object param1) {
-      // $FF: Couldn't be decompiled
-   }
+    @Override
+    public void setValue(@Nullable Object value) {
+        if (value instanceof Map) {
+            final ConcurrentMap<Object, SimpleConfigurationNode> newValue = newMap();
+            for (Map.Entry<?, ?> ent : ((Map<?, ?>) value).entrySet()) {
+                if (ent.getValue() == null) {
+                    continue;
+                }
+                SimpleConfigurationNode child = holder.createNode(ent.getKey());
+                newValue.put(ent.getKey(), child);
+                child.attached = true;
+                child.setValue(ent.getValue());
+            }
+            synchronized (this) {
+                ConcurrentMap<Object, SimpleConfigurationNode> oldMap = this.values;
+                this.values = newValue;
+                detachChildren(oldMap);
+            }
+        } else {
+            throw new IllegalArgumentException("Map configuration values can only be set to values of type Map");
+        }
+    }
 
-   SimpleConfigurationNode putChild(Object var1, SimpleConfigurationNode var2) {
-      acE[] var3 = ValueType.b();
-      return var2 == null?(SimpleConfigurationNode)this.values.remove(var1):(SimpleConfigurationNode)this.values.put(var1, var2);
-   }
+    @Nullable
+    @Override
+    SimpleConfigurationNode putChild(@NonNull Object key, @Nullable SimpleConfigurationNode value) {
+        if (value == null) {
+            return values.remove(key);
+        } else {
+            return values.put(key, value);
+        }
+    }
 
-   SimpleConfigurationNode putChildIfAbsent(Object var1, SimpleConfigurationNode var2) {
-      acE[] var3 = ValueType.b();
-      return var2 == null?(SimpleConfigurationNode)this.values.remove(var1):(SimpleConfigurationNode)this.values.putIfAbsent(var1, var2);
-   }
+    @Nullable
+    @Override
+    SimpleConfigurationNode putChildIfAbsent(@NonNull Object key, @Nullable SimpleConfigurationNode value) {
+        if (value == null) {
+            return values.remove(key);
+        } else {
+            return values.putIfAbsent(key, value);
+        }
+    }
 
-   public SimpleConfigurationNode getChild(Object var1) {
-      return (SimpleConfigurationNode)this.values.get(var1);
-   }
+    @Nullable
+    @Override
+    public SimpleConfigurationNode getChild(@Nullable Object key) {
+        return values.get(key);
+    }
 
-   public Iterable iterateChildren() {
-      return this.values.values();
-   }
+    @NonNull
+    @Override
+    public Iterable<SimpleConfigurationNode> iterateChildren() {
+        return values.values();
+    }
 
-   MapConfigValue copy(SimpleConfigurationNode var1) {
-      MapConfigValue var3 = new MapConfigValue(var1);
-      ValueType.b();
-      Iterator var4 = this.values.entrySet().iterator();
-      if(var4.hasNext()) {
-         Entry var5 = (Entry)var4.next();
-         var3.values.put(var5.getKey(), ((SimpleConfigurationNode)var5.getValue()).copy(var1));
-      }
+    @NonNull
+    @Override
+    MapConfigValue copy(@NonNull SimpleConfigurationNode holder) {
+        MapConfigValue copy = new MapConfigValue(holder);
+        for (Map.Entry<Object, ? extends SimpleConfigurationNode> ent : this.values.entrySet()) {
+            copy.values.put(ent.getKey(), ent.getValue().copy(holder)); // recursively copy
+        }
+        return copy;
+    }
 
-      return var3;
-   }
+    private static void detachChildren(Map<Object, SimpleConfigurationNode> map) {
+        for (SimpleConfigurationNode value : map.values()) {
+            value.attached = false;
+            value.clear();
+        }
+    }
 
-   private static void detachChildren(Map var0) {
-      ValueType.b();
-      Iterator var2 = var0.values().iterator();
-      if(var2.hasNext()) {
-         SimpleConfigurationNode var3 = (SimpleConfigurationNode)var2.next();
-         var3.attached = false;
-         var3.clear();
-      }
+    @Override
+    public void clear() {
+        synchronized (this) {
+            ConcurrentMap<Object, SimpleConfigurationNode> oldMap = this.values;
+            this.values = newMap();
+            detachChildren(oldMap);
+        }
+    }
 
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MapConfigValue that = (MapConfigValue) o;
+        return Objects.equals(values, that.values);
+    }
 
-   public void clear() {
-      // $FF: Couldn't be decompiled
-   }
+    @Override
+    public int hashCode() {
+        return values.hashCode();
+    }
 
-   public boolean equals(Object var1) {
-      acE[] var2 = ValueType.b();
-      if(this == var1) {
-         return true;
-      } else if(var1 != null && this.getClass() == var1.getClass()) {
-         MapConfigValue var3 = (MapConfigValue)var1;
-         return Objects.equals(this.values, var3.values);
-      } else {
-         return false;
-      }
-   }
+    @Override
+    public String toString() {
+        return "MapConfigValue{values=" + this.values + '}';
+    }
 
-   public int hashCode() {
-      return this.values.hashCode();
-   }
-
-   public String toString() {
-      return "MapConfigValue{values=" + this.values + '}';
-   }
-
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
 }

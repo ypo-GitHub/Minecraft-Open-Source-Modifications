@@ -1,70 +1,62 @@
 package net.shadersmod.client;
 
-import java.nio.ByteBuffer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.shadersmod.client.ShaderOption;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
+import java.nio.ByteBuffer;
+
 public class HFNoiseTexture {
-   public int texID = GL11.glGenTextures();
-   public int textureUnit = 15;
+    public int texID = GL11.glGenTextures();
+    public int textureUnit = 15;
 
-   public HFNoiseTexture(int var1, int var2) {
-      byte[] var3 = this.genHFNoiseImage(var1, var2);
-      ByteBuffer var4 = BufferUtils.createByteBuffer(var3.length);
-      var4.put(var3);
-      var4.flip();
-      GlStateManager.bindTexture(this.texID);
-      GL11.glTexImage2D(3553, 0, 6407, var1, var2, 0, 6407, 5121, var4);
-      GL11.glTexParameteri(3553, 10242, 10497);
-      GL11.glTexParameteri(3553, 10243, 10497);
-      GL11.glTexParameteri(3553, 10240, 9729);
-      GL11.glTexParameteri(3553, 10241, 9729);
-      GlStateManager.bindTexture(0);
-   }
+    public HFNoiseTexture(int width, int height) {
+        byte[] abyte = this.genHFNoiseImage(width, height);
+        ByteBuffer bytebuffer = BufferUtils.createByteBuffer(abyte.length);
+        bytebuffer.put(abyte);
+        bytebuffer.flip();
+        GlStateManager.bindTexture(this.texID);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) bytebuffer);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GlStateManager.bindTexture(0);
+    }
 
-   public int getID() {
-      return this.texID;
-   }
+    public int getID() {
+        return this.texID;
+    }
 
-   public void destroy() {
-      GlStateManager.deleteTexture(this.texID);
-      this.texID = 0;
-   }
+    public void destroy() {
+        GlStateManager.deleteTexture(this.texID);
+        this.texID = 0;
+    }
 
-   private int random(int var1) {
-      var1 = var1 ^ var1 << 13;
-      var1 = var1 ^ var1 >> 17;
-      var1 = var1 ^ var1 << 5;
-      return var1;
-   }
+    private int random(int seed) {
+        seed = seed ^ seed << 13;
+        seed = seed ^ seed >> 17;
+        seed = seed ^ seed << 5;
+        return seed;
+    }
 
-   private byte random(int var1, int var2, int var3) {
-      int var4 = (this.random(var1) + this.random(var2 * 19)) * this.random(var3 * 23) - var3;
-      return (byte)(this.random(var4) % 128);
-   }
+    private byte random(int x, int y, int z) {
+        int i = (this.random(x) + this.random(y * 19)) * this.random(z * 23) - z;
+        return (byte) (this.random(i) % 128);
+    }
 
-   private byte[] genHFNoiseImage(int var1, int var2) {
-      byte[] var4 = new byte[var1 * var2 * 3];
-      ShaderOption.p();
-      int var5 = 0;
-      int var6 = 0;
-      if(var6 < var2) {
-         int var7 = 0;
-         if(var7 < var1) {
-            int var8 = 1;
-            if(var8 < 4) {
-               var4[var5++] = this.random(var7, var6, var8);
-               ++var8;
+    private byte[] genHFNoiseImage(int width, int height) {
+        byte[] abyte = new byte[width * height * 3];
+        int i = 0;
+
+        for (int j = 0; j < height; ++j) {
+            for (int k = 0; k < width; ++k) {
+                for (int l = 1; l < 4; ++l) {
+                    abyte[i++] = this.random(k, j, l);
+                }
             }
+        }
 
-            ++var7;
-         }
-
-         ++var6;
-      }
-
-      return var4;
-   }
+        return abyte;
+    }
 }

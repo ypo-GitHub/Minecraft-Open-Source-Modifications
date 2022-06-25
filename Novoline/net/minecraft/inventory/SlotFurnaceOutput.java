@@ -3,75 +3,93 @@ package net.minecraft.inventory;
 import net.minecraft.entity.item.EntityXPOrb;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.stats.AchievementList;
 import net.minecraft.util.MathHelper;
 
 public class SlotFurnaceOutput extends Slot {
-   private EntityPlayer thePlayer;
-   private int field_75228_b;
+    /**
+     * The player that is using the GUI where this slot resides.
+     */
+    private EntityPlayer thePlayer;
+    private int field_75228_b;
 
-   public SlotFurnaceOutput(EntityPlayer var1, IInventory var2, int var3, int var4, int var5) {
-      super(var2, var3, var4, var5);
-      this.thePlayer = var1;
-   }
+    public SlotFurnaceOutput(EntityPlayer player, IInventory inventoryIn, int slotIndex, int xPosition, int yPosition) {
+        super(inventoryIn, slotIndex, xPosition, yPosition);
+        this.thePlayer = player;
+    }
 
-   public boolean isItemValid(ItemStack var1) {
-      return false;
-   }
+    /**
+     * Check if the stack is a valid item for this slot. Always true beside for the armor slots.
+     */
+    public boolean isItemValid(ItemStack stack) {
+        return false;
+    }
 
-   public ItemStack decrStackSize(int var1) {
-      if(this.getHasStack()) {
-         this.field_75228_b += Math.min(var1, this.getStack().stackSize);
-      }
+    /**
+     * Decrease the size of the stack in slot (first int arg) by the amount of the second int arg. Returns the new
+     * stack.
+     */
+    public ItemStack decrStackSize(int amount) {
+        if (this.getHasStack()) {
+            this.field_75228_b += Math.min(amount, this.getStack().stackSize);
+        }
 
-      return super.decrStackSize(var1);
-   }
+        return super.decrStackSize(amount);
+    }
 
-   public void onPickupFromSlot(EntityPlayer var1, ItemStack var2) {
-      this.onCrafting(var2);
-      super.onPickupFromSlot(var1, var2);
-   }
+    public void onPickupFromSlot(EntityPlayer playerIn, ItemStack stack) {
+        this.onCrafting(stack);
+        super.onPickupFromSlot(playerIn, stack);
+    }
 
-   protected void onCrafting(ItemStack var1, int var2) {
-      this.field_75228_b += var2;
-      this.onCrafting(var1);
-   }
+    /**
+     * the itemStack passed in is the output - ie, iron ingots, and pickaxes, not ore and wood. Typically increases an
+     * internal count then calls onCrafting(item).
+     */
+    protected void onCrafting(ItemStack stack, int amount) {
+        this.field_75228_b += amount;
+        this.onCrafting(stack);
+    }
 
-   protected void onCrafting(ItemStack var1) {
-      var1.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.field_75228_b);
-      if(!this.thePlayer.worldObj.isRemote) {
-         int var2 = this.field_75228_b;
-         float var3 = FurnaceRecipes.instance().getSmeltingExperience(var1);
-         if(var3 == 0.0F) {
-            var2 = 0;
-         } else if(var3 < 1.0F) {
-            int var4 = MathHelper.floor_float((float)var2 * var3);
-            if(var4 < MathHelper.ceiling_float_int((float)var2 * var3) && Math.random() < (double)((float)var2 * var3 - (float)var4)) {
-               ++var4;
+    /**
+     * the itemStack passed in is the output - ie, iron ingots, and pickaxes, not ore and wood.
+     */
+    protected void onCrafting(ItemStack stack) {
+        stack.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.field_75228_b);
+
+        if (!this.thePlayer.worldObj.isRemote) {
+            int i = this.field_75228_b;
+            float f = FurnaceRecipes.instance().getSmeltingExperience(stack);
+
+            if (f == 0.0F) {
+                i = 0;
+            } else if (f < 1.0F) {
+                int j = MathHelper.floor_float((float) i * f);
+
+                if (j < MathHelper.ceiling_float_int((float) i * f) && Math.random() < (double) ((float) i * f - (float) j)) {
+                    ++j;
+                }
+
+                i = j;
             }
 
-            var2 = var4;
-         }
+            while (i > 0) {
+                int k = EntityXPOrb.getXPSplit(i);
+                i -= k;
+                this.thePlayer.worldObj.spawnEntityInWorld(new EntityXPOrb(this.thePlayer.worldObj, this.thePlayer.posX, this.thePlayer.posY + 0.5D, this.thePlayer.posZ + 0.5D, k));
+            }
+        }
 
-         while(true) {
-            int var5 = EntityXPOrb.getXPSplit(var2);
-            var2 -= var5;
-            this.thePlayer.worldObj.spawnEntityInWorld(new EntityXPOrb(this.thePlayer.worldObj, this.thePlayer.posX, this.thePlayer.posY + 0.5D, this.thePlayer.posZ + 0.5D, var5));
-         }
-      }
+        this.field_75228_b = 0;
 
-      this.field_75228_b = 0;
-      if(var1.getItem() == Items.iron_ingot) {
-         this.thePlayer.triggerAchievement(AchievementList.acquireIron);
-      }
+        if (stack.getItem() == Items.iron_ingot) {
+            this.thePlayer.triggerAchievement(AchievementList.acquireIron);
+        }
 
-      if(var1.getItem() == Items.cooked_fish) {
-         this.thePlayer.triggerAchievement(AchievementList.cookFish);
-      }
-
-   }
+        if (stack.getItem() == Items.cooked_fish) {
+            this.thePlayer.triggerAchievement(AchievementList.cookFish);
+        }
+    }
 }

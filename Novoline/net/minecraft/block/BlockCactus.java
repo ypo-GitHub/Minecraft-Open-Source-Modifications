@@ -1,113 +1,124 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.iV;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Plane;
-import net.minecraft.util.EnumWorldBlockLayer;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockCactus extends Block {
-   public static final iV P = iV.a("age", 0, 15);
 
-   protected BlockCactus() {
-      super(Material.cactus);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(P, Integer.valueOf(0)));
-      this.setTickRandomly(true);
-      this.setCreativeTab(CreativeTabs.tabDecorations);
-   }
+    public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 15);
 
-   public void updateTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      BlockPos var5 = var2.up();
-      if(var1.isAirBlock(var5)) {
-         int var6;
-         for(var6 = 1; var1.getBlockState(var2.down(var6)).getBlock() == this; ++var6) {
-            ;
-         }
+    protected BlockCactus() {
+        super(Material.cactus);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(AGE, 0));
+        this.setTickRandomly(true);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
 
-         if(var6 < 3) {
-            int var7 = ((Integer)var3.getValue(P)).intValue();
-            if(var7 == 15) {
-               var1.setBlockState(var5, this.getDefaultState());
-               IBlockState var8 = var3.withProperty(P, Integer.valueOf(0));
-               var1.setBlockState(var2, var8, 4);
-               this.onNeighborBlockChange(var1, var5, var8, this);
-            } else {
-               var1.setBlockState(var2, var3.withProperty(P, Integer.valueOf(var7 + 1)), 4);
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        final BlockPos blockpos = pos.up();
+
+        if (worldIn.isAirBlock(blockpos)) {
+            int i;
+
+            for (i = 1; worldIn.getBlockState(pos.down(i)).getBlock() == this; ++i) {
             }
-         }
-      }
 
-   }
+            if (i < 3) {
+                final int j = state.getValue(AGE);
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      float var4 = 0.0625F;
-      return new AxisAlignedBB((double)((float)var2.getX() + 0.0625F), (double)var2.getY(), (double)((float)var2.getZ() + 0.0625F), (double)((float)(var2.getX() + 1) - 0.0625F), (double)((float)(var2.getY() + 1) - 0.0625F), (double)((float)(var2.getZ() + 1) - 0.0625F));
-   }
+                if (j == 15) {
+                    worldIn.setBlockState(blockpos, this.getDefaultState());
+                    final IBlockState blockState = state.withProperty(AGE, 0);
+                    worldIn.setBlockState(pos, blockState, 4);
+                    this.onNeighborBlockChange(worldIn, blockpos, blockState, this);
+                } else {
+                    worldIn.setBlockState(pos, state.withProperty(AGE, j + 1), 4);
+                }
+            }
+        }
+    }
 
-   public AxisAlignedBB getSelectedBoundingBox(World var1, BlockPos var2) {
-      float var3 = 0.0625F;
-      return new AxisAlignedBB((double)((float)var2.getX() + 0.0625F), (double)var2.getY(), (double)((float)var2.getZ() + 0.0625F), (double)((float)(var2.getX() + 1) - 0.0625F), (double)(var2.getY() + 1), (double)((float)(var2.getZ() + 1) - 0.0625F));
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        final float f = 0.0625F;
+        return new AxisAlignedBB((float) pos.getX() + f, pos.getY(), (float) pos.getZ() + f, (float) (pos.getX() + 1) - f, (float) (pos.getY() + 1) - f, (float) (pos.getZ() + 1) - f);
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos) {
+        final float f = 0.0625F;
+        return new AxisAlignedBB((float) pos.getX() + f, pos.getY(), (float) pos.getZ() + f, (float) (pos.getX() + 1) - f, pos.getY() + 1, (float) (pos.getZ() + 1) - f);
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      return super.canPlaceBlockAt(var1, var2) && this.canBlockStay(var1, var2);
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public void onNeighborBlockChange(World var1, BlockPos var2, IBlockState var3, Block var4) {
-      if(!this.canBlockStay(var1, var2)) {
-         var1.destroyBlock(var2, true);
-      }
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        return super.canPlaceBlockAt(worldIn, pos) && this.canBlockStay(worldIn, pos);
+    }
 
-   }
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock) {
+        if (!this.canBlockStay(worldIn, pos)) {
+            worldIn.destroyBlock(pos, true);
+        }
+    }
 
-   public boolean canBlockStay(World var1, BlockPos var2) {
-      for(Object var4 : EnumFacing$Plane.HORIZONTAL) {
-         if(var1.getBlockState(var2.offset((EnumFacing)var4)).getBlock().getMaterial().isSolid()) {
-            return false;
-         }
-      }
+    public boolean canBlockStay(World worldIn, BlockPos pos) {
+        for (Object enumfacing : EnumFacing.Plane.HORIZONTAL) {
+            if (worldIn.getBlockState(pos.offset((EnumFacing) enumfacing)).getBlock().getMaterial().isSolid()) {
+                return false;
+            }
+        }
 
-      Block var5 = var1.getBlockState(var2.down()).getBlock();
-      return var5 == Blocks.cactus || var5 == Blocks.sand;
-   }
+        final Block block = worldIn.getBlockState(pos.down()).getBlock();
+        return block == Blocks.cactus || block == Blocks.sand;
+    }
 
-   public void onEntityCollidedWithBlock(World var1, BlockPos var2, IBlockState var3, Entity var4) {
-      var4.attackEntityFrom(DamageSource.cactus, 1.0F);
-   }
+    /**
+     * Called When an Entity Collided with the Block
+     */
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn) {
+        entityIn.attackEntityFrom(DamageSource.cactus, 1.0F);
+    }
 
-   public EnumWorldBlockLayer getBlockLayer() {
-      return EnumWorldBlockLayer.CUTOUT;
-   }
+    public EnumWorldBlockLayer getBlockLayer() {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
 
-   public IBlockState getStateFromMeta(int var1) {
-      return this.getDefaultState().withProperty(P, Integer.valueOf(var1));
-   }
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        return this.getDefaultState().withProperty(AGE, meta);
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((Integer)var1.getValue(P)).intValue();
-   }
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(AGE);
+    }
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{P});
-   }
+    protected BlockState createBlockState() {
+        return new BlockState(this, AGE);
+    }
+
 }

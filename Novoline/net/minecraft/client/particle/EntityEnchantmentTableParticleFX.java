@@ -1,73 +1,85 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.particle.EntityFX;
 import net.minecraft.world.World;
 
 public class EntityEnchantmentTableParticleFX extends EntityFX {
-   private float field_70565_a;
-   private double coordX;
-   private double coordY;
-   private double coordZ;
+    private float field_70565_a;
+    private double coordX;
+    private double coordY;
+    private double coordZ;
 
-   protected EntityEnchantmentTableParticleFX(World var1, double var2, double var4, double var6, double var8, double var10, double var12) {
-      super(var1, var2, var4, var6, var8, var10, var12);
-      this.motionX = var8;
-      this.motionY = var10;
-      this.motionZ = var12;
-      this.coordX = var2;
-      this.coordY = var4;
-      this.coordZ = var6;
-      this.posX = this.prevPosX = var2 + var8;
-      this.posY = this.prevPosY = var4 + var10;
-      this.posZ = this.prevPosZ = var6 + var12;
-      float var14 = this.rand.nextFloat() * 0.6F + 0.4F;
-      this.field_70565_a = this.particleScale = this.rand.nextFloat() * 0.5F + 0.2F;
-      this.particleRed = this.particleGreen = this.particleBlue = 1.0F * var14;
-      this.particleGreen *= 0.9F;
-      this.particleRed *= 0.9F;
-      this.particleMaxAge = (int)(Math.random() * 10.0D) + 30;
-      this.noClip = true;
-      this.setParticleTextureIndex((int)(Math.random() * 26.0D + 1.0D + 224.0D));
-   }
+    protected EntityEnchantmentTableParticleFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn) {
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        this.motionX = xSpeedIn;
+        this.motionY = ySpeedIn;
+        this.motionZ = zSpeedIn;
+        this.coordX = xCoordIn;
+        this.coordY = yCoordIn;
+        this.coordZ = zCoordIn;
+        this.posX = this.prevPosX = xCoordIn + xSpeedIn;
+        this.posY = this.prevPosY = yCoordIn + ySpeedIn;
+        this.posZ = this.prevPosZ = zCoordIn + zSpeedIn;
+        float f = this.rand.nextFloat() * 0.6F + 0.4F;
+        this.field_70565_a = this.particleScale = this.rand.nextFloat() * 0.5F + 0.2F;
+        this.particleRed = this.particleGreen = this.particleBlue = 1.0F * f;
+        this.particleGreen *= 0.9F;
+        this.particleRed *= 0.9F;
+        this.particleMaxAge = (int) (Math.random() * 10.0D) + 30;
+        this.noClip = true;
+        this.setParticleTextureIndex((int) (Math.random() * 26.0D + 1.0D + 224.0D));
+    }
 
-   public int getBrightnessForRender(float var1) {
-      int var2 = super.getBrightnessForRender(var1);
-      float var3 = (float)this.particleAge / (float)this.particleMaxAge;
-      var3 = var3 * var3;
-      var3 = var3 * var3;
-      int var4 = var2 & 255;
-      int var5 = var2 >> 16 & 255;
-      var5 = var5 + (int)(var3 * 15.0F * 16.0F);
-      if(var5 > 240) {
-         var5 = 240;
-      }
+    public int getBrightnessForRender(float partialTicks) {
+        int i = super.getBrightnessForRender(partialTicks);
+        float f = (float) this.particleAge / (float) this.particleMaxAge;
+        f = f * f;
+        f = f * f;
+        int j = i & 255;
+        int k = i >> 16 & 255;
+        k = k + (int) (f * 15.0F * 16.0F);
 
-      return var4 | var5 << 16;
-   }
+        if (k > 240) {
+            k = 240;
+        }
 
-   public float getBrightness(float var1) {
-      float var2 = super.getBrightness(var1);
-      float var3 = (float)this.particleAge / (float)this.particleMaxAge;
-      var3 = var3 * var3;
-      var3 = var3 * var3;
-      return var2 * (1.0F - var3) + var3;
-   }
+        return j | k << 16;
+    }
 
-   public void onUpdate() {
-      this.prevPosX = this.posX;
-      this.prevPosY = this.posY;
-      this.prevPosZ = this.posZ;
-      float var1 = (float)this.particleAge / (float)this.particleMaxAge;
-      var1 = 1.0F - var1;
-      float var2 = 1.0F - var1;
-      var2 = var2 * var2;
-      var2 = var2 * var2;
-      this.posX = this.coordX + this.motionX * (double)var1;
-      this.posY = this.coordY + this.motionY * (double)var1 - (double)(var2 * 1.2F);
-      this.posZ = this.coordZ + this.motionZ * (double)var1;
-      if(this.particleAge++ >= this.particleMaxAge) {
-         this.setDead();
-      }
+    /**
+     * Gets how bright this entity is.
+     */
+    public float getBrightness(float partialTicks) {
+        float f = super.getBrightness(partialTicks);
+        float f1 = (float) this.particleAge / (float) this.particleMaxAge;
+        f1 = f1 * f1;
+        f1 = f1 * f1;
+        return f * (1.0F - f1) + f1;
+    }
 
-   }
+    /**
+     * Called to update the entity's position/logic.
+     */
+    public void onUpdate() {
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
+        float f = (float) this.particleAge / (float) this.particleMaxAge;
+        f = 1.0F - f;
+        float f1 = 1.0F - f;
+        f1 = f1 * f1;
+        f1 = f1 * f1;
+        this.posX = this.coordX + this.motionX * (double) f;
+        this.posY = this.coordY + this.motionY * (double) f - (double) (f1 * 1.2F);
+        this.posZ = this.coordZ + this.motionZ * (double) f;
+
+        if (this.particleAge++ >= this.particleMaxAge) {
+            this.setDead();
+        }
+    }
+
+    public static class EnchantmentTable implements IParticleFactory {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_) {
+            return new EntityEnchantmentTableParticleFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        }
+    }
 }

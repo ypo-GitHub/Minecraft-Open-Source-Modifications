@@ -1,11 +1,17 @@
 package viaversion.viarewind.api;
 
-import net.bY;
-
 public interface ViaRewindConfig {
-   bY a();
 
-   boolean isReplaceAdventureMode();
+    enum CooldownIndicator {
+        TITLE,
+        ACTION_BAR,
+        BOSS_BAR,
+        DISABLED
+	}
 
-   boolean isReplaceParticles();
+    CooldownIndicator getCooldownIndicator();
+
+    boolean isReplaceAdventureMode();
+
+    boolean isReplaceParticles();
 }

@@ -2,41 +2,38 @@ package net.optifine;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import net.aE2;
-import net.acE;
-import net.optifine.Config;
-import net.optifine.IFileDownloadListener;
-import net.optifine.MatchBlock;
-import net.optifine.PlayerConfiguration;
-import net.optifine.PlayerConfigurationParser;
 
-public class PlayerConfigurationReceiver implements IFileDownloadListener {
-   private String player = null;
+public class PlayerConfigurationReceiver implements IFileDownloadListener
+{
+    private String player = null;
 
-   public PlayerConfigurationReceiver(String var1) {
-      this.player = var1;
-   }
+    public PlayerConfigurationReceiver(String p_i72_1_)
+    {
+        this.player = p_i72_1_;
+    }
 
-   public void fileDownloadFinished(String var1, byte[] var2, Throwable var3) {
-      acE[] var4 = MatchBlock.b();
+    public void fileDownloadFinished(String p_fileDownloadFinished_1_, byte[] p_fileDownloadFinished_2_, Throwable p_fileDownloadFinished_3_)
+    {
+        if (p_fileDownloadFinished_2_ != null)
+        {
+            try
+            {
+                String s = new String(p_fileDownloadFinished_2_, "ASCII");
+                JsonParser jsonparser = new JsonParser();
+                JsonElement jsonelement = jsonparser.parse(s);
+                PlayerConfigurationParser playerconfigurationparser = new PlayerConfigurationParser(this.player);
+                PlayerConfiguration playerconfiguration = playerconfigurationparser.parsePlayerConfiguration(jsonelement);
 
-      try {
-         String var5 = new String(var2, "ASCII");
-         JsonParser var6 = new JsonParser();
-         JsonElement var7 = var6.parse(var5);
-         PlayerConfigurationParser var8 = new PlayerConfigurationParser(this.player);
-         PlayerConfiguration var9 = var8.parsePlayerConfiguration(var7);
-         if(var9 != null) {
-            var9.setInitialized(true);
-            aE2.a(this.player, var9);
-         }
-      } catch (Exception var10) {
-         Config.dbg("Error parsing configuration: " + var1 + ", " + var10.getClass().getName() + ": " + var10.getMessage());
-      }
-
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+                if (playerconfiguration != null)
+                {
+                    playerconfiguration.setInitialized(true);
+                    PlayerConfigurations.setPlayerConfiguration(this.player, playerconfiguration);
+                }
+            }
+            catch (Exception exception)
+            {
+                Config.dbg("Error parsing configuration: " + p_fileDownloadFinished_1_ + ", " + exception.getClass().getName() + ": " + exception.getMessage());
+            }
+        }
+    }
 }

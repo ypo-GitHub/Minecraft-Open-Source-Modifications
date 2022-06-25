@@ -1,157 +1,153 @@
 package viaversion.viaversion.api.data;
 
 import com.google.gson.JsonObject;
-import net.cA;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.Via;
-import viaversion.viaversion.api.data.MappingDataLoader;
-import viaversion.viaversion.api.data.Mappings;
-import viaversion.viaversion.api.data.ParticleMappings;
 import viaversion.viaversion.util.Int2IntBiMap;
 
 public class MappingData {
-   protected final String oldVersion;
-   protected final String newVersion;
-   protected final boolean hasDiffFile;
-   protected Int2IntBiMap itemMappings;
-   protected ParticleMappings particleMappings;
-   protected Mappings blockMappings;
-   protected Mappings blockStateMappings;
-   protected Mappings soundMappings;
-   protected Mappings statisticsMappings;
-   protected boolean loadItems;
-   private static String[] c;
 
-   public MappingData(String var1, String var2) {
-      this(var1, var2, false);
-   }
+    protected final String oldVersion;
+    protected final String newVersion;
+    protected final boolean hasDiffFile;
+    protected Int2IntBiMap itemMappings;
+    protected ParticleMappings particleMappings;
+    protected Mappings blockMappings;
+    protected Mappings blockStateMappings;
+    protected Mappings soundMappings;
+    protected Mappings statisticsMappings;
+    protected boolean loadItems = true;
 
-   public MappingData(String var1, String var2, boolean var3) {
-      this.loadItems = true;
-      this.oldVersion = var1;
-      this.newVersion = var2;
-      this.hasDiffFile = var3;
-   }
+    public MappingData(String oldVersion, String newVersion) {
+        this(oldVersion, newVersion, false);
+    }
 
-   public void load() {
-      Via.getPlatform().getLogger().info("Loading " + this.oldVersion + " -> " + this.newVersion + " mappings...");
-      JsonObject var1 = this.hasDiffFile?this.loadDiffFile():null;
-      JsonObject var2 = MappingDataLoader.loadData("mapping-" + this.oldVersion + ".json", true);
-      JsonObject var3 = MappingDataLoader.loadData("mapping-" + this.newVersion + ".json", true);
-      System.out.println();
-      this.blockMappings = this.loadFromObject(var2, var3, var1, "blocks");
-      this.blockStateMappings = this.loadFromObject(var2, var3, var1, "blockstates");
-      this.soundMappings = this.loadFromArray(var2, var3, var1, "sounds");
-      this.statisticsMappings = this.loadFromArray(var2, var3, var1, "statistics");
-      Mappings var4 = this.loadFromArray(var2, var3, var1, "particles");
-      this.particleMappings = new ParticleMappings(var2.getAsJsonArray("particles"), var4);
-      if(this.loadItems && var3.has("items")) {
-         this.itemMappings = new Int2IntBiMap();
-         this.itemMappings.defaultReturnValue(-1);
-         MappingDataLoader.mapIdentifiers(this.itemMappings, var2.getAsJsonObject("items"), var3.getAsJsonObject("items"), var1.getAsJsonObject("items"));
-      }
+    public MappingData(String oldVersion, String newVersion, boolean hasDiffFile) {
+        this.oldVersion = oldVersion;
+        this.newVersion = newVersion;
+        this.hasDiffFile = hasDiffFile;
+    }
 
-      this.loadExtras(var2, var3, var1);
-   }
+    public void load() {
+        Via.getPlatform().getLogger().info("Loading " + oldVersion + " -> " + newVersion + " mappings...");
+        JsonObject diffMapping = hasDiffFile ? loadDiffFile() : null;
+        JsonObject oldMappings = MappingDataLoader.loadData("mapping-" + oldVersion + ".json", true);
+        JsonObject newMappings = MappingDataLoader.loadData("mapping-" + newVersion + ".json", true);
 
-   public int getNewBlockStateId(int var1) {
-      return this.checkValidity(var1, this.blockStateMappings.getNewId(var1), "blockstate");
-   }
+        if(oldMappings == null || newMappings == null)
+            System.out.println();
 
-   public int getNewBlockId(int var1) {
-      return this.checkValidity(var1, this.blockMappings.getNewId(var1), "block");
-   }
+        blockMappings = loadFromObject(oldMappings, newMappings, diffMapping, "blocks");
+        blockStateMappings = loadFromObject(oldMappings, newMappings, diffMapping, "blockstates");
+        soundMappings = loadFromArray(oldMappings, newMappings, diffMapping, "sounds");
+        statisticsMappings = loadFromArray(oldMappings, newMappings, diffMapping, "statistics");
 
-   public int getNewItemId(int var1) {
-      return this.checkValidity(var1, this.itemMappings.get(var1), "item");
-   }
+        Mappings particles = loadFromArray(oldMappings, newMappings, diffMapping, "particles");
 
-   public int getOldItemId(int var1) {
-      cA.c();
-      int var3 = this.itemMappings.inverse().get(var1);
-      return var3 != -1?var3:1;
-   }
+        if(particles != null) {
+            particleMappings = new ParticleMappings(oldMappings.getAsJsonArray("particles"), particles);
+        }
 
-   public int getNewParticleId(int var1) {
-      return this.checkValidity(var1, this.particleMappings.getMappings().getNewId(var1), "particles");
-   }
+        if(loadItems && newMappings.has("items")) {
+            itemMappings = new Int2IntBiMap();
+            itemMappings.defaultReturnValue(-1);
+            MappingDataLoader.mapIdentifiers(itemMappings,
+                    oldMappings.getAsJsonObject("items"),
+                    newMappings.getAsJsonObject("items"),
+                    diffMapping != null ? diffMapping.getAsJsonObject("items") : null);
+        }
 
-   @Nullable
-   public Int2IntBiMap getItemMappings() {
-      return this.itemMappings;
-   }
+        loadExtras(oldMappings, newMappings, diffMapping);
+    }
 
-   @Nullable
-   public ParticleMappings getParticleMappings() {
-      return this.particleMappings;
-   }
+    public int getNewBlockStateId(int id) {
+        return checkValidity(id, blockStateMappings.getNewId(id), "blockstate");
+    }
 
-   @Nullable
-   public Mappings getBlockMappings() {
-      return this.blockMappings;
-   }
+    public int getNewBlockId(int id) {
+        return checkValidity(id, blockMappings.getNewId(id), "block");
+    }
 
-   @Nullable
-   public Mappings getBlockStateMappings() {
-      return this.blockStateMappings;
-   }
+    public int getNewItemId(int id) {
+        return checkValidity(id, itemMappings.get(id), "item");
+    }
 
-   @Nullable
-   public Mappings getSoundMappings() {
-      return this.soundMappings;
-   }
+    public int getOldItemId(int id) {
+        int oldId = itemMappings.inverse().get(id);
+        // Remap new items to stone
+        return oldId != -1 ? oldId : 1;
+    }
 
-   @Nullable
-   public Mappings getStatisticsMappings() {
-      return this.statisticsMappings;
-   }
+    public int getNewParticleId(int id) {
+        return checkValidity(id, particleMappings.getMappings().getNewId(id), "particles");
+    }
 
-   @Nullable
-   protected Mappings loadFromArray(JsonObject var1, JsonObject var2, @Nullable JsonObject var3, String var4) {
-      if(var1.has(var4) && var2.has(var4)) {
-         JsonObject var5 = var3.getAsJsonObject(var4);
-         return new Mappings(var1.getAsJsonArray(var4), var2.getAsJsonArray(var4), var5);
-      } else {
-         return null;
-      }
-   }
+    @Nullable
+    public Int2IntBiMap getItemMappings() {
+        return itemMappings;
+    }
 
-   @Nullable
-   protected Mappings loadFromObject(JsonObject var1, JsonObject var2, @Nullable JsonObject var3, String var4) {
-      if(var1.has(var4) && var2.has(var4)) {
-         JsonObject var5 = var3.getAsJsonObject(var4);
-         return new Mappings(var1.getAsJsonObject(var4), var2.getAsJsonObject(var4), var5);
-      } else {
-         return null;
-      }
-   }
+    @Nullable
+    public ParticleMappings getParticleMappings() {
+        return particleMappings;
+    }
 
-   protected JsonObject loadDiffFile() {
-      return MappingDataLoader.loadData("mappingdiff-" + this.oldVersion + "to" + this.newVersion + ".json");
-   }
+    @Nullable
+    public Mappings getBlockMappings() {
+        return blockMappings;
+    }
 
-   protected int checkValidity(int var1, int var2, String var3) {
-      boolean var4 = cA.b();
-      if(var2 == -1) {
-         Via.getPlatform().getLogger().warning(String.format("Missing %s %s for %s %s %d", new Object[]{this.newVersion, var3, this.oldVersion, var3, Integer.valueOf(var1)}));
-         return 0;
-      } else {
-         return var2;
-      }
-   }
+    @Nullable
+    public Mappings getBlockStateMappings() {
+        return blockStateMappings;
+    }
 
-   protected void loadExtras(JsonObject var1, JsonObject var2, @Nullable JsonObject var3) {
-   }
+    @Nullable
+    public Mappings getSoundMappings() {
+        return soundMappings;
+    }
 
-   public static void b(String[] var0) {
-      c = var0;
-   }
+    @Nullable
+    public Mappings getStatisticsMappings() {
+        return statisticsMappings;
+    }
 
-   public static String[] a() {
-      return c;
-   }
+    @Nullable
+    protected Mappings loadFromArray(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings, String key) {
+        if(!oldMappings.has(key) || !newMappings.has(key)) return null;
 
-   static {
-      b((String[])null);
-   }
+        JsonObject diff = diffMappings != null ? diffMappings.getAsJsonObject(key) : null;
+        return new Mappings(oldMappings.getAsJsonArray(key), newMappings.getAsJsonArray(key), diff);
+    }
+
+    @Nullable
+    protected Mappings loadFromObject(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings, String key) {
+        if(!oldMappings.has(key) || !newMappings.has(key)) return null;
+
+        JsonObject diff = diffMappings != null ? diffMappings.getAsJsonObject(key) : null;
+        return new Mappings(oldMappings.getAsJsonObject(key), newMappings.getAsJsonObject(key), diff);
+    }
+
+    protected JsonObject loadDiffFile() {
+        return MappingDataLoader.loadData("mappingdiff-" + oldVersion + "to" + newVersion + ".json");
+    }
+
+    protected int checkValidity(int id, int mappedId, String type) {
+        if(mappedId == -1) {
+            Via.getPlatform().getLogger().warning(String.format("Missing %s %s for %s %s %d", newVersion, type, oldVersion, type, id));
+            return 0;
+        }
+
+        return mappedId;
+    }
+
+    /**
+     * To be overridden.
+     *
+     * @param oldMappings  old mappings
+     * @param newMappings  new mappings
+     * @param diffMappings diff mappings if present
+     */
+    protected void loadExtras(JsonObject oldMappings, JsonObject newMappings, @Nullable JsonObject diffMappings) {
+    }
 }

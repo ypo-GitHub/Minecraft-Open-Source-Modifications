@@ -2,23 +2,30 @@ package viaversion.viaversion.protocols.protocol1_9to1_8.chat;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.cq;
 import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.protocols.protocol1_9to1_8.chat.GameMode;
+import viaversion.viaversion.protocols.protocol1_9to1_8.storage.EntityTracker1_9;
 
 public class ChatRewriter {
-   public static void toClient(JsonObject var0, UserConnection var1) {
-      int[] var2 = GameMode.b();
-      if(var0.get("translate") != null && var0.get("translate").getAsString().equals("gameMode.changed")) {
-         String var3 = ((cq)var1.b(cq.class)).h().getText();
-         JsonObject var4 = new JsonObject();
-         var4.addProperty("text", var3);
-         var4.addProperty("color", "gray");
-         var4.addProperty("italic", Boolean.valueOf(true));
-         JsonArray var5 = new JsonArray();
-         var5.add(var4);
-         var0.add("with", var5);
-      }
+    /**
+     * Rewrite chat being sent to the client so that gamemode issues don't occur.
+     *
+     * @param obj  The json object being sent by the server
+     * @param user The player involved. (Required for Gamemode info)
+     */
+    public static void toClient(JsonObject obj, UserConnection user) {
+        //Check gamemode change
+        if (obj.get("translate") != null && obj.get("translate").getAsString().equals("gameMode.changed")) {
+            String gameMode = user.get(EntityTracker1_9.class).getGameMode().getText();
 
-   }
+            JsonObject gameModeObject = new JsonObject();
+            gameModeObject.addProperty("text", gameMode);
+            gameModeObject.addProperty("color", "gray");
+            gameModeObject.addProperty("italic", true);
+
+            JsonArray array = new JsonArray();
+            array.add(gameModeObject);
+
+            obj.add("with", array);
+        }
+    }
 }

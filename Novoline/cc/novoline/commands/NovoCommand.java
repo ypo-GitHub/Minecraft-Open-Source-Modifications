@@ -2,9 +2,11 @@ package cc.novoline.commands;
 
 import cc.novoline.Novoline;
 import cc.novoline.utils.java.Lazy;
+import cc.novoline.utils.messages.HelpMessage.UsageMessage;
 import cc.novoline.utils.messages.MessageFactory;
 import cc.novoline.utils.messages.TextMessage;
 import cc.novoline.utils.notifications.NotificationType;
+import static cc.novoline.utils.notifications.NotificationType.*;
 import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.io.IOException;
@@ -12,13 +14,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.Uj;
-import net.acE;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandBase;
@@ -28,243 +25,238 @@ import net.minecraft.command.NumberInvalidException;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import static net.minecraft.util.EnumChatFormatting.GRAY;
+import static net.minecraft.util.EnumChatFormatting.LIGHT_PURPLE;
 import net.minecraft.util.IChatComponent;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import viaversion.viaversion.api.type.Type;
 
 public abstract class NovoCommand extends CommandBase {
-   public static final TextMessage PREFIX = MessageFactory.text("Novoline", EnumChatFormatting.LIGHT_PURPLE).append(" » ", EnumChatFormatting.GRAY);
-   public static final IChatComponent EMPTY_COMPONENT = new ChatComponentText("");
-   protected final Lazy player;
-   protected final Novoline novoline;
-   protected final String name;
-   protected final String description;
-   protected final List aliases;
-   private static String g;
 
-   protected NovoCommand(@NotNull Novoline var1, @NotNull String var2, @Nullable String var3, @Nullable Iterable var4) {
-      this.player = Lazy.create(NovoCommand::lambda$new$0);
-      this.novoline = var1;
-      this.name = var2;
-      this.description = var3;
-      this.aliases = Lists.newArrayList(var4);
-   }
+    public static final TextMessage PREFIX = MessageFactory.text("Novoline", LIGHT_PURPLE).append(" \u00bb ", GRAY);
+    public static final IChatComponent EMPTY_COMPONENT = new ChatComponentText("");
 
-   protected NovoCommand(@NotNull Novoline var1, @NotNull String var2, @Nullable String var3, @Nullable String var4) {
-      this(var1, var2, var3, (Iterable)Collections.singleton(var4));
-   }
+    /* fields */
+    protected final Lazy<EntityPlayerSP> player = Lazy.create(() -> Minecraft.getInstance().player);
 
-   protected NovoCommand(@NotNull Novoline var1, @NotNull String var2, @Nullable String var3) {
-      this(var1, var2, (String)null, (Iterable)Collections.singleton(var3));
-   }
+    protected final Novoline novoline;
+    protected final String name;
+    protected final String description;
+    protected final List<String> aliases;
 
-   protected NovoCommand(@NotNull Novoline var1, @NotNull String var2, @Nullable Iterable var3) {
-      this(var1, var2, (String)null, (Iterable)var3);
-   }
+    /* constructors */
+    protected NovoCommand(@NotNull Novoline novoline,
+                          @NotNull String name,
+                          @Nullable String description,
+                          @Nullable Iterable<String> aliases) {
+        this.novoline = novoline;
+        this.name = name;
+        this.description = description;
+        this.aliases = aliases != null ? Lists.newArrayList(aliases) : Collections.emptyList();
+    }
 
-   protected NovoCommand(@NotNull Novoline var1, @NotNull String var2) {
-      this(var1, var2, (String)null, (Iterable)((Iterable)null));
-   }
+    protected NovoCommand(@NotNull Novoline novoline,
+                          @NotNull String name,
+                          @Nullable String description,
+                          @Nullable String alias) {
+        this(novoline, name, description, alias != null ? Collections.singleton(alias) : null);
+    }
 
-   public abstract void process(String[] var1) throws CommandException, IOException;
+    protected NovoCommand(@NotNull Novoline novoline,
+                          @NotNull String name,
+                          @Nullable String alias) {
+        this(novoline, name, null, alias != null ? Collections.singleton(alias) : null);
+    }
 
-   @Nullable
-   public List completeTabOptions(String[] var1) {
-      return null;
-   }
+    protected NovoCommand(@NotNull Novoline novoline,
+                          @NotNull String name,
+                          @Nullable Iterable<String> aliases) {
+        this(novoline, name, null, aliases);
+    }
 
-   protected int getInt(String var1) throws NumberInvalidException {
-      String var10000 = var1;
+    protected NovoCommand(@NotNull Novoline novoline,
+                          @NotNull String name) {
+        this(novoline, name, null, (Iterable<String>) null);
+    }
 
-      try {
-         return Integer.parseInt(var10000);
-      } catch (NumberFormatException var3) {
-         throw new NumberInvalidException(var1 + " is not a valid number", new Object[0]);
-      }
-   }
+    /* methods */
+    public abstract void process(String[] args) throws CommandException, IOException;
 
-   protected double getDouble(String var1) throws NumberInvalidException {
-      String var10000 = var1;
+    public @Nullable List<String> completeTabOptions(String[] args) {
+        return null;
+    }
 
-      try {
-         return Double.parseDouble(var10000);
-      } catch (NumberFormatException var3) {
-         throw new NumberInvalidException(var1 + " is not a valid number", new Object[0]);
-      }
-   }
+    protected int getInt(String s) throws NumberInvalidException {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            throw new NumberInvalidException(s + " is not a valid number");
+        }
+    }
 
-   protected void send(@Nullable TextMessage var1, boolean var2) {
-      Type.b();
-      EntityPlayerSP var4 = (EntityPlayerSP)this.player.get();
-      if(var1 != null) {
-         TextMessage var5 = var1.prefix(PREFIX);
-      }
+    protected double getDouble(String s) throws NumberInvalidException {
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            throw new NumberInvalidException(s + " is not a valid number");
+        }
+    }
 
-      IChatComponent var6 = EMPTY_COMPONENT;
-      var4.addChatComponentMessage(var6);
-   }
+    protected void send(@Nullable TextMessage component, boolean prefix) {
+        EntityPlayerSP player = this.player.get();
+        IChatComponent chatComponent;
 
-   protected void send(@Nullable TextMessage var1) {
-      this.send(var1, false);
-   }
+        if (component != null) {
+            if (prefix) {
+                chatComponent = component.prefix(PREFIX);
+            } else {
+                chatComponent = component;
+            }
+        } else {
+            chatComponent = EMPTY_COMPONENT;
+        }
 
-   protected void send(@Nullable String var1, boolean var2) {
-      this.send(MessageFactory.text(var1), var2);
-   }
+        player.addChatComponentMessage(chatComponent);
+    }
 
-   protected void send(@Nullable String var1) {
-      this.send(MessageFactory.text(var1));
-   }
+    protected void send(@Nullable TextMessage component) {
+        send(component, false);
+    }
 
-   protected void send(@Nullable String var1, @NotNull EnumChatFormatting var2) {
-      TextMessage var3 = MessageFactory.text(var1);
-      var3.setColor(var2);
-      this.send(var3);
-   }
+    protected void send(@Nullable String s, boolean prefix) {
+        send(MessageFactory.text(s), prefix);
+    }
 
-   protected void send(@Nullable Object var1) {
-      acE[] var2 = Type.b();
-      this.send(var1 != null?var1.toString():null);
-   }
+    protected void send(@Nullable String s) {
+        send(MessageFactory.text(s));
+    }
 
-   protected void sendEmpty() {
-      ((EntityPlayerSP)this.player.get()).addChatComponentMessage(MessageFactory.a());
-   }
+    protected void send(@Nullable String s, @NotNull EnumChatFormatting color) {
+        TextMessage text = MessageFactory.text(s);
+        text.setColor(color);
 
-   protected void sendUsage(@NotNull String var1, @NotNull String var2) {
-      this.send((TextMessage)MessageFactory.a(var1, var2));
-   }
+        send(text);
+    }
 
-   protected void a(@NotNull String var1, @NotNull String var2, @NotNull Uj... var3) {
-      this.send((TextMessage)MessageFactory.a(var1, var2, var3), true);
-   }
+    protected void send(@Nullable Object o) {
+        send(o != null ? o.toString() : null);
+    }
 
-   protected void notify(@NotNull String var1, int var2, @Nullable NotificationType var3) {
-      Novoline.getInstance().getNotificationManager().pop(var1, var2, var3);
-   }
+    protected void sendEmpty() {
+        player.get().addChatComponentMessage(MessageFactory.empty());
+    }
 
-   protected void notify(@NotNull String var1, int var2) {
-      this.notify(var1, var2, (NotificationType)null);
-   }
+    protected void sendUsage(@NotNull String command, @NotNull String description) {
+        send(MessageFactory.usage(command, description));
+    }
 
-   protected void notify(@NotNull String var1, @Nullable NotificationType var2) {
-      this.notify(var1, 2000, var2);
-   }
+    protected void sendHelp(@NotNull String name, @NotNull String command, @NotNull UsageMessage... subCommands) {
+        send(MessageFactory.help(name, command, subCommands), true);
+    }
 
-   protected void notify(@NotNull String var1) {
-      this.notify(var1, 2000, NotificationType.INFO);
-   }
+    protected void notify(@NotNull String s, int delay, @Nullable NotificationType type) {
+        Novoline.getInstance().getNotificationManager().pop(s, delay, type);
+    }
 
-   protected void notifyClient(@NotNull String var1, @NotNull String var2, int var3, NotificationType var4) {
-      this.novoline.getNotificationManager().pop(var1, var2, var3, var4);
-   }
+    protected void notify(@NotNull String s, int delay) {
+        notify(s, delay, null);
+    }
 
-   protected void notifyWarning(@NotNull String var1, int var2) {
-      this.notify(var1, var2, NotificationType.WARNING);
-   }
+    protected void notify(@NotNull String s, @Nullable NotificationType type) {
+        notify(s, 2_000, type);
+    }
 
-   protected void notifyWarning(@NotNull String var1) {
-      this.notifyWarning(var1, 2000);
-   }
+    protected void notify(@NotNull String s) {
+        notify(s, 2_000, INFO);
+    }
 
-   protected void notifyError(@NotNull String var1, int var2) {
-      this.notify(var1, var2, NotificationType.ERROR);
-   }
+    protected void notifyClient(@NotNull String reason, @NotNull String text, int delay, NotificationType type) {
+        novoline.getNotificationManager().pop(reason, text, delay, type);
+    }
 
-   protected void notifyError(@NotNull String var1) {
-      this.notifyError(var1, 2000);
-   }
+    protected void notifyWarning(@NotNull String s, int delay) {
+        notify(s, delay, WARNING);
+    }
 
-   protected List completeTab(@NotNull Stream var1, @NotNull String var2, boolean var3) {
-      acE[] var4 = Type.b();
-      String var5 = var2.toLowerCase(Locale.ROOT);
-      return (List)var1.map(NovoCommand::lambda$completeTab$1).filter(NovoCommand::lambda$completeTab$2).collect(Collectors.toCollection(ObjectArrayList::<init>));
-   }
+    protected void notifyWarning(@NotNull String s) {
+        notifyWarning(s, 2_000);
+    }
 
-   protected List completeTab(@NotNull Collection var1, @NotNull String var2, boolean var3) {
-      return this.completeTab(var1.stream(), var2, var3);
-   }
+    protected void notifyError(@NotNull String s, int delay) {
+        notify(s, delay, ERROR);
+    }
 
-   protected Logger getLogger() {
-      return Novoline.getLogger();
-   }
+    protected void notifyError(@NotNull String s) {
+        notifyError(s, 2_000);
+    }
 
-   public final void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      NovoCommand var10000 = this;
-      String[] var10001 = var2;
+    protected List<String> completeTab(@NotNull Stream<String> lookIn, @NotNull String lookFor, boolean ignoreCase) {
+        if(ignoreCase) {
+            String lookForLowercase = lookFor.toLowerCase(Locale.ROOT);
+            return lookIn.map(s -> s.toLowerCase(Locale.ROOT))
+                    .filter(s -> s.startsWith(lookForLowercase))
+                    .collect(Collectors.toCollection(ObjectArrayList::new));
+        } else {
+            return lookIn.filter(s -> s.startsWith(lookFor))
+                    .collect(Collectors.toCollection(ObjectArrayList::new));
+        }
+    }
 
-      try {
-         var10000.process(var10001);
-      } catch (CommandException var4) {
-         this.getLogger().warn(var4);
-         throw var4;
-      } catch (Throwable var5) {
-         this.getLogger().warn(var5);
-         throw new CommandException("Unexpected error occurred while executing command", var5, new Object[0]);
-      }
-   }
+    protected List<String> completeTab(@NotNull Collection<String> lookIn, @NotNull String lookFor,
+                                       boolean ignoreCase) {
+        return completeTab(lookIn.stream(), lookFor, ignoreCase);
+    }
 
-   public final String getCommandName() {
-      return this.name;
-   }
+    protected Logger getLogger() {
+        return Novoline.getLogger();
+    }
 
-   public final List getCommandAliases() {
-      return this.aliases;
-   }
+    @Override
+    public final void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        try {
+            process(args);
+        } catch (CommandException e) {
+            getLogger().warn(e);
+            throw e;
+        } catch (Throwable t) {
+            getLogger().warn(t);
+            throw new CommandException("Unexpected error occurred while executing command", t);
+        }
+    }
 
-   @Nullable
-   public final String getCommandUsage(ICommandSender var1) {
-      return null;
-   }
+    @Override
+    public final String getCommandName() {
+        return name;
+    }
 
-   public final int getRequiredPermissionLevel() {
-      return 0;
-   }
+    @Override
+    public final List<String> getCommandAliases() {
+        return aliases;
+    }
 
-   public final boolean canCommandSenderUseCommand(ICommandSender var1) {
-      return true;
-   }
+    @Override
+    public final @Nullable String getCommandUsage(ICommandSender sender) {
+        return null;
+    }
 
-   @Nullable
-   public final List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return this.completeTabOptions(var2);
-   }
+    @Override
+    public final int getRequiredPermissionLevel() {
+        return 0;
+    }
 
-   public final boolean isUsernameIndex(String[] var1, int var2) {
-      return false;
-   }
+    @Override
+    public final boolean canCommandSenderUseCommand(ICommandSender sender) {
+        return true;
+    }
 
-   private static boolean lambda$completeTab$3(String var0, String var1) {
-      return var1.startsWith(var0);
-   }
+    @Override
+    public final @Nullable List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return completeTabOptions(args);
+    }
 
-   private static boolean lambda$completeTab$2(String var0, String var1) {
-      return var1.startsWith(var0);
-   }
-
-   private static String lambda$completeTab$1(String var0) {
-      return var0.toLowerCase(Locale.ROOT);
-   }
-
-   private static EntityPlayerSP lambda$new$0() {
-      return Minecraft.getInstance().player;
-   }
-
-   static {
-      g((String)null);
-   }
-
-   public static void g(String var0) {
-      g = var0;
-   }
-
-   public static String c() {
-      return g;
-   }
-
-   private static NumberFormatException a(NumberFormatException var0) {
-      return var0;
-   }
+    @Override
+    public final boolean isUsernameIndex(String[] args, int index) {
+        return false;
+    }
 }

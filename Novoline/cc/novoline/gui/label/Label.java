@@ -2,26 +2,33 @@ package cc.novoline.gui.label;
 
 import cc.novoline.gui.Element;
 import cc.novoline.utils.fonts.api.FontRenderer;
-import java.awt.Color;
+import java.awt.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * @author xDelsy
+ */
 public interface Label extends Element {
-   String getText();
 
-   void setText(String var1);
+    @Nullable String getText();
 
-   int getColor();
+    void setText(@Nullable String text);
 
-   void setColor(int var1);
+    int getColor();
 
-   default void setColor(Color var1) {
-      this.setColor(var1.getRGB());
-   }
+    void setColor(int color);
 
-   FontRenderer getFontRenderer();
+    default void setColor(@NonNull Color color) {
+        setColor(color.getRGB());
+    }
 
-   void setFontRenderer(FontRenderer var1);
+    @NonNull FontRenderer getFontRenderer();
 
-   default int getWidth() {
-      return this.getFontRenderer().stringWidth(this.getText());
-   }
+    void setFontRenderer(@NonNull FontRenderer fontRenderer);
+
+    default int getWidth() {
+        return getFontRenderer().stringWidth(getText());
+    }
+
 }

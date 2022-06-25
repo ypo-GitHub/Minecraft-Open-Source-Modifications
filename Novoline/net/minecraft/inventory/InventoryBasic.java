@@ -1,169 +1,226 @@
 package net.minecraft.inventory;
 
 import com.google.common.collect.Lists;
-import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInvBasic;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.IChatComponent;
 
+import java.util.List;
+
 public class InventoryBasic implements IInventory {
-   private String inventoryTitle;
-   private int slotsCount;
-   private ItemStack[] inventoryContents;
-   private List field_70480_d;
-   private boolean hasCustomName;
+    private String inventoryTitle;
+    private int slotsCount;
+    private ItemStack[] inventoryContents;
+    private List<IInvBasic> field_70480_d;
+    private boolean hasCustomName;
 
-   public InventoryBasic(String var1, boolean var2, int var3) {
-      this.inventoryTitle = var1;
-      this.hasCustomName = var2;
-      this.slotsCount = var3;
-      this.inventoryContents = new ItemStack[var3];
-   }
+    public InventoryBasic(String title, boolean customName, int slotCount) {
+        this.inventoryTitle = title;
+        this.hasCustomName = customName;
+        this.slotsCount = slotCount;
+        this.inventoryContents = new ItemStack[slotCount];
+    }
 
-   public InventoryBasic(IChatComponent var1, int var2) {
-      this(var1.getUnformattedText(), true, var2);
-   }
+    public InventoryBasic(IChatComponent title, int slotCount) {
+        this(title.getUnformattedText(), true, slotCount);
+    }
 
-   public void func_110134_a(IInvBasic var1) {
-      if(this.field_70480_d == null) {
-         this.field_70480_d = Lists.newArrayList();
-      }
+    public void func_110134_a(IInvBasic p_110134_1_) {
+        if (this.field_70480_d == null) {
+            this.field_70480_d = Lists.<IInvBasic>newArrayList();
+        }
 
-      this.field_70480_d.add(var1);
-   }
+        this.field_70480_d.add(p_110134_1_);
+    }
 
-   public void func_110132_b(IInvBasic var1) {
-      this.field_70480_d.remove(var1);
-   }
+    public void func_110132_b(IInvBasic p_110132_1_) {
+        this.field_70480_d.remove(p_110132_1_);
+    }
 
-   public ItemStack getStackInSlot(int var1) {
-      return var1 < this.inventoryContents.length?this.inventoryContents[var1]:null;
-   }
+    /**
+     * Returns the stack in the given slot.
+     */
+    public ItemStack getStackInSlot(int index) {
+        return index >= 0 && index < this.inventoryContents.length ? this.inventoryContents[index] : null;
+    }
 
-   public ItemStack decrStackSize(int var1, int var2) {
-      if(this.inventoryContents[var1] != null) {
-         if(this.inventoryContents[var1].stackSize <= var2) {
-            ItemStack var4 = this.inventoryContents[var1];
-            this.inventoryContents[var1] = null;
-            this.markDirty();
-            return var4;
-         } else {
-            ItemStack var3 = this.inventoryContents[var1].splitStack(var2);
-            if(this.inventoryContents[var1].stackSize == 0) {
-               this.inventoryContents[var1] = null;
+    /**
+     * Removes up to a specified number of items from an inventory slot and returns them in a new stack.
+     */
+    public ItemStack decrStackSize(int index, int count) {
+        if (this.inventoryContents[index] != null) {
+            if (this.inventoryContents[index].stackSize <= count) {
+                ItemStack itemstack1 = this.inventoryContents[index];
+                this.inventoryContents[index] = null;
+                this.markDirty();
+                return itemstack1;
+            } else {
+                ItemStack itemstack = this.inventoryContents[index].splitStack(count);
+
+                if (this.inventoryContents[index].stackSize == 0) {
+                    this.inventoryContents[index] = null;
+                }
+
+                this.markDirty();
+                return itemstack;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public ItemStack func_174894_a(ItemStack stack) {
+        ItemStack itemstack = stack.copy();
+
+        for (int i = 0; i < this.slotsCount; ++i) {
+            ItemStack itemstack1 = this.getStackInSlot(i);
+
+            if (itemstack1 == null) {
+                this.setInventorySlotContents(i, itemstack);
+                this.markDirty();
+                return null;
             }
 
+            if (ItemStack.areItemsEqual(itemstack1, itemstack)) {
+                int j = Math.min(this.getInventoryStackLimit(), itemstack1.getMaxStackSize());
+                int k = Math.min(itemstack.stackSize, j - itemstack1.stackSize);
+
+                if (k > 0) {
+                    itemstack1.stackSize += k;
+                    itemstack.stackSize -= k;
+
+                    if (itemstack.stackSize <= 0) {
+                        this.markDirty();
+                        return null;
+                    }
+                }
+            }
+        }
+
+        if (itemstack.stackSize != stack.stackSize) {
             this.markDirty();
-            return var3;
-         }
-      } else {
-         return null;
-      }
-   }
+        }
 
-   public ItemStack a(ItemStack var1) {
-      ItemStack var2 = var1.copy();
-      byte var3 = 0;
-      if(var3 < this.slotsCount) {
-         ItemStack var4 = this.getStackInSlot(var3);
-         this.setInventorySlotContents(var3, var2);
-         this.markDirty();
-         return null;
-      } else {
-         if(var2.stackSize != var1.stackSize) {
-            this.markDirty();
-         }
+        return itemstack;
+    }
 
-         return var2;
-      }
-   }
+    /**
+     * Removes a stack from the given slot and returns it.
+     */
+    public ItemStack removeStackFromSlot(int index) {
+        if (this.inventoryContents[index] != null) {
+            ItemStack itemstack = this.inventoryContents[index];
+            this.inventoryContents[index] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
+    }
 
-   public ItemStack removeStackFromSlot(int var1) {
-      if(this.inventoryContents[var1] != null) {
-         ItemStack var2 = this.inventoryContents[var1];
-         this.inventoryContents[var1] = null;
-         return var2;
-      } else {
-         return null;
-      }
-   }
+    /**
+     * Sets the given item stack to the specified slot in the inventory (can be crafting or armor sections).
+     */
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        this.inventoryContents[index] = stack;
 
-   public void setInventorySlotContents(int var1, ItemStack var2) {
-      this.inventoryContents[var1] = var2;
-      if(var2.stackSize > this.getInventoryStackLimit()) {
-         var2.stackSize = this.getInventoryStackLimit();
-      }
+        if (stack != null && stack.stackSize > this.getInventoryStackLimit()) {
+            stack.stackSize = this.getInventoryStackLimit();
+        }
 
-      this.markDirty();
-   }
+        this.markDirty();
+    }
 
-   public int getSizeInventory() {
-      return this.slotsCount;
-   }
+    /**
+     * Returns the number of slots in the inventory.
+     */
+    public int getSizeInventory() {
+        return this.slotsCount;
+    }
 
-   public String getName() {
-      return this.inventoryTitle;
-   }
+    /**
+     * Gets the name of this command sender (usually username, but possibly "Rcon")
+     */
+    public String getName() {
+        return this.inventoryTitle;
+    }
 
-   public boolean hasCustomName() {
-      return this.hasCustomName;
-   }
+    /**
+     * Returns true if this thing is named
+     */
+    public boolean hasCustomName() {
+        return this.hasCustomName;
+    }
 
-   public void setCustomName(String var1) {
-      this.hasCustomName = true;
-      this.inventoryTitle = var1;
-   }
+    /**
+     * Sets the name of this inventory. This is displayed to the client on opening.
+     */
+    public void setCustomName(String inventoryTitleIn) {
+        this.hasCustomName = true;
+        this.inventoryTitle = inventoryTitleIn;
+    }
 
-   public IChatComponent getDisplayName() {
-      return (IChatComponent)(this.hasCustomName()?new ChatComponentText(this.getName()):new ChatComponentTranslation(this.getName(), new Object[0]));
-   }
+    /**
+     * Get the formatted ChatComponent that will be used for the sender's username in chat
+     */
+    public IChatComponent getDisplayName() {
+        return (IChatComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatComponentTranslation(this.getName(), new Object[0]));
+    }
 
-   public int getInventoryStackLimit() {
-      return 64;
-   }
+    /**
+     * Returns the maximum stack size for a inventory slot. Seems to always be 64, possibly will be extended.
+     */
+    public int getInventoryStackLimit() {
+        return 64;
+    }
 
-   public void markDirty() {
-      if(this.field_70480_d != null) {
-         for(IInvBasic var2 : this.field_70480_d) {
-            var2.onInventoryChanged(this);
-         }
-      }
+    /**
+     * For tile entities, ensures the chunk containing the tile entity is saved to disk later - the game won't think it
+     * hasn't changed and skip it.
+     */
+    public void markDirty() {
+        if (this.field_70480_d != null) {
+            for (IInvBasic iInvBasic : this.field_70480_d) {
+                ((IInvBasic) iInvBasic).onInventoryChanged(this);
+            }
+        }
+    }
 
-   }
+    /**
+     * Do not make give this method the name canInteractWith because it clashes with Container
+     */
+    public boolean isUseableByPlayer(EntityPlayer player) {
+        return true;
+    }
 
-   public boolean isUseableByPlayer(EntityPlayer var1) {
-      return true;
-   }
+    public void openInventory(EntityPlayer player) {
+    }
 
-   public void openInventory(EntityPlayer var1) {
-   }
+    public void closeInventory(EntityPlayer player) {
+    }
 
-   public void closeInventory(EntityPlayer var1) {
-   }
+    /**
+     * Returns true if automation is allowed to insert the given stack (ignoring stack size) into the given slot.
+     */
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return true;
+    }
 
-   public boolean isItemValidForSlot(int var1, ItemStack var2) {
-      return true;
-   }
+    public int getField(int id) {
+        return 0;
+    }
 
-   public int getField(int var1) {
-      return 0;
-   }
+    public void setField(int id, int value) {
+    }
 
-   public void setField(int var1, int var2) {
-   }
+    public int getFieldCount() {
+        return 0;
+    }
 
-   public int getFieldCount() {
-      return 0;
-   }
-
-   public void clear() {
-      for(int var1 = 0; var1 < this.inventoryContents.length; ++var1) {
-         this.inventoryContents[var1] = null;
-      }
-
-   }
+    public void clear() {
+        for (int i = 0; i < this.inventoryContents.length; ++i) {
+            this.inventoryContents[i] = null;
+        }
+    }
 }

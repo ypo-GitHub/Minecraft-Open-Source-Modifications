@@ -6,138 +6,153 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.culling.ICamera;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.entity.RendererLivingEntity;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityHanging;
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.MathHelper;
 import net.optifine.Config;
 import net.shadersmod.client.Shaders;
 
-public abstract class RenderLiving extends RendererLivingEntity {
-   public RenderLiving(RenderManager var1, ModelBase var2, float var3) {
-      super(var1, var2, var3);
-   }
+public abstract class RenderLiving<T extends EntityLiving> extends RendererLivingEntity<T> {
 
-   protected boolean canRenderName(EntityLiving var1) {
-      return super.canRenderName((EntityLivingBase)var1) && (var1.getAlwaysRenderNameTagForRender() || var1.hasCustomName() && var1 == this.renderManager.pointedEntity);
-   }
+    public RenderLiving(RenderManager renderManager, ModelBase modelBase, float shadowSize) {
+        super(renderManager, modelBase, shadowSize);
+    }
 
-   public boolean shouldRender(EntityLiving var1, ICamera var2, double var3, double var5, double var7) {
-      if(super.shouldRender(var1, var2, var3, var5, var7)) {
-         return true;
-      } else if(var1.getLeashed() && var1.getLeashedToEntity() != null) {
-         Entity var9 = var1.getLeashedToEntity();
-         return var2.isBoundingBoxInFrustum(var9.getEntityBoundingBox());
-      } else {
-         return false;
-      }
-   }
+    protected boolean canRenderName(T entity) {
+        return super.canRenderName(entity) && (entity.getAlwaysRenderNameTagForRender() || entity.hasCustomName() && entity == this.renderManager.pointedEntity);
+    }
 
-   public void doRender(EntityLiving var1, double var2, double var4, double var6, float var8, float var9) {
-      super.doRender((EntityLivingBase)var1, var2, var4, var6, var8, var9);
-      this.renderLeash(var1, var2, var4, var6, var8, var9);
-   }
+    public boolean shouldRender(T livingEntity, ICamera camera, double camX, double camY, double camZ) {
+        if (super.shouldRender(livingEntity, camera, camX, camY, camZ)) {
+            return true;
+        } else if (livingEntity.getLeashed() && livingEntity.getLeashedToEntity() != null) {
+            Entity entity = livingEntity.getLeashedToEntity();
+            return camera.isBoundingBoxInFrustum(entity.getEntityBoundingBox());
+        } else {
+            return false;
+        }
+    }
 
-   public void func_177105_a(EntityLiving var1, float var2) {
-      int var3 = var1.getBrightnessForRender(var2);
-      int var4 = var3 % 65536;
-      int var5 = var3 / 65536;
-      OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)var4 / 1.0F, (float)var5 / 1.0F);
-   }
+    /**
+     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
+     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
+     * (Render<T extends Entity>) and this method has signature public void doRender(T entity, double d, double d1,
+     * double d2, float f, float f1). But JAD is pre 1.5 so doe
+     */
+    public void doRender(T entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
+        this.renderLeash(entity, x, y, z, entityYaw, partialTicks);
+    }
 
-   private double interpolateValue(double var1, double var3, double var5) {
-      return var1 + (var3 - var1) * var5;
-   }
+    public void func_177105_a(T entityLivingIn, float partialTicks) {
+        int i = entityLivingIn.getBrightnessForRender(partialTicks);
+        int j = i % 65536;
+        int k = i / 65536;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) j / 1.0F, (float) k / 1.0F);
+    }
 
-   protected void renderLeash(EntityLiving var1, double var2, double var4, double var6, float var8, float var9) {
-      if(!Config.isShaders() || !Shaders.isShadowPass) {
-         Entity var10 = var1.getLeashedToEntity();
-         var4 = var4 - (1.6D - (double)var1.height) * 0.5D;
-         Tessellator var11 = Tessellator.getInstance();
-         WorldRenderer var12 = var11.getWorldRenderer();
-         double var13 = this.interpolateValue((double)var10.prevRotationYaw, (double)var10.rotationYaw, (double)(var9 * 0.5F)) * 0.01745329238474369D;
-         double var15 = this.interpolateValue((double)var10.prevRotationPitch, (double)var10.rotationPitch, (double)(var9 * 0.5F)) * 0.01745329238474369D;
-         double var17 = (double)MathHelper.cos(var13);
-         double var19 = (double)MathHelper.sin(var13);
-         double var21 = (double)MathHelper.sin(var15);
-         if(var10 instanceof EntityHanging) {
-            var17 = 0.0D;
-            var19 = 0.0D;
-            var21 = -1.0D;
-         }
+    /**
+     * Gets the value between start and end according to pct
+     */
+    private double interpolateValue(double start, double end, double pct) {
+        return start + (end - start) * pct;
+    }
 
-         double var23 = (double)MathHelper.cos(var15);
-         double var25 = this.interpolateValue(var10.prevPosX, var10.posX, (double)var9) - var17 * 0.7D - var19 * 0.5D * var23;
-         double var27 = this.interpolateValue(var10.prevPosY + (double)var10.getEyeHeight() * 0.7D, var10.posY + (double)var10.getEyeHeight() * 0.7D, (double)var9) - var21 * 0.5D - 0.25D;
-         double var29 = this.interpolateValue(var10.prevPosZ, var10.posZ, (double)var9) - var19 * 0.7D + var17 * 0.5D * var23;
-         double var31 = this.interpolateValue((double)var1.prevRenderYawOffset, (double)var1.renderYawOffset, (double)var9) * 0.01745329238474369D + 1.5707963267948966D;
-         var17 = (double)MathHelper.cos(var31) * (double)var1.width * 0.4D;
-         var19 = (double)MathHelper.sin(var31) * (double)var1.width * 0.4D;
-         double var33 = this.interpolateValue(var1.prevPosX, var1.posX, (double)var9) + var17;
-         double var35 = this.interpolateValue(var1.prevPosY, var1.posY, (double)var9);
-         double var37 = this.interpolateValue(var1.prevPosZ, var1.posZ, (double)var9) + var19;
-         var2 = var2 + var17;
-         var6 = var6 + var19;
-         double var39 = (double)((float)(var25 - var33));
-         double var41 = (double)((float)(var27 - var35));
-         double var43 = (double)((float)(var29 - var37));
-         GlStateManager.disableTexture2D();
-         GlStateManager.disableLighting();
-         GlStateManager.disableCull();
-         if(Config.isShaders()) {
-            Shaders.beginLeash();
-         }
+    protected void renderLeash(T entityLivingIn, double x, double y, double z, float entityYaw, float partialTicks) {
+        if (!Config.isShaders() || !Shaders.isShadowPass) {
+            Entity entity = entityLivingIn.getLeashedToEntity();
 
-         boolean var45 = true;
-         double var46 = 0.025D;
-         var12.begin(5, DefaultVertexFormats.POSITION_COLOR);
+            if (entity != null) {
+                y = y - (1.6D - (double) entityLivingIn.height) * 0.5D;
+                Tessellator tessellator = Tessellator.getInstance();
+                WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+                double d0 = this.interpolateValue(entity.prevRotationYaw, entity.rotationYaw, partialTicks * 0.5F) * 0.01745329238474369D;
+                double d1 = this.interpolateValue(entity.prevRotationPitch, entity.rotationPitch, partialTicks * 0.5F) * 0.01745329238474369D;
+                double d2 = MathHelper.cos(d0);
+                double d3 = MathHelper.sin(d0);
+                double d4 = MathHelper.sin(d1);
 
-         for(int var48 = 0; var48 <= 24; ++var48) {
-            float var49 = 0.5F;
-            float var50 = 0.4F;
-            float var51 = 0.3F;
-            if(var48 % 2 == 0) {
-               var49 *= 0.7F;
-               var50 *= 0.7F;
-               var51 *= 0.7F;
+                if (entity instanceof EntityHanging) {
+                    d2 = 0.0D;
+                    d3 = 0.0D;
+                    d4 = -1.0D;
+                }
+
+                double d5 = MathHelper.cos(d1);
+                double d6 = this.interpolateValue(entity.prevPosX, entity.posX, partialTicks) - d2 * 0.7D - d3 * 0.5D * d5;
+                double d7 = this.interpolateValue(entity.prevPosY + (double) entity.getEyeHeight() * 0.7D, entity.posY + (double) entity.getEyeHeight() * 0.7D, partialTicks) - d4 * 0.5D - 0.25D;
+                double d8 = this.interpolateValue(entity.prevPosZ, entity.posZ, partialTicks) - d3 * 0.7D + d2 * 0.5D * d5;
+                double d9 = this.interpolateValue(entityLivingIn.prevRenderYawOffset, entityLivingIn.renderYawOffset, partialTicks) * 0.01745329238474369D + Math.PI / 2D;
+                d2 = MathHelper.cos(d9) * (double) entityLivingIn.width * 0.4D;
+                d3 = MathHelper.sin(d9) * (double) entityLivingIn.width * 0.4D;
+                double d10 = this.interpolateValue(entityLivingIn.prevPosX, entityLivingIn.posX, partialTicks) + d2;
+                double d11 = this.interpolateValue(entityLivingIn.prevPosY, entityLivingIn.posY, partialTicks);
+                double d12 = this.interpolateValue(entityLivingIn.prevPosZ, entityLivingIn.posZ, partialTicks) + d3;
+                x = x + d2;
+                z = z + d3;
+                double d13 = (float) (d6 - d10);
+                double d14 = (float) (d7 - d11);
+                double d15 = (float) (d8 - d12);
+                GlStateManager.disableTexture2D();
+                GlStateManager.disableLighting();
+                GlStateManager.disableCull();
+
+                if (Config.isShaders()) {
+                    Shaders.beginLeash();
+                }
+
+                boolean flag = true;
+                double d16 = 0.025D;
+                worldrenderer.begin(5, DefaultVertexFormats.POSITION_COLOR);
+
+                for (int i = 0; i <= 24; ++i) {
+                    float f = 0.5F;
+                    float f1 = 0.4F;
+                    float f2 = 0.3F;
+
+                    if (i % 2 == 0) {
+                        f *= 0.7F;
+                        f1 *= 0.7F;
+                        f2 *= 0.7F;
+                    }
+
+                    float f3 = (float) i / 24.0F;
+                    worldrenderer.pos(x + d13 * (double) f3 + 0.0D, y + d14 * (double) (f3 * f3 + f3) * 0.5D + (double) ((24.0F - (float) i) / 18.0F + 0.125F), z + d15 * (double) f3).color(f, f1, f2, 1.0F).endVertex();
+                    worldrenderer.pos(x + d13 * (double) f3 + 0.025D, y + d14 * (double) (f3 * f3 + f3) * 0.5D + (double) ((24.0F - (float) i) / 18.0F + 0.125F) + 0.025D, z + d15 * (double) f3).color(f, f1, f2, 1.0F).endVertex();
+                }
+
+                tessellator.draw();
+                worldrenderer.begin(5, DefaultVertexFormats.POSITION_COLOR);
+
+                for (int j = 0; j <= 24; ++j) {
+                    float f4 = 0.5F;
+                    float f5 = 0.4F;
+                    float f6 = 0.3F;
+
+                    if (j % 2 == 0) {
+                        f4 *= 0.7F;
+                        f5 *= 0.7F;
+                        f6 *= 0.7F;
+                    }
+
+                    float f7 = (float) j / 24.0F;
+                    worldrenderer.pos(x + d13 * (double) f7 + 0.0D, y + d14 * (double) (f7 * f7 + f7) * 0.5D + (double) ((24.0F - (float) j) / 18.0F + 0.125F) + 0.025D, z + d15 * (double) f7).color(f4, f5, f6, 1.0F).endVertex();
+                    worldrenderer.pos(x + d13 * (double) f7 + 0.025D, y + d14 * (double) (f7 * f7 + f7) * 0.5D + (double) ((24.0F - (float) j) / 18.0F + 0.125F), z + d15 * (double) f7 + 0.025D).color(f4, f5, f6, 1.0F).endVertex();
+                }
+
+                tessellator.draw();
+
+                if (Config.isShaders()) {
+                    Shaders.endLeash();
+                }
+
+                GlStateManager.enableLighting();
+                GlStateManager.enableTexture2D();
+                GlStateManager.enableCull();
             }
+        }
+    }
 
-            float var52 = (float)var48 / 24.0F;
-            var12.pos(var2 + var39 * (double)var52 + 0.0D, var4 + var41 * (double)(var52 * var52 + var52) * 0.5D + (double)((24.0F - (float)var48) / 18.0F + 0.125F), var6 + var43 * (double)var52).color(var49, var50, var51, 1.0F).endVertex();
-            var12.pos(var2 + var39 * (double)var52 + 0.025D, var4 + var41 * (double)(var52 * var52 + var52) * 0.5D + (double)((24.0F - (float)var48) / 18.0F + 0.125F) + 0.025D, var6 + var43 * (double)var52).color(var49, var50, var51, 1.0F).endVertex();
-         }
-
-         var11.draw();
-         var12.begin(5, DefaultVertexFormats.POSITION_COLOR);
-
-         for(int var58 = 0; var58 <= 24; ++var58) {
-            float var59 = 0.5F;
-            float var60 = 0.4F;
-            float var61 = 0.3F;
-            if(var58 % 2 == 0) {
-               var59 *= 0.7F;
-               var60 *= 0.7F;
-               var61 *= 0.7F;
-            }
-
-            float var62 = (float)var58 / 24.0F;
-            var12.pos(var2 + var39 * (double)var62 + 0.0D, var4 + var41 * (double)(var62 * var62 + var62) * 0.5D + (double)((24.0F - (float)var58) / 18.0F + 0.125F) + 0.025D, var6 + var43 * (double)var62).color(var59, var60, var61, 1.0F).endVertex();
-            var12.pos(var2 + var39 * (double)var62 + 0.025D, var4 + var41 * (double)(var62 * var62 + var62) * 0.5D + (double)((24.0F - (float)var58) / 18.0F + 0.125F), var6 + var43 * (double)var62 + 0.025D).color(var59, var60, var61, 1.0F).endVertex();
-         }
-
-         var11.draw();
-         if(Config.isShaders()) {
-            Shaders.endLeash();
-         }
-
-         GlStateManager.enableLighting();
-         GlStateManager.enableTexture2D();
-         GlStateManager.enableCull();
-      }
-
-   }
 }

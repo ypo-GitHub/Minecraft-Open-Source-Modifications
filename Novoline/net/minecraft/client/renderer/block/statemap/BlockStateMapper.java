@@ -3,35 +3,35 @@ package net.minecraft.client.renderer.block.statemap;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.block.Block;
-import net.minecraft.client.renderer.block.statemap.DefaultStateMapper;
-import net.minecraft.client.renderer.block.statemap.IStateMapper;
 
 public class BlockStateMapper {
-   private Map blockStateMap = Maps.newIdentityHashMap();
-   private Set setBuiltInBlocks = Sets.newIdentityHashSet();
+    private Map<Block, IStateMapper> blockStateMap = Maps.<Block, IStateMapper>newIdentityHashMap();
+    private Set<Block> setBuiltInBlocks = Sets.<Block>newIdentityHashSet();
 
-   public void registerBlockStateMapper(Block var1, IStateMapper var2) {
-      this.blockStateMap.put(var1, var2);
-   }
+    public void registerBlockStateMapper(Block p_178447_1_, IStateMapper p_178447_2_) {
+        this.blockStateMap.put(p_178447_1_, p_178447_2_);
+    }
 
-   public void registerBuiltInBlocks(Block... var1) {
-      Collections.addAll(this.setBuiltInBlocks, var1);
-   }
+    public void registerBuiltInBlocks(Block... p_178448_1_) {
+        Collections.addAll(this.setBuiltInBlocks, p_178448_1_);
+    }
 
-   public Map putAllStateModelLocations() {
-      IdentityHashMap var1 = Maps.newIdentityHashMap();
+    public Map<IBlockState, ModelResourceLocation> putAllStateModelLocations() {
+        Map<IBlockState, ModelResourceLocation> map = Maps.<IBlockState, ModelResourceLocation>newIdentityHashMap();
 
-      for(Block var3 : Block.blockRegistry) {
-         if(!this.setBuiltInBlocks.contains(var3)) {
-            var1.putAll(((IStateMapper)Objects.firstNonNull(this.blockStateMap.get(var3), new DefaultStateMapper())).putStateModelLocations(var3));
-         }
-      }
+        for (Block block : Block.blockRegistry) {
+            if (!this.setBuiltInBlocks.contains(block)) {
+                map.putAll(((IStateMapper) Objects.firstNonNull(this.blockStateMap.get(block), new DefaultStateMapper())).putStateModelLocations(block));
+            }
+        }
 
-      return var1;
-   }
+        return map;
+    }
 }

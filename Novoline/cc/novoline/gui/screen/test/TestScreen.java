@@ -5,23 +5,25 @@ import cc.novoline.gui.NovoGuiScreen;
 import cc.novoline.gui.button.FunctionalButton;
 import cc.novoline.gui.group2.BasicRoundedGroupWithTitle;
 import cc.novoline.gui.label.BasicLabel;
-import cc.novoline.utils.fonts.impl.Fonts$SFBOLD$SFBOLD_16;
+import static cc.novoline.utils.fonts.impl.Fonts.SFBOLD.SFBOLD_16.SFBOLD_16;
 import cc.novoline.utils.notifications.NotificationType;
-import java.util.function.Consumer;
-import net.aJi;
 
+/**
+ * @author xDelsy
+ */
 public class TestScreen extends NovoGuiScreen {
-   protected void onInitialize() {
-      aJi.b();
-      this.register(new FunctionalButton(new BasicLabel("Test label", -16711936, Fonts$SFBOLD$SFBOLD_16.SFBOLD_16), 10, 10, TestScreen::lambda$onInitialize$0));
-      this.register(new BasicRoundedGroupWithTitle(new BasicLabel("", -16711936, Fonts$SFBOLD$SFBOLD_16.SFBOLD_16), 8, 10, 40, 400, 200));
-   }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      super.drawScreen(var1, var2, var3);
-   }
+    @Override
+    protected void onInitialize() {
+        register(new FunctionalButton(new BasicLabel("Test label", 0xFF00FF00, SFBOLD_16), 10, 10, a -> {
+            Novoline.getInstance().getNotificationManager().pop("Clicked " + a, NotificationType.SUCCESS);
+        }));
+            register(new BasicRoundedGroupWithTitle(new BasicLabel("", 0xFF00FF00, SFBOLD_16), 8, 10, 40, 400, 200));
+    }
 
-   private static void lambda$onInitialize$0(Integer var0) {
-      Novoline.getInstance().getNotificationManager().pop("Clicked " + var0, NotificationType.SUCCESS);
-   }
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
 }

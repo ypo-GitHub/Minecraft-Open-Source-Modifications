@@ -1,89 +1,86 @@
 package viaversion.viarewind.protocol.protocol1_7_6_10to1_8.storage;
 
-import net.cA;
+import viaversion.viaversion.api.data.StoredObject;
 import viaversion.viaversion.api.data.UserConnection;
 
-public class PlayerPosition extends cA {
-   private double d;
-   private double i;
-   private double j;
-   private float h;
-   private float e;
-   private boolean onGround;
-   private boolean positionPacketReceived;
-   private double receivedPosY;
+public class PlayerPosition extends StoredObject {
+	private double posX, posY, posZ;
+	private float yaw, pitch;
+	private boolean onGround;
+	private boolean positionPacketReceived;
+	private double receivedPosY;
 
-   public PlayerPosition(UserConnection var1) {
-      super(var1);
-   }
+	public PlayerPosition(UserConnection user) {
+		super(user);
+	}
 
-   public void setPos(double var1, double var3, double var5) {
-      this.d = var1;
-      this.i = var3;
-      this.j = var5;
-   }
+	public void setPos(double x, double y, double z) {
+		posX = x;
+		posY = y;
+		posZ = z;
+	}
 
-   public boolean isPositionPacketReceived() {
-      return this.positionPacketReceived;
-   }
+	public boolean isPositionPacketReceived() {
+		return positionPacketReceived;
+	}
 
-   public void setPositionPacketReceived(boolean var1) {
-      this.positionPacketReceived = var1;
-   }
+	public void setPositionPacketReceived(boolean positionPacketReceived) {
+		this.positionPacketReceived = positionPacketReceived;
+	}
 
-   public double getReceivedPosY() {
-      return this.receivedPosY;
-   }
+	public double getReceivedPosY() {
+		return receivedPosY;
+	}
 
-   public void setReceivedPosY(double var1) {
-      this.receivedPosY = var1;
-   }
+	public void setReceivedPosY(double receivedPosY) {
+		this.receivedPosY = receivedPosY;
+	}
 
-   public double g() {
-      return this.d;
-   }
+	public double getPosX() {
+		return posX;
+	}
 
-   public void d(double var1) {
-      this.d = var1;
-   }
+	public void setPosX(double posX) {
+		this.posX = posX;
+	}
 
-   public double f() {
-      return this.i;
-   }
+	public double getPosY() {
+		return posY;
+	}
 
-   public void c(double var1) {
-      this.i = var1;
-   }
+	public void setPosY(double posY) {
+		this.posY = posY;
+	}
 
-   public double e() {
-      return this.j;
-   }
+	public double getPosZ() {
+		return posZ;
+	}
 
-   public void a(double var1) {
-      this.j = var1;
-   }
+	public void setPosZ(double posZ) {
+		this.posZ = posZ;
+	}
 
-   public float c() {
-      return this.h;
-   }
+	public float getYaw() {
+		return yaw;
+	}
 
-   public void b(float var1) {
-      this.h = var1;
-   }
+	public void setYaw(float yaw) {
+		this.yaw = yaw;
+	}
 
-   public float a() {
-      return this.e;
-   }
+	public float getPitch() {
+		return pitch;
+	}
 
-   public void a(float var1) {
-      this.e = var1;
-   }
+	public void setPitch(float pitch) {
+		this.pitch = pitch;
+	}
 
-   public boolean isOnGround() {
-      return this.onGround;
-   }
+	public boolean isOnGround() {
+		return onGround;
+	}
 
-   public void setOnGround(boolean var1) {
-      this.onGround = var1;
-   }
+	public void setOnGround(boolean onGround) {
+		this.onGround = onGround;
+	}
 }

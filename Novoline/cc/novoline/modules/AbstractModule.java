@@ -2,19 +2,13 @@ package cc.novoline.modules;
 
 import cc.novoline.Initializer;
 import cc.novoline.Novoline;
-import cc.novoline.commands.NovoCommand;
-import cc.novoline.events.EventManager;
-import cc.novoline.events.events.PacketDirection;
 import cc.novoline.events.events.PacketEvent;
 import cc.novoline.gui.screen.setting.Manager;
 import cc.novoline.gui.screen.setting.Setting;
 import cc.novoline.gui.screen.setting.SettingType;
-import cc.novoline.modules.AbstractModule$1;
-import cc.novoline.modules.Config;
-import cc.novoline.modules.EnumModuleType;
-import cc.novoline.modules.ModuleManager;
 import cc.novoline.modules.binds.KeyboardKeybind;
 import cc.novoline.modules.binds.ModuleKeybind;
+import cc.novoline.modules.configurations.annotation.DelsyConfig;
 import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.BooleanProperty;
 import cc.novoline.modules.configurations.property.object.KeyBindProperty;
@@ -28,512 +22,480 @@ import cc.novoline.utils.ServerUtils;
 import cc.novoline.utils.Servers;
 import cc.novoline.utils.messages.MessageFactory;
 import cc.novoline.utils.messages.TextMessage;
-import cc.novoline.utils.notifications.NotificationType;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.reflect.TypeToken;
-import java.awt.Color;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import net.Ea;
-import net.J8;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S39PacketPlayerAbilities;
 import net.minecraft.network.play.server.S45PacketTitle;
-import net.minecraft.network.play.server.S45PacketTitle$Type;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
-import net.skidunion.J;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.input.Keyboard;
 
-@J8
-public class AbstractModule {
-   Initializer o;
-   protected final Logger logger;
-   protected final Novoline novoline;
-   protected final ModuleManager moduleManager;
-   protected final Minecraft mc;
-   protected Config config;
-   protected final EnumModuleType type;
-   protected final String name;
-   protected String displayName;
-   protected final String description;
-   protected final int g;
-   protected boolean a;
-   protected String suffix;
-   @Property("enabled")
-   protected final BooleanProperty enabled;
-   @Property("hidden")
-   protected final BooleanProperty hidden;
-   @Property("display-name")
-   protected final StringProperty displayNameProperty;
-   protected final KeyBindProperty bind;
-   public float offsetX;
-   public float offsetY;
-   public Color b;
-   public Color c;
-   private final Cache moduleCache;
-   private static int[] q;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull String var3, int var4, @NotNull EnumModuleType var5, @Nullable String var6, @Nullable String var7) {
-      this.o = Initializer.getInstance();
-      this.logger = LogManager.getLogger();
-      this.a = false;
-      this.enabled = PropertyFactory.booleanFalse();
-      this.hidden = PropertyFactory.booleanFalse();
-      d();
-      this.displayNameProperty = PropertyFactory.createString("");
-      this.bind = PropertyFactory.keyBinding(KeyboardKeybind.of(0));
-      this.offsetX = 0.0F;
-      this.offsetY = 0.0F;
-      this.b = new Color(255, 0, 0);
-      this.c = new Color(0, 255, 255);
-      this.moduleCache = CacheBuilder.newBuilder().expireAfterAccess(1L, TimeUnit.MINUTES).build();
-      this.moduleManager = var1;
-      this.novoline = var1.getNovoline();
-      this.mc = this.novoline.getMinecraft();
-      this.name = var2;
-      this.type = var5;
-      this.g = var4;
-      this.description = var6;
-      this.displayName = var3;
-      Manager.put(new Setting("MODULE_BIND", "Bind", SettingType.BINDABLE, this, this.bind));
-      this.config = Config.fromPath(this.novoline.getDataFolder().resolve(var7 + ".novo"));
-      Ea var9 = this.config.getLoader().getDefaultOptions().f();
-      var9.a((Predicate)(AbstractModule::lambda$new$0), new ConfigSerializer(var1));
-      this.a(var9);
+import static cc.novoline.commands.NovoCommand.EMPTY_COMPONENT;
+import static cc.novoline.commands.NovoCommand.PREFIX;
+import static cc.novoline.events.EventManager.register;
+import static cc.novoline.events.EventManager.unregister;
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.booleanFalse;
+import static cc.novoline.utils.messages.MessageFactory.text;
+import static cc.novoline.utils.notifications.NotificationType.WARNING;
 
-      try {
-         this.config.load();
-      } catch (LoadConfigException var11) {
-         var11.printStackTrace();
-      }
 
-   }
+@DelsyConfig
+public abstract class AbstractModule {
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull String var3, @NotNull EnumModuleType var4, @Nullable String var5, @Nullable String var6) {
-      this(var1, var2, var3, 0, var4, var5, var6);
-   }
+    protected double secretShit = Initializer.getInstance().secretShit;
+    protected double flight50 = Initializer.getInstance().flight50;
+    protected double flight90 = Initializer.getInstance().flight90;
+    protected double flightAmp = Initializer.getInstance().flightAmp;
+    protected double flight75 = Initializer.getInstance().flight75;
+    protected double flightMagicCon1 = Initializer.getInstance().flightMagicCon1;
+    protected double flightMagicCon2 = Initializer.getInstance().flightMagicCon2;
+    protected double flightHypixelGroundCheck = Initializer.getInstance().flightHypixelGroundCheck;
+    protected double bunnyDivFriction = Initializer.getInstance().bunnyDivFriction;
+    protected double threshold = Initializer.getInstance().threshold;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull String var3, int var4, @NotNull EnumModuleType var5, @Nullable String var6) {
-      this(var1, var2, var3, var4, var5, var6, (String)null);
-   }
+    public double min17 = Initializer.getInstance().min17, max17 = Initializer.getInstance().max17;
+    public double min18 = Initializer.getInstance().min18, max18 = Initializer.getInstance().max18;
+    public double min19 = Initializer.getInstance().min19, max19 = Initializer.getInstance().max19;
+    public double min20 = Initializer.getInstance().min20, max20 = Initializer.getInstance().max20;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull EnumModuleType var3, @Nullable String var4, @Nullable String var5) {
-      this(var1, var2, var2, 0, var3, var4, var5);
-   }
+    protected final Logger logger = LogManager.getLogger();
+    protected final Novoline novoline;
+    protected final ModuleManager moduleManager;
+    protected final Minecraft mc;
+    protected Config config;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull String var3, @NotNull EnumModuleType var4, @Nullable String var5) {
-      this(var1, var2, var3, 0, var4, var5, (String)null);
-   }
+    protected final EnumModuleType type;
+    protected final String name;
+    protected String displayName;
+    protected final String description;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull String var3, @NotNull int var4, @NotNull EnumModuleType var5) {
-      this(var1, var2, var3, var4, var5, (String)null, (String)null);
-   }
+    protected String suffix;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull EnumModuleType var3, @Nullable String var4) {
-      this(var1, var2, var2, 0, var3, var4, (String)null);
-   }
+    @Property("enabled")
+    protected final BooleanProperty enabled = booleanFalse();
+    @Property("hidden")
+    protected final BooleanProperty hidden = booleanFalse();
+    @Property("display-name")
+    protected final StringProperty displayNameProperty = PropertyFactory.createString("");
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull String var2, @NotNull EnumModuleType var3) {
-      this(var1, var2, var2, 0, var3, (String)null, (String)null);
-   }
+    protected final KeyBindProperty bind = PropertyFactory.keyBinding(KeyboardKeybind.of(Keyboard.KEY_NONE));
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull EnumModuleType var2, @NotNull String var3) {
-      this(var1, var3, var3, 0, var2, (String)null, (String)null);
-   }
+    public float offsetX = 0;
+    public float offsetY = 0;
 
-   protected AbstractModule(@NotNull ModuleManager var1, @NotNull EnumModuleType var2, @NotNull String var3, @NotNull String var4) {
-      this(var1, var3, var4, 0, var2, (String)null, (String)null);
-   }
+    /* constructors */
+    protected AbstractModule(@NotNull ModuleManager moduleManager,
+                             @NotNull String name,
+                             @NotNull String displayName,
+                             int keyBind,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description,
+                             @Nullable String path) {
+        this.moduleManager = moduleManager;
+        this.novoline = moduleManager.getNovoline();
+        this.mc = novoline.getMinecraft();
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.displayName = displayName;
+        Manager.put(new Setting("MODULE_BIND", "Bind", SettingType.BINDABLE, this, bind));
 
-   protected void a(@NotNull Ea var1) {
-   }
+        if (path != null) {
+            this.config = Config.fromPath(novoline.getDataFolder().resolve(path + ".novo"));
+            TypeSerializerCollection serializers = config.getLoader().getDefaultOptions().getSerializers();
 
-   @NotNull
-   public AbstractModule getModule(Class var1) {
-      try {
-         return (AbstractModule)this.moduleCache.get(var1, this::lambda$getModule$1);
-      } catch (ExecutionException var3) {
-         throw new RuntimeException(var3);
-      }
-   }
+            serializers.registerPredicate(input -> {
+                Class<? super Object> rawType = input.getRawType();
+                boolean b;
 
-   protected void send(@Nullable TextMessage var1, boolean var2) {
-      int[] var3 = d();
-      if(var1 != null) {
-         TextMessage var4 = var1.prefix(NovoCommand.PREFIX);
-      }
+                do {
+                    if (!(b = rawType.isAnnotationPresent(DelsyConfig.class))) {
+                        rawType = rawType.getSuperclass();
+                    }
+                } while (!b && rawType != null && rawType.getSuperclass() != null);
 
-      IChatComponent var5 = NovoCommand.EMPTY_COMPONENT;
-      this.mc.player.addChatComponentMessage(var5);
-   }
+                return b;
+            }, new ConfigSerializer(moduleManager));
+            addCustomSerializers(serializers);
 
-   protected void send(@Nullable TextMessage var1) {
-      this.send(var1, false);
-   }
-
-   protected void send(@NotNull String var1, boolean var2) {
-      this.send(MessageFactory.text(var1), var2);
-   }
-
-   protected void send(@NotNull String var1) {
-      this.send(MessageFactory.text(var1));
-   }
-
-   protected void sendEmpty() {
-      this.mc.player.addChatComponentMessage(MessageFactory.a());
-   }
-
-   public float categoryColor() {
-      switch(AbstractModule$1.$SwitchMap$cc$novoline$modules$EnumModuleType[this.type.ordinal()]) {
-      case 1:
-         return 0.9F;
-      case 2:
-         return 0.55F;
-      case 3:
-         return 0.45F;
-      case 4:
-         return 0.1F;
-      default:
-         return 0.0F;
-      }
-   }
-
-   protected void autoDisable(@NotNull PacketEvent var1) {
-      int[] var2 = d();
-      if(var1.getDirection() == PacketDirection.INCOMING) {
-         if(var1.getPacket() instanceof S45PacketTitle) {
-            S45PacketTitle var3 = (S45PacketTitle)var1.getPacket();
-            if(var3.getType() == S45PacketTitle$Type.TITLE) {
-               String var4 = var3.getMessage().getUnformattedText();
-               if(var4.equals("VICTORY!")) {
-                  this.toggle();
-                  this.novoline.getNotificationManager().pop(this.name + " was disabled, because game has ended", 1000, NotificationType.WARNING);
-               }
+            try {
+                config.load();
+            } catch (LoadConfigException e) {
+                e.printStackTrace();
             }
-         }
+        }
+    }
 
-         if(var1.getPacket() instanceof S02PacketChat) {
-            S02PacketChat var5 = (S02PacketChat)var1.getPacket();
-            String var7 = var5.getChatComponent().getUnformattedText();
-            if(var7.equalsIgnoreCase("You died! Want to play again? Click here! ")) {
-               this.novoline.getNotificationManager().pop(this.name + " was disabled, because game has ended", 1000, NotificationType.WARNING);
-               this.toggle();
+    protected AbstractModule(@NotNull ModuleManager moduleManager,
+                             @NotNull String name,
+                             @NotNull String displayName,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description,
+                             @Nullable String path) {
+        this(moduleManager, name, displayName, Keyboard.KEY_NONE, type, description, path);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager moduleManager,
+                             @NotNull String name,
+                             @NotNull String displayName,
+                             int keyBind,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description) {
+        this(moduleManager, name, displayName, keyBind, type, description, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull String name,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description,
+                             @Nullable String path) {
+        this(novoline, name, name, 0, type, description, path);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull String name,
+                             @NotNull String displayName,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description) {
+        this(novoline, name, displayName, Keyboard.KEY_NONE, type, description, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull String name,
+                             @NotNull String displayName,
+                             @NotNull int keyBind,
+                             @NotNull EnumModuleType type) {
+        this(novoline, name, displayName, keyBind, type, null, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull String name,
+                             @NotNull EnumModuleType type,
+                             @Nullable String description) {
+        this(novoline, name, name, 0, type, description, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull String name,
+                             @NotNull EnumModuleType type) {
+        this(novoline, name, name, 0, type, null, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull EnumModuleType type,
+                             @NotNull String name) {
+        this(novoline, name, name, 0, type, null, null);
+    }
+
+    protected AbstractModule(@NotNull ModuleManager novoline,
+                             @NotNull EnumModuleType type,
+                             @NotNull String name,
+                             @NotNull String displayName) {
+        this(novoline, name, displayName, 0, type, null, null);
+    }
+
+    protected void addCustomSerializers(@NotNull TypeSerializerCollection collection) {
+    }
+
+    /* methods */
+    private final Cache<Class<? extends AbstractModule>, AbstractModule> moduleCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(1, TimeUnit.MINUTES)
+            .build();
+
+    @SuppressWarnings("unchecked")
+    public <Module extends AbstractModule> @NotNull Module getModule(Class<? extends Module> moduleClass) {
+        try {
+            return (Module) moduleCache.get(moduleClass, () -> moduleManager.getModule(moduleClass));
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void send(@Nullable TextMessage message, boolean prefix) {
+        IChatComponent chatComponent;
+
+        if (message != null) {
+            if (prefix) {
+                chatComponent = message.prefix(PREFIX);
+            } else {
+                chatComponent = message;
             }
-         }
+        } else {
+            chatComponent = EMPTY_COMPONENT;
+        }
 
-         if((ServerUtils.serverIs(Servers.SW) || ServerUtils.serverIs(Servers.BW)) && var1.getPacket() instanceof S39PacketPlayerAbilities) {
-            S39PacketPlayerAbilities var6 = (S39PacketPlayerAbilities)var1.getPacket();
-            if(var6.isAllowFlying()) {
-               this.novoline.getNotificationManager().pop(this.name + " was disabled, because game has ended", 1000, NotificationType.WARNING);
-               this.toggle();
-            }
-         }
-      }
+        mc.player.addChatComponentMessage(chatComponent);
+    }
 
-   }
+    protected void send(@Nullable TextMessage component) {
+        send(component, false);
+    }
 
-   protected void checkModule(@NotNull Class var1) {
-      d();
-      AbstractModule var3 = this.getModule(var1);
-      if(var3.isEnabled()) {
-         this.novoline.getNotificationManager().pop(var3.getName() + " was disabled to prevent flags/errors", 1000, NotificationType.WARNING);
-         var3.toggle();
-      }
+    protected void send(@NotNull String s, boolean prefix) {
+        send(text(s), prefix);
+    }
 
-   }
+    protected void send(@NotNull String s) {
+        send(text(s));
+    }
 
-   protected void checkModule(@NotNull Class... var1) {
-      int[] var2 = d();
-      int var4 = var1.length;
-      int var5 = 0;
-      if(var5 < var4) {
-         Class var6 = var1[var5];
-         AbstractModule var7 = this.getModule(var6);
-         if(var7.isEnabled()) {
-            var7.toggle();
-            this.novoline.getNotificationManager().pop(this.getDisplayName(), var7.name + " was disabled to prevent flags/errors", 1000, NotificationType.WARNING);
-         }
+    protected void sendEmpty() {
+        mc.player.addChatComponentMessage(MessageFactory.empty());
+    }
 
-         ++var5;
-      }
+    @SuppressWarnings({"MagicNumber", "MethodWithMultipleReturnPoints"})
+    public float categoryColor() {
+        switch (type) {
+            case COMBAT:
+                return 0.9F;
+            case MOVEMENT:
+                return 0.55F;
+            case VISUALS:
+                return 0.45F;
+            case PLAYER:
+                return 0.1F;
+            default:
+                return 0;
+        }
+    }
 
-   }
+    @SuppressWarnings({"ChainOfInstanceofChecks", "CastToConcreteClass", "InstanceofConcreteClass"})
+    protected void autoDisable(@NotNull PacketEvent event) {
+        if (event.getState() == PacketEvent.State.INCOMING) {
+            if (event.getPacket() instanceof S45PacketTitle) {
+                S45PacketTitle packet = (S45PacketTitle) event.getPacket();
 
-   protected boolean isEnabled(@NotNull Class var1) {
-      return this.getModule(var1).isEnabled();
-   }
+                if (packet.getType() == S45PacketTitle.Type.TITLE) {
+                    String text = packet.getMessage().getUnformattedText();
 
-   public void sendPacket(@NotNull Packet var1) {
-      int[] var2 = d();
-      if(this.mc.player != null) {
-         this.mc.player.connection.b(var1);
-      }
-
-   }
-
-   public void sendPacketNoEvent(@NotNull Packet var1) {
-      int[] var2 = d();
-      if(this.mc.player != null) {
-         this.mc.player.connection.sendPacketNoEvent(var1);
-      }
-
-   }
-
-   public void a(Object... var1) {
-      if(this.o.a()) {
-         String var2 = Arrays.toString(var1);
-         this.mc.ingameGUI.n().a((IChatComponent)(new ChatComponentText(var2)));
-      }
-
-   }
-
-   public void c(boolean var1) {
-      d();
-      this.a = var1;
-      if(this.a && this.isEnabled()) {
-         this.toggle();
-         this.novoline.getNotificationManager().pop(this.getDisplayName() + " is currently detected!", "Can\'t turn that on right now, however, it will be usable again soon!", 3000, NotificationType.WARNING);
-      }
-
-   }
-
-   public boolean h() {
-      return this.a;
-   }
-
-   public boolean toggle() {
-      int[] var1 = d();
-      if(((Boolean)this.enabled.get()).booleanValue()) {
-         this.setEnabled(false);
-         return false;
-      } else {
-         this.setEnabled(true);
-         return true;
-      }
-   }
-
-   public void u() {
-      int[] var1 = d();
-      if(this.isEnabled()) {
-         this.toggle();
-      }
-
-   }
-
-   public void setSuffix(String var1) {
-      int[] var2 = d();
-      if(var1 == null || !var1.isEmpty()) {
-         String var3 = ((String)((HUD)this.getModule(HUD.class)).getSuffixType().get()).toLowerCase();
-         byte var4 = -1;
-         switch(var3.hashCode()) {
-         case -902286926:
-            if(!var3.equals("simple")) {
-               break;
+                    if (text.equals("VICTORY!")) {
+                        toggle();
+                        novoline.getNotificationManager().pop(name + " was disabled, because game has ended", 1_000, WARNING);
+                    }
+                }
             }
 
-            var4 = 0;
-         case 3075986:
-            if(!var3.equals("dash")) {
-               break;
+            if (event.getPacket() instanceof S02PacketChat) {
+                S02PacketChat packet = (S02PacketChat) event.getPacket();
+                String message = packet.getChatComponent().getUnformattedText();
+
+                if (message.equalsIgnoreCase("You died! Want to play again? Click here! ")) {
+                    novoline.getNotificationManager().pop(name + " was disabled, because game has ended", 1_000, WARNING);
+                    toggle();
+                }
             }
 
-            var4 = 1;
-         case 137407656:
-            if(var3.equals("bracket")) {
-               var4 = 2;
-            }
-         }
+            if (ServerUtils.serverIs(Servers.SW) || ServerUtils.serverIs(Servers.BW)) {
+                if (event.getPacket() instanceof S39PacketPlayerAbilities) {
+                    S39PacketPlayerAbilities packet = (S39PacketPlayerAbilities) event.getPacket();
 
-         switch(var4) {
-         case 0:
-            this.suffix = "§7 " + var1;
-         case 1:
-            this.suffix = "§7 - " + var1;
-         case 2:
-            this.suffix = "§7 [" + var1 + "]";
-         default:
+                    if (packet.isAllowFlying()) {
+                        novoline.getNotificationManager().pop(name + " was disabled, because game has ended", 1_000, WARNING);
+                        toggle();
+                    }
+                }
+            }
+        }
+    }
+
+    protected <M extends AbstractModule> void checkModule(@NotNull Class<? extends M> moduleClass) {
+        M module = getModule(moduleClass);
+
+        if (module.isEnabled()) {
+            novoline.getNotificationManager().pop(module.getName() + " was disabled to prevent flags/errors", 1_000, WARNING);
+            module.toggle();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void checkModule(@NotNull Class<? extends AbstractModule> @NotNull ... modules) {
+        for (Class<? extends AbstractModule> mClass : modules) {
+            AbstractModule module = getModule(mClass);
+
+            if (module.isEnabled()) {
+                module.toggle();
+                novoline.getNotificationManager().pop("Speed check", module.name + " was disabled to prevent flags/errors", 1_000, WARNING);
+            }
+        }
+    }
+
+    protected <M extends AbstractModule> boolean isEnabled(@NotNull Class<? extends M> moduleClass) {
+        return getModule(moduleClass).isEnabled();
+    }
+
+    public void sendPacket(@NotNull Packet<?> packet) {
+        if (mc.player != null) {
+            mc.player.connection.sendPacket(packet);
+        }
+    }
+
+    public void sendPacketNoEvent(@NotNull Packet<?> packet) {
+        if (mc.player != null) {
+            mc.player.connection.sendPacketNoEvent(packet);
+        }
+    }
+
+    public void print(Object... debug) {
+        //debug mode for uids < 5
+//        if (Integer.parseInt(Protection.serviceUid) < 5) {
+            String message = Arrays.toString(debug);
+            mc.ingameGUI.getChatGUI().printChatMessage(new ChatComponentText(message));
+//        }
+    }
+
+    public boolean toggle() {
+        if (enabled.get()) {
+            setEnabled(false);
+            return false;
+        } else {
+            setEnabled(true);
+            return true;
+        }
+    }
+
+    public void setSuffix(String suffix) {
+        if (suffix == null || !suffix.isEmpty()) {
+            switch (getModule(HUD.class).getSuffixType().get().toLowerCase()) {
+                case "simple":
+                    this.suffix = "\u00A77 " + suffix;
+                    break;
+
+                case "dash":
+                    this.suffix = "\u00A77 - " + suffix;
+                    break;
+
+                case "bracket":
+                    this.suffix = "\u00A77 [" + suffix + "]";
+                    break;
+
+                default:
+                    this.suffix = "";
+            }
+
+        } else {
             this.suffix = "";
-         }
-      }
+        }
+    }
 
-      this.suffix = "";
-   }
+    public final boolean isEnabled() {
+        return enabled.get();
+    }
 
-   public final boolean isEnabled() {
-      return ((Boolean)this.enabled.get()).booleanValue();
-   }
+    public void setEnabled(boolean state) {
+        if (enabled.get() != state) {
+            enabled.set(state);
 
-   public void setEnabled(boolean var1) {
-      int[] var2 = d();
-      if(((Boolean)this.enabled.get()).booleanValue() != var1) {
-         this.enabled.set(Boolean.valueOf(var1));
-         if(var1) {
-            this.q();
-         }
+            if (state) {
+                enable();
+            } else {
+                disable();
+            }
+        }
+    }
 
-         this.disable();
-      }
+    public final void enable() {
+        register(this);
+        onEnable();
 
-   }
+        if (!novoline.getModuleManager().getAbstractModules().contains(this) && this != novoline.getModuleManager().getModule(ClickGUI.class)) {
+            novoline.getModuleManager().getAbstractModules().add(this);
+        }
 
-   public final void q() {
-      d();
-      EventManager.register(this);
-      this.onEnable();
-      if(this.a) {
-         this.toggle();
-         this.novoline.getNotificationManager().pop(this.getDisplayName() + " is currently detected!", "Can\'t turn that on right now, however, it will be usable again soon!", 3000, NotificationType.WARNING);
-      }
+        offsetY = novoline.getModuleManager().getModule(HUD.class).getHeight(this) - 1;
+        offsetX = 0;
+    }
 
-      if(!this.novoline.getModuleManager().getAbstractModules().contains(this) && this != this.novoline.getModuleManager().getModule(ClickGUI.class)) {
-         this.novoline.getModuleManager().getAbstractModules().add(this);
-      }
+    public final void disable() {
+        unregister(this);
+        onDisable();
+    }
 
-      this.offsetY = ((HUD)this.novoline.getModuleManager().getModule(HUD.class)).getHeight(this) - 1.0F;
-      this.offsetX = 0.0F;
-   }
+    public void onEnable() {
+    }
 
-   public final void disable() {
-      EventManager.unregister(this);
-      this.onDisable();
-   }
+    public void onDisable() {
+    }
 
-   public void onEnable() {
-   }
+    //region Lombok
+    public @NotNull String getDisplayName() {
+        String property = displayNameProperty.get();
+        return property == null || property.isEmpty() ? displayName : property;
+    }
 
-   public void onDisable() {
-   }
+    public final boolean isHidden() {
+        return hidden.get();
+    }
 
-   @NotNull
-   public String getDisplayName() {
-      d();
-      String var2 = (String)this.displayNameProperty.get();
-      return var2 != null && !var2.isEmpty()?var2:this.displayName;
-   }
+    public void setHidden(boolean hidden) {
+        this.hidden.set(hidden);
+    }
 
-   public final boolean isHidden() {
-      return ((Boolean)this.hidden.get()).booleanValue();
-   }
+    public @NotNull String getSuffix() {
+        return suffix == null ? "" : suffix;
+    }
 
-   public void setHidden(boolean var1) {
-      this.hidden.set(Boolean.valueOf(var1));
-   }
+    public @NotNull String getFinalDisplayName() {
+        return getDisplayName() + getSuffix();
+    }
 
-   @NotNull
-   public String getSuffix() {
-      int[] var1 = d();
-      return this.suffix == null?"":this.suffix;
-   }
+    public @NotNull String getName() {
+        return name;
+    }
 
-   @NotNull
-   public String getFinalDisplayName() {
-      return this.getDisplayName() + this.getSuffix();
-   }
+    public KeyBindProperty getKeybind() {
+        return bind;
+    }
 
-   @NotNull
-   public String getName() {
-      return this.name;
-   }
+    public @Nullable String getDescription() {
+        return description;
+    }
 
-   public KeyBindProperty getKeybind() {
-      return this.bind;
-   }
+    public @NotNull EnumModuleType getType() {
+        return type;
+    }
 
-   @Nullable
-   public String getDescription() {
-      return this.description;
-   }
+    public Config getConfig() {
+        return config;
+    }
 
-   @NotNull
-   public EnumModuleType getType() {
-      return this.type;
-   }
+    public @NotNull Logger getLogger() {
+        return logger;
+    }
 
-   public Config getConfig() {
-      return this.config;
-   }
+    public @NotNull String getVanillaDisplayName() {
+        return displayName;
+    }
 
-   @NotNull
-   public Logger getLogger() {
-      return this.logger;
-   }
+    public void setDisplayName(@NotNull String displayName) {
+        this.displayName = displayName;
+    }
 
-   @NotNull
-   public String getVanillaDisplayName() {
-      return this.displayName;
-   }
+    public void setKeyBind(ModuleKeybind keyBind) {
+        bind.set(keyBind);
+    }
 
-   public void setDisplayName(@NotNull String var1) {
-      this.displayName = var1;
-   }
+    public void setDisplayNameProperty(String displayNameProperty) {
+        this.displayNameProperty.set(displayNameProperty);
+    }
 
-   public void setKeyBind(ModuleKeybind var1) {
-      this.bind.set(var1);
-   }
+    public @NotNull Novoline getNovoline() {
+        return novoline;
+    }
+    //endregion
 
-   public int p() {
-      return this.g;
-   }
-
-   public void setDisplayNameProperty(String var1) {
-      this.displayNameProperty.set(var1);
-   }
-
-   @NotNull
-   public Novoline getNovoline() {
-      return this.novoline;
-   }
-
-   public boolean i() {
-      int[] var1 = d();
-      return Integer.parseInt(J.aK) < 3;
-   }
-
-   private AbstractModule lambda$getModule$1(Class var1) throws Exception {
-      return this.moduleManager.getModule(var1);
-   }
-
-   private static boolean lambda$new$0(TypeToken var0) {
-      d();
-      Class var2 = var0.getRawType();
-
-      boolean var3;
-      while(true) {
-         if(!(var3 = var2.isAnnotationPresent(J8.class))) {
-            var2 = var2.getSuperclass();
-         }
-
-         if(var3 || var2 == null || var2.getSuperclass() == null) {
-            break;
-         }
-      }
-
-      return var3;
-   }
-
-   public static void b(int[] var0) {
-      q = var0;
-   }
-
-   public static int[] d() {
-      return q;
-   }
-
-   private static LoadConfigException a(LoadConfigException var0) {
-      return var0;
-   }
-
-   static {
-      b(new int[2]);
-   }
+    public KeyBindProperty getBind() {
+        return bind;
+    }
 }

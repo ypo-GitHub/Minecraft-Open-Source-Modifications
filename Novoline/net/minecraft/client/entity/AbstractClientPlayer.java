@@ -1,15 +1,17 @@
 package net.minecraft.client.entity;
 
+import cc.novoline.Novoline;
+import cc.novoline.utils.tasks.FutureTask;
 import com.mojang.authlib.GameProfile;
-import java.io.File;
-import net.Uv;
-import net.aE2;
-import net.aTu;
-import net.aeQ;
+import static net.minecraft.client.Minecraft.getInstance;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.client.renderer.ImageBufferDownload;
+import net.minecraft.client.renderer.ThreadDownloadImageData;
 import net.minecraft.client.renderer.texture.ITextureObject;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
@@ -18,126 +20,196 @@ import net.minecraft.init.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldSettings$GameType;
-import optifine.CapeUtils;
-import optifine.Config;
-import optifine.Reflector;
+import net.minecraft.world.WorldSettings;
+import net.optifine.*;
+import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractClientPlayer extends EntityPlayer {
-   private NetworkPlayerInfo bN;
-   private ResourceLocation locationOfCape = null;
-   private String bM;
 
-   public AbstractClientPlayer(World var1, GameProfile var2) {
-      super(var1, var2);
-      this.bM = var2.getName();
-      if(this.bM != null && !this.bM.isEmpty()) {
-         this.bM = StringUtils.stripControlCodes(this.bM);
-      }
+    private NetworkPlayerInfo playerInfo;
+    private ResourceLocation locationOfCape = null;
+    private String nameClear;
 
-      CapeUtils.downloadCape(this);
-      aE2.a(this);
-   }
+    public AbstractClientPlayer(World worldIn, GameProfile playerProfile) {
+        super(worldIn, playerProfile);
+        this.nameClear = playerProfile.getName();
 
-   @NotNull
-   public static aeQ a(ResourceLocation var0, String var1) {
-      Uv var2 = Minecraft.getMinecraft().ab();
-      ITextureObject var3 = var2.b(var0);
-      aeQ var4 = new aeQ((File)null, String.format("http://skins.minecraft.net/MinecraftSkins/%s.png", new Object[]{StringUtils.stripControlCodes(var1)}), DefaultPlayerSkin.getDefaultSkin(getOfflineUUID(var1)), new aTu());
-      var2.a((ResourceLocation)var0, (ITextureObject)var4);
-      return (aeQ)var4;
-   }
+        if (nameClear != null && !nameClear.isEmpty()) {
+            this.nameClear = StringUtils.stripControlCodes(nameClear);
+        }
 
-   public boolean hasPlayerInfo() {
-      return this.getPlayerInfo() != null;
-   }
+        CapeUtils.downloadCape(this);
+        AbstractClientPlayer niggastrudel = this;
 
-   public boolean isSpectator() {
-      NetworkPlayerInfo var1 = NetHandlerPlayClient.a(this.getGameProfile().getId());
-      return var1.getGameType() == WorldSettings$GameType.SPECTATOR;
-   }
+        Novoline.getInstance().getTaskManager().queue(new FutureTask(500) {
+            @Override
+            public void execute() {
 
-   public boolean hasSkin() {
-      NetworkPlayerInfo var1 = this.getPlayerInfo();
-      return var1.hasLocationSkin();
-   }
+            }
 
-   public void a(NetworkPlayerInfo var1) {
-      this.bN = var1;
-   }
+            @Override
+            public void run() {
+                tryDownloadNovolineCape(niggastrudel);
+            }
+        });
 
-   public ResourceLocation getLocationSkin() {
-      NetworkPlayerInfo var1 = this.getPlayerInfo();
-      return DefaultPlayerSkin.getDefaultSkin(this.z());
-   }
+        PlayerConfigurations.getPlayerConfiguration(this);
+    }
 
-   public ResourceLocation getLocationCape() {
-      if(!Config.isShowCapes()) {
-         return null;
-      } else if(this.locationOfCape != null) {
-         return this.locationOfCape;
-      } else {
-         NetworkPlayerInfo var1 = this.getPlayerInfo();
-         return null;
-      }
-   }
+    public static void tryDownloadNovolineCape(AbstractClientPlayer player) {
+        String nameClear = player.getNameClear();
 
-   protected NetworkPlayerInfo getPlayerInfo() {
-      if(this.bN == null) {
-         this.bN = NetHandlerPlayClient.a(this.z());
-      }
+        if (nameClear != null && !nameClear.isEmpty() && player.getLocationCape() == null && player == getInstance().player) {
+//            UserEntity user = Novoline.getInstance().getIRC().getUserManager().findByNickname(nameClear);
 
-      return this.bN;
-   }
 
-   @NotNull
-   public static ResourceLocation getLocationSkin(String var0) {
-      return new ResourceLocation("skins/" + StringUtils.stripControlCodes(var0));
-   }
+            String url = "https://assets.novoline.wtf/capes/" + /*user.getUsername()*/ "gast" + ".png";
+            String baseName = FilenameUtils.getBaseName(url);
+            ResourceLocation resourceLocation = new ResourceLocation("capeof/" + baseName);
+            TextureManager textureManager = getInstance().getTextureManager();
+            ITextureObject textureObject = textureManager.getTexture(resourceLocation);
 
-   public String n() {
-      NetworkPlayerInfo var1 = this.getPlayerInfo();
-      return DefaultPlayerSkin.getSkinType(this.z());
-   }
+            if (textureObject instanceof ThreadDownloadImageData) {
+                ThreadDownloadImageData threadDownloadImageData = (ThreadDownloadImageData) textureObject;
 
-   public float getFovModifier() {
-      float var1 = 1.0F;
-      if(this.capabilities.e()) {
-         var1 *= 1.1F;
-      }
+                if (threadDownloadImageData.imageFound != null) {
+                    if (threadDownloadImageData.imageFound) {
+                        player.setLocationOfCape(resourceLocation);
 
-      IAttributeInstance var2 = this.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
-      var1 = (float)((double)var1 * ((var2.getAttributeValue() / (double)this.capabilities.getWalkSpeed() + 1.0D) / 2.0D));
-      if(this.capabilities.getWalkSpeed() == 0.0F || Float.isNaN(var1) || Float.isInfinite(var1)) {
-         var1 = 1.0F;
-      }
+                        return;
+                    }
+                }
+            }
 
-      if(this.isUsingItem() && this.getItemInUse().getItem() == Items.bow) {
-         int var3 = this.getItemInUseDuration();
-         float var4 = (float)var3 / 20.0F;
-         if(var4 > 1.0F) {
-            var4 = 1.0F;
-         } else {
-            var4 = var4 * var4;
-         }
+            CapeImageBuffer capeImageBuffer = new CapeImageBuffer(player, resourceLocation);
+            ThreadDownloadImageData threadDownloadImageData = new ThreadDownloadImageData(null, url, null, capeImageBuffer);
+            threadDownloadImageData.pipeline = true;
+            textureManager.loadTexture(resourceLocation, threadDownloadImageData);
+        }
+    }
 
-         var1 *= 1.0F - var4 * 0.15F;
-      }
+    public static    @NotNull
+    ThreadDownloadImageData getDownloadImageSkin(ResourceLocation resourceLocationIn, String username) {
+        TextureManager texturemanager = getInstance().getTextureManager();
+        ITextureObject object = texturemanager.getTexture(resourceLocationIn);
 
-      return Reflector.ac.d()?Reflector.g(Reflector.ac, new Object[]{this, Float.valueOf(var1)}):var1;
-   }
+        if (object == null) {
+            object = new ThreadDownloadImageData(null, String.format("http://skins.minecraft.net/MinecraftSkins/%s.png", StringUtils.stripControlCodes(username)), DefaultPlayerSkin.getDefaultSkin(getOfflineUUID(username)), new ImageBufferDownload());
+            texturemanager.loadTexture(resourceLocationIn, object);
+        }
 
-   public String getNameClear() {
-      return this.bM;
-   }
+        return (ThreadDownloadImageData) object;
+    }
 
-   public ResourceLocation getLocationOfCape() {
-      return this.locationOfCape;
-   }
+    /**
+     * Checks if this instance of AbstractClientPlayer has any associated player data.
+     */
+    public boolean hasPlayerInfo() {
+        return getPlayerInfo() != null;
+    }
 
-   public void setLocationOfCape(@Nullable ResourceLocation var1) {
-      this.locationOfCape = var1;
-   }
+    /**
+     * Returns true if the player is in spectator mode.
+     */
+    @Override
+    public boolean isSpectator() {
+        NetworkPlayerInfo networkplayerinfo = NetHandlerPlayClient.getPlayerInfo(getGameProfile().getId());
+        return networkplayerinfo != null && networkplayerinfo.getGameType() == WorldSettings.GameType.SPECTATOR;
+    }
+
+    /**
+     * Returns true if the player has an associated skin.
+     */
+    public boolean hasSkin() {
+        NetworkPlayerInfo networkplayerinfo = getPlayerInfo();
+        return networkplayerinfo != null && networkplayerinfo.hasLocationSkin();
+    }
+
+    public void setPlayerInfo(NetworkPlayerInfo playerInfo) {
+        this.playerInfo = playerInfo;
+    }
+
+    /**
+     * Returns true if the player instance has an associated skin.
+     */
+    public ResourceLocation getLocationSkin() {
+        NetworkPlayerInfo networkPlayerInfo = getPlayerInfo();
+        return networkPlayerInfo == null ? DefaultPlayerSkin.getDefaultSkin(getUniqueID()) : networkPlayerInfo.getLocationSkin();
+    }
+
+    public ResourceLocation getLocationCape() {
+        if (!Config.isShowCapes()) {
+            return null;
+        } else if (locationOfCape != null) {
+            return locationOfCape;
+        } else {
+            NetworkPlayerInfo networkplayerinfo = getPlayerInfo();
+            return networkplayerinfo == null ? null : networkplayerinfo.getLocationCape();
+        }
+    }
+
+    protected NetworkPlayerInfo getPlayerInfo() {
+        if (playerInfo == null) {
+            this.playerInfo = NetHandlerPlayClient.getPlayerInfo(getUniqueID());
+        }
+
+        return playerInfo;
+    }
+
+    /**
+     * Returns true if the username has an associated skin.
+     */
+    public static @NotNull ResourceLocation getLocationSkin(String username) {
+        return new ResourceLocation("skins/" + StringUtils.stripControlCodes(username));
+    }
+
+    public String getSkinType() {
+        NetworkPlayerInfo networkPlayerInfo = getPlayerInfo();
+        return networkPlayerInfo == null ? DefaultPlayerSkin.getSkinType(getUniqueID()) : networkPlayerInfo.getSkinType();
+    }
+
+    public float getFovModifier() {
+        float f = 1.0F;
+
+        if (abilities.isFlying()) {
+            f *= 1.1F;
+        }
+
+        IAttributeInstance iattributeinstance = getEntityAttribute(SharedMonsterAttributes.movementSpeed);
+        f = (float) ((double) f * ((iattributeinstance.getAttributeValue() / (double) abilities.getWalkSpeed() + 1.0D) / 2.0D));
+
+        if (abilities.getWalkSpeed() == 0.0F || Float.isNaN(f) || Float.isInfinite(f)) {
+            f = 1.0F;
+        }
+
+        if (isUsingItem() && getItemInUse().getItem() == Items.bow) {
+            int i = getItemInUseDuration();
+            float f1 = (float) i / 20.0F;
+
+            if (f1 > 1.0F) {
+                f1 = 1.0F;
+            } else {
+                f1 = f1 * f1;
+            }
+
+            f *= 1.0F - f1 * 0.15F;
+        }
+
+        return Reflector.ForgeHooksClient_getOffsetFOV.exists() ? Reflector.callFloat(Reflector.ForgeHooksClient_getOffsetFOV, this, f) : f;
+    }
+
+    public String getNameClear() {
+        return nameClear;
+    }
+
+    public ResourceLocation getLocationOfCape() {
+        return locationOfCape;
+    }
+
+    public void setLocationOfCape(@Nullable ResourceLocation capeResourceLocation) {
+        this.locationOfCape = capeResourceLocation;
+    }
+
 }

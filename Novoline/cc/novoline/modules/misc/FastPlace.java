@@ -10,16 +10,22 @@ import cc.novoline.modules.configurations.annotation.Property;
 import cc.novoline.modules.configurations.property.object.BooleanProperty;
 import cc.novoline.modules.configurations.property.object.IntProperty;
 import cc.novoline.modules.configurations.property.object.PropertyFactory;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import static cc.novoline.modules.configurations.property.object.PropertyFactory.createInt;
 
 public final class FastPlace extends AbstractModule {
-   @Property("place-delay")
-   public final IntProperty placeDelay = (IntProperty)((IntProperty)PropertyFactory.createInt(Integer.valueOf(3)).minimum(Integer.valueOf(1))).maximum(Integer.valueOf(4));
-   @Property("blocks-only")
-   public final BooleanProperty blocksOnly = PropertyFactory.booleanTrue();
 
-   public FastPlace(ModuleManager var1) {
-      super(var1, "FastPlace", "Fast Place", EnumModuleType.MISC, "place blocks faster");
-      Manager.put(new Setting("PLACE_DELAY", "Place Delay", SettingType.SLIDER, this, this.placeDelay, 1.0D));
-      Manager.put(new Setting("BLOCKS_ONLY", "Blocks Only", SettingType.CHECKBOX, this, this.blocksOnly));
-   }
+    /* properties @off */
+    @Property("place-delay")
+    public final IntProperty placeDelay = createInt(3).minimum(1).maximum(4);
+    @Property("blocks-only")
+    public final BooleanProperty blocksOnly = PropertyFactory.booleanTrue();
+
+    /* constructors @on */
+    public FastPlace(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "FastPlace", "Fast Place", EnumModuleType.MISC, "place blocks faster");
+        Manager.put(new Setting("PLACE_DELAY", "Place Delay", SettingType.SLIDER, this, this.placeDelay, 1));
+        Manager.put(new Setting("BLOCKS_ONLY", "Blocks Only", SettingType.CHECKBOX, this, this.blocksOnly));
+    }
 }

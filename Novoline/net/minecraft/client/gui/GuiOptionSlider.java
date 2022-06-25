@@ -1,70 +1,82 @@
 package net.minecraft.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.settings.GameSettings$Options;
+import net.minecraft.client.settings.GameSettings;
 import net.minecraft.util.MathHelper;
 
 public class GuiOptionSlider extends GuiButton {
-   private float sliderValue;
-   public boolean dragging;
-   private GameSettings$Options options;
-   private final float field_146132_r;
-   private final float field_146131_s;
+    private float sliderValue;
+    public boolean dragging;
+    private GameSettings.Options options;
+    private final float field_146132_r;
+    private final float field_146131_s;
 
-   public GuiOptionSlider(int var1, int var2, int var3, GameSettings$Options var4) {
-      this(var1, var2, var3, var4, 0.0F, 1.0F);
-   }
+    public GuiOptionSlider(int p_i45016_1_, int p_i45016_2_, int p_i45016_3_, GameSettings.Options p_i45016_4_) {
+        this(p_i45016_1_, p_i45016_2_, p_i45016_3_, p_i45016_4_, 0.0F, 1.0F);
+    }
 
-   public GuiOptionSlider(int var1, int var2, int var3, GameSettings$Options var4, float var5, float var6) {
-      super(var1, var2, var3, 150, 20, "");
-      this.sliderValue = 1.0F;
-      this.options = var4;
-      this.field_146132_r = var5;
-      this.field_146131_s = var6;
-      Minecraft var7 = Minecraft.getInstance();
-      this.sliderValue = var4.normalizeValue(var7.gameSettings.getOptionFloatValue(var4));
-      this.displayString = var7.gameSettings.b(var4);
-   }
+    public GuiOptionSlider(int p_i45017_1_, int p_i45017_2_, int p_i45017_3_, GameSettings.Options p_i45017_4_, float p_i45017_5_, float p_i45017_6_) {
+        super(p_i45017_1_, p_i45017_2_, p_i45017_3_, 150, 20, "");
+        this.sliderValue = 1.0F;
+        this.options = p_i45017_4_;
+        this.field_146132_r = p_i45017_5_;
+        this.field_146131_s = p_i45017_6_;
+        Minecraft minecraft = Minecraft.getInstance();
+        this.sliderValue = p_i45017_4_.normalizeValue(minecraft.gameSettings.getOptionFloatValue(p_i45017_4_));
+        this.displayString = minecraft.gameSettings.getKeyBinding(p_i45017_4_);
+    }
 
-   protected int getHoverState(boolean var1) {
-      return 0;
-   }
+    /**
+     * Returns 0 if the button is disabled, 1 if the mouse is NOT hovering over this button and 2 if it IS hovering over
+     * this button.
+     */
+    protected int getHoverState(boolean mouseOver) {
+        return 0;
+    }
 
-   protected void mouseDragged(Minecraft var1, int var2, int var3) {
-      if(this.visible) {
-         if(this.dragging) {
-            this.sliderValue = (float)((double)var2 - (this.xPosition + 4.0D)) / (float)(this.width - 8);
+    /**
+     * Fired when the mouse button is dragged. Equivalent of MouseListener.mouseDragged(MouseEvent e).
+     */
+    protected void mouseDragged(Minecraft mc, int mouseX, int mouseY) {
+        if (this.visible) {
+            if (this.dragging) {
+                this.sliderValue = (float) (mouseX - (this.xPosition + 4)) / (float) (this.width - 8);
+                this.sliderValue = MathHelper.clamp_float(this.sliderValue, 0.0F, 1.0F);
+                float f = this.options.denormalizeValue(this.sliderValue);
+                mc.gameSettings.setOptionFloatValue(this.options, f);
+                this.sliderValue = this.options.normalizeValue(f);
+                this.displayString = mc.gameSettings.getKeyBinding(this.options);
+            }
+
+            mc.getTextureManager().bindTexture(buttonTextures);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            this.drawTexturedModalRect((int) this.xPosition + (int) (this.sliderValue * (float) (this.width - 8)), (int) this.yPosition, 0, 66, 4, 20);
+            this.drawTexturedModalRect((int) this.xPosition + (int) (this.sliderValue * (float) (this.width - 8)) + 4, (int) this.yPosition, 196, 66, 4, 20);
+        }
+    }
+
+    /**
+     * Returns true if the mouse has been pressed on this control. Equivalent of MouseListener.mousePressed(MouseEvent
+     * e).
+     */
+    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY) {
+        if (super.mousePressed(mc, mouseX, mouseY)) {
+            this.sliderValue = (float) (mouseX - (this.xPosition + 4)) / (float) (this.width - 8);
             this.sliderValue = MathHelper.clamp_float(this.sliderValue, 0.0F, 1.0F);
-            float var4 = this.options.denormalizeValue(this.sliderValue);
-            var1.gameSettings.setOptionFloatValue(this.options, var4);
-            this.sliderValue = this.options.normalizeValue(var4);
-            this.displayString = var1.gameSettings.b(this.options);
-         }
+            mc.gameSettings.setOptionFloatValue(this.options, this.options.denormalizeValue(this.sliderValue));
+            this.displayString = mc.gameSettings.getKeyBinding(this.options);
+            this.dragging = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-         var1.getTextureManager().bindTexture(buttonTextures);
-         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-         this.drawTexturedModalRect((int)this.xPosition + (int)(this.sliderValue * (float)(this.width - 8)), (int)this.yPosition, 0, 66, 4, 20);
-         this.drawTexturedModalRect((int)this.xPosition + (int)(this.sliderValue * (float)(this.width - 8)) + 4, (int)this.yPosition, 196, 66, 4, 20);
-      }
-
-   }
-
-   public boolean mousePressed(Minecraft var1, int var2, int var3) {
-      if(super.mousePressed(var1, var2, var3)) {
-         this.sliderValue = (float)((double)var2 - (this.xPosition + 4.0D)) / (float)(this.width - 8);
-         this.sliderValue = MathHelper.clamp_float(this.sliderValue, 0.0F, 1.0F);
-         var1.gameSettings.setOptionFloatValue(this.options, this.options.denormalizeValue(this.sliderValue));
-         this.displayString = var1.gameSettings.b(this.options);
-         this.dragging = true;
-         return true;
-      } else {
-         return false;
-      }
-   }
-
-   public void mouseReleased(int var1, int var2) {
-      this.dragging = false;
-   }
+    /**
+     * Fired when the mouse button is released. Equivalent of MouseListener.mouseReleased(MouseEvent e).
+     */
+    public void mouseReleased(int mouseX, int mouseY) {
+        this.dragging = false;
+    }
 }

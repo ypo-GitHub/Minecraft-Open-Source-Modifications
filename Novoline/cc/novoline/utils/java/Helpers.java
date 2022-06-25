@@ -1,129 +1,93 @@
 package cc.novoline.utils.java;
 
-import cc.novoline.utils.java.Checks;
-import cc.novoline.utils.java.FilteredArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 
+/**
+ * @author xDelsy
+ */
 public final class Helpers {
-   private Helpers() {
-      throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-   }
 
-   public static boolean isEmpty(CharSequence var0) {
-      return var0.length() == 0;
-   }
+    private Helpers() {
+        throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
-   public static boolean containsWhitespace(CharSequence var0) {
-      String[] var1 = FilteredArrayList.c();
-      if(isEmpty(var0)) {
-         return false;
-      } else {
-         int var2 = 0;
-         if(var2 < var0.length()) {
-            if(Character.isWhitespace(var0.charAt(var2))) {
-               return true;
-            }
+    public static boolean isEmpty(final CharSequence seq) {
+        return seq == null || seq.length() == 0;
+    }
 
-            ++var2;
-         }
+    public static boolean containsWhitespace(final CharSequence seq) {
+        if (isEmpty(seq)) return false;
 
-         return false;
-      }
-   }
+        for (int i = 0; i < seq.length(); i++) {
+            if (Character.isWhitespace(seq.charAt(i))) return true;
+        }
 
-   public static boolean isBlank(CharSequence var0) {
-      if(isEmpty(var0)) {
-         return true;
-      } else {
-         for(int var1 = 0; var1 < var0.length(); ++var1) {
-            if(!Character.isWhitespace(var0.charAt(var1))) {
-               return false;
-            }
-         }
+        return false;
+    }
 
-         return true;
-      }
-   }
+    public static boolean isBlank(final CharSequence seq) {
+        if (isEmpty(seq)) return true;
 
-   public static int countMatches(CharSequence var0, char var1) {
-      String[] var2 = FilteredArrayList.c();
-      if(isEmpty(var0)) {
-         return 0;
-      } else {
-         int var3 = 0;
-         int var4 = 0;
-         if(var4 < var0.length()) {
-            if(var0.charAt(var4) == var1) {
-               ++var3;
-            }
+        for (int i = 0; i < seq.length(); i++) {
+            if (!Character.isWhitespace(seq.charAt(i))) return false;
+        }
 
-            ++var4;
-         }
+        return true;
+    }
 
-         return var3;
-      }
-   }
+    public static int countMatches(final CharSequence seq, final char c) {
+        if (isEmpty(seq)) return 0;
+        int count = 0;
 
-   public static String truncate(String var0, int var1) {
-      String[] var2 = FilteredArrayList.c();
-      if(var0 == null) {
-         return null;
-      } else {
-         Checks.notNegative(var1, "maxWidth");
-         return var0.length() <= var1?var0:(var1 == 0?"":var0.substring(0, var1));
-      }
-   }
+        for (int i = 0; i < seq.length(); i++) {
+            if (seq.charAt(i) == c) count++;
+        }
 
-   public static boolean isNumeric(String var0) {
-      String[] var1 = FilteredArrayList.c();
-      if(isEmpty(var0)) {
-         return false;
-      } else {
-         char[] var2 = var0.toCharArray();
-         int var3 = var2.length;
-         int var4 = 0;
-         if(var4 < var3) {
-            char var5 = var2[var4];
-            if(!Character.isDigit(var5)) {
-               return false;
-            }
+        return count;
+    }
 
-            ++var4;
-         }
+    public static String truncate(final String input, final int maxWidth) {
+        if (input == null) return null;
 
-         return true;
-      }
-   }
+        Checks.notNegative(maxWidth, "maxWidth");
 
-   public static boolean deepEquals(Collection var0, Collection var1) {
-      String[] var2 = FilteredArrayList.c();
-      if(var0 == var1) {
-         return true;
-      } else if(var0 != null && var1 != null && var0.size() == var1.size()) {
-         Iterator var3 = var0.iterator();
-         Iterator var4 = var1.iterator();
-         if(var3.hasNext()) {
-            Object var5 = var3.next();
-            Object var6 = var4.next();
-            if(!Objects.equals(var5, var6)) {
-               return false;
-            }
-         }
+        if (input.length() <= maxWidth) return input;
+        if (maxWidth == 0) return "";
 
-         return true;
-      } else {
-         return false;
-      }
-   }
+        return input.substring(0, maxWidth);
+    }
 
-   public static boolean deepEqualsUnordered(Collection var0, Collection var1) {
-      String[] var2 = FilteredArrayList.c();
-      return var0 == var1?true:(var0 != null && var1 != null?var0.size() == var1.size() && var1.containsAll(var0):false);
-   }
+    public static boolean isNumeric(final String input) {
+        if (isEmpty(input)) return false;
 
-   private static UnsupportedOperationException a(UnsupportedOperationException var0) {
-      return var0;
-   }
+        for (char c : input.toCharArray()) {
+            if (!Character.isDigit(c)) return false;
+        }
+
+        return true;
+    }
+
+    public static boolean deepEquals(Collection<?> first, Collection<?> second) {
+        if (first == second) return true;
+        if (first == null || second == null || first.size() != second.size()) return false;
+
+        for (Iterator<?> itFirst = first.iterator(), itSecond = second.iterator(); itFirst.hasNext(); ) {
+            final Object elementFirst = itFirst.next();
+            final Object elementSecond = itSecond.next();
+
+            if (!Objects.equals(elementFirst, elementSecond)) return false;
+        }
+
+        return true;
+    }
+
+    public static boolean deepEqualsUnordered(Collection<?> first, Collection<?> second) {
+        if (first == second) return true;
+        if (first == null || second == null) return false;
+
+        return first.size() == second.size() && second.containsAll(first);
+    }
+
 }

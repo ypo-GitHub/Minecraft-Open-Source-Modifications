@@ -1,132 +1,124 @@
 package net.shadersmod.client;
 
-import java.util.Iterator;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 import net.optifine.BlockPosM;
-import net.shadersmod.client.IteratorAxis;
-import net.shadersmod.client.ShaderOption;
 
-public class Iterator3d implements Iterator {
-   private IteratorAxis iteratorAxis;
-   private BlockPosM blockPos;
-   private int axis;
-   private int kX;
-   private int kY;
-   private int kZ;
-   private static final int AXIS_X = 0;
-   private static final int AXIS_Y = 1;
-   private static final int AXIS_Z = 2;
+import java.util.Iterator;
 
-   public Iterator3d(BlockPos var1, BlockPos var2, int var3, int var4) {
-      ShaderOption.p();
-      this.blockPos = new BlockPosM(0, 0, 0);
-      this.axis = 0;
-      boolean var6 = var1.getX() > var2.getX();
-      boolean var7 = var1.getY() > var2.getY();
-      boolean var8 = var1.getZ() > var2.getZ();
-      var1 = this.reverseCoord(var1, var6, var7, var8);
-      var2 = this.reverseCoord(var2, var6, var7, var8);
-      this.kX = var6?-1:1;
-      this.kY = var7?-1:1;
-      this.kZ = var8?-1:1;
-      Vec3 var9 = new Vec3((double)(var2.getX() - var1.getX()), (double)(var2.getY() - var1.getY()), (double)(var2.getZ() - var1.getZ()));
-      Vec3 var10 = var9.normalize();
-      Vec3 var11 = new Vec3(1.0D, 0.0D, 0.0D);
-      double var12 = var10.dotProduct(var11);
-      double var14 = Math.abs(var12);
-      Vec3 var16 = new Vec3(0.0D, 1.0D, 0.0D);
-      double var17 = var10.dotProduct(var16);
-      double var19 = Math.abs(var17);
-      Vec3 var21 = new Vec3(0.0D, 0.0D, 1.0D);
-      double var22 = var10.dotProduct(var21);
-      double var24 = Math.abs(var22);
-      if(var24 >= var19 && var24 >= var14) {
-         this.axis = 2;
-         BlockPos var26 = new BlockPos(var1.getZ(), var1.getY() - var3, var1.getX() - var4);
-         BlockPos var27 = new BlockPos(var2.getZ(), var1.getY() + var3 + 1, var1.getX() + var4 + 1);
-         int var28 = var2.getZ() - var1.getZ();
-         double var29 = (double)(var2.getY() - var1.getY()) / (1.0D * (double)var28);
-         double var31 = (double)(var2.getX() - var1.getX()) / (1.0D * (double)var28);
-         this.iteratorAxis = new IteratorAxis(var26, var27, var29, var31);
-      }
+public class Iterator3d implements Iterator<BlockPos> {
+    private IteratorAxis iteratorAxis;
+    private BlockPosM blockPos = new BlockPosM(0, 0, 0);
+    private int axis = 0;
+    private int kX;
+    private int kY;
+    private int kZ;
+    private static final int AXIS_X = 0;
+    private static final int AXIS_Y = 1;
+    private static final int AXIS_Z = 2;
 
-      if(var19 >= var14 && var19 >= var24) {
-         this.axis = 1;
-         BlockPos var35 = new BlockPos(var1.getY(), var1.getX() - var3, var1.getZ() - var4);
-         BlockPos var37 = new BlockPos(var2.getY(), var1.getX() + var3 + 1, var1.getZ() + var4 + 1);
-         int var39 = var2.getY() - var1.getY();
-         double var41 = (double)(var2.getX() - var1.getX()) / (1.0D * (double)var39);
-         double var43 = (double)(var2.getZ() - var1.getZ()) / (1.0D * (double)var39);
-         this.iteratorAxis = new IteratorAxis(var35, var37, var41, var43);
-      }
+    public Iterator3d(BlockPos posStart, BlockPos posEnd, int width, int height) {
+        boolean flag = posStart.getX() > posEnd.getX();
+        boolean flag1 = posStart.getY() > posEnd.getY();
+        boolean flag2 = posStart.getZ() > posEnd.getZ();
+        posStart = this.reverseCoord(posStart, flag, flag1, flag2);
+        posEnd = this.reverseCoord(posEnd, flag, flag1, flag2);
+        this.kX = flag ? -1 : 1;
+        this.kY = flag1 ? -1 : 1;
+        this.kZ = flag2 ? -1 : 1;
+        Vec3 vec3 = new Vec3((double) (posEnd.getX() - posStart.getX()), (double) (posEnd.getY() - posStart.getY()), (double) (posEnd.getZ() - posStart.getZ()));
+        Vec3 vec31 = vec3.normalize();
+        Vec3 vec32 = new Vec3(1.0D, 0.0D, 0.0D);
+        double d0 = vec31.dotProduct(vec32);
+        double d1 = Math.abs(d0);
+        Vec3 vec33 = new Vec3(0.0D, 1.0D, 0.0D);
+        double d2 = vec31.dotProduct(vec33);
+        double d3 = Math.abs(d2);
+        Vec3 vec34 = new Vec3(0.0D, 0.0D, 1.0D);
+        double d4 = vec31.dotProduct(vec34);
+        double d5 = Math.abs(d4);
 
-      this.axis = 0;
-      BlockPos var36 = new BlockPos(var1.getX(), var1.getY() - var3, var1.getZ() - var4);
-      BlockPos var38 = new BlockPos(var2.getX(), var1.getY() + var3 + 1, var1.getZ() + var4 + 1);
-      int var40 = var2.getX() - var1.getX();
-      double var42 = (double)(var2.getY() - var1.getY()) / (1.0D * (double)var40);
-      double var44 = (double)(var2.getZ() - var1.getZ()) / (1.0D * (double)var40);
-      this.iteratorAxis = new IteratorAxis(var36, var38, var42, var44);
-   }
+        if (d5 >= d3 && d5 >= d1) {
+            this.axis = 2;
+            BlockPos blockpos3 = new BlockPos(posStart.getZ(), posStart.getY() - width, posStart.getX() - height);
+            BlockPos blockpos5 = new BlockPos(posEnd.getZ(), posStart.getY() + width + 1, posStart.getX() + height + 1);
+            int k = posEnd.getZ() - posStart.getZ();
+            double d9 = (double) (posEnd.getY() - posStart.getY()) / (1.0D * (double) k);
+            double d11 = (double) (posEnd.getX() - posStart.getX()) / (1.0D * (double) k);
+            this.iteratorAxis = new IteratorAxis(blockpos3, blockpos5, d9, d11);
+        } else if (d3 >= d1 && d3 >= d5) {
+            this.axis = 1;
+            BlockPos blockpos2 = new BlockPos(posStart.getY(), posStart.getX() - width, posStart.getZ() - height);
+            BlockPos blockpos4 = new BlockPos(posEnd.getY(), posStart.getX() + width + 1, posStart.getZ() + height + 1);
+            int j = posEnd.getY() - posStart.getY();
+            double d8 = (double) (posEnd.getX() - posStart.getX()) / (1.0D * (double) j);
+            double d10 = (double) (posEnd.getZ() - posStart.getZ()) / (1.0D * (double) j);
+            this.iteratorAxis = new IteratorAxis(blockpos2, blockpos4, d8, d10);
+        } else {
+            this.axis = 0;
+            BlockPos blockpos = new BlockPos(posStart.getX(), posStart.getY() - width, posStart.getZ() - height);
+            BlockPos blockpos1 = new BlockPos(posEnd.getX(), posStart.getY() + width + 1, posStart.getZ() + height + 1);
+            int i = posEnd.getX() - posStart.getX();
+            double d6 = (double) (posEnd.getY() - posStart.getY()) / (1.0D * (double) i);
+            double d7 = (double) (posEnd.getZ() - posStart.getZ()) / (1.0D * (double) i);
+            this.iteratorAxis = new IteratorAxis(blockpos, blockpos1, d6, d7);
+        }
+    }
 
-   private BlockPos reverseCoord(BlockPos var1, boolean var2, boolean var3, boolean var4) {
-      String[] var5 = ShaderOption.p();
-      if(var2) {
-         var1 = new BlockPos(-var1.getX(), var1.getY(), var1.getZ());
-      }
+    private BlockPos reverseCoord(BlockPos pos, boolean revX, boolean revY, boolean revZ) {
+        if (revX) {
+            pos = new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
+        }
 
-      if(var3) {
-         var1 = new BlockPos(var1.getX(), -var1.getY(), var1.getZ());
-      }
+        if (revY) {
+            pos = new BlockPos(pos.getX(), -pos.getY(), pos.getZ());
+        }
 
-      if(var4) {
-         var1 = new BlockPos(var1.getX(), var1.getY(), -var1.getZ());
-      }
+        if (revZ) {
+            pos = new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
+        }
 
-      return var1;
-   }
+        return pos;
+    }
 
-   public boolean hasNext() {
-      return this.iteratorAxis.hasNext();
-   }
+    public boolean hasNext() {
+        return this.iteratorAxis.hasNext();
+    }
 
-   public BlockPos next() {
-      ShaderOption.p();
-      BlockPos var2 = this.iteratorAxis.next();
-      switch(this.axis) {
-      case 0:
-         this.blockPos.setXyz(var2.getX() * this.kX, var2.getY() * this.kY, var2.getZ() * this.kZ);
-         return this.blockPos;
-      case 1:
-         this.blockPos.setXyz(var2.getY() * this.kX, var2.getX() * this.kY, var2.getZ() * this.kZ);
-         return this.blockPos;
-      case 2:
-         this.blockPos.setXyz(var2.getZ() * this.kX, var2.getY() * this.kY, var2.getX() * this.kZ);
-         return this.blockPos;
-      default:
-         this.blockPos.setXyz(var2.getX() * this.kX, var2.getY() * this.kY, var2.getZ() * this.kZ);
-         return this.blockPos;
-      }
-   }
+    public BlockPos next() {
+        BlockPos blockpos = this.iteratorAxis.next();
 
-   public void remove() {
-      throw new RuntimeException("Not supported");
-   }
+        switch (this.axis) {
+            case 0:
+                this.blockPos.setXyz(blockpos.getX() * this.kX, blockpos.getY() * this.kY, blockpos.getZ() * this.kZ);
+                return this.blockPos;
 
-   public static void main(String[] var0) {
-      ShaderOption.p();
-      BlockPos var2 = new BlockPos(10, 20, 30);
-      BlockPos var3 = new BlockPos(30, 40, 20);
-      Iterator3d var4 = new Iterator3d(var2, var3, 1, 1);
-      if(var4.hasNext()) {
-         BlockPos var5 = var4.next();
-         System.out.println("" + var5);
-      }
+            case 1:
+                this.blockPos.setXyz(blockpos.getY() * this.kX, blockpos.getX() * this.kY, blockpos.getZ() * this.kZ);
+                return this.blockPos;
 
-   }
+            case 2:
+                this.blockPos.setXyz(blockpos.getZ() * this.kX, blockpos.getY() * this.kY, blockpos.getX() * this.kZ);
+                return this.blockPos;
 
-   private static RuntimeException a(RuntimeException var0) {
-      return var0;
-   }
+            default:
+                this.blockPos.setXyz(blockpos.getX() * this.kX, blockpos.getY() * this.kY, blockpos.getZ() * this.kZ);
+                return this.blockPos;
+        }
+    }
+
+    public void remove() {
+        throw new RuntimeException("Not supported");
+    }
+
+    public static void main(String[] args) {
+        BlockPos blockpos = new BlockPos(10, 20, 30);
+        BlockPos blockpos1 = new BlockPos(30, 40, 20);
+        Iterator3d iterator3d = new Iterator3d(blockpos, blockpos1, 1, 1);
+
+        while (iterator3d.hasNext()) {
+            BlockPos blockpos2 = iterator3d.next();
+            System.out.println("" + blockpos2);
+        }
+    }
 }

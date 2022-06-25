@@ -1,41 +1,42 @@
 package net.minecraft.block.properties;
 
 import com.google.common.base.Objects;
-import net.minecraft.block.properties.IProperty;
 
-public abstract class PropertyHelper implements IProperty {
-   private final Class valueClass;
-   private final String name;
+public abstract class PropertyHelper<T extends Comparable<T>> implements IProperty<T> {
 
-   protected PropertyHelper(String var1, Class var2) {
-      this.valueClass = var2;
-      this.name = var1;
-   }
+    private final Class<T> valueClass;
+    private final String name;
 
-   public String getName() {
-      return this.name;
-   }
+    protected PropertyHelper(String name, Class<T> valueClass) {
+        this.valueClass = valueClass;
+        this.name = name;
+    }
 
-   public Class getValueClass() {
-      return this.valueClass;
-   }
+    public String getName() {
+        return this.name;
+    }
 
-   public String toString() {
-      return Objects.toStringHelper(this).add("name", this.name).add("clazz", this.valueClass).add("values", this.getAllowedValues()).toString();
-   }
+    public Class<T> getValueClass() {
+        return this.valueClass;
+    }
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(this.getClass() != var1.getClass()) {
-         return false;
-      } else {
-         PropertyHelper var2 = (PropertyHelper)var1;
-         return this.valueClass.equals(var2.valueClass) && this.name.equals(var2.name);
-      }
-   }
+    public String toString() {
+        return Objects.toStringHelper(this).add("name", this.name).add("clazz", this.valueClass).add("values", this.getAllowedValues()).toString();
+    }
 
-   public int hashCode() {
-      return 31 * this.valueClass.hashCode() + this.name.hashCode();
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
+            return true;
+        } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
+            final PropertyHelper propertyhelper = (PropertyHelper) p_equals_1_;
+            return this.valueClass.equals(propertyhelper.valueClass) && this.name.equals(propertyhelper.name);
+        } else {
+            return false;
+        }
+    }
+
+    public int hashCode() {
+        return 31 * this.valueClass.hashCode() + this.name.hashCode();
+    }
+
 }

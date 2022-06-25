@@ -1,39 +1,51 @@
 package net.minecraft.client.gui.inventory;
 
-import net.aHz;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.inventory.ContainerChest;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
 
-public class GuiChest extends aHz {
-   private static final ResourceLocation CHEST_GUI_TEXTURE = new ResourceLocation("textures/gui/container/generic_54.png");
-   private IInventory upperChestInventory;
-   public IInventory lowerChestInventory;
-   private int inventoryRows;
+public class GuiChest extends GuiContainer {
+    /**
+     * The ResourceLocation containing the chest GUI texture.
+     */
+    private static final ResourceLocation CHEST_GUI_TEXTURE = new ResourceLocation("textures/gui/container/generic_54.png");
+    private IInventory upperChestInventory;
+    public IInventory lowerChestInventory;
 
-   public GuiChest(IInventory var1, IInventory var2) {
-      super(new ContainerChest(var1, var2, Minecraft.getInstance().player));
-      this.upperChestInventory = var1;
-      this.lowerChestInventory = var2;
-      short var3 = 222;
-      int var4 = var3 - 108;
-      this.inventoryRows = var2.getSizeInventory() / 9;
-      this.ab = var4 + this.inventoryRows * 18;
-   }
+    /**
+     * window height is calculated with these values; the more rows, the heigher
+     */
+    private int inventoryRows;
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      this.fontRendererObj.drawString(this.lowerChestInventory.getDisplayName().getUnformattedText(), 8.0F, 6.0F, 4210752);
-      this.fontRendererObj.drawString(this.upperChestInventory.getDisplayName().getUnformattedText(), 8.0F, (float)(this.ab - 96 + 2), 4210752);
-   }
+    public GuiChest(IInventory upperInv, IInventory lowerInv) {
+        super(new ContainerChest(upperInv, lowerInv, Minecraft.getInstance().player));
+        this.upperChestInventory = upperInv;
+        this.lowerChestInventory = lowerInv;
+        int i = 222;
+        int j = i - 108;
+        this.inventoryRows = lowerInv.getSizeInventory() / 9;
+        this.ySize = j + this.inventoryRows * 18;
+    }
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(CHEST_GUI_TEXTURE);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.inventoryRows * 18 + 17);
-      this.drawTexturedModalRect(var4, var5 + this.inventoryRows * 18 + 17, 0, 126, this.y, 96);
-   }
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        this.fontRendererObj.drawString(this.lowerChestInventory.getDisplayName().getUnformattedText(), 8, 6, 4210752);
+        this.fontRendererObj.drawString(this.upperChestInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
+    }
+
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(CHEST_GUI_TEXTURE);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.inventoryRows * 18 + 17);
+        this.drawTexturedModalRect(i, j + this.inventoryRows * 18 + 17, 0, 126, this.xSize, 96);
+    }
 }

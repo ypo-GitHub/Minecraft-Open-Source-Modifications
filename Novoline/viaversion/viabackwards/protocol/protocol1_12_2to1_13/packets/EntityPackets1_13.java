@@ -1,224 +1,416 @@
 package viaversion.viabackwards.protocol.protocol1_12_2to1_13.packets;
 
-import net.Gh;
-import net.RL;
-import net.VV;
-import net.aCN;
-import net.aCP;
-import net.aCp;
-import net.aCr;
-import net.aCw;
-import net.aEY;
-import net.a_4;
-import net.aci;
-import net.aqI;
-import net.aqr;
-import net.ayk;
-import net.q1;
-import net.r;
-import net.yb;
-import viaversion.viabackwards.api.entities.meta.MetaHandler;
-import viaversion.viabackwards.api.entities.storage.EntityData$MetaCreator;
-import viaversion.viabackwards.api.entities.storage.MetaStorage;
+import viaversion.viabackwards.ViaBackwards;
+import viaversion.viabackwards.api.entities.storage.EntityPositionHandler;
 import viaversion.viabackwards.api.exceptions.RemovedValueException;
+import viaversion.viabackwards.api.rewriters.LegacyEntityRewriter;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.Protocol1_12_2To1_13;
 import viaversion.viabackwards.protocol.protocol1_12_2to1_13.data.EntityTypeMapping;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.data.ParticleMapping$ParticleData;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.packets.EntityPackets1_13$4;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.packets.EntityPackets1_13$6;
-import viaversion.viabackwards.protocol.protocol1_12_2to1_13.packets.EntityPackets1_13$8;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.data.PaintingMapping;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.data.ParticleMapping;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.storage.BackwardsBlockStorage;
+import viaversion.viabackwards.protocol.protocol1_12_2to1_13.storage.PlayerPositionStorage1_13;
 import viaversion.viaversion.api.PacketWrapper;
+import viaversion.viaversion.api.entities.Entity1_13Types;
 import viaversion.viaversion.api.entities.EntityType;
 import viaversion.viaversion.api.minecraft.item.Item;
 import viaversion.viaversion.api.minecraft.metadata.Metadata;
 import viaversion.viaversion.api.minecraft.metadata.types.MetaType1_12;
-import viaversion.viaversion.api.protocol.ClientboundPacketType;
 import viaversion.viaversion.api.remapper.PacketHandler;
+import viaversion.viaversion.api.remapper.PacketRemapper;
 import viaversion.viaversion.api.type.Type;
+import viaversion.viaversion.api.type.types.Particle;
 import viaversion.viaversion.api.type.types.version.Types1_12;
+import viaversion.viaversion.api.type.types.version.Types1_13;
+import viaversion.viaversion.protocols.protocol1_12_1to1_12.ServerboundPackets1_12_1;
 import viaversion.viaversion.protocols.protocol1_13to1_12_2.ChatRewriter;
+import viaversion.viaversion.protocols.protocol1_13to1_12_2.ClientboundPackets1_13;
 
-public class EntityPackets1_13 extends aqr {
-   public EntityPackets1_13(ayk var1) {
-      super(var1);
-   }
+import java.util.Optional;
 
-   protected void registerPackets() {
-      ((ayk)this.c).a(q1.PLAYER_POSITION, new aCr(this));
-      ((ayk)this.c).a(q1.SPAWN_ENTITY, new aCp(this));
-      this.registerExtraTracker(q1.SPAWN_EXPERIENCE_ORB, a_4.EXPERIENCE_ORB);
-      this.registerExtraTracker(q1.SPAWN_GLOBAL_ENTITY, a_4.LIGHTNING_BOLT);
-      ((ayk)this.c).a(q1.SPAWN_MOB, new aCw(this));
-      ((ayk)this.c).a(q1.SPAWN_PLAYER, new EntityPackets1_13$4(this));
-      ((ayk)this.c).a(q1.SPAWN_PAINTING, new aCP(this));
-      this.b(q1.JOIN_GAME, a_4.PLAYER);
-      ((ayk)this.c).a(q1.RESPAWN, new EntityPackets1_13$6(this));
-      this.registerEntityDestroy(q1.DESTROY_ENTITIES);
-      this.a(q1.ENTITY_METADATA, aEY.a, Types1_12.METADATA_LIST);
-      ((ayk)this.c).a(q1.FACE_PLAYER, (ClientboundPacketType)null, new aCN(this));
-      if(VV.c().isFix1_13FacePlayer()) {
-         EntityPackets1_13$8 var1 = new EntityPackets1_13$8(this);
-         ((ayk)this.c).a(r.PLAYER_POSITION, var1);
-         ((ayk)this.c).a(r.PLAYER_POSITION_AND_ROTATION, var1);
-         ((ayk)this.c).a(r.VEHICLE_MOVE, var1);
-      }
+public class EntityPackets1_13 extends LegacyEntityRewriter<Protocol1_12_2To1_13> {
 
-   }
+    public EntityPackets1_13(Protocol1_12_2To1_13 protocol) {
+        super(protocol);
+    }
 
-   protected void registerRewrites() {
-      this.mapEntity(a_4.DROWNED, a_4.ZOMBIE_VILLAGER).mobName("Drowned");
-      this.mapEntity(a_4.COD, a_4.SQUID).mobName("Cod");
-      this.mapEntity(a_4.SALMON, a_4.SQUID).mobName("Salmon");
-      this.mapEntity(a_4.PUFFERFISH, a_4.SQUID).mobName("Puffer Fish");
-      this.mapEntity(a_4.TROPICAL_FISH, a_4.SQUID).mobName("Tropical Fish");
-      this.mapEntity(a_4.PHANTOM, a_4.PARROT).mobName("Phantom").spawnMetadata(EntityPackets1_13::lambda$registerRewrites$0);
-      aqI.a();
-      this.mapEntity(a_4.DOLPHIN, a_4.SQUID).mobName("Dolphin");
-      this.mapEntity(a_4.TURTLE, a_4.OCELOT).mobName("Turtle");
-      this.registerMetaHandler().handle(this::lambda$registerRewrites$1);
-      this.registerMetaHandler().filter(a_4.ENTITY, true, 2).handle(EntityPackets1_13::lambda$registerRewrites$2);
-      this.registerMetaHandler().filter(a_4.ZOMBIE, true, 15).removed();
-      this.registerMetaHandler().filter(a_4.ZOMBIE, true).handle(EntityPackets1_13::lambda$registerRewrites$3);
-      this.registerMetaHandler().filter(a_4.TURTLE, 13).removed();
-      this.registerMetaHandler().filter(a_4.TURTLE, 14).removed();
-      this.registerMetaHandler().filter(a_4.TURTLE, 15).removed();
-      this.registerMetaHandler().filter(a_4.TURTLE, 16).removed();
-      this.registerMetaHandler().filter(a_4.TURTLE, 17).removed();
-      this.registerMetaHandler().filter(a_4.TURTLE, 18).removed();
-      this.registerMetaHandler().filter(a_4.ABSTRACT_FISHES, true, 12).removed();
-      this.registerMetaHandler().filter(a_4.ABSTRACT_FISHES, true, 13).removed();
-      this.registerMetaHandler().filter(a_4.PHANTOM, 12).removed();
-      this.registerMetaHandler().filter(a_4.BOAT, 12).removed();
-      this.registerMetaHandler().filter(a_4.TRIDENT, 7).removed();
-      this.registerMetaHandler().filter(a_4.WOLF, 17).handle(EntityPackets1_13::lambda$registerRewrites$4);
-      this.registerMetaHandler().filter(a_4.AREA_EFFECT_CLOUD, 9).handle(this::lambda$registerRewrites$5);
-   }
+    @Override
+    protected void registerPackets() {
+        protocol.registerOutgoing(ClientboundPackets1_13.PLAYER_POSITION, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.FLOAT);
+                map(Type.FLOAT);
+                map(Type.BYTE);
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        if (!ViaBackwards.getConfig().isFix1_13FacePlayer()) return;
 
-   protected EntityType getTypeFromId(int var1) {
-      return RL.a(var1, false);
-   }
+                        PlayerPositionStorage1_13 playerStorage = wrapper.user().get(PlayerPositionStorage1_13.class);
+                        byte bitField = wrapper.get(Type.BYTE, 0);
+                        playerStorage.setX(toSet(bitField, 0, playerStorage.getX(), wrapper.get(Type.DOUBLE, 0)));
+                        playerStorage.setY(toSet(bitField, 1, playerStorage.getY(), wrapper.get(Type.DOUBLE, 1)));
+                        playerStorage.setZ(toSet(bitField, 2, playerStorage.getZ(), wrapper.get(Type.DOUBLE, 2)));
+                    }
 
-   protected EntityType getObjectTypeFromId(int var1) {
-      return RL.a(var1, true);
-   }
+                    private double toSet(int field, int bitIndex, double origin, double packetValue) {
+                        // If bit is set, coordinate is relative
+                        return (field & (1 << bitIndex)) != 0 ? origin + packetValue : packetValue;
+                    }
+                });
+            }
+        });
 
-   public int getOldEntityId(int var1) {
-      return EntityTypeMapping.getOldId(var1);
-   }
+        protocol.registerOutgoing(ClientboundPackets1_13.SPAWN_ENTITY, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT);
+                map(Type.UUID);
+                map(Type.BYTE);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.BYTE);
+                map(Type.BYTE);
+                map(Type.INT);
 
-   private Metadata lambda$registerRewrites$5(yb var1) throws RemovedValueException {
-      aqI.a();
-      Metadata var3 = var1.i();
-      Gh var4 = (Gh)var3.getValue();
-      ParticleMapping$ParticleData var5 = aci.a(var4.c());
-      int var6 = 0;
-      int var7 = 0;
-      int[] var8 = var5.a((ayk)this.c, var4.d());
-      if(var8.length != 0) {
-         if(var5.getHandler().isBlockHandler() && var8[0] == 0) {
-            var8[0] = 102;
-         }
+                handler(getObjectTrackerHandler());
 
-         var6 = var8[0];
-         var7 = var8.length == 2?var8[1]:0;
-      }
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        Optional<Entity1_13Types.ObjectType> optionalType = Entity1_13Types.ObjectType.findById(wrapper.get(Type.BYTE, 0));
+                        if (!optionalType.isPresent()) return;
 
-      var1.a(new Metadata(9, MetaType1_12.VarInt, Integer.valueOf(var5.getHistoryId())));
-      var1.a(new Metadata(10, MetaType1_12.VarInt, Integer.valueOf(var6)));
-      var1.a(new Metadata(11, MetaType1_12.VarInt, Integer.valueOf(var7)));
-      throw RemovedValueException.EX;
-   }
+                        Entity1_13Types.ObjectType type = optionalType.get();
+                        if (type == Entity1_13Types.ObjectType.FALLING_BLOCK) {
+                            int blockState = wrapper.get(Type.INT, 0);
+                            int combined = Protocol1_12_2To1_13.MAPPINGS.getNewBlockStateId(blockState);
+                            combined = ((combined >> 4) & 0xFFF) | ((combined & 0xF) << 12);
+                            wrapper.set(Type.INT, 0, combined);
+                        } else if (type == Entity1_13Types.ObjectType.ITEM_FRAME) {
+                            int data = wrapper.get(Type.INT, 0);
+                            switch (data) {
+                                case 3:
+                                    data = 0;
+                                    break;
+                                case 4:
+                                    data = 1;
+                                    break;
+                                case 5:
+                                    data = 3;
+                                    break;
+                            }
+                            wrapper.set(Type.INT, 0, data);
+                        } else if (type == Entity1_13Types.ObjectType.TRIDENT) {
+                            wrapper.set(Type.BYTE, 0, (byte) Entity1_13Types.ObjectType.TIPPED_ARROW.getId());
+                        }
+                    }
+                });
+            }
+        });
 
-   private static Metadata lambda$registerRewrites$4(yb var0) throws RemovedValueException {
-      Metadata var1 = var0.i();
-      var1.setValue(Integer.valueOf(15 - ((Integer)var1.getValue()).intValue()));
-      return var1;
-   }
+        registerExtraTracker(ClientboundPackets1_13.SPAWN_EXPERIENCE_ORB, Entity1_13Types.EntityType.EXPERIENCE_ORB);
+        registerExtraTracker(ClientboundPackets1_13.SPAWN_GLOBAL_ENTITY, Entity1_13Types.EntityType.LIGHTNING_BOLT);
 
-   private static Metadata lambda$registerRewrites$3(yb var0) throws RemovedValueException {
-      aqI.a();
-      Metadata var2 = var0.i();
-      if(var2.getId() > 15) {
-         var2.setId(var2.getId() - 1);
-      }
+        protocol.registerOutgoing(ClientboundPackets1_13.SPAWN_MOB, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT);
+                map(Type.UUID);
+                map(Type.VAR_INT);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.BYTE);
+                map(Type.BYTE);
+                map(Type.BYTE);
+                map(Type.SHORT);
+                map(Type.SHORT);
+                map(Type.SHORT);
+                map(Types1_13.METADATA_LIST, Types1_12.METADATA_LIST);
 
-      return var2;
-   }
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        int type = wrapper.get(Type.VAR_INT, 1);
+                        EntityType entityType = Entity1_13Types.getTypeFromId(type, false);
+                        addTrackedEntity(wrapper, wrapper.get(Type.VAR_INT, 0), entityType);
 
-   private static Metadata lambda$registerRewrites$2(yb var0) throws RemovedValueException {
-      Metadata var2 = var0.i();
-      aqI.a();
-      String var3 = var2.getValue().toString();
-      if(var3.isEmpty()) {
-         return var2;
-      } else {
-         var2.setValue(ChatRewriter.jsonTextToLegacy(var3));
-         return var2;
-      }
-   }
+                        int oldId = EntityTypeMapping.getOldId(type);
+                        if (oldId == -1) {
+                            if (!hasData(entityType)) {
+                                ViaBackwards.getPlatform().getLogger().warning("Could not find 1.12 entity type for 1.13 entity type " + type + "/" + entityType);
+                            }
+                        } else {
+                            wrapper.set(Type.VAR_INT, 1, oldId);
+                        }
+                    }
+                });
 
-   private Metadata lambda$registerRewrites$1(yb var1) throws RemovedValueException {
-      aqI.a();
-      Metadata var3 = var1.i();
-      int var4 = var3.getMetaType().getTypeID();
-      if(var4 == 5) {
-         var3.setMetaType(MetaType1_12.String);
-         if(var3.getValue() != null) {
-            return var3;
-         }
+                // Rewrite entity type / metadata
+                handler(getMobSpawnRewriter(Types1_12.METADATA_LIST));
+            }
+        });
 
-         var3.setValue("");
-      }
+        protocol.registerOutgoing(ClientboundPackets1_13.SPAWN_PLAYER, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT);
+                map(Type.UUID);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.DOUBLE);
+                map(Type.BYTE);
+                map(Type.BYTE);
+                map(Types1_13.METADATA_LIST, Types1_12.METADATA_LIST);
 
-      if(var4 == 6) {
-         var3.setMetaType(MetaType1_12.Slot);
-         Item var5 = (Item)var3.getValue();
-         var3.setValue(((ayk)this.c).a().a(var5));
-      }
+                handler(getTrackerAndMetaHandler(Types1_12.METADATA_LIST, Entity1_13Types.EntityType.PLAYER));
+            }
+        });
 
-      if(var4 == 15) {
-         var3.setMetaType(MetaType1_12.Discontinued);
-      }
+        protocol.registerOutgoing(ClientboundPackets1_13.SPAWN_PAINTING, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.VAR_INT);
+                map(Type.UUID);
 
-      if(var4 > 5) {
-         var3.setMetaType(MetaType1_12.byId(var4 - 1));
-      }
+                handler(getTrackerHandler(Entity1_13Types.EntityType.PAINTING, Type.VAR_INT));
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        int motive = wrapper.read(Type.VAR_INT);
+                        String title = PaintingMapping.getStringId(motive);
+                        wrapper.write(Type.STRING, title);
+                    }
+                });
+            }
+        });
 
-      return var3;
-   }
+        registerJoinGame(ClientboundPackets1_13.JOIN_GAME, Entity1_13Types.EntityType.PLAYER);
 
-   private static void lambda$registerRewrites$0(MetaStorage var0) {
-      var0.add(new Metadata(15, MetaType1_12.VarInt, Integer.valueOf(3)));
-   }
+        protocol.registerOutgoing(ClientboundPackets1_13.RESPAWN, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                map(Type.INT); // 0 - Dimension ID
 
-   static PacketHandler access$000(EntityPackets1_13 var0) {
-      return var0.c();
-   }
+                handler(getDimensionHandler(0));
+                handler(wrapper -> wrapper.user().get(BackwardsBlockStorage.class).clear());
+            }
+        });
 
-   static void access$100(EntityPackets1_13 var0, PacketWrapper var1, int var2, EntityType var3) throws Exception {
-      var0.addTrackedEntity(var1, var2, var3);
-   }
+        registerEntityDestroy(ClientboundPackets1_13.DESTROY_ENTITIES);
+        registerMetadataRewriter(ClientboundPackets1_13.ENTITY_METADATA, Types1_13.METADATA_LIST, Types1_12.METADATA_LIST);
 
-   static boolean access$200(EntityPackets1_13 var0, EntityType var1) {
-      return var0.hasData(var1);
-   }
+        // Face Player (new packet)
+        protocol.registerOutgoing(ClientboundPackets1_13.FACE_PLAYER, null, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        wrapper.cancel();
 
-   static PacketHandler access$300(EntityPackets1_13 var0, Type var1) {
-      return var0.a(var1);
-   }
+                        if (!ViaBackwards.getConfig().isFix1_13FacePlayer()) return;
 
-   static PacketHandler access$400(EntityPackets1_13 var0, Type var1, EntityType var2) {
-      return var0.a(var1, var2);
-   }
+                        // We will just accept a possible, very minor mismatch between server and client position,
+                        // and will take the server's one in both cases, else we would have to cache all entities' positions.
+                        final int anchor = wrapper.read(Type.VAR_INT); // feet/eyes enum
+                        final double x = wrapper.read(Type.DOUBLE);
+                        final double y = wrapper.read(Type.DOUBLE);
+                        final double z = wrapper.read(Type.DOUBLE);
 
-   static PacketHandler access$500(EntityPackets1_13 var0, EntityType var1, Type var2) {
-      return var0.getTrackerHandler(var1, var2);
-   }
+                        PlayerPositionStorage1_13 positionStorage = wrapper.user().get(PlayerPositionStorage1_13.class);
 
-   static PacketHandler access$600(EntityPackets1_13 var0, int var1) {
-      return var0.getDimensionHandler(var1);
-   }
+                        // Send teleport packet to client
+                        PacketWrapper positionAndLook = wrapper.create(0x2F);
+                        positionAndLook.write(Type.DOUBLE, 0D);
+                        positionAndLook.write(Type.DOUBLE, 0D);
+                        positionAndLook.write(Type.DOUBLE, 0D);
 
-   private static RemovedValueException a(RemovedValueException var0) {
-      return var0;
-   }
+                        //TODO properly cache and calculate head position?
+                        EntityPositionHandler.writeFacingDegrees(positionAndLook, positionStorage.getX(),
+                                anchor == 1 ? positionStorage.getY() + 1.62 : positionStorage.getY(),
+                                positionStorage.getZ(), x, y, z);
+
+                        positionAndLook.write(Type.BYTE, (byte) 7); // bitfield, 0=absolute, 1=relative - x,y,z relative, yaw,pitch absolute
+                        positionAndLook.write(Type.VAR_INT, -1);
+                        positionAndLook.send(Protocol1_12_2To1_13.class, true, true);
+                    }
+                });
+            }
+        });
+
+        if (ViaBackwards.getConfig().isFix1_13FacePlayer()) {
+            PacketRemapper movementRemapper = new PacketRemapper() {
+                @Override
+                public void registerMap() {
+                    map(Type.DOUBLE);
+                    map(Type.DOUBLE);
+                    map(Type.DOUBLE);
+                    handler(wrapper -> wrapper.user().get(PlayerPositionStorage1_13.class).setCoordinates(wrapper, false));
+                }
+            };
+            protocol.registerIncoming(ServerboundPackets1_12_1.PLAYER_POSITION, movementRemapper); // Player Position
+            protocol.registerIncoming(ServerboundPackets1_12_1.PLAYER_POSITION_AND_ROTATION, movementRemapper); // Player Position And Look (serverbound)
+            protocol.registerIncoming(ServerboundPackets1_12_1.VEHICLE_MOVE, movementRemapper); // Vehicle Move (serverbound)
+        }
+    }
+
+    @Override
+    protected void registerRewrites() {
+        // Rewrite new Entity 'drowned'
+        mapEntity(Entity1_13Types.EntityType.DROWNED, Entity1_13Types.EntityType.ZOMBIE_VILLAGER).mobName("Drowned");
+
+        // Fishy
+        mapEntity(Entity1_13Types.EntityType.COD, Entity1_13Types.EntityType.SQUID).mobName("Cod");
+        mapEntity(Entity1_13Types.EntityType.SALMON, Entity1_13Types.EntityType.SQUID).mobName("Salmon");
+        mapEntity(Entity1_13Types.EntityType.PUFFERFISH, Entity1_13Types.EntityType.SQUID).mobName("Puffer Fish");
+        mapEntity(Entity1_13Types.EntityType.TROPICAL_FISH, Entity1_13Types.EntityType.SQUID).mobName("Tropical Fish");
+
+        // Phantom
+        mapEntity(Entity1_13Types.EntityType.PHANTOM, Entity1_13Types.EntityType.PARROT).mobName("Phantom").spawnMetadata(storage -> {
+            // The phantom is grey/blue so let's do yellow/blue
+            storage.add(new Metadata(15, MetaType1_12.VarInt, 3));
+        });
+
+        // Dolphin
+        mapEntity(Entity1_13Types.EntityType.DOLPHIN, Entity1_13Types.EntityType.SQUID).mobName("Dolphin");
+
+        // Turtle
+        mapEntity(Entity1_13Types.EntityType.TURTLE, Entity1_13Types.EntityType.OCELOT).mobName("Turtle");
+
+        // Rewrite Meta types
+        registerMetaHandler().handle(e -> {
+            Metadata meta = e.getData();
+            int typeId = meta.getMetaType().getTypeID();
+
+            // Rewrite optional chat to chat
+            if (typeId == 5) {
+                meta.setMetaType(MetaType1_12.String);
+
+                if (meta.getValue() == null) {
+                    meta.setValue("");
+                }
+            }
+
+            // Rewrite items
+            else if (typeId == 6) {
+                meta.setMetaType(MetaType1_12.Slot);
+                Item item = (Item) meta.getValue();
+                meta.setValue(protocol.getBlockItemPackets().handleItemToClient(item));
+            }
+
+            // Discontinue particles
+            else if (typeId == 15) {
+                meta.setMetaType(MetaType1_12.Discontinued);
+            }
+
+            // Rewrite to 1.12 ids
+            else if (typeId > 5) {
+                meta.setMetaType(MetaType1_12.byId(
+                        typeId - 1
+                ));
+            }
+
+            return meta;
+        });
+
+        // Rewrite Custom Name from Chat to String
+        registerMetaHandler().filter(Entity1_13Types.EntityType.ENTITY, true, 2).handle(e -> {
+            Metadata meta = e.getData();
+            String value = meta.getValue().toString();
+            if (value.isEmpty()) return meta;
+            meta.setValue(ChatRewriter.jsonTextToLegacy(value));
+            return meta;
+        });
+
+        // Handle zombie metadata
+        registerMetaHandler().filter(Entity1_13Types.EntityType.ZOMBIE, true, 15).removed();
+        registerMetaHandler().filter(Entity1_13Types.EntityType.ZOMBIE, true).handle(e -> {
+            Metadata meta = e.getData();
+
+            if (meta.getId() > 15) {
+                meta.setId(meta.getId() - 1);
+            }
+
+            return meta;
+        });
+
+        // Handle turtle metadata (Remove them all for now)
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 13).removed(); // Home pos
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 14).removed(); // Has egg
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 15).removed(); // Laying egg
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 16).removed(); // Travel pos
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 17).removed(); // Going home
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TURTLE, 18).removed(); // Traveling
+
+        // Remove additional fish meta
+        registerMetaHandler().filter(Entity1_13Types.EntityType.ABSTRACT_FISHES, true, 12).removed();
+        registerMetaHandler().filter(Entity1_13Types.EntityType.ABSTRACT_FISHES, true, 13).removed();
+
+        // Remove phantom size
+        registerMetaHandler().filter(Entity1_13Types.EntityType.PHANTOM, 12).removed();
+
+        // Remove boat splash timer
+        registerMetaHandler().filter(Entity1_13Types.EntityType.BOAT, 12).removed();
+
+        // Remove Trident special loyalty level
+        registerMetaHandler().filter(Entity1_13Types.EntityType.TRIDENT, 7).removed();
+
+        // Handle new wolf colors
+        registerMetaHandler().filter(Entity1_13Types.EntityType.WOLF, 17).handle(e -> {
+            Metadata meta = e.getData();
+
+            meta.setValue(15 - (int) meta.getValue());
+
+            return meta;
+        });
+
+        // Rewrite AreaEffectCloud
+        registerMetaHandler().filter(Entity1_13Types.EntityType.AREA_EFFECT_CLOUD, 9).handle(e -> {
+            Metadata meta = e.getData();
+            Particle particle = (Particle) meta.getValue();
+
+            ParticleMapping.ParticleData data = ParticleMapping.getMapping(particle.getId());
+
+            int firstArg = 0;
+            int secondArg = 0;
+            int[] particleArgs = data.rewriteMeta(protocol, particle.getArguments());
+            if (particleArgs != null && particleArgs.length != 0) {
+                if (data.getHandler().isBlockHandler() && particleArgs[0] == 0) {
+                    // Air doesn't have a break particle for sub 1.13 clients -> glass pane
+                    particleArgs[0] = 102;
+                }
+
+                firstArg = particleArgs[0];
+                secondArg = particleArgs.length == 2 ? particleArgs[1] : 0;
+            }
+
+            e.createMeta(new Metadata(9, MetaType1_12.VarInt, data.getHistoryId()));
+            e.createMeta(new Metadata(10, MetaType1_12.VarInt, firstArg));
+            e.createMeta(new Metadata(11, MetaType1_12.VarInt, secondArg));
+
+            throw RemovedValueException.EX;
+        });
+    }
+
+    @Override
+    protected EntityType getTypeFromId(int typeId) {
+        return Entity1_13Types.getTypeFromId(typeId, false);
+    }
+
+    @Override
+    protected EntityType getObjectTypeFromId(final int typeId) {
+        return Entity1_13Types.getTypeFromId(typeId, true);
+    }
+
+    @Override
+    public int getOldEntityId(final int newId) {
+        return EntityTypeMapping.getOldId(newId);
+    }
 }

@@ -1,86 +1,105 @@
 package net.minecraft.client.gui;
 
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.util.List;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiOptionButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiYesNoCallback;
 import net.minecraft.client.resources.I18n;
 
+import java.io.IOException;
+import java.util.List;
+
 public class GuiYesNo extends GuiScreen {
-   protected GuiYesNoCallback parentScreen;
-   protected String messageLine1;
-   private String messageLine2;
-   private final List field_175298_s = Lists.newArrayList();
-   protected String confirmButtonText;
-   protected String cancelButtonText;
-   protected int parentButtonClickedId;
-   private int ticksUntilEnable;
+    /**
+     * A reference to the screen object that created this. Used for navigating between screens.
+     */
+    protected GuiYesNoCallback parentScreen;
+    protected String messageLine1;
+    private String messageLine2;
+    private final List<String> field_175298_s = Lists.newArrayList();
 
-   public GuiYesNo(GuiYesNoCallback var1, String var2, String var3, int var4) {
-      this.parentScreen = var1;
-      this.messageLine1 = var2;
-      this.messageLine2 = var3;
-      this.parentButtonClickedId = var4;
-      this.confirmButtonText = I18n.format("gui.yes", new Object[0]);
-      this.cancelButtonText = I18n.format("gui.no", new Object[0]);
-   }
+    /**
+     * The text shown for the first button in GuiYesNo
+     */
+    protected String confirmButtonText;
 
-   public GuiYesNo(GuiYesNoCallback var1, String var2, String var3, String var4, String var5, int var6) {
-      this.parentScreen = var1;
-      this.messageLine1 = var2;
-      this.messageLine2 = var3;
-      this.confirmButtonText = var4;
-      this.cancelButtonText = var5;
-      this.parentButtonClickedId = var6;
-   }
+    /**
+     * The text shown for the second button in GuiYesNo
+     */
+    protected String cancelButtonText;
+    protected int parentButtonClickedId;
+    private int ticksUntilEnable;
 
-   public void initGui() {
-      this.buttonList.add(new GuiOptionButton(0, this.width / 2 - 155, this.height / 6 + 96, this.confirmButtonText));
-      this.buttonList.add(new GuiOptionButton(1, this.width / 2 - 155 + 160, this.height / 6 + 96, this.cancelButtonText));
-      this.field_175298_s.clear();
-      this.field_175298_s.addAll(this.fontRendererObj.listFormattedStringToWidth(this.messageLine2, this.width - 50));
-   }
+    public GuiYesNo(GuiYesNoCallback p_i1082_1_, String p_i1082_2_, String p_i1082_3_, int p_i1082_4_) {
+        this.parentScreen = p_i1082_1_;
+        this.messageLine1 = p_i1082_2_;
+        this.messageLine2 = p_i1082_3_;
+        this.parentButtonClickedId = p_i1082_4_;
+        this.confirmButtonText = I18n.format("gui.yes");
+        this.cancelButtonText = I18n.format("gui.no");
+    }
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      this.parentScreen.confirmClicked(var1.id == 0, this.parentButtonClickedId);
-   }
+    public GuiYesNo(GuiYesNoCallback p_i1083_1_, String p_i1083_2_, String p_i1083_3_, String p_i1083_4_, String p_i1083_5_, int p_i1083_6_) {
+        this.parentScreen = p_i1083_1_;
+        this.messageLine1 = p_i1083_2_;
+        this.messageLine2 = p_i1083_3_;
+        this.confirmButtonText = p_i1083_4_;
+        this.cancelButtonText = p_i1083_5_;
+        this.parentButtonClickedId = p_i1083_6_;
+    }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      this.drawDefaultBackground();
-      this.drawCenteredString(this.fontRendererObj, this.messageLine1, this.width / 2, 70, 16777215);
-      int var4 = 90;
+    /**
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
+     */
+    public void initGui() {
+        this.buttonList.add(new GuiOptionButton(0, this.width / 2 - 155, this.height / 6 + 96, this.confirmButtonText));
+        this.buttonList.add(new GuiOptionButton(1, this.width / 2 - 155 + 160, this.height / 6 + 96, this.cancelButtonText));
+        this.field_175298_s.clear();
+        this.field_175298_s.addAll(this.fontRendererObj.listFormattedStringToWidth(this.messageLine2, this.width - 50));
+    }
 
-      for(String var6 : this.field_175298_s) {
-         this.drawCenteredString(this.fontRendererObj, var6, this.width / 2, var4, 16777215);
-         var4 += this.fontRendererObj.getHeight();
-      }
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException {
+        this.parentScreen.confirmClicked(button.id == 0, this.parentButtonClickedId);
+    }
 
-      super.drawScreen(var1, var2, var3);
-   }
+    /**
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
+     */
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        this.drawDefaultBackground();
+        this.drawCenteredString(this.fontRendererObj, this.messageLine1, this.width / 2, 70, 16777215);
+        int i = 90;
 
-   public void setButtonDelay(int var1) {
-      this.ticksUntilEnable = var1;
+        for (String s : this.field_175298_s) {
+            this.drawCenteredString(this.fontRendererObj, s, this.width / 2, i, 16777215);
+            i += this.fontRendererObj.getHeight();
+        }
 
-      for(GuiButton var3 : this.buttonList) {
-         var3.enabled = false;
-      }
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
 
-   }
+    /**
+     * Sets the number of ticks to wait before enabling the buttons.
+     */
+    public void setButtonDelay(int p_146350_1_) {
+        this.ticksUntilEnable = p_146350_1_;
 
-   public void updateScreen() {
-      super.updateScreen();
-      if(--this.ticksUntilEnable == 0) {
-         for(GuiButton var2 : this.buttonList) {
-            var2.enabled = true;
-         }
-      }
+        for (GuiButton guibutton : this.buttonList) {
+            guibutton.enabled = false;
+        }
+    }
 
-   }
+    /**
+     * Called from the main game loop to update the screen.
+     */
+    public void updateScreen() {
+        super.updateScreen();
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        if (--this.ticksUntilEnable == 0) {
+            for (GuiButton guibutton : this.buttonList) {
+                guibutton.enabled = true;
+            }
+        }
+    }
 }

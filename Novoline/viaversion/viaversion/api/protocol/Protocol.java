@@ -1,310 +1,552 @@
 package viaversion.viaversion.api.protocol;
 
 import com.google.common.base.Preconditions;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import net.JL;
-import net.a66;
-import net.acE;
 import org.jetbrains.annotations.Nullable;
 import viaversion.viaversion.api.PacketWrapper;
 import viaversion.viaversion.api.Via;
 import viaversion.viaversion.api.data.MappingData;
 import viaversion.viaversion.api.data.UserConnection;
-import viaversion.viaversion.api.protocol.ClientboundPacketType;
-import viaversion.viaversion.api.protocol.PacketType;
-import viaversion.viaversion.api.protocol.Protocol$1;
-import viaversion.viaversion.api.protocol.Protocol$2;
-import viaversion.viaversion.api.protocol.Protocol$Packet;
-import viaversion.viaversion.api.protocol.Protocol$ProtocolPacket;
-import viaversion.viaversion.api.protocol.ServerboundPacketType;
+import viaversion.viaversion.api.platform.providers.ViaProviders;
+import viaversion.viaversion.api.remapper.PacketRemapper;
+import viaversion.viaversion.exception.CancelException;
 import viaversion.viaversion.exception.InformativeException;
 import viaversion.viaversion.packets.Direction;
+import viaversion.viaversion.packets.State;
 
-public abstract class Protocol {
-   private final Map incoming;
-   private final Map outgoing;
-   private final Map storedObjects;
-   protected final Class oldClientboundPacketEnum;
-   protected final Class newClientboundPacketEnum;
-   protected final Class oldServerboundPacketEnum;
-   protected final Class newServerboundPacketEnum;
-   private static acE[] g;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 
-   protected Protocol() {
-      this((Class)null, (Class)null, (Class)null, (Class)null);
-   }
+/**
+ * Abstract protocol class handling packet transformation between two protocol versions.
+ * Clientbound and serverbount packet types can be set to enforce correct usage of them.
+ *
+ * @param <C1> old clientbound packet types
+ * @param <C2> new clientbound packet types
+ * @param <S1> old serverbound packet types
+ * @param <S2> new serverbound packet types
+ * @see SimpleProtocol for a helper class if you do not want to define any of the types above
+ */
+public abstract class Protocol<C1 extends ClientboundPacketType, C2 extends ClientboundPacketType, S1 extends ServerboundPacketType, S2 extends ServerboundPacketType> {
+    private final Map<Packet, ProtocolPacket> incoming = new HashMap<>();
+    private final Map<Packet, ProtocolPacket> outgoing = new HashMap<>();
+    private final Map<Class, Object> storedObjects = new HashMap<>(); // currently only used for MetadataRewriters
+    protected final Class<C1> oldClientboundPacketEnum;
+    protected final Class<C2> newClientboundPacketEnum;
+    protected final Class<S1> oldServerboundPacketEnum;
+    protected final Class<S2> newServerboundPacketEnum;
 
-   protected Protocol(@Nullable Class var1, @Nullable Class var2, @Nullable Class var3, @Nullable Class var4) {
-      this.incoming = new HashMap();
-      this.outgoing = new HashMap();
-      this.storedObjects = new HashMap();
-      this.oldClientboundPacketEnum = var1;
-      this.newClientboundPacketEnum = var2;
-      this.oldServerboundPacketEnum = var3;
-      this.newServerboundPacketEnum = var4;
-      this.registerPackets();
-      if(var1 != var2) {
-         this.registerOutgoingChannelIdChanges();
-      }
+    protected Protocol() {
+        this(null, null, null, null);
+    }
 
-      if(var3 != var4) {
-         this.registerIncomingChannelIdChanges();
-      }
+    /**
+     * Creates a protocol with automated id mapping if the respective enums are not null.
+     */
+    protected Protocol(@Nullable Class<C1> oldClientboundPacketEnum, @Nullable Class<C2> clientboundPacketEnum,
+                       @Nullable Class<S1> oldServerboundPacketEnum, @Nullable Class<S2> serverboundPacketEnum) {
+        this.oldClientboundPacketEnum = oldClientboundPacketEnum;
+        this.newClientboundPacketEnum = clientboundPacketEnum;
+        this.oldServerboundPacketEnum = oldServerboundPacketEnum;
+        this.newServerboundPacketEnum = serverboundPacketEnum;
+        registerPackets();
 
-   }
+        // Register the rest of the ids with no handlers if necessary
+        if (oldClientboundPacketEnum != null && clientboundPacketEnum != null
+                && oldClientboundPacketEnum != clientboundPacketEnum) {
+            registerOutgoingChannelIdChanges();
+        }
+        if (oldServerboundPacketEnum != null && serverboundPacketEnum != null
+                && oldServerboundPacketEnum != serverboundPacketEnum) {
+            registerIncomingChannelIdChanges();
+        }
+    }
 
-   protected void registerOutgoingChannelIdChanges() {
-      ClientboundPacketType[] var1 = (ClientboundPacketType[])this.newClientboundPacketEnum.getEnumConstants();
-      HashMap var2 = new HashMap(var1.length);
+    protected void registerOutgoingChannelIdChanges() {
+        ClientboundPacketType[] newConstants = newClientboundPacketEnum.getEnumConstants();
+        Map<String, ClientboundPacketType> newClientboundPackets = new HashMap<>(newConstants.length);
+        for (ClientboundPacketType newConstant : newConstants) {
+            newClientboundPackets.put(newConstant.name(), newConstant);
+        }
 
-      for(ClientboundPacketType var6 : var1) {
-         var2.put(var6.name(), var6);
-      }
+        for (ClientboundPacketType packet : oldClientboundPacketEnum.getEnumConstants()) {
+            ClientboundPacketType mappedPacket = newClientboundPackets.get(packet.name());
+            int oldId = packet.ordinal();
+            if (mappedPacket == null) {
+                // Packet doesn't exist on new client
+                Preconditions.checkArgument(hasRegisteredOutgoing(State.PLAY, oldId),
+                        "Packet " + packet + " in " + getClass().getCanonicalName() + " has no mapping - it needs to be manually cancelled or remapped!");
+                continue;
+            }
 
-      for(ClientboundPacketType var12 : (ClientboundPacketType[])this.oldClientboundPacketEnum.getEnumConstants()) {
-         ClientboundPacketType var7 = (ClientboundPacketType)var2.get(var12.name());
-         int var8 = var12.ordinal();
-         Preconditions.checkArgument(this.a(a66.PLAY, var8), "Packet " + var12 + " in " + this.getClass().getCanonicalName() + " has no mapping - it needs to be manually cancelled or remapped!");
-      }
+            int newId = mappedPacket.ordinal();
+            if (!hasRegisteredOutgoing(State.PLAY, oldId)) {
+                registerOutgoing(State.PLAY, oldId, newId);
+            }
+        }
+    }
 
-   }
+    protected void registerIncomingChannelIdChanges() {
+        ServerboundPacketType[] oldConstants = oldServerboundPacketEnum.getEnumConstants();
+        Map<String, ServerboundPacketType> oldServerboundConstants = new HashMap<>(oldConstants.length);
+        for (ServerboundPacketType oldConstant : oldConstants) {
+            oldServerboundConstants.put(oldConstant.name(), oldConstant);
+        }
 
-   protected void registerIncomingChannelIdChanges() {
-      ServerboundPacketType[] var1 = (ServerboundPacketType[])this.oldServerboundPacketEnum.getEnumConstants();
-      HashMap var2 = new HashMap(var1.length);
+        for (ServerboundPacketType packet : newServerboundPacketEnum.getEnumConstants()) {
+            ServerboundPacketType mappedPacket = oldServerboundConstants.get(packet.name());
+            int newId = packet.ordinal();
+            if (mappedPacket == null) {
+                // Packet doesn't exist on old server
+                Preconditions.checkArgument(hasRegisteredIncoming(State.PLAY, newId),
+                        "Packet " + packet + " in " + getClass().getCanonicalName() + " has no mapping - it needs to be manually cancelled or remapped!");
+                continue;
+            }
 
-      for(ServerboundPacketType var6 : var1) {
-         var2.put(var6.name(), var6);
-      }
+            int oldId = mappedPacket.ordinal();
+            if (!hasRegisteredIncoming(State.PLAY, newId)) {
+                registerIncoming(State.PLAY, oldId, newId);
+            }
+        }
+    }
 
-      for(ServerboundPacketType var12 : (ServerboundPacketType[])this.newServerboundPacketEnum.getEnumConstants()) {
-         ServerboundPacketType var7 = (ServerboundPacketType)var2.get(var12.name());
-         int var8 = var12.ordinal();
-         Preconditions.checkArgument(this.b(a66.PLAY, var8), "Packet " + var12 + " in " + this.getClass().getCanonicalName() + " has no mapping - it needs to be manually cancelled or remapped!");
-      }
+    /**
+     * Should this protocol filter an object packet from this class.
+     * Default: false
+     *
+     * @param packetClass The class of the current input
+     * @return True if it should handle the filtering
+     */
+    public boolean isFiltered(Class packetClass) {
+        return false;
+    }
 
-   }
+    /**
+     * Filter a packet into the output
+     *
+     * @param info   The current user connection
+     * @param packet The input packet as an object (NMS)
+     * @param output The list to put the object into.
+     * @throws Exception Throws exception if cancelled / error.
+     */
+    protected void filterPacket(UserConnection info, Object packet, List output) throws Exception {
+        output.add(packet);
+    }
 
-   public boolean isFiltered(Class var1) {
-      return false;
-   }
+    /**
+     * Register the packets for this protocol. To be overriden.
+     */
+    protected void registerPackets() {
+    }
 
-   protected void filterPacket(UserConnection var1, Object var2, List var3) throws Exception {
-      var3.add(var2);
-   }
+    /**
+     * Loads the mappingdata.
+     */
+    protected final void loadMappingData() {
+        getMappingData().load();
+        onMappingDataLoaded();
+    }
 
-   protected void registerPackets() {
-   }
+    /**
+     * Called after {@link #loadMappingData()} is called; load extra mapping data for the protocol.
+     * <p>
+     * To be overridden if needed.
+     */
+    protected void onMappingDataLoaded() {
+    }
 
-   protected final void loadMappingData() {
-      this.getMappingData().load();
-      this.onMappingDataLoaded();
-   }
+    /**
+     * Handle protocol registration phase, use this to register providers / tasks.
+     * <p>
+     * To be overridden if needed.
+     *
+     * @param providers The current providers
+     */
+    protected void register(ViaProviders providers) {
+    }
 
-   protected void onMappingDataLoaded() {
-   }
+    /**
+     * Initialise a user for this protocol setting up objects.
+     * /!\ WARNING - May be called more than once in a single {@link UserConnection}
+     * <p>
+     * To be overridden if needed.
+     *
+     * @param userConnection The user to initialise
+     */
+    public void init(UserConnection userConnection) {
+    }
 
-   protected void a(JL var1) {
-   }
+    /**
+     * Register an incoming packet, with simple id transformation.
+     *
+     * @param state       The state which the packet is sent in.
+     * @param oldPacketID The old packet ID
+     * @param newPacketID The new packet ID
+     */
+    public void registerIncoming(State state, int oldPacketID, int newPacketID) {
+        registerIncoming(state, oldPacketID, newPacketID, null);
+    }
 
-   public void init(UserConnection var1) {
-   }
+    /**
+     * Register an incoming packet, with id transformation and remapper.
+     *
+     * @param state          The state which the packet is sent in.
+     * @param oldPacketID    The old packet ID
+     * @param newPacketID    The new packet ID
+     * @param packetRemapper The remapper to use for the packet
+     */
+    public void registerIncoming(State state, int oldPacketID, int newPacketID, PacketRemapper packetRemapper) {
+        registerIncoming(state, oldPacketID, newPacketID, packetRemapper, false);
+    }
 
-   public void a(a66 var1, int var2, int var3) {
-      this.a(var1, var2, var3, (acE)null);
-   }
+    public void registerIncoming(State state, int oldPacketID, int newPacketID, PacketRemapper packetRemapper, boolean override) {
+        ProtocolPacket protocolPacket = new ProtocolPacket(state, oldPacketID, newPacketID, packetRemapper);
+        Packet packet = new Packet(state, newPacketID);
+        if (!override && incoming.containsKey(packet)) {
+            Via.getPlatform().getLogger().log(Level.WARNING, packet + " already registered!" +
+                    " If this override is intentional, set override to true. Stacktrace: ", new Exception());
+        }
+        incoming.put(packet, protocolPacket);
+    }
 
-   public void a(a66 var1, int var2, int var3, acE var4) {
-      this.b(var1, var2, var3, var4, false);
-   }
+    public void cancelIncoming(State state, int oldPacketID, int newPacketID) {
+        registerIncoming(state, oldPacketID, newPacketID, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(PacketWrapper::cancel);
+            }
+        });
+    }
 
-   public void b(a66 var1, int var2, int var3, acE var4, boolean var5) {
-      Protocol$ProtocolPacket var6 = new Protocol$ProtocolPacket(var1, var2, var3, var4);
-      Protocol$Packet var7 = new Protocol$Packet(var1, var3);
-      if(this.incoming.containsKey(var7)) {
-         Via.getPlatform().getLogger().log(Level.WARNING, var7 + " already registered! If this override is intentional, set override to true. Stacktrace: ", new Exception());
-      }
+    public void cancelIncoming(State state, int newPacketID) {
+        cancelIncoming(state, -1, newPacketID);
+    }
 
-      this.incoming.put(var7, var6);
-   }
+    /**
+     * Register an outgoing packet, with simple id transformation.
+     *
+     * @param state       The state which the packet is sent in.
+     * @param oldPacketID The old packet ID
+     * @param newPacketID The new packet ID
+     */
+    public void registerOutgoing(State state, int oldPacketID, int newPacketID) {
+        registerOutgoing(state, oldPacketID, newPacketID, null);
+    }
 
-   public void d(a66 var1, int var2, int var3) {
-      this.a(var1, var2, var3, new Protocol$1(this));
-   }
+    /**
+     * Register an outgoing packet, with id transformation and remapper.
+     *
+     * @param state          The state which the packet is sent in.
+     * @param oldPacketID    The old packet ID
+     * @param newPacketID    The new packet ID
+     * @param packetRemapper The remapper to use for the packet
+     */
+    public void registerOutgoing(State state, int oldPacketID, int newPacketID, PacketRemapper packetRemapper) {
+        registerOutgoing(state, oldPacketID, newPacketID, packetRemapper, false);
+    }
 
-   public void c(a66 var1, int var2) {
-      this.d(var1, -1, var2);
-   }
+    public void cancelOutgoing(State state, int oldPacketID, int newPacketID) {
+        registerOutgoing(state, oldPacketID, newPacketID, new PacketRemapper() {
+            @Override
+            public void registerMap() {
+                handler(PacketWrapper::cancel);
+            }
+        });
+    }
 
-   public void c(a66 var1, int var2, int var3) {
-      this.b(var1, var2, var3, (acE)null);
-   }
+    public void cancelOutgoing(State state, int oldPacketID) {
+        cancelOutgoing(state, oldPacketID, -1);
+    }
 
-   public void b(a66 var1, int var2, int var3, acE var4) {
-      this.a(var1, var2, var3, var4, false);
-   }
+    public void registerOutgoing(State state, int oldPacketID, int newPacketID, PacketRemapper packetRemapper, boolean override) {
+        ProtocolPacket protocolPacket = new ProtocolPacket(state, oldPacketID, newPacketID, packetRemapper);
+        Packet packet = new Packet(state, oldPacketID);
+        if (!override && outgoing.containsKey(packet)) {
+            Via.getPlatform().getLogger().log(Level.WARNING, packet + " already registered!" +
+                    " If override is intentional, set override to true. Stacktrace: ", new Exception());
+        }
+        outgoing.put(packet, protocolPacket);
+    }
 
-   public void b(a66 var1, int var2, int var3) {
-      this.b(var1, var2, var3, new Protocol$2(this));
-   }
 
-   public void d(a66 var1, int var2) {
-      this.b(var1, var2, -1);
-   }
+    /**
+     * Registers an outgoing protocol and automatically maps it to the new id.
+     *
+     * @param packetType     clientbound packet type the server sends
+     * @param packetRemapper remapper
+     */
+    public void registerOutgoing(C1 packetType, @Nullable PacketRemapper packetRemapper) {
+        checkPacketType(packetType, packetType.getClass() == oldClientboundPacketEnum);
 
-   public void a(a66 var1, int var2, int var3, acE var4, boolean var5) {
-      Protocol$ProtocolPacket var6 = new Protocol$ProtocolPacket(var1, var2, var3, var4);
-      Protocol$Packet var7 = new Protocol$Packet(var1, var2);
-      if(this.outgoing.containsKey(var7)) {
-         Via.getPlatform().getLogger().log(Level.WARNING, var7 + " already registered! If override is intentional, set override to true. Stacktrace: ", new Exception());
-      }
+        ClientboundPacketType mappedPacket = oldClientboundPacketEnum == newClientboundPacketEnum ? packetType
+                : Arrays.stream(newClientboundPacketEnum.getEnumConstants()).filter(en -> en.name().equals(packetType.name())).findAny().orElse(null);
+        Preconditions.checkNotNull(mappedPacket, "Packet type " + packetType + " in " + packetType.getClass().getCanonicalName() + " could not be automatically mapped!");
 
-      this.outgoing.put(var7, var6);
-   }
+        int oldId = packetType.ordinal();
+        int newId = mappedPacket.ordinal();
+        registerOutgoing(State.PLAY, oldId, newId, packetRemapper);
+    }
 
-   public void a(ClientboundPacketType var1, @Nullable acE var2) {
-      acE[] var3 = h();
-      this.checkPacketType(var1, var1.getClass() == this.oldClientboundPacketEnum);
-      ClientboundPacketType var4 = this.oldClientboundPacketEnum == this.newClientboundPacketEnum?var1:(ClientboundPacketType)Arrays.stream(this.newClientboundPacketEnum.getEnumConstants()).filter(Protocol::lambda$registerOutgoing$0).findAny().orElse((Object)null);
-      Preconditions.checkNotNull(var4, "Packet type " + var1 + " in " + var1.getClass().getCanonicalName() + " could not be automatically mapped!");
-      int var5 = var1.ordinal();
-      int var6 = var4.ordinal();
-      this.b(a66.PLAY, var5, var6, var2);
-      if(acE.b() == null) {
-         b(new acE[1]);
-      }
+    /**
+     * Registers an outgoing protocol.
+     *
+     * @param packetType       clientbound packet type the server initially sends
+     * @param mappedPacketType clientbound packet type after transforming for the client
+     * @param packetRemapper   remapper
+     */
+    public void registerOutgoing(C1 packetType, @Nullable C2 mappedPacketType, @Nullable PacketRemapper packetRemapper) {
+        checkPacketType(packetType, packetType.getClass() == oldClientboundPacketEnum);
+        checkPacketType(mappedPacketType, mappedPacketType == null || mappedPacketType.getClass() == newClientboundPacketEnum);
 
-   }
+        registerOutgoing(State.PLAY, packetType.ordinal(), mappedPacketType != null ? mappedPacketType.ordinal() : -1, packetRemapper);
+    }
 
-   public void a(ClientboundPacketType var1, @Nullable ClientboundPacketType var2, @Nullable acE var3) {
-      acE[] var4 = h();
-      this.checkPacketType(var1, var1.getClass() == this.oldClientboundPacketEnum);
-      this.checkPacketType(var2, var2 == null || var2.getClass() == this.newClientboundPacketEnum);
-      this.b(a66.PLAY, var1.ordinal(), var2 != null?var2.ordinal():-1, var3);
-   }
+    /**
+     * Maps a packet type to another packet type without a packet handler.
+     * Note that this should not be called for simple channel mappings of the same packet; this is already done automatically.
+     *
+     * @param packetType       clientbound packet type the server initially sends
+     * @param mappedPacketType clientbound packet type after transforming for the client
+     */
+    public void registerOutgoing(C1 packetType, @Nullable C2 mappedPacketType) {
+        registerOutgoing(packetType, mappedPacketType, null);
+    }
 
-   public void registerOutgoing(ClientboundPacketType var1, @Nullable ClientboundPacketType var2) {
-      this.a((ClientboundPacketType)var1, (ClientboundPacketType)var2, (acE)null);
-   }
+    public void cancelOutgoing(C1 packetType) {
+        cancelOutgoing(State.PLAY, packetType.ordinal(), packetType.ordinal());
+    }
 
-   public void cancelOutgoing(ClientboundPacketType var1) {
-      this.b(a66.PLAY, var1.ordinal(), var1.ordinal());
-   }
+    /**
+     * Registers an incoming protocol and automatically maps it to the server's id.
+     *
+     * @param packetType     serverbound packet type the client sends
+     * @param packetRemapper remapper
+     */
+    public void registerIncoming(S2 packetType, @Nullable PacketRemapper packetRemapper) {
+        checkPacketType(packetType, packetType.getClass() == newServerboundPacketEnum);
 
-   public void a(ServerboundPacketType var1, @Nullable acE var2) {
-      acE[] var3 = h();
-      this.checkPacketType(var1, var1.getClass() == this.newServerboundPacketEnum);
-      ServerboundPacketType var4 = this.oldServerboundPacketEnum == this.newServerboundPacketEnum?var1:(ServerboundPacketType)Arrays.stream(this.oldServerboundPacketEnum.getEnumConstants()).filter(Protocol::lambda$registerIncoming$1).findAny().orElse((Object)null);
-      Preconditions.checkNotNull(var4, "Packet type " + var1 + " in " + var1.getClass().getCanonicalName() + " could not be automatically mapped!");
-      int var5 = var4.ordinal();
-      int var6 = var1.ordinal();
-      this.a(a66.PLAY, var5, var6, var2);
-   }
+        ServerboundPacketType mappedPacket = oldServerboundPacketEnum == newServerboundPacketEnum ? packetType
+                : Arrays.stream(oldServerboundPacketEnum.getEnumConstants()).filter(en -> en.name().equals(packetType.name())).findAny().orElse(null);
+        Preconditions.checkNotNull(mappedPacket, "Packet type " + packetType + " in " + packetType.getClass().getCanonicalName() + " could not be automatically mapped!");
 
-   public void a(ServerboundPacketType var1, @Nullable ServerboundPacketType var2, @Nullable acE var3) {
-      acE[] var4 = h();
-      this.checkPacketType(var1, var1.getClass() == this.newServerboundPacketEnum);
-      this.checkPacketType(var2, var2 == null || var2.getClass() == this.oldServerboundPacketEnum);
-      this.a(a66.PLAY, var2 != null?var2.ordinal():-1, var1.ordinal(), var3);
-   }
+        int oldId = mappedPacket.ordinal();
+        int newId = packetType.ordinal();
+        registerIncoming(State.PLAY, oldId, newId, packetRemapper);
+    }
 
-   public void cancelIncoming(ServerboundPacketType var1) {
-      Preconditions.checkArgument(var1.getClass() == this.newServerboundPacketEnum);
-      this.d(a66.PLAY, -1, var1.ordinal());
-   }
+    /**
+     * Registers an incoming protocol.
+     *
+     * @param packetType       serverbound packet type initially sent by the client
+     * @param mappedPacketType serverbound packet type after transforming for the server
+     * @param packetRemapper   remapper
+     */
+    public void registerIncoming(S2 packetType, @Nullable S1 mappedPacketType, @Nullable PacketRemapper packetRemapper) {
+        checkPacketType(packetType, packetType.getClass() == newServerboundPacketEnum);
+        checkPacketType(mappedPacketType, mappedPacketType == null || mappedPacketType.getClass() == oldServerboundPacketEnum);
 
-   public boolean a(a66 var1, int var2) {
-      Protocol$Packet var3 = new Protocol$Packet(var1, var2);
-      return this.outgoing.containsKey(var3);
-   }
+        registerIncoming(State.PLAY, mappedPacketType != null ? mappedPacketType.ordinal() : -1, packetType.ordinal(), packetRemapper);
+    }
 
-   public boolean b(a66 var1, int var2) {
-      Protocol$Packet var3 = new Protocol$Packet(var1, var2);
-      return this.incoming.containsKey(var3);
-   }
+    public void cancelIncoming(S2 packetType) {
+        Preconditions.checkArgument(packetType.getClass() == newServerboundPacketEnum);
+        cancelIncoming(State.PLAY, -1, packetType.ordinal());
+    }
 
-   public void a(Direction var1, a66 var2, PacketWrapper var3) throws Exception {
-      h();
-      Protocol$Packet var5 = new Protocol$Packet(var2, var3.getId());
-      Map var6 = var1 == Direction.OUTGOING?this.outgoing:this.incoming;
-      Protocol$ProtocolPacket var7 = (Protocol$ProtocolPacket)var6.get(var5);
-   }
 
-   private void a(Direction var1, a66 var2, int var3, int var4, InformativeException var5) throws InformativeException {
-      acE[] var6 = h();
-      if(var2 == a66.HANDSHAKE) {
-         throw var5;
-      } else {
-         Class var7 = var2 == a66.PLAY?(var1 == Direction.OUTGOING?this.oldClientboundPacketEnum:this.newServerboundPacketEnum):null;
-         if(var7 != null) {
-            PacketType[] var8 = (PacketType[])var7.getEnumConstants();
-            PacketType var9 = var3 < var8.length && var3 >= 0?var8[var3]:null;
-            Via.getPlatform().getLogger().warning("ERROR IN " + this.getClass().getCanonicalName() + " IN REMAP OF " + var9 + " (" + this.toNiceHex(var3) + ")");
-         }
+    /**
+     * Checks if an outgoing packet has already been registered.
+     *
+     * @param state       state which the packet is sent in
+     * @param oldPacketID old packet ID
+     * @return true if already registered
+     */
+    public boolean hasRegisteredOutgoing(State state, int oldPacketID) {
+        Packet packet = new Packet(state, oldPacketID);
+        return outgoing.containsKey(packet);
+    }
 
-         Via.getPlatform().getLogger().warning("ERROR IN " + this.getClass().getCanonicalName() + " IN REMAP OF " + this.toNiceHex(var3) + "->" + this.toNiceHex(var4));
-         throw var5;
-      }
-   }
+    /**
+     * Checks if an incoming packet has already been registered.
+     *
+     * @param state       state which the packet is sent in
+     * @param newPacketId packet ID
+     * @return true if already registered
+     */
+    public boolean hasRegisteredIncoming(State state, int newPacketId) {
+        Packet packet = new Packet(state, newPacketId);
+        return incoming.containsKey(packet);
+    }
 
-   private String toNiceHex(int var1) {
-      h();
-      String var3 = Integer.toHexString(var1).toUpperCase();
-      return (var3.length() == 1?"0x0":"0x") + var3;
-   }
+    /**
+     * Transform a packet using this protocol
+     *
+     * @param direction     The direction the packet is going in
+     * @param state         The current protocol state
+     * @param packetWrapper The packet wrapper to transform
+     * @throws Exception Throws exception if it fails to transform
+     */
+    public void transform(Direction direction, State state, PacketWrapper packetWrapper) throws Exception {
+        Packet statePacket = new Packet(state, packetWrapper.getId());
+        Map<Packet, ProtocolPacket> packetMap = (direction == Direction.OUTGOING ? outgoing : incoming);
+        ProtocolPacket protocolPacket = packetMap.get(statePacket);
+        if (protocolPacket == null) {
+            return;
+        }
 
-   private void checkPacketType(PacketType var1, boolean var2) {
-      throw new IllegalArgumentException("Packet type " + var1 + " in " + var1.getClass().getCanonicalName() + " is taken from the wrong enum");
-   }
+        // Write packet id
+        int oldId = packetWrapper.getId();
+        int newId = direction == Direction.OUTGOING ? protocolPacket.getNewID() : protocolPacket.getOldID();
+        packetWrapper.setId(newId);
 
-   @Nullable
-   public Object get(Class var1) {
-      return this.storedObjects.get(var1);
-   }
+        PacketRemapper remapper = protocolPacket.getRemapper();
+        if (remapper != null) {
+            try {
+                remapper.remap(packetWrapper);
+            } catch (InformativeException e) { // Catch InformativeExceptions, pass through CancelExceptions
+                throwRemapError(direction, state, oldId, newId, e);
+                return;
+            }
 
-   public void put(Object var1) {
-      this.storedObjects.put(var1.getClass(), var1);
-   }
+            if (packetWrapper.isCancelled()) {
+                throw CancelException.generate();
+            }
+        }
+    }
 
-   public boolean hasMappingDataToLoad() {
-      return this.getMappingData() != null;
-   }
+    private void throwRemapError(Direction direction, State state, int oldId, int newId, InformativeException e) throws InformativeException {
+        // Don't print errors during handshake
+        if (state == State.HANDSHAKE) {
+            throw e;
+        }
 
-   @Nullable
-   public MappingData getMappingData() {
-      return null;
-   }
+        Class<? extends PacketType> packetTypeClass = state == State.PLAY ? (direction == Direction.OUTGOING ? oldClientboundPacketEnum : newServerboundPacketEnum) : null;
+        if (packetTypeClass != null) {
+            PacketType[] enumConstants = packetTypeClass.getEnumConstants();
+            PacketType packetType = oldId < enumConstants.length && oldId >= 0 ? enumConstants[oldId] : null;
+            Via.getPlatform().getLogger().warning("ERROR IN " + getClass().getCanonicalName() + " IN REMAP OF " + packetType + " (" + toNiceHex(oldId) + ")");
+        } else {
+            Via.getPlatform().getLogger().warning("ERROR IN " + getClass().getCanonicalName()
+                    + " IN REMAP OF " + toNiceHex(oldId) + "->" + toNiceHex(newId));
+        }
+        throw e;
+    }
 
-   public String toString() {
-      return "Protocol:" + this.getClass().getCanonicalName();
-   }
+    private String toNiceHex(int id) {
+        String hex = Integer.toHexString(id).toUpperCase();
+        return (hex.length() == 1 ? "0x0" : "0x") + hex;
+    }
 
-   private static boolean lambda$registerIncoming$1(ServerboundPacketType var0, ServerboundPacketType var1) {
-      return var1.name().equals(var0.name());
-   }
+    /**
+     * @param packetType packet type
+     * @param isValid    expression to check the packet's validity
+     * @throws IllegalArgumentException if the given expression is not met
+     */
+    private void checkPacketType(PacketType packetType, boolean isValid) {
+        if (!isValid) {
+            throw new IllegalArgumentException("Packet type " + packetType + " in " + packetType.getClass().getCanonicalName() + " is taken from the wrong enum");
+        }
+    }
 
-   private static boolean lambda$registerOutgoing$0(ClientboundPacketType var0, ClientboundPacketType var1) {
-      return var1.name().equals(var0.name());
-   }
+    @Nullable
+    public <T> T get(Class<T> objectClass) {
+        return (T) storedObjects.get(objectClass);
+    }
 
-   public static void b(acE[] var0) {
-      g = var0;
-   }
+    public void put(Object object) {
+        storedObjects.put(object.getClass(), object);
+    }
 
-   public static acE[] h() {
-      return g;
-   }
+    /**
+     * Returns true if this Protocol's {@link #loadMappingData()} method should be called.
+     * <p>
+     * This does *not* necessarily mean that {@link #getMappingData()} is non-null, since this may be
+     * overriden, depending on special cases.
+     *
+     * @return true if this Protocol's {@link #loadMappingData()} method should be called
+     */
+    public boolean hasMappingDataToLoad() {
+        return getMappingData() != null;
+    }
 
-   private static Exception b(Exception var0) {
-      return var0;
-   }
+    @Nullable
+    public MappingData getMappingData() {
+        return null; // Let the protocols hold the mappings to still have easy, static singleton access there
+    }
 
-   static {
-      b((acE[])null);
-   }
+    @Override
+    public String toString() {
+        return "Protocol:" + getClass().getCanonicalName();
+    }
+
+    public static class Packet {
+        private final State state;
+        private final int packetId;
+
+        public Packet(State state, int packetId) {
+            this.state = state;
+            this.packetId = packetId;
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public int getPacketId() {
+            return packetId;
+        }
+
+        @Override
+        public String toString() {
+            return "Packet{" + "state=" + state + ", packetId=" + packetId + '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Packet that = (Packet) o;
+            return packetId == that.packetId && state == that.state;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = state != null ? state.hashCode() : 0;
+            result = 31 * result + packetId;
+            return result;
+        }
+    }
+
+    public static class ProtocolPacket {
+        private final State state;
+        private final int oldID;
+        private final int newID;
+        private final PacketRemapper remapper;
+
+        public ProtocolPacket(State state, int oldID, int newID, @Nullable PacketRemapper remapper) {
+            this.state = state;
+            this.oldID = oldID;
+            this.newID = newID;
+            this.remapper = remapper;
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public int getOldID() {
+            return oldID;
+        }
+
+        public int getNewID() {
+            return newID;
+        }
+
+        @Nullable
+        public PacketRemapper getRemapper() {
+            return remapper;
+        }
+    }
 }

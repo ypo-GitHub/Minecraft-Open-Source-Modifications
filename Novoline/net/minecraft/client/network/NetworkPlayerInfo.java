@@ -2,163 +2,173 @@ package net.minecraft.client.network;
 
 import com.google.common.base.Objects;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
-import net.aXg;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.NetworkPlayerInfo$1;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.network.play.server.S38PacketPlayerListItem;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.WorldSettings$GameType;
+import net.minecraft.world.WorldSettings;
 
 public class NetworkPlayerInfo {
-   private final GameProfile gameProfile;
-   private WorldSettings$GameType gameType;
-   private int responseTime;
-   private boolean playerTexturesLoaded = false;
-   private ResourceLocation locationSkin;
-   private ResourceLocation locationCape;
-   private String skinType;
-   private IChatComponent displayName;
-   private int g = 0;
-   private int j = 0;
-   private long i = 0L;
-   private long c = 0L;
-   private long h = 0L;
 
-   public NetworkPlayerInfo(GameProfile var1) {
-      this.gameProfile = var1;
-   }
+    /**
+     * The GameProfile for the player represented by this NetworkPlayerInfo instance
+     */
+    private final GameProfile gameProfile;
+    private WorldSettings.GameType gameType;
 
-   public NetworkPlayerInfo(aXg var1) {
-      this.gameProfile = var1.a();
-      this.gameType = var1.d();
-      this.responseTime = var1.c();
-      this.displayName = var1.b();
-   }
+    /**
+     * Player response time to server in milliseconds
+     */
+    private int responseTime;
+    private boolean playerTexturesLoaded = false;
+    private ResourceLocation locationSkin;
+    private ResourceLocation locationCape;
+    private String skinType;
 
-   public GameProfile getGameProfile() {
-      return this.gameProfile;
-   }
+    /**
+     * When this is non-null, it is displayed instead of the player's real name
+     */
+    private IChatComponent displayName;
+    private int field_178873_i = 0;
+    private int field_178870_j = 0;
+    private long field_178871_k = 0L;
+    private long field_178868_l = 0L;
+    private long field_178869_m = 0L;
 
-   public WorldSettings$GameType getGameType() {
-      return this.gameType;
-   }
+    public NetworkPlayerInfo(GameProfile gameProfile) {
+        this.gameProfile = gameProfile;
+    }
 
-   protected void setGameType(WorldSettings$GameType var1) {
-      this.gameType = var1;
-   }
+    public NetworkPlayerInfo(S38PacketPlayerListItem.AddPlayerData addPlayerData) {
+        this.gameProfile = addPlayerData.getProfile();
+        this.gameType = addPlayerData.getGameMode();
+        this.responseTime = addPlayerData.getPing();
+        this.displayName = addPlayerData.getDisplayName();
+    }
 
-   public int getResponseTime() {
-      return this.responseTime;
-   }
+    /**
+     * Returns the GameProfile for the player represented by this NetworkPlayerInfo instance
+     */
+    public GameProfile getGameProfile() {
+        return this.gameProfile;
+    }
 
-   protected void setResponseTime(int var1) {
-      this.responseTime = var1;
-   }
+    public WorldSettings.GameType getGameType() {
+        return this.gameType;
+    }
 
-   public boolean hasLocationSkin() {
-      return this.locationSkin != null;
-   }
+    protected void setGameType(WorldSettings.GameType p_178839_1_) {
+        this.gameType = p_178839_1_;
+    }
 
-   public String getSkinType() {
-      return this.skinType == null?DefaultPlayerSkin.getSkinType(this.gameProfile.getId()):this.skinType;
-   }
+    public int getResponseTime() {
+        return this.responseTime;
+    }
 
-   public ResourceLocation getRawLocationSkin() {
-      if(this.locationSkin == null) {
-         this.loadPlayerTextures();
-      }
+    protected void setResponseTime(int p_178838_1_) {
+        this.responseTime = p_178838_1_;
+    }
 
-      return this.locationSkin != null?this.locationSkin:DefaultPlayerSkin.getDefaultSkin(this.gameProfile.getId());
-   }
+    public boolean hasLocationSkin() {
+        return this.locationSkin != null;
+    }
 
-   public ResourceLocation getLocationSkin() {
-      if(this.locationSkin == null) {
-         this.loadPlayerTextures();
-      }
+    public String getSkinType() {
+        return this.skinType == null ? DefaultPlayerSkin.getSkinType(this.gameProfile.getId()) : this.skinType;
+    }
 
-      return (ResourceLocation)Objects.firstNonNull(this.locationSkin, DefaultPlayerSkin.getDefaultSkin(this.gameProfile.getId()));
-   }
+    public ResourceLocation getRawLocationSkin() {
+        if (this.locationSkin == null) loadPlayerTextures();
+        return this.locationSkin != null ? this.locationSkin : DefaultPlayerSkin.getDefaultSkin(this.gameProfile.getId());
+    }
 
-   public ResourceLocation getLocationCape() {
-      if(this.locationCape == null) {
-         this.loadPlayerTextures();
-      }
+    public ResourceLocation getLocationSkin() {
+        if (this.locationSkin == null) loadPlayerTextures();
+        return Objects.firstNonNull(this.locationSkin, DefaultPlayerSkin.getDefaultSkin(this.gameProfile.getId()));
+    }
 
-      return this.locationCape;
-   }
+    public ResourceLocation getLocationCape() {
+        if (this.locationCape == null) this.loadPlayerTextures();
+        return this.locationCape;
+    }
 
-   public ScorePlayerTeam getPlayerTeam() {
-      return Minecraft.getInstance().world.getScoreboard().getPlayersTeam(this.getGameProfile().getName());
-   }
+    public ScorePlayerTeam getPlayerTeam() {
+        return Minecraft.getInstance().world.getScoreboard().getPlayersTeam(this.getGameProfile().getName());
+    }
 
-   protected void loadPlayerTextures() {
-      // $FF: Couldn't be decompiled
-   }
+    protected void loadPlayerTextures() {
+        synchronized (this) {
+            if (!this.playerTexturesLoaded) {
+                this.playerTexturesLoaded = true;
 
-   public IChatComponent getDisplayName() {
-      return this.displayName;
-   }
+                Minecraft.getInstance().getSkinManager().loadProfileTextures(this.gameProfile, (type, location, profileTexture) -> {
+                    switch (type) {
+                        case SKIN:
+                            NetworkPlayerInfo.this.locationSkin = location;
+                            NetworkPlayerInfo.this.skinType = profileTexture.getMetadata("model");
 
-   public void setDisplayName(IChatComponent var1) {
-      this.displayName = var1;
-   }
+                            if (NetworkPlayerInfo.this.skinType == null) {
+                                NetworkPlayerInfo.this.skinType = "default";
+                            }
 
-   public int h() {
-      return this.g;
-   }
+                            break;
 
-   public void b(int var1) {
-      this.g = var1;
-   }
+                        case CAPE:
+                            NetworkPlayerInfo.this.locationCape = location;
+                    }
+                }, true);
+            }
+        }
+    }
 
-   public int e() {
-      return this.j;
-   }
+    public IChatComponent getDisplayName() {
+        return this.displayName;
+    }
 
-   public void c(int var1) {
-      this.j = var1;
-   }
+    public void setDisplayName(IChatComponent displayName) {
+        this.displayName = displayName;
+    }
 
-   public long g() {
-      return this.i;
-   }
+    public int func_178835_l() {
+        return this.field_178873_i;
+    }
 
-   public void c(long var1) {
-      this.i = var1;
-   }
+    public void func_178836_b(int p_178836_1_) {
+        this.field_178873_i = p_178836_1_;
+    }
 
-   public long o() {
-      return this.c;
-   }
+    public int func_178860_m() {
+        return this.field_178870_j;
+    }
 
-   public void a(long var1) {
-      this.c = var1;
-   }
+    public void func_178857_c(int p_178857_1_) {
+        this.field_178870_j = p_178857_1_;
+    }
 
-   public long k() {
-      return this.h;
-   }
+    public long func_178847_n() {
+        return this.field_178871_k;
+    }
 
-   public void b(long var1) {
-      this.h = var1;
-   }
+    public void func_178846_a(long p_178846_1_) {
+        this.field_178871_k = p_178846_1_;
+    }
 
-   private void lambda$loadPlayerTextures$0(Type var1, ResourceLocation var2, MinecraftProfileTexture var3) {
-      switch(NetworkPlayerInfo$1.$SwitchMap$com$mojang$authlib$minecraft$MinecraftProfileTexture$Type[var1.ordinal()]) {
-      case 1:
-         this.locationSkin = var2;
-         this.skinType = var3.getMetadata("model");
-         if(this.skinType == null) {
-            this.skinType = "default";
-         }
-         break;
-      case 2:
-         this.locationCape = var2;
-      }
+    public long func_178858_o() {
+        return this.field_178868_l;
+    }
 
-   }
+    public void func_178844_b(long p_178844_1_) {
+        this.field_178868_l = p_178844_1_;
+    }
+
+    public long func_178855_p() {
+        return this.field_178869_m;
+    }
+
+    public void func_178843_c(long p_178843_1_) {
+        this.field_178869_m = p_178843_1_;
+    }
+
 }

@@ -1,15 +1,14 @@
 package cc.novoline.events.events;
 
-import cc.novoline.events.events.Event;
+public class DisplayChestGuiEvent implements Event{
 
-public class DisplayChestGuiEvent implements Event {
-   String string;
+    String string;
 
-   public DisplayChestGuiEvent(String var1) {
-      this.string = var1;
-   }
+    public DisplayChestGuiEvent(String string) {
+        this.string = string;
+    }
 
-   public String getString() {
-      return this.string;
-   }
+    public String getString() {
+        return string;
+    }
 }

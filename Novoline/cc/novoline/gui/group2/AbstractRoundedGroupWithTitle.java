@@ -1,80 +1,91 @@
 package cc.novoline.gui.group2;
 
-import cc.novoline.gui.group2.AbstractGroup;
-import cc.novoline.gui.group2.RoundedGroupWithTitle;
 import cc.novoline.gui.label.Label;
-import cc.novoline.utils.RenderUtils;
 import cc.novoline.utils.java.Checks;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.Objects;
 
+import static cc.novoline.utils.RenderUtils.drawRoundedRect;
+
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractRoundedGroupWithTitle extends AbstractGroup implements RoundedGroupWithTitle {
-   protected Label title;
-   protected int radius;
 
-   public AbstractRoundedGroupWithTitle(Label var1, int var2, int var3, int var4, int var5, int var6, int var7) {
-      super(var3, var4, var5, var6, var7);
-      this.setTitle(var1);
-      this.radius = var2;
-   }
+    /* fields */
+    @Nullable
+    protected Label title;
+    protected int radius;
 
-   public void onDraw(int var1, int var2) {
-      AbstractGroup.a();
-      RenderUtils.drawRoundedRect((float)this.x, (float)this.y, (float)this.width, (float)this.height, (float)this.radius, this.color);
-      if(this.title != null) {
-         this.title.draw(var1, var2);
-      }
+    /* constructors */
+    public AbstractRoundedGroupWithTitle(@Nullable Label title, int radius, int color, int x, int y, int width,
+                                         int height) {
+        super(color, x, y, width, height);
+        setTitle(title);
+        this.radius = radius;
+    }
 
-   }
+    /* methods */
+    @Override
+    public void onDraw(int mouseX, int mouseY) {
+        drawRoundedRect(this.x, this.y, this.width, this.height, this.radius, this.color);
 
-   public void updateTitlePosition() throws NullPointerException {
-      Checks.notNull(this.title, "title");
-      int var1 = (int)((float)this.x + (float)(this.width - this.title.getWidth()) / 2.0F);
-      int var2 = this.y + 4;
-      this.title.setPosition(var1, var2);
-   }
+        if (this.title != null) {
+            this.title.draw(mouseX, mouseY);
+        }
+    }
 
-   public Label getTitle() {
-      return this.title;
-   }
+    public void updateTitlePosition() throws NullPointerException {
+        Checks.notNull(this.title, "title");
 
-   public void setTitle(Label var1) {
-      int[] var2 = AbstractGroup.a();
-      this.title = var1;
-      this.updateTitlePosition();
-   }
+        final int x = (int) (this.x + (this.width - this.title.getWidth()) / 2.0F), // @off
+                y = this.y + 4; // @on
 
-   public int getRadius() {
-      return this.radius;
-   }
+        this.title.setPosition(x, y);
+    }
 
-   public void setRadius(int var1) {
-      this.radius = var1;
-   }
+    //region Lombok
+    @Nullable
+    public Label getTitle() {
+        return this.title;
+    }
 
-   public boolean equals(Object var1) {
-      int[] var2 = AbstractGroup.a();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractRoundedGroupWithTitle)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         AbstractRoundedGroupWithTitle var3 = (AbstractRoundedGroupWithTitle)var1;
-         return this.radius == var3.radius && Objects.equals(this.title, var3.title);
-      }
-   }
+    public void setTitle(@Nullable Label title) {
+        if (title != null) {
+            this.title = title;
+            updateTitlePosition();
+        }
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(super.hashCode()), this.title, Integer.valueOf(this.radius)});
-   }
+    @Override
+    public int getRadius() {
+        return this.radius;
+    }
 
-   public String toString() {
-      int[] var1 = AbstractGroup.a();
-      return "AbstractRoundedGroupWithTitle{title=" + this.title + ", radius=" + this.radius + ", color=" + this.color + ", width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
-   }
+    @Override
+    public void setRadius(int radius) {
+        this.radius = radius;
+    }
 
-   private static NullPointerException a(NullPointerException var0) {
-      return var0;
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractRoundedGroupWithTitle)) return false;
+        if (!super.equals(o)) return false;
+        final AbstractRoundedGroupWithTitle that = (AbstractRoundedGroupWithTitle) o;
+        return this.radius == that.radius && Objects.equals(this.title, that.title);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.title, this.radius);
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractRoundedGroupWithTitle{" + "title=" + this.title + ", radius=" + this.radius + ", color=" + this.color + ", width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
+    }
+    //endregion
+
 }

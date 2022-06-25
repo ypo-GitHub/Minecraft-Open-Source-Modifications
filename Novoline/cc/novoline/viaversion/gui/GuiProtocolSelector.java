@@ -1,58 +1,89 @@
 package cc.novoline.viaversion.gui;
 
-import cc.novoline.viaversion.gui.GuiProtocolSelector$SlotList;
-import java.io.IOException;
-import net.acE;
-import net.j5;
+import cc.novoline.viaversion.utils.ProtocolSorter;
+import viaversion.viafabric.ViaFabric;
+import viaversion.viafabric.util.ProtocolUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiSlot;
 import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.opengl.GL11;
 
+import java.io.IOException;
+
 public class GuiProtocolSelector extends GuiScreen {
-   public GuiProtocolSelector$SlotList list;
-   private GuiScreen parent;
 
-   public GuiProtocolSelector(GuiScreen var1) {
-      this.parent = var1;
-   }
+    public SlotList list;
 
-   public void initGui() {
-      j5.b();
-      super.initGui();
-      this.buttonList.add(new GuiButton(1, this.width / 2 - 100, this.height - 27, 200, 20, "Back"));
-      this.list = new GuiProtocolSelector$SlotList(this, this.mc, this.width, this.height, 32, this.height - 32, 10);
-   }
+    private GuiScreen parent;
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      String[] var2 = j5.b();
-      this.list.actionPerformed(var1);
-      if(var1.id == 1) {
-         this.mc.displayGuiScreen(this.parent);
-      }
+    public GuiProtocolSelector(GuiScreen parent) {
+        this.parent = parent;
+    }
 
-   }
+    @Override
+    public void initGui() {
+        super.initGui();
+        buttonList.add(new GuiButton(1, width / 2 - 100, height - 27, 200, 20, "Back"));
+        list = new SlotList(mc, width, height, 32, height - 32, 10);
+    }
 
-   public void handleMouseInput() throws IOException {
-      this.list.handleMouseInput();
-      super.handleMouseInput();
-   }
+    @Override
+    protected void actionPerformed(GuiButton button) throws IOException {
+        list.actionPerformed(button);
 
-   public void drawScreen(int var1, int var2, float var3) {
-      this.list.drawScreen(var1, var2, var3);
-      j5.b();
-      GL11.glPushMatrix();
-      GL11.glScalef(2.0F, 2.0F, 2.0F);
-      this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.BOLD.toString() + "ViaMCP", this.width / 4, 6, 16777215);
-      GL11.glPopMatrix();
-      super.drawScreen(var1, var2, var3);
-      if(acE.b() == null) {
-         j5.b(new String[4]);
-      }
+        if (button.id == 1)
+            mc.displayGuiScreen(parent);
+    }
 
-   }
+    @Override
+    public void handleMouseInput() throws IOException {
+        list.handleMouseInput();
+        super.handleMouseInput();
+    }
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    @Override
+    public void drawScreen(int drawScreen, int mouseX, float mouseY) {
+        list.drawScreen(drawScreen, mouseX, mouseY);
+
+        GL11.glPushMatrix();
+        GL11.glScalef(2.0F, 2.0F, 2.0F);
+        this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.BOLD.toString() + "ViaMCP",this.width / 4, 6, 16777215);
+        GL11.glPopMatrix();
+
+        super.drawScreen(drawScreen, mouseX, mouseY);
+    }
+
+    class SlotList extends GuiSlot {
+
+        public SlotList(Minecraft p_i1052_1_, int p_i1052_2_, int p_i1052_3_, int p_i1052_4_, int p_i1052_5_, int p_i1052_6_) {
+            super(p_i1052_1_, p_i1052_2_, p_i1052_3_, p_i1052_4_, p_i1052_5_, p_i1052_6_);
+        }
+
+        @Override
+        protected int getSize() {
+            return ProtocolSorter.getProtocolVersions().size();
+        }
+
+        @Override
+        protected void elementClicked(int i, boolean b, int i1, int i2) {
+            ViaFabric.clientSideVersion = ProtocolSorter.getProtocolVersions().get(i).getVersion();
+        }
+
+        @Override
+        protected boolean isSelected(int i) {
+            return false;
+        }
+
+        @Override
+        protected void drawBackground() {
+            drawDefaultBackground();
+        }
+
+        @Override
+        protected void drawSlot(int i, int i1, int i2, int i3, int i4, int i5) {
+            drawCenteredString(mc.fontRendererObj,(ViaFabric.clientSideVersion == ProtocolSorter.getProtocolVersions().get(i).getVersion() ? EnumChatFormatting.GREEN.toString() : EnumChatFormatting.WHITE.toString()) + ProtocolUtils.getProtocolName(ProtocolSorter.getProtocolVersions().get(i).getVersion()) , width / 2, i2 + 2, -1);
+        }
+    }
 }

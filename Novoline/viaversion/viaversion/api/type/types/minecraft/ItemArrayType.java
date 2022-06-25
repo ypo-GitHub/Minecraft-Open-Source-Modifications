@@ -1,43 +1,30 @@
 package viaversion.viaversion.api.type.types.minecraft;
 
 import io.netty.buffer.ByteBuf;
-import net.nP;
 import viaversion.viaversion.api.minecraft.item.Item;
 import viaversion.viaversion.api.type.Type;
-import viaversion.viaversion.api.type.types.minecraft.BaseItemArrayType;
 
 public class ItemArrayType extends BaseItemArrayType {
-   public ItemArrayType() {
-      super("Item Array");
-   }
 
-   public Item[] read(ByteBuf var1) throws Exception {
-      nP.b();
-      short var3 = Type.SHORT.readPrimitive(var1);
-      Item[] var4 = new Item[var3];
-      int var5 = 0;
-      if(var5 < var3) {
-         var4[var5] = (Item)Type.ITEM.read(var1);
-         ++var5;
-      }
+    public ItemArrayType() {
+        super("Item Array");
+    }
 
-      return var4;
-   }
+    @Override
+    public Item[] read(ByteBuf buffer) throws Exception {
+        int amount = Type.SHORT.readPrimitive(buffer);
+        Item[] array = new Item[amount];
+        for (int i = 0; i < amount; i++) {
+            array[i] = Type.ITEM.read(buffer);
+        }
+        return array;
+    }
 
-   public void write(ByteBuf var1, Item[] var2) throws Exception {
-      nP.b();
-      Type.SHORT.writePrimitive(var1, (short)var2.length);
-      int var5 = var2.length;
-      int var6 = 0;
-      if(var6 < var5) {
-         Item var7 = var2[var6];
-         Type.ITEM.write(var1, var7);
-         ++var6;
-      }
-
-   }
-
-   private static Exception a(Exception var0) {
-      return var0;
-   }
+    @Override
+    public void write(ByteBuf buffer, Item[] object) throws Exception {
+        Type.SHORT.writePrimitive(buffer, (short) object.length);
+        for (Item o : object) {
+            Type.ITEM.write(buffer, o);
+        }
+    }
 }

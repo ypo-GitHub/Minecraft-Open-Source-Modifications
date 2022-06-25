@@ -1,42 +1,52 @@
 package net.minecraft.network.play.server;
 
-import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.potion.PotionEffect;
 
-public class S1EPacketRemoveEntityEffect implements Packet {
-   private int entityId;
-   private int effectId;
+import java.io.IOException;
 
-   public S1EPacketRemoveEntityEffect() {
-   }
+public class S1EPacketRemoveEntityEffect implements Packet<INetHandlerPlayClient> {
+    private int entityId;
+    private int effectId;
 
-   public S1EPacketRemoveEntityEffect(int var1, PotionEffect var2) {
-      this.entityId = var1;
-      this.effectId = var2.getPotionID();
-   }
+    public S1EPacketRemoveEntityEffect() {
+    }
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.entityId = var1.readVarIntFromBuffer();
-      this.effectId = var1.readUnsignedByte();
-   }
+    public S1EPacketRemoveEntityEffect(int entityIdIn, PotionEffect effect) {
+        this.entityId = entityIdIn;
+        this.effectId = effect.getPotionID();
+    }
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeVarIntToBuffer(this.entityId);
-      var1.writeByte(this.effectId);
-   }
+    /**
+     * Reads the raw packet data from the data stream.
+     */
+    public void readPacketData(PacketBuffer buf) throws IOException {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.effectId = buf.readUnsignedByte();
+    }
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleRemoveEntityEffect(this);
-   }
+    /**
+     * Writes the raw packet data to the data stream.
+     */
+    public void writePacketData(PacketBuffer buf) throws IOException {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.effectId);
+    }
 
-   public int getEntityId() {
-      return this.entityId;
-   }
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler) {
+        handler.handleRemoveEntityEffect(this);
+    }
 
-   public int getEffectId() {
-      return this.effectId;
-   }
+    public int getEntityId() {
+        return this.entityId;
+    }
+
+    public int getEffectId() {
+        return this.effectId;
+    }
 }

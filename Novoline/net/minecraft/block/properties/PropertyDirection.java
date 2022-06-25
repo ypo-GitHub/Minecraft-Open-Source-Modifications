@@ -4,24 +4,35 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
-import java.util.Collection;
-import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.util.EnumFacing;
 
-public class PropertyDirection extends PropertyEnum {
-   protected PropertyDirection(String var1, Collection var2) {
-      super(var1, EnumFacing.class, var2);
-   }
+import java.util.Collection;
 
-   public static PropertyDirection create(String var0) {
-      return create(var0, Predicates.alwaysTrue());
-   }
+public class PropertyDirection extends PropertyEnum<EnumFacing> {
 
-   public static PropertyDirection create(String var0, Predicate var1) {
-      return create(var0, Collections2.filter(Lists.newArrayList(EnumFacing.values()), var1));
-   }
+    protected PropertyDirection(String name, Collection<EnumFacing> values) {
+        super(name, EnumFacing.class, values);
+    }
 
-   public static PropertyDirection create(String var0, Collection var1) {
-      return new PropertyDirection(var0, var1);
-   }
+    /**
+     * Create a new PropertyDirection with the given name
+     */
+    public static PropertyDirection create(String name) {
+        return create(name, Predicates.alwaysTrue());
+    }
+
+    /**
+     * Create a new PropertyDirection with all directions that match the given Predicate
+     */
+    public static PropertyDirection create(String name, Predicate<EnumFacing> filter) {
+        return create(name, Collections2.filter(Lists.newArrayList(EnumFacing.values()), filter));
+    }
+
+    /**
+     * Create a new PropertyDirection for the given direction values
+     */
+    public static PropertyDirection create(String name, Collection<EnumFacing> values) {
+        return new PropertyDirection(name, values);
+    }
+
 }

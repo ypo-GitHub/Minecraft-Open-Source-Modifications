@@ -1,88 +1,98 @@
 package viaversion.viaversion.api.minecraft.chunks;
 
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+
 import java.util.List;
-import viaversion.viaversion.api.minecraft.chunks.Chunk;
-import viaversion.viaversion.api.minecraft.chunks.ChunkSection;
 
 public class BaseChunk implements Chunk {
-   protected final int x;
-   protected final int z;
-   protected final boolean fullChunk;
-   protected boolean ignoreOldLightData;
-   protected final int bitmask;
-   protected final ChunkSection[] sections;
-   protected int[] biomeData;
-   protected CompoundTag heightMap;
-   protected final List blockEntities;
+    protected final int x;
+    protected final int z;
+    protected final boolean fullChunk;
+    protected boolean ignoreOldLightData;
+    protected final int bitmask;
+    protected final ChunkSection[] sections;
+    protected int[] biomeData;
+    protected CompoundTag heightMap;
+    protected final List<CompoundTag> blockEntities;
 
-   public BaseChunk(int var1, int var2, boolean var3, boolean var4, int var5, ChunkSection[] var6, int[] var7, CompoundTag var8, List var9) {
-      ChunkSection.b();
-      super();
-      this.x = var1;
-      this.z = var2;
-      this.fullChunk = var3;
-      this.ignoreOldLightData = var4;
-      this.bitmask = var5;
-      this.sections = var6;
-      this.biomeData = var7;
-      this.heightMap = var8;
-      this.blockEntities = var9;
-   }
+    public BaseChunk(int x, int z, boolean fullChunk, boolean ignoreOldLightData, int bitmask, ChunkSection[] sections, int[] biomeData, CompoundTag heightMap, List<CompoundTag> blockEntities) {
+        this.x = x;
+        this.z = z;
+        this.fullChunk = fullChunk;
+        this.ignoreOldLightData = ignoreOldLightData;
+        this.bitmask = bitmask;
+        this.sections = sections;
+        this.biomeData = biomeData;
+        this.heightMap = heightMap;
+        this.blockEntities = blockEntities;
+    }
 
-   public BaseChunk(int var1, int var2, boolean var3, boolean var4, int var5, ChunkSection[] var6, int[] var7, List var8) {
-      this(var1, var2, var3, var4, var5, var6, var7, (CompoundTag)null, var8);
-   }
+    public BaseChunk(int x, int z, boolean fullChunk, boolean ignoreOldLightData, int bitmask, ChunkSection[] sections, int[] biomeData, List<CompoundTag> blockEntities) {
+        this(x, z, fullChunk, ignoreOldLightData, bitmask, sections, biomeData, null, blockEntities);
+    }
 
-   public boolean isBiomeData() {
-      return this.biomeData != null;
-   }
+    @Override
+    public boolean isBiomeData() {
+        return biomeData != null;
+    }
 
-   public int getX() {
-      return this.x;
-   }
+    @Override
+    public int getX() {
+        return x;
+    }
 
-   public int getZ() {
-      return this.z;
-   }
+    @Override
+    public int getZ() {
+        return z;
+    }
 
-   public boolean isFullChunk() {
-      return this.fullChunk;
-   }
+    @Override
+    public boolean isFullChunk() {
+        return fullChunk;
+    }
 
-   public boolean isIgnoreOldLightData() {
-      return this.ignoreOldLightData;
-   }
+    @Override
+    public boolean isIgnoreOldLightData() {
+        return ignoreOldLightData;
+    }
 
-   public void setIgnoreOldLightData(boolean var1) {
-      this.ignoreOldLightData = var1;
-   }
+    @Override
+    public void setIgnoreOldLightData(boolean ignoreOldLightData) {
+        this.ignoreOldLightData = ignoreOldLightData;
+    }
 
-   public int getBitmask() {
-      return this.bitmask;
-   }
+    @Override
+    public int getBitmask() {
+        return bitmask;
+    }
 
-   public ChunkSection[] getSections() {
-      return this.sections;
-   }
+    @Override
+    public ChunkSection[] getSections() {
+        return sections;
+    }
 
-   public int[] getBiomeData() {
-      return this.biomeData;
-   }
+    @Override
+    public int[] getBiomeData() {
+        return biomeData;
+    }
 
-   public void setBiomeData(int[] var1) {
-      this.biomeData = var1;
-   }
+    @Override
+    public void setBiomeData(final int[] biomeData) {
+        this.biomeData = biomeData;
+    }
 
-   public CompoundTag getHeightMap() {
-      return this.heightMap;
-   }
+    @Override
+    public CompoundTag getHeightMap() {
+        return heightMap;
+    }
 
-   public void setHeightMap(CompoundTag var1) {
-      this.heightMap = var1;
-   }
+    @Override
+    public void setHeightMap(final CompoundTag heightMap) {
+        this.heightMap = heightMap;
+    }
 
-   public List getBlockEntities() {
-      return this.blockEntities;
-   }
+    @Override
+    public List<CompoundTag> getBlockEntities() {
+        return blockEntities;
+    }
 }

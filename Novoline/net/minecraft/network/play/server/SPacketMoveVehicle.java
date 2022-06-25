@@ -6,61 +6,65 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class SPacketMoveVehicle implements Packet {
-   private double x;
-   private double y;
-   private double z;
-   private float yaw;
-   private float pitch;
+public class SPacketMoveVehicle implements Packet<INetHandlerPlayClient> {
 
-   public SPacketMoveVehicle() {
-   }
+	private double x;
+	private double y;
+	private double z;
+	private float yaw;
+	private float pitch;
 
-   public SPacketMoveVehicle(Entity var1) {
-      this.x = var1.posX;
-      this.y = var1.posY;
-      this.z = var1.posZ;
-      this.yaw = var1.rotationYaw;
-      this.pitch = var1.rotationPitch;
-   }
+	public SPacketMoveVehicle() {
+	}
 
-   public void readPacketData(PacketBuffer var1) throws IOException {
-      this.x = var1.readDouble();
-      this.y = var1.readDouble();
-      this.z = var1.readDouble();
-      this.yaw = var1.readFloat();
-      this.pitch = var1.readFloat();
-   }
+	public SPacketMoveVehicle(Entity entityIn) {
+		this.x = entityIn.posX;
+		this.y = entityIn.posY;
+		this.z = entityIn.posZ;
+		this.yaw = entityIn.rotationYaw;
+		this.pitch = entityIn.rotationPitch;
+	}
 
-   public void writePacketData(PacketBuffer var1) throws IOException {
-      var1.writeDouble(this.x);
-      var1.writeDouble(this.y);
-      var1.writeDouble(this.z);
-      var1.writeFloat(this.yaw);
-      var1.writeFloat(this.pitch);
-   }
+	@Override
+    public void readPacketData(PacketBuffer buf) throws IOException {
+		this.x = buf.readDouble();
+		this.y = buf.readDouble();
+		this.z = buf.readDouble();
+		this.yaw = buf.readFloat();
+		this.pitch = buf.readFloat();
+	}
 
-   public void processPacket(INetHandlerPlayClient var1) {
-      var1.handleMoveVehicle(this);
-   }
+	@Override
+    public void writePacketData(PacketBuffer buf) throws IOException {
+		buf.writeDouble(x);
+		buf.writeDouble(y);
+		buf.writeDouble(z);
+		buf.writeFloat(yaw);
+		buf.writeFloat(pitch);
+	}
 
-   public double getX() {
-      return this.x;
-   }
+	@Override
+    public void processPacket(INetHandlerPlayClient handler) {
+		handler.handleMoveVehicle(this);
+	}
 
-   public double getY() {
-      return this.y;
-   }
+	public double getX() {
+		return x;
+	}
 
-   public double getZ() {
-      return this.z;
-   }
+	public double getY() {
+		return y;
+	}
 
-   public float getYaw() {
-      return this.yaw;
-   }
+	public double getZ() {
+		return z;
+	}
 
-   public float getPitch() {
-      return this.pitch;
-   }
+	public float getYaw() {
+		return yaw;
+	}
+
+	public float getPitch() {
+		return pitch;
+	}
 }

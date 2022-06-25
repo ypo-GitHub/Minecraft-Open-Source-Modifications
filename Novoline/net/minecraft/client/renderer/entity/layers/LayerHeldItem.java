@@ -4,9 +4,8 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms$TransformType;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
-import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -14,48 +13,54 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 
-public class LayerHeldItem implements LayerRenderer {
-   private final RendererLivingEntity livingEntityRenderer;
+public class LayerHeldItem implements LayerRenderer<EntityLivingBase> {
+    private final RendererLivingEntity<?> livingEntityRenderer;
 
-   public LayerHeldItem(RendererLivingEntity var1) {
-      this.livingEntityRenderer = var1;
-   }
+    public LayerHeldItem(RendererLivingEntity<?> livingEntityRendererIn) {
+        this.livingEntityRenderer = livingEntityRendererIn;
+    }
 
-   public void doRenderLayer(EntityLivingBase var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      ItemStack var9 = var1.getHeldItem();
-      GlStateManager.pushMatrix();
-      if(this.livingEntityRenderer.getMainModel().isChild) {
-         float var10 = 0.5F;
-         GlStateManager.translate(0.0F, 0.625F, 0.0F);
-         GlStateManager.rotate(-20.0F, -1.0F, 0.0F, 0.0F);
-         GlStateManager.scale(var10, var10, var10);
-      }
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float p_177141_2_, float p_177141_3_, float partialTicks, float p_177141_5_, float p_177141_6_, float p_177141_7_, float scale) {
+        ItemStack itemstack = entitylivingbaseIn.getHeldItem();
 
-      ((ModelBiped)this.livingEntityRenderer.getMainModel()).postRenderArm(0.0625F);
-      GlStateManager.translate(-0.0625F, 0.4375F, 0.0625F);
-      if(var1 instanceof EntityPlayer && ((EntityPlayer)var1).fishEntity != null) {
-         var9 = new ItemStack(Items.fishing_rod, 0);
-      }
+        if (itemstack != null) {
+            GlStateManager.pushMatrix();
 
-      Item var13 = var9.getItem();
-      Minecraft var11 = Minecraft.getInstance();
-      if(var13 instanceof ItemBlock && Block.getBlockFromItem(var13).getRenderType() == 2) {
-         GlStateManager.translate(0.0F, 0.1875F, -0.3125F);
-         GlStateManager.rotate(20.0F, 1.0F, 0.0F, 0.0F);
-         GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
-         float var12 = 0.375F;
-         GlStateManager.scale(-var12, -var12, var12);
-      }
+            if (this.livingEntityRenderer.getMainModel().isChild) {
+                float f = 0.5F;
+                GlStateManager.translate(0.0F, 0.625F, 0.0F);
+                GlStateManager.rotate(-20.0F, -1.0F, 0.0F, 0.0F);
+                GlStateManager.scale(f, f, f);
+            }
 
-      if(var1.isSneaking()) {
-         GlStateManager.translate(0.0F, 0.203125F, 0.0F);
-      }
+            ((ModelBiped) this.livingEntityRenderer.getMainModel()).postRenderArm(0.0625F);
+            GlStateManager.translate(-0.0625F, 0.4375F, 0.0625F);
 
-      var11.getItemRenderer().renderItem(var1, var9, ItemCameraTransforms$TransformType.THIRD_PERSON);
-      GlStateManager.popMatrix();
-   }
+            if (entitylivingbaseIn instanceof EntityPlayer && ((EntityPlayer) entitylivingbaseIn).fishEntity != null) {
+                itemstack = new ItemStack(Items.fishing_rod, 0);
+            }
 
-   public boolean shouldCombineTextures() {
-      return false;
-   }
+            Item item = itemstack.getItem();
+            Minecraft minecraft = Minecraft.getInstance();
+
+            if (item instanceof ItemBlock && Block.getBlockFromItem(item).getRenderType() == 2) {
+                GlStateManager.translate(0.0F, 0.1875F, -0.3125F);
+                GlStateManager.rotate(20.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
+                float f1 = 0.375F;
+                GlStateManager.scale(-f1, -f1, f1);
+            }
+
+            if (entitylivingbaseIn.isSneaking()) {
+                GlStateManager.translate(0.0F, 0.203125F, 0.0F);
+            }
+
+            minecraft.getItemRenderer().renderItem(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.THIRD_PERSON);
+            GlStateManager.popMatrix();
+        }
+    }
+
+    public boolean shouldCombineTextures() {
+        return false;
+    }
 }

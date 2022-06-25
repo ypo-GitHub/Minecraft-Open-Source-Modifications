@@ -1,94 +1,101 @@
 package net.minecraft.command;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommand;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.NumberInvalidException;
-import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.event.ClickEvent;
-import net.minecraft.event.ClickEvent$Action;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.MathHelper;
+
+import java.util.*;
 
 public class CommandHelp extends CommandBase {
-   public String getCommandName() {
-      return "help";
-   }
 
-   public int getRequiredPermissionLevel() {
-      return 0;
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "help";
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.help.usage";
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 0;
+    }
 
-   public List getCommandAliases() {
-      return Arrays.asList(new String[]{"?"});
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.help.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      List var3 = this.getSortedPossibleCommands(var1);
-      int var4 = (var3.size() - 1) / 7;
+    public List<String> getCommandAliases() {
+        return Arrays.asList("?");
+    }
 
-      int var5;
-      try {
-         var5 = var2.length == 0?0:parseInt(var2[0], 1, var4 + 1) - 1;
-      } catch (NumberInvalidException var11) {
-         Map var7 = this.getCommands();
-         ICommand var8 = (ICommand)var7.get(var2[0]);
-         throw new WrongUsageException(var8.getCommandUsage(var1), new Object[0]);
-      }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        final List<ICommand> list = this.getSortedPossibleCommands(sender);
+        final int j = (list.size() - 1) / 7;
+        int k;
 
-      int var6 = Math.min((var5 + 1) * 7, var3.size());
-      ChatComponentTranslation var12 = new ChatComponentTranslation("commands.help.header", new Object[]{Integer.valueOf(var5 + 1), Integer.valueOf(var4 + 1)});
-      var12.getChatStyle().setColor(EnumChatFormatting.DARK_GREEN);
-      var1.addChatMessage(var12);
+        try {
+            k = args.length == 0 ? 0 : parseInt(args[0], 1, j + 1) - 1;
+        } catch (NumberInvalidException e) {
+            final Map<String, ICommand> map = this.getCommands();
+            final ICommand icommand = map.get(args[0]);
 
-      for(int var13 = var5 * 7; var13 < var6; ++var13) {
-         ICommand var9 = (ICommand)var3.get(var13);
-         ChatComponentTranslation var10 = new ChatComponentTranslation(var9.getCommandUsage(var1), new Object[0]);
-         var10.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent$Action.SUGGEST_COMMAND, "/" + var9.getCommandName() + " "));
-         var1.addChatMessage(var10);
-      }
+            if (icommand != null) throw new WrongUsageException(icommand.getCommandUsage(sender));
+            if (MathHelper.parseIntWithDefault(args[0], -1) != -1) throw e;
 
-      if(var1 instanceof EntityPlayer) {
-         ChatComponentTranslation var14 = new ChatComponentTranslation("commands.help.footer", new Object[0]);
-         var14.getChatStyle().setColor(EnumChatFormatting.GREEN);
-         var1.addChatMessage(var14);
-      }
+            throw new CommandNotFoundException();
+        }
 
-   }
+        final int l = Math.min((k + 1) * 7, list.size());
+        final ChatComponentTranslation header = new ChatComponentTranslation("commands.help.header", k + 1, j + 1);
+        header.getChatStyle().setColor(EnumChatFormatting.DARK_GREEN);
+        sender.addChatMessage(header);
 
-   protected List getSortedPossibleCommands(ICommandSender var1) {
-      List var2 = MinecraftServer.getServer().getCommandManager().getPossibleCommands(var1);
-      Collections.sort(var2);
-      return var2;
-   }
+        for (int i1 = k * 7; i1 < l; ++i1) {
+            final ICommand command = list.get(i1);
+            final ChatComponentTranslation chatcomponenttranslation = new ChatComponentTranslation(command.getCommandUsage(sender));
 
-   protected Map getCommands() {
-      return MinecraftServer.getServer().getCommandManager().getCommands();
-   }
+            chatcomponenttranslation.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + command.getCommandName() + " "));
+            sender.addChatMessage(chatcomponenttranslation);
+        }
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      if(var2.length == 1) {
-         Set var4 = this.getCommands().keySet();
-         return getListOfStringsMatchingLastWord(var2, (String[])var4.toArray(new String[0]));
-      } else {
-         return null;
-      }
-   }
+        if (k == 0 && sender instanceof EntityPlayer) {
+            final ChatComponentTranslation footer = new ChatComponentTranslation("commands.help.footer");
 
-   private static NumberInvalidException a(NumberInvalidException var0) {
-      return var0;
-   }
+            footer.getChatStyle().setColor(EnumChatFormatting.GREEN);
+            sender.addChatMessage(footer);
+        }
+    }
+
+    protected List<ICommand> getSortedPossibleCommands(ICommandSender p_71534_1_) {
+        final List<ICommand> list = MinecraftServer.getServer().getCommandManager().getPossibleCommands(p_71534_1_);
+
+        Collections.sort(list);
+        return list;
+    }
+
+    protected Map<String, ICommand> getCommands() {
+        return MinecraftServer.getServer().getCommandManager().getCommands();
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        if (args.length == 1) {
+            final Set<String> set = this.getCommands().keySet();
+            return getListOfStringsMatchingLastWord(args, set.toArray(new String[0]));
+        } else {
+            return null;
+        }
+    }
+
 }

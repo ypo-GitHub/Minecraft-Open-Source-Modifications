@@ -3,11 +3,32 @@ package viaversion.viaversion.api.command;
 import java.util.UUID;
 
 public interface ViaCommandSender {
-   boolean hasPermission(String var1);
+    /**
+     * Check if the sender has a permission.
+     *
+     * @param permission Permission string eg. viaversion.admin
+     * @return True if the sender has the permission
+     */
+    boolean hasPermission(String permission);
 
-   void sendMessage(String var1);
+    /**
+     * Send a message to the sender
+     *
+     * @param msg The message to send
+     */
+    void sendMessage(String msg);
 
-   UUID getUUID();
+    /**
+     * Get the senders UUID.
+     *
+     * @return The senders UUID
+     */
+    UUID getUUID();
 
-   String getName();
+    /**
+     * Get the senders name.
+     *
+     * @return The senders name
+     */
+    String getName();
 }

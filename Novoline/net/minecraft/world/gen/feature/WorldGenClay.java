@@ -1,45 +1,51 @@
 package net.minecraft.world.gen.feature;
 
-import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.WorldGenerator;
+
+import java.util.Random;
 
 public class WorldGenClay extends WorldGenerator {
-   private Block field_150546_a = Blocks.clay;
-   private int numberOfBlocks;
+    private Block field_150546_a = Blocks.clay;
 
-   public WorldGenClay(int var1) {
-      this.numberOfBlocks = var1;
-   }
+    /**
+     * The number of blocks to generate.
+     */
+    private int numberOfBlocks;
 
-   public boolean generate(World var1, Random var2, BlockPos var3) {
-      if(var1.getBlockState(var3).getBlock().getMaterial() != Material.water) {
-         return false;
-      } else {
-         int var4 = var2.nextInt(this.numberOfBlocks - 2) + 2;
-         byte var5 = 1;
+    public WorldGenClay(int p_i2011_1_) {
+        this.numberOfBlocks = p_i2011_1_;
+    }
 
-         for(int var6 = var3.getX() - var4; var6 <= var3.getX() + var4; ++var6) {
-            for(int var7 = var3.getZ() - var4; var7 <= var3.getZ() + var4; ++var7) {
-               int var8 = var6 - var3.getX();
-               int var9 = var7 - var3.getZ();
-               if(var8 * var8 + var9 * var9 <= var4 * var4) {
-                  for(int var10 = var3.getY() - var5; var10 <= var3.getY() + var5; ++var10) {
-                     BlockPos var11 = new BlockPos(var6, var10, var7);
-                     Block var12 = var1.getBlockState(var11).getBlock();
-                     if(var12 == Blocks.dirt || var12 == Blocks.clay) {
-                        var1.setBlockState(var11, this.field_150546_a.getDefaultState(), 2);
-                     }
-                  }
-               }
+    public boolean generate(World worldIn, Random rand, BlockPos position) {
+        if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.water) {
+            return false;
+        } else {
+            int i = rand.nextInt(this.numberOfBlocks - 2) + 2;
+            int j = 1;
+
+            for (int k = position.getX() - i; k <= position.getX() + i; ++k) {
+                for (int l = position.getZ() - i; l <= position.getZ() + i; ++l) {
+                    int i1 = k - position.getX();
+                    int j1 = l - position.getZ();
+
+                    if (i1 * i1 + j1 * j1 <= i * i) {
+                        for (int k1 = position.getY() - j; k1 <= position.getY() + j; ++k1) {
+                            BlockPos blockpos = new BlockPos(k, k1, l);
+                            Block block = worldIn.getBlockState(blockpos).getBlock();
+
+                            if (block == Blocks.dirt || block == Blocks.clay) {
+                                worldIn.setBlockState(blockpos, this.field_150546_a.getDefaultState(), 2);
+                            }
+                        }
+                    }
+                }
             }
-         }
 
-         return true;
-      }
-   }
+            return true;
+        }
+    }
 }

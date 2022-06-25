@@ -1,53 +1,48 @@
 package viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import net.abi;
-import net.acE;
 import viaversion.viaversion.api.Pair;
 import viaversion.viaversion.api.data.UserConnection;
 import viaversion.viaversion.api.minecraft.BlockFace;
 import viaversion.viaversion.api.minecraft.Position;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.ConnectionData$ConnectorInitAction;
-import viaversion.viaversion.protocols.protocol1_13to1_12_2.blockconnections.WrappedBlockData;
 
-public class SnowyGrassConnectionHandler extends abi {
-   private static final Map grassBlocks = new HashMap();
-   private static final Set snows = new HashSet();
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-   static ConnectionData$ConnectorInitAction init() {
-      HashSet var0 = new HashSet();
-      var0.add("minecraft:grass_block");
-      var0.add("minecraft:podzol");
-      var0.add("minecraft:mycelium");
-      SnowyGrassConnectionHandler var1 = new SnowyGrassConnectionHandler();
-      return SnowyGrassConnectionHandler::lambda$init$0;
-   }
+public class SnowyGrassConnectionHandler extends ConnectionHandler {
+    private static final Map<Pair<Integer, Boolean>, Integer> grassBlocks = new HashMap<>();
+    private static final Set<Integer> snows = new HashSet<>();
 
-   public int connect(UserConnection var1, Position var2, int var3) {
-      int var5 = this.getBlockData(var1, var2.getRelative(BlockFace.TOP));
-      abi.b();
-      Integer var6 = (Integer)grassBlocks.get(new Pair(Integer.valueOf(var3), Boolean.valueOf(snows.contains(Integer.valueOf(var5)))));
-      return var6 != null?var6.intValue():var3;
-   }
+    static ConnectionData.ConnectorInitAction init() {
+        final Set<String> snowyGrassBlocks = new HashSet<>();
+        snowyGrassBlocks.add("minecraft:grass_block");
+        snowyGrassBlocks.add("minecraft:podzol");
+        snowyGrassBlocks.add("minecraft:mycelium");
 
-   private static void lambda$init$0(Set var0, SnowyGrassConnectionHandler var1, WrappedBlockData var2) {
-      acE[] var3 = abi.b();
-      if(var0.contains(var2.getMinecraftKey())) {
-         ConnectionData.connectionHandlerMap.put(var2.getSavedBlockStateId(), var1);
-         var2.set("snowy", "true");
-         grassBlocks.put(new Pair(Integer.valueOf(var2.getSavedBlockStateId()), Boolean.valueOf(true)), Integer.valueOf(var2.getBlockStateId()));
-         var2.set("snowy", "false");
-         grassBlocks.put(new Pair(Integer.valueOf(var2.getSavedBlockStateId()), Boolean.valueOf(false)), Integer.valueOf(var2.getBlockStateId()));
-      }
+        final SnowyGrassConnectionHandler handler = new SnowyGrassConnectionHandler();
+        return blockData -> {
+            if (snowyGrassBlocks.contains(blockData.getMinecraftKey())) {
+                ConnectionData.connectionHandlerMap.put(blockData.getSavedBlockStateId(), handler);
+                blockData.set("snowy", "true");
+                grassBlocks.put(new Pair<>(blockData.getSavedBlockStateId(), true), blockData.getBlockStateId());
+                blockData.set("snowy", "false");
+                grassBlocks.put(new Pair<>(blockData.getSavedBlockStateId(), false), blockData.getBlockStateId());
+            }
+            if (blockData.getMinecraftKey().equals("minecraft:snow") || blockData.getMinecraftKey().equals("minecraft:snow_block")) {
+                ConnectionData.connectionHandlerMap.put(blockData.getSavedBlockStateId(), handler);
+                snows.add(blockData.getSavedBlockStateId());
+            }
+        };
+    }
 
-      if(var2.getMinecraftKey().equals("minecraft:snow") || var2.getMinecraftKey().equals("minecraft:snow_block")) {
-         ConnectionData.connectionHandlerMap.put(var2.getSavedBlockStateId(), var1);
-         snows.add(Integer.valueOf(var2.getSavedBlockStateId()));
-      }
-
-   }
+    @Override
+    public int connect(UserConnection user, Position position, int blockState) {
+        int blockUpId = getBlockData(user, position.getRelative(BlockFace.TOP));
+        Integer newId = grassBlocks.get(new Pair<>(blockState, snows.contains(blockUpId)));
+        if (newId != null) {
+            return newId;
+        }
+        return blockState;
+    }
 }

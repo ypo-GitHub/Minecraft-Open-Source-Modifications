@@ -1,54 +1,82 @@
 package net.minecraft.client.gui.inventory;
 
-import net.aHz;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.inventory.ContainerHorseInventory;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
 
-public class GuiScreenHorseInventory extends aHz {
-   private static final ResourceLocation horseGuiTextures = new ResourceLocation("textures/gui/container/horse.png");
-   private IInventory playerInventory;
-   private IInventory horseInventory;
-   private EntityHorse horseEntity;
-   private float mousePosx;
-   private float mousePosY;
+public class GuiScreenHorseInventory extends GuiContainer {
+    private static final ResourceLocation horseGuiTextures = new ResourceLocation("textures/gui/container/horse.png");
 
-   public GuiScreenHorseInventory(IInventory var1, IInventory var2, EntityHorse var3) {
-      super(new ContainerHorseInventory(var1, var2, var3, Minecraft.getInstance().player));
-      this.playerInventory = var1;
-      this.horseInventory = var2;
-      this.horseEntity = var3;
-   }
+    /**
+     * The player inventory bound to this GUI.
+     */
+    private IInventory playerInventory;
 
-   protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-      this.fontRendererObj.drawString(this.horseInventory.getDisplayName().getUnformattedText(), 8.0F, 6.0F, 4210752);
-      this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8.0F, (float)(this.ab - 96 + 2), 4210752);
-   }
+    /**
+     * The horse inventory bound to this GUI.
+     */
+    private IInventory horseInventory;
 
-   protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-      GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-      this.mc.getTextureManager().bindTexture(horseGuiTextures);
-      int var4 = (this.width - this.y) / 2;
-      int var5 = (this.height - this.ab) / 2;
-      this.drawTexturedModalRect(var4, var5, 0, 0, this.y, this.ab);
-      if(this.horseEntity.isChested()) {
-         this.drawTexturedModalRect(var4 + 79, var5 + 17, 0, this.ab, 90, 54);
-      }
+    /**
+     * The EntityHorse whose inventory is currently being accessed.
+     */
+    private EntityHorse horseEntity;
 
-      if(this.horseEntity.canWearArmor()) {
-         this.drawTexturedModalRect(var4 + 7, var5 + 35, 0, this.ab + 54, 18, 18);
-      }
+    /**
+     * The mouse x-position recorded during the last rendered frame.
+     */
+    private float mousePosx;
 
-      GuiInventory.drawEntityOnScreen(var4 + 51, var5 + 60, 17, (float)(var4 + 51) - this.mousePosx, (float)(var5 + 75 - 50) - this.mousePosY, this.horseEntity);
-   }
+    /**
+     * The mouse y-position recorded during the last renderered frame.
+     */
+    private float mousePosY;
 
-   public void drawScreen(int var1, int var2, float var3) {
-      this.mousePosx = (float)var1;
-      this.mousePosY = (float)var2;
-      super.drawScreen(var1, var2, var3);
-   }
+    public GuiScreenHorseInventory(IInventory playerInv, IInventory horseInv, EntityHorse horse) {
+        super(new ContainerHorseInventory(playerInv, horseInv, horse, Minecraft.getInstance().player));
+        this.playerInventory = playerInv;
+        this.horseInventory = horseInv;
+        this.horseEntity = horse;
+    }
+
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        this.fontRendererObj.drawString(this.horseInventory.getDisplayName().getUnformattedText(), 8, 6, 4210752);
+        this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
+    }
+
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(horseGuiTextures);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+
+        if (this.horseEntity.isChested()) {
+            this.drawTexturedModalRect(i + 79, j + 17, 0, this.ySize, 90, 54);
+        }
+
+        if (this.horseEntity.canWearArmor()) {
+            this.drawTexturedModalRect(i + 7, j + 35, 0, this.ySize + 54, 18, 18);
+        }
+
+        GuiInventory.drawEntityOnScreen(i + 51, j + 60, 17, (float) (i + 51) - this.mousePosx, (float) (j + 75 - 50) - this.mousePosY, this.horseEntity);
+    }
+
+    /**
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
+     */
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        this.mousePosx = (float) mouseX;
+        this.mousePosY = (float) mouseY;
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
 }

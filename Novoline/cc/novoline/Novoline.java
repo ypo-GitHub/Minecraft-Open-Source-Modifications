@@ -10,244 +10,214 @@ import cc.novoline.utils.fonts.api.FontManager;
 import cc.novoline.utils.fonts.impl.SimpleFontManager;
 import cc.novoline.utils.notifications.NotificationManager;
 import cc.novoline.utils.tasks.TaskManager;
+import com.thealtening.api.response.Account;
 import com.thealtening.api.retriever.AsynchronousDataRetriever;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
+//import net.skidunion.irc.IRCClient;
+//import net.skidunion.irc.entities.UserEntity;
+//import net.skidunion.security.Protection;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
-import net.Pa;
-import net.X9;
-import net.aHK;
-import net.aHW;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ServerData;
-import net.skidunion.J;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import store.intent.c;
 
 public final class Novoline {
-   private final boolean BETA = false;
-   private final boolean HOTFIX = false;
-   private c c;
-   private static Novoline INSTANCE;
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Minecraft mc = Minecraft.getInstance();
-   private final Path dataFolder;
-   public String version = "112321";
-   private final NovoCommandHandler novoCommandHandler = new NovoCommandHandler(this);
-   private ModuleManager moduleManager;
-   public TaskManager taskManager;
-   public PlayerManager playerManager;
-   private final AsynchronousDataRetriever dataRetriever = new AsynchronousDataRetriever((String)null);
-   public NotificationManager notificationManager;
-   public FontManager fontManager = SimpleFontManager.create();
-   public Pa r;
-   public DiscordGUI discordGUI;
-   public DropdownGUI dropDownGUI;
-   public AltRepositoryGUI altRepositoryGUI;
-   public aHW q;
-   public aHK d;
-   private J p;
-   private ServerData lastConnectedServer;
-   private static int l;
 
-   public Novoline() {
-      this.dataFolder = Paths.get(this.mc.mcDataDir.getAbsolutePath(), new String[0]).resolve("Novoline");
-      if(INSTANCE != null) {
-         throw new IllegalStateException("Cannot instantiate " + this.getClass().getCanonicalName() + " twice");
-      }
-   }
+    /* fields */
+    private final boolean BETA = false;
+    private final boolean HOTFIX = false;
 
-   public void onStart() {
-   }
+    private static Novoline INSTANCE;
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public void onLoaded() {
-   }
+    private final Minecraft mc = Minecraft.getInstance();
+    private final Path dataFolder;
 
-   public void onDisable() {
-      Novoline var10000 = this;
+    public String version = "@VERSION@";
 
-      try {
-         var10000.getModuleManager().getConfigManager().save("default");
-      } catch (IOException var2) {
-         getLogger().warn("An I/O error occurred while " + var2.getMessage() + "!", var2);
-      } catch (X9 var3) {
-         getLogger().warn("An I/O error occurred while serializing config!", var3);
-      }
+    /* managers */ // todo public fields
+    private final NovoCommandHandler novoCommandHandler = new NovoCommandHandler(this);
+    private ModuleManager moduleManager;
+    public TaskManager taskManager;
+    public PlayerManager playerManager;
+    private final AsynchronousDataRetriever dataRetriever = new AsynchronousDataRetriever(null);
+    public NotificationManager notificationManager;
+    public FontManager fontManager = SimpleFontManager.create();
 
-   }
+    /* gui */
+    public DiscordGUI discordGUI;
+    public DropdownGUI dropDownGUI;
+    public AltRepositoryGUI altRepositoryGUI;
 
-   public NovoCommandHandler getNovoCommandHandler() {
-      return this.novoCommandHandler;
-   }
+//    public IRCClient irc;
+//    private Protection protection;
 
-   public ModuleManager getModuleManager() {
-      return this.moduleManager;
-   }
+    /* misc */
+    private ServerData lastConnectedServer;
 
-   public PlayerManager getPlayerManager() {
-      return this.playerManager;
-   }
+    /* constructors */
+    public Novoline() {
+        if (INSTANCE != null) {
+            throw new IllegalStateException("Cannot instantiate " + getClass().getCanonicalName() + " twice");
+        }
+    }
 
-   public TaskManager getTaskManager() {
-      return this.taskManager;
-   }
+    /* methods */
+    public void onStart() {
+    }
 
-   public AsynchronousDataRetriever getDataRetriever() {
-      return this.dataRetriever;
-   }
+    public void onLoaded() {
+    }
 
-   public DiscordGUI getDiscordGUI() {
-      return this.discordGUI;
-   }
+    public void onDisable() {
+        try {
+            getModuleManager().getConfigManager().save("default");
+        } catch (IOException e) {
+            getLogger().warn("An I/O error occurred while " + e.getMessage() + "!", e);
+        } catch (ObjectMappingException e) {
+            getLogger().warn("An I/O error occurred while serializing config!", e);
+        }
+    }
 
-   public DropdownGUI getDropDownGUI() {
-      return this.dropDownGUI;
-   }
+    {
+        this.dataFolder = Paths.get(mc.mcDataDir.getAbsolutePath()).resolve("Novoline");
+    }
 
-   public AltRepositoryGUI getAltRepositoryGUI() {
-      return this.altRepositoryGUI;
-   }
+//    public IRCClient getIRC() {
+//        return irc;
+//    }
 
-   public Pa u() {
-      return this.r;
-   }
+    public NovoCommandHandler getNovoCommandHandler() {
+        return novoCommandHandler;
+    }
 
-   public aHK h() {
-      return this.d;
-   }
+    public ModuleManager getModuleManager() {
+        return moduleManager;
+    }
 
-   public String getVersion() {
-      int var1 = E();
-      String var2 = this.version.toCharArray()[0] != 64?this.version:(new SimpleDateFormat("MMddyy")).format(new Date());
-      return var2 + "" + "";
-   }
+    public PlayerManager getPlayerManager() {
+        return playerManager;
+    }
 
-   public Path getDataFolder() {
-      return this.dataFolder;
-   }
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
 
-   public String getPathString() {
-      return this.mc.mcDataDir.getAbsolutePath() + "\\Novoline\\";
-   }
+    public AsynchronousDataRetriever getDataRetriever() {
+        return dataRetriever;
+    }
 
-   public CompletableFuture generateAlteningAlt() {
-      return this.dataRetriever.getAccountDataAsync();
-   }
+    public DiscordGUI getDiscordGUI() {
+        return discordGUI;
+    }
 
-   public ServerData getLastConnectedServer() {
-      return this.lastConnectedServer;
-   }
+    public DropdownGUI getDropDownGUI() {
+        return dropDownGUI;
+    }
 
-   public void setLastConnectedServer(@NotNull ServerData var1) {
-      this.lastConnectedServer = var1;
-   }
+    public AltRepositoryGUI getAltRepositoryGUI() {
+        return altRepositoryGUI;
+    }
 
-   public void init() {
-   }
+    public String getVersion() {
+        String version = this.version.toCharArray()[0] != '@' ? this.version : new SimpleDateFormat("MMddyy").format(new Date());
+        return version + (BETA ? "-BETA" : "") + (HOTFIX ? "-H" : "");
+    }
 
-   public String Xor(Object var1, String var2) {
-      StringBuilder var4 = new StringBuilder();
-      char[] var5 = var2.toCharArray();
-      int var6 = 0;
-      C();
-      char[] var7 = var1.toString().toCharArray();
-      int var8 = var7.length;
-      int var9 = 0;
-      if(var9 < var8) {
-         char var10 = var7[var9];
-         var4.append((char)(var10 ^ var5[var6 % var5.length]));
-         ++var6;
-         ++var9;
-      }
+    public Path getDataFolder() {
+        return dataFolder/*Paths.get(this.mc.mcDataDir.getAbsolutePath() + "\\Novoline")*/;
+    }
 
-      return var4.toString();
-   }
+    public String getPathString() {
+        return mc.mcDataDir.getAbsolutePath() + "\\Novoline\\";
+    }
 
-   public boolean isAnythingNull() {
-      int var1 = C();
-      return this.moduleManager == null || this.playerManager == null || this.notificationManager == null;
-   }
+    public CompletableFuture<Account> generateAlteningAlt() {
+        return dataRetriever.getAccountDataAsync();
+    }
 
-   public NotificationManager getNotificationManager() {
-      return this.notificationManager;
-   }
+    public ServerData getLastConnectedServer() {
+        return lastConnectedServer;
+    }
 
-   public FontManager getFontManager() {
-      return this.fontManager;
-   }
+    public void setLastConnectedServer(@NotNull ServerData lastConnectedServer) {
+        this.lastConnectedServer = lastConnectedServer;
+    }
 
-   public Minecraft getMinecraft() {
-      return this.mc;
-   }
+    public void init() {
 
-   public static Logger getLogger() {
-      return LOGGER;
-   }
+    }
 
-   public static Novoline getInstance() {
-      try {
-         if(INSTANCE == null) {
-            INSTANCE = new Novoline();
-         }
+    public String Xor(Object obj, String key) {
+        StringBuilder sb = new StringBuilder();
+        char[] keyChars = key.toCharArray();
 
-         return INSTANCE;
-      } catch (Throwable var1) {
-         LOGGER.warn(var1);
-         throw var1;
-      }
-   }
+        int i = 0;
 
-   public void setModuleManager(ModuleManager var1) {
-      this.moduleManager = var1;
-   }
+        for (char c : obj.toString().toCharArray()) {
+            sb.append((char) (c ^ keyChars[i % keyChars.length]));
+            i++;
+        }
 
-   public J A() {
-      return this.p;
-   }
+        return sb.toString();
+    }
 
-   public void a(J var1) {
-      this.p = var1;
-   }
+    public boolean isAnythingNull() {
+        return moduleManager == null || playerManager == null || notificationManager == null;
+    }
 
-   public int viaVersion() {
-      return 340;
-   }
+    public NotificationManager getNotificationManager() {
+        return notificationManager;
+    }
 
-   public c e() {
-      return this.c;
-   }
+    public FontManager getFontManager() {
+        return fontManager;
+    }
 
-   public void a(c var1) {
-      this.c = var1;
-   }
+    public Minecraft getMinecraft() {
+        return mc;
+    }
 
-   public aHW D() {
-      return this.q;
-   }
+    public static Logger getLogger() {
+        return LOGGER;
+    }
 
-   static {
-      b(55);
-   }
+    public static Novoline getInstance() {
+        try {
+            if (INSTANCE == null) INSTANCE = new Novoline();
+            return INSTANCE;
+        } catch (Throwable t) {
+            LOGGER.warn(t);
+            throw t;
+        }
+    }
 
-   public static void b(int var0) {
-      l = var0;
-   }
+    public void setModuleManager(ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
+    }
 
-   public static int C() {
-      return l;
-   }
+//    public Protection getProtection() {
+//        return protection;
+//    }
 
-   public static int E() {
-      int var0 = C();
-      return 102;
-   }
+//    public void setProtection(Protection protection) {
+//        this.protection = protection;
+//    }
+    //endregion
 
-   private static Throwable a(Throwable var0) {
-      return var0;
-   }
+//    public UserEntity getIRCUser(String name) {
+//        return irc.getUserManager().findByNickname(name);
+//    }
+
+    public int viaVersion() {
+        return 404;
+    }
 }

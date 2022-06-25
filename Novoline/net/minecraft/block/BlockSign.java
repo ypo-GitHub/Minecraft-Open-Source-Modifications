@@ -1,7 +1,5 @@
 package net.minecraft.block;
 
-import java.util.Random;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,61 +13,74 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockSign extends BlockContainer {
-   protected BlockSign() {
-      super(Material.wood);
-      float var1 = 0.25F;
-      float var2 = 1.0F;
-      this.setBlockBounds(0.25F, 0.0F, 0.25F, 0.75F, 1.0F, 0.75F);
-   }
 
-   public AxisAlignedBB getCollisionBoundingBox(World var1, BlockPos var2, IBlockState var3) {
-      return null;
-   }
+    protected BlockSign() {
+        super(Material.wood);
+        final float f = 0.25F;
+        final float f1 = 1.0F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
+    }
 
-   public AxisAlignedBB getSelectedBoundingBox(World var1, BlockPos var2) {
-      this.setBlockBoundsBasedOnState(var1, var2);
-      return super.getSelectedBoundingBox(var1, var2);
-   }
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state) {
+        return null;
+    }
 
-   public boolean isFullCube() {
-      return false;
-   }
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos) {
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getSelectedBoundingBox(worldIn, pos);
+    }
 
-   public boolean isPassable(IBlockAccess var1, BlockPos var2) {
-      return true;
-   }
+    public boolean isFullCube() {
+        return false;
+    }
 
-   public boolean isOpaqueCube() {
-      return false;
-   }
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos) {
+        return true;
+    }
 
-   public boolean func_181623_g() {
-      return true;
-   }
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
+    public boolean isOpaqueCube() {
+        return false;
+    }
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntitySign();
-   }
+    public boolean func_181623_g() {
+        return true;
+    }
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Items.sign;
-   }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntitySign();
+    }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return Items.sign;
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Items.sign;
+    }
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(var1.isRemote) {
-         return true;
-      } else {
-         TileEntity var9 = var1.getTileEntity(var2);
-         return var9 instanceof TileEntitySign && ((TileEntitySign)var9).executeCommand(var4);
-      }
-   }
+    public Item getItem(World worldIn, BlockPos pos) {
+        return Items.sign;
+    }
 
-   public boolean canPlaceBlockAt(World var1, BlockPos var2) {
-      return !this.func_181087_e(var1, var2) && super.canPlaceBlockAt(var1, var2);
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (worldIn.isRemote) {
+            return true;
+        } else {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
+            return tileentity instanceof TileEntitySign && ((TileEntitySign) tileentity).executeCommand(playerIn);
+        }
+    }
+
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        return !this.func_181087_e(worldIn, pos) && super.canPlaceBlockAt(worldIn, pos);
+    }
+
 }

@@ -1,18 +1,23 @@
 package cc.novoline.modules.exceptions;
 
+/**
+ * @author xDelsy
+ */
 public final class LoadConfigException extends RuntimeException {
-   public LoadConfigException() {
-   }
 
-   public LoadConfigException(String var1) {
-      super(var1);
-   }
+    public LoadConfigException() {
+    }
 
-   public LoadConfigException(String var1, Throwable var2) {
-      super(var1, var2);
-   }
+    public LoadConfigException(String message) {
+        super(message);
+    }
 
-   public LoadConfigException(Throwable var1) {
-      super(var1);
-   }
+    public LoadConfigException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public LoadConfigException(Throwable cause) {
+        super(cause);
+    }
+
 }

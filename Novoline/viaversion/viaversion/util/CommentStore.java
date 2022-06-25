@@ -4,199 +4,192 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
+
+import java.io.*;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import net.acE;
-import viaversion.viaversion.util.Config;
 
 public class CommentStore {
-   private final Map headers = Maps.newConcurrentMap();
-   private final char pathSeperator;
-   private final int indents;
-   private List mainHeader = Lists.newArrayList();
+    private final Map<String, List<String>> headers = Maps.newConcurrentMap();
+    private final char pathSeperator;
+    private final int indents;
+    private List<String> mainHeader = Lists.newArrayList();
 
-   public CommentStore(char var1, int var2) {
-      this.pathSeperator = var1;
-      this.indents = var2;
-   }
+    public CommentStore(char pathSeperator, int indents) {
+        this.pathSeperator = pathSeperator;
+        this.indents = indents;
+    }
 
-   public void mainHeader(String... var1) {
-      this.mainHeader = Arrays.asList(var1);
-   }
+    /**
+     * Set the main header displayed at top of config.
+     *
+     * @param header header
+     */
+    public void mainHeader(String... header) {
+        mainHeader = Arrays.asList(header);
+    }
 
-   public List mainHeader() {
-      return this.mainHeader;
-   }
+    /**
+     * Get main header displayed at top of config.
+     *
+     * @return header
+     */
+    public List<String> mainHeader() {
+        return mainHeader;
+    }
 
-   public void header(String var1, String... var2) {
-      this.headers.put(var1, Arrays.asList(var2));
-   }
+    /**
+     * Set option header.
+     *
+     * @param key    of option (or section)
+     * @param header of option (or section)
+     */
+    public void header(String key, String... header) {
+//        String value = Joiner.on('\n').join(header);
+        headers.put(key, Arrays.asList(header));
+    }
 
-   public List header(String var1) {
-      return (List)this.headers.get(var1);
-   }
+    /**
+     * Get header of option
+     *
+     * @param key of option (or section)
+     * @return Header
+     */
+    public List<String> header(String key) {
+        return headers.get(key);
+    }
 
-   public void storeComments(InputStream var1) throws IOException {
-      Config.c();
-      InputStreamReader var3 = new InputStreamReader(var1);
-      InputStreamReader var10000 = var3;
+    public void storeComments(InputStream inputStream) throws IOException {
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        String contents;
+        try {
+            contents = CharStreams.toString(reader);
+        } finally {
+            reader.close();
+        }
+        StringBuilder memoryData = new StringBuilder();
+        // Parse headers
+        final String pathSeparator = Character.toString(this.pathSeperator);
+        int currentIndents = 0;
+        String key = "";
+        List<String> headers = Lists.newArrayList();
+        for (String line : contents.split("\n")) {
+            if (line.isEmpty()) continue; // Skip empty lines
+            int indent = getSuccessiveCharCount(line, ' ');
+            String subline = indent > 0 ? line.substring(indent) : line;
+            if (subline.startsWith("#")) {
+                if (subline.startsWith("#>")) {
+                    String txt = subline.startsWith("#> ") ? subline.substring(3) : subline.substring(2);
+                    mainHeader.add(txt);
+                    continue; // Main header, handled by bukkit
+                }
 
-      String var4;
-      try {
-         var4 = CharStreams.toString(var10000);
-      } finally {
-         var3.close();
-      }
-
-      StringBuilder var5 = new StringBuilder();
-      String var6 = Character.toString(this.pathSeperator);
-      byte var7 = 0;
-      String var8 = "";
-      ArrayList var9 = Lists.newArrayList();
-      String[] var10 = var4.split("\n");
-      int var11 = var10.length;
-      int var12 = 0;
-      if(var12 < var11) {
-         String var13 = var10[var12];
-         if(!var13.isEmpty()) {
-            int var14 = this.getSuccessiveCharCount(var13, ' ');
-            String var15 = var13.substring(var14);
-            if(var15.startsWith("#")) {
-               if(var15.startsWith("#>")) {
-                  String var16 = var15.startsWith("#> ")?var15.substring(3):var15.substring(2);
-                  this.mainHeader.add(var16);
-               }
-
-               String var24 = var15.startsWith("# ")?var15.substring(2):var15.substring(1);
-               var9.add(var24);
+                // Add header to list
+                String txt = subline.startsWith("# ") ? subline.substring(2) : subline.substring(1);
+                headers.add(txt);
+                continue;
             }
 
-            int var25 = var14 / this.indents;
-            if(var25 <= var7) {
-               String[] var17 = var8.split(Pattern.quote(var6));
-               int var18 = var7 - var25 + 1;
-               var8 = this.join(var17, this.pathSeperator, 0, var17.length - var18);
+            int indents = indent / this.indents;
+            if (indents <= currentIndents) {
+                // Remove last section of key
+                String[] array = key.split(Pattern.quote(pathSeparator));
+                int backspace = currentIndents - indents + 1;
+                key = join(array, this.pathSeperator, 0, array.length - backspace);
             }
 
-            String var26 = var8.length() > 0?var6:"";
-            String var27 = var13.contains(":")?var13.split(Pattern.quote(":"))[0]:var13;
-            var8 = var8 + var26 + var27.substring(var14);
-            var5.append(var13).append('\n');
-            if(!var9.isEmpty()) {
-               this.headers.put(var8, var9);
-               var9 = Lists.newArrayList();
+            // Add new section to key
+            String separator = key.length() > 0 ? pathSeparator : "";
+            String lineKey = line.contains(":") ? line.split(Pattern.quote(":"))[0] : line;
+            key += separator + lineKey.substring(indent);
+
+            currentIndents = indents;
+
+            memoryData.append(line).append('\n');
+            if (!headers.isEmpty()) {
+                this.headers.put(key, headers);
+                headers = Lists.newArrayList();
             }
-         }
+        }
+    }
 
-         ++var12;
-      }
+    public void writeComments(String yaml, File output) throws IOException {
+        // Custom save
+        final int indentLength = this.indents;
+        final String pathSeparator = Character.toString(this.pathSeperator);
+        StringBuilder fileData = new StringBuilder();
+        int currentIndents = 0;
+        String key = "";
+        for (String h : mainHeader) {
+            // Append main header to top of file
+            fileData.append("#> ").append(h).append('\n');
+        }
 
-      if(acE.b() == null) {
-         Config.b("ZzBHO");
-      }
-
-   }
-
-   public void writeComments(String var1, File var2) throws IOException {
-      int var4 = this.indents;
-      Config.c();
-      String var5 = Character.toString(this.pathSeperator);
-      StringBuilder var6 = new StringBuilder();
-      byte var7 = 0;
-      String var8 = "";
-      Iterator var9 = this.mainHeader.iterator();
-      if(var9.hasNext()) {
-         String var10 = (String)var9.next();
-         var6.append("#> ").append(var10).append('\n');
-      }
-
-      String[] var28 = var1.split("\n");
-      int var30 = var28.length;
-      int var11 = 0;
-      if(var11 < var30) {
-         String var12 = var28[var11];
-         if(!var12.isEmpty()) {
-            int var13 = this.getSuccessiveCharCount(var12, ' ');
-            int var14 = var13 / var4;
-            String var15 = var12.substring(0, var13);
-            if(var14 <= var7) {
-               String[] var16 = var8.split(Pattern.quote(var5));
-               int var17 = var7 - var14 + 1;
-               var8 = this.join(var16, this.pathSeperator, 0, var16.length - var17);
+        for (String line : yaml.split("\n")) {
+            if (line.isEmpty()) continue; // Skip empty lines
+            int indent = getSuccessiveCharCount(line, ' ');
+            int indents = indent / indentLength;
+            String indentText = indent > 0 ? line.substring(0, indent) : "";
+            if (indents <= currentIndents) {
+                // Remove last section of key
+                String[] array = key.split(Pattern.quote(pathSeparator));
+                int backspace = currentIndents - indents + 1;
+                key = join(array, this.pathSeperator, 0, array.length - backspace);
             }
 
-            String var32 = var8.length() > 0?var5:"";
-            String var33 = var12.contains(":")?var12.split(Pattern.quote(":"))[0]:var12;
-            var8 = var8 + var32 + var33.substring(var13);
-            List var18 = (List)this.headers.get(var8);
-            String var19 = this.addHeaderTags(var18, var15);
-            var6.append(var19).append(var12).append('\n');
-         }
+            // Add new section to key
+            String separator = key.length() > 0 ? pathSeparator : "";
+            String lineKey = line.contains(":") ? line.split(Pattern.quote(":"))[0] : line;
+            key += separator + lineKey.substring(indent);
 
-         ++var11;
-      }
+            currentIndents = indents;
 
-      FileWriter var29 = null;
+            List<String> header = headers.get(key);
+            String headerText = header != null ? addHeaderTags(header, indentText) : "";
+            fileData.append(headerText).append(line).append('\n');
+        }
 
-      try {
-         var29 = new FileWriter(var2);
-         var29.write(var6.toString());
-         var29.flush();
-      } finally {
-         if(var29 != null) {
-            FileWriter var10000 = var29;
-
-            try {
-               var10000.close();
-            } catch (IOException var25) {
-               ;
+        // Write data to file
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(output);
+            writer.write(fileData.toString());
+            writer.flush();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException ignored) {
+                }
             }
-         }
+        }
+    }
 
-      }
+    private String addHeaderTags(List<String> header, String indent) {
+        StringBuilder builder = new StringBuilder();
+        for (String line : header) {
+            builder.append(indent).append("# ").append(line).append('\n');
+        }
+        return builder.toString();
+    }
 
-   }
+    private String join(String[] array, char joinChar, int start, int length) {
+        String[] copy = new String[length - start];
+        System.arraycopy(array, start, copy, 0, length - start);
+        return Joiner.on(joinChar).join(copy);
+    }
 
-   private String addHeaderTags(List var1, String var2) {
-      StringBuilder var4 = new StringBuilder();
-      Config.c();
-      Iterator var5 = var1.iterator();
-      if(var5.hasNext()) {
-         String var6 = (String)var5.next();
-         var4.append(var2).append("# ").append(var6).append('\n');
-      }
-
-      return var4.toString();
-   }
-
-   private String join(String[] var1, char var2, int var3, int var4) {
-      String[] var5 = new String[var4 - var3];
-      System.arraycopy(var1, var3, var5, 0, var4 - var3);
-      return Joiner.on(var2).join(var5);
-   }
-
-   private int getSuccessiveCharCount(String var1, char var2) {
-      Config.c();
-      int var4 = 0;
-      int var5 = 0;
-      if(var5 < var1.length() && var1.charAt(var5) == var2) {
-         ++var4;
-         ++var5;
-      }
-
-      return var4;
-   }
-
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+    private int getSuccessiveCharCount(String text, char key) {
+        int count = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == key) {
+                count += 1;
+            } else {
+                break;
+            }
+        }
+        return count;
+    }
 }

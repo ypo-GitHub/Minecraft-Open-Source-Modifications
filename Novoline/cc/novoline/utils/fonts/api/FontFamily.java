@@ -1,10 +1,12 @@
 package cc.novoline.utils.fonts.api;
 
-import cc.novoline.utils.fonts.api.FontRenderer;
-import cc.novoline.utils.fonts.api.FontType;
-
+/**
+ * @author Artyom Popov
+ * @since June 30, 2020
+ */
 public interface FontFamily {
-   FontRenderer ofSize(int var1);
 
-   FontType font();
+	FontRenderer ofSize(int size);
+
+	FontType font();
 }

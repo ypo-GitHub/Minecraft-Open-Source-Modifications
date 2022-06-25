@@ -1,12 +1,6 @@
 package net.minecraft.block;
 
-import com.google.common.base.Predicate;
-import java.util.Random;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
-import net.minecraft.block.BlockFurnace$1;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockState;
 import net.minecraft.block.state.IBlockState;
@@ -22,169 +16,214 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing$Axis;
-import net.minecraft.util.EnumFacing$Plane;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
 
+import java.util.Random;
+
 public class BlockFurnace extends BlockContainer {
-   public static final PropertyDirection FACING = PropertyDirection.create("facing", (Predicate)EnumFacing$Plane.HORIZONTAL);
-   private final boolean isBurning;
-   private static boolean keepInventory;
 
-   protected BlockFurnace(boolean var1) {
-      super(Material.rock);
-      this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
-      this.isBurning = var1;
-   }
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+    private final boolean isBurning;
+    private static boolean keepInventory;
 
-   public Item getItemDropped(IBlockState var1, Random var2, int var3) {
-      return Item.getItemFromBlock(Blocks.furnace);
-   }
+    protected BlockFurnace(boolean isBurning) {
+        super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+        this.isBurning = isBurning;
+    }
 
-   public void onBlockAdded(World var1, BlockPos var2, IBlockState var3) {
-      this.setDefaultFacing(var1, var2, var3);
-   }
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+        return Item.getItemFromBlock(Blocks.furnace);
+    }
 
-   private void setDefaultFacing(World var1, BlockPos var2, IBlockState var3) {
-      if(!var1.isRemote) {
-         Block var4 = var1.getBlockState(var2.north()).getBlock();
-         Block var5 = var1.getBlockState(var2.south()).getBlock();
-         Block var6 = var1.getBlockState(var2.west()).getBlock();
-         Block var7 = var1.getBlockState(var2.east()).getBlock();
-         EnumFacing var8 = (EnumFacing)var3.getValue(FACING);
-         if(var8 == EnumFacing.NORTH && var4.isFullBlock() && !var5.isFullBlock()) {
-            var8 = EnumFacing.SOUTH;
-         } else if(var8 == EnumFacing.SOUTH && var5.isFullBlock() && !var4.isFullBlock()) {
-            var8 = EnumFacing.NORTH;
-         } else if(var8 == EnumFacing.WEST && var6.isFullBlock() && !var7.isFullBlock()) {
-            var8 = EnumFacing.EAST;
-         } else if(var8 == EnumFacing.EAST && var7.isFullBlock() && !var6.isFullBlock()) {
-            var8 = EnumFacing.WEST;
-         }
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
+        this.setDefaultFacing(worldIn, pos, state);
+    }
 
-         var1.setBlockState(var2, var3.withProperty(FACING, var8), 2);
-      }
+    private void setDefaultFacing(World worldIn, BlockPos pos, IBlockState state) {
+        if (!worldIn.isRemote) {
+            final Block block = worldIn.getBlockState(pos.north()).getBlock();
+            final Block block1 = worldIn.getBlockState(pos.south()).getBlock();
+            final Block block2 = worldIn.getBlockState(pos.west()).getBlock();
+            final Block block3 = worldIn.getBlockState(pos.east()).getBlock();
+            EnumFacing enumfacing = state.getValue(FACING);
 
-   }
+            if (enumfacing == EnumFacing.NORTH && block.isFullBlock() && !block1.isFullBlock()) {
+                enumfacing = EnumFacing.SOUTH;
+            } else if (enumfacing == EnumFacing.SOUTH && block1.isFullBlock() && !block.isFullBlock()) {
+                enumfacing = EnumFacing.NORTH;
+            } else if (enumfacing == EnumFacing.WEST && block2.isFullBlock() && !block3.isFullBlock()) {
+                enumfacing = EnumFacing.EAST;
+            } else if (enumfacing == EnumFacing.EAST && block3.isFullBlock() && !block2.isFullBlock()) {
+                enumfacing = EnumFacing.WEST;
+            }
 
-   public void randomDisplayTick(World var1, BlockPos var2, IBlockState var3, Random var4) {
-      if(this.isBurning) {
-         EnumFacing var5 = (EnumFacing)var3.getValue(FACING);
-         double var6 = (double)var2.getX() + 0.5D;
-         double var8 = (double)var2.getY() + var4.nextDouble() * 6.0D / 16.0D;
-         double var10 = (double)var2.getZ() + 0.5D;
-         double var12 = 0.52D;
-         double var14 = var4.nextDouble() * 0.6D - 0.3D;
-         switch(BlockFurnace$1.$SwitchMap$net$minecraft$util$EnumFacing[var5.ordinal()]) {
-         case 1:
-            var1.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, var6 - 0.52D, var8, var10 + var14, 0.0D, 0.0D, 0.0D, new int[0]);
-            var1.spawnParticle(EnumParticleTypes.FLAME, var6 - 0.52D, var8, var10 + var14, 0.0D, 0.0D, 0.0D, new int[0]);
-            break;
-         case 2:
-            var1.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, var6 + 0.52D, var8, var10 + var14, 0.0D, 0.0D, 0.0D, new int[0]);
-            var1.spawnParticle(EnumParticleTypes.FLAME, var6 + 0.52D, var8, var10 + var14, 0.0D, 0.0D, 0.0D, new int[0]);
-            break;
-         case 3:
-            var1.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, var6 + var14, var8, var10 - 0.52D, 0.0D, 0.0D, 0.0D, new int[0]);
-            var1.spawnParticle(EnumParticleTypes.FLAME, var6 + var14, var8, var10 - 0.52D, 0.0D, 0.0D, 0.0D, new int[0]);
-            break;
-         case 4:
-            var1.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, var6 + var14, var8, var10 + 0.52D, 0.0D, 0.0D, 0.0D, new int[0]);
-            var1.spawnParticle(EnumParticleTypes.FLAME, var6 + var14, var8, var10 + 0.52D, 0.0D, 0.0D, 0.0D, new int[0]);
-         }
-      }
+            worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing), 2);
+        }
+    }
 
-   }
+    @SuppressWarnings("incomplete-switch")
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
+        if (this.isBurning) {
+            final EnumFacing enumfacing = state.getValue(FACING);
+            final double d0 = (double) pos.getX() + 0.5D;
+            final double d1 = (double) pos.getY() + rand.nextDouble() * 6.0D / 16.0D;
+            final double d2 = (double) pos.getZ() + 0.5D;
+            final double d3 = 0.52D;
+            final double d4 = rand.nextDouble() * 0.6D - 0.3D;
 
-   public boolean onBlockActivated(World var1, BlockPos var2, IBlockState var3, EntityPlayer var4, EnumFacing var5, float var6, float var7, float var8) {
-      if(!var1.isRemote) {
-         TileEntity var9 = var1.getTileEntity(var2);
-         if(var9 instanceof TileEntityFurnace) {
-            var4.displayGUIChest((TileEntityFurnace)var9);
-            var4.triggerAchievement(StatList.field_181741_Y);
-         }
-      }
+            switch (enumfacing) {
+                case WEST:
+                    worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0 - d3, d1, d2 + d4, 0.0D, 0.0D, 0.0D);
+                    worldIn.spawnParticle(EnumParticleTypes.FLAME, d0 - d3, d1, d2 + d4, 0.0D, 0.0D, 0.0D);
+                    break;
 
-      return true;
-   }
+                case EAST:
+                    worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0 + d3, d1, d2 + d4, 0.0D, 0.0D, 0.0D);
+                    worldIn.spawnParticle(EnumParticleTypes.FLAME, d0 + d3, d1, d2 + d4, 0.0D, 0.0D, 0.0D);
+                    break;
 
-   public static void setState(boolean var0, World var1, BlockPos var2) {
-      IBlockState var3 = var1.getBlockState(var2);
-      TileEntity var4 = var1.getTileEntity(var2);
-      keepInventory = true;
-      var1.setBlockState(var2, Blocks.lit_furnace.getDefaultState().withProperty(FACING, var3.getValue(FACING)), 3);
-      var1.setBlockState(var2, Blocks.lit_furnace.getDefaultState().withProperty(FACING, var3.getValue(FACING)), 3);
-      keepInventory = false;
-      var4.validate();
-      var1.setTileEntity(var2, var4);
-   }
+                case NORTH:
+                    worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0 + d4, d1, d2 - d3, 0.0D, 0.0D, 0.0D);
+                    worldIn.spawnParticle(EnumParticleTypes.FLAME, d0 + d4, d1, d2 - d3, 0.0D, 0.0D, 0.0D);
+                    break;
 
-   public TileEntity createNewTileEntity(World var1, int var2) {
-      return new TileEntityFurnace();
-   }
+                case SOUTH:
+                    worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0 + d4, d1, d2 + d3, 0.0D, 0.0D, 0.0D);
+                    worldIn.spawnParticle(EnumParticleTypes.FLAME, d0 + d4, d1, d2 + d3, 0.0D, 0.0D, 0.0D);
+            }
+        }
+    }
 
-   public IBlockState onBlockPlaced(World var1, BlockPos var2, EnumFacing var3, float var4, float var5, float var6, int var7, EntityLivingBase var8) {
-      return this.getDefaultState().withProperty(FACING, var8.getHorizontalFacing().getOpposite());
-   }
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (!worldIn.isRemote) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   public void onBlockPlacedBy(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4, ItemStack var5) {
-      var1.setBlockState(var2, var3.withProperty(FACING, var4.getHorizontalFacing().getOpposite()), 2);
-      if(var5.hasDisplayName()) {
-         TileEntity var6 = var1.getTileEntity(var2);
-         if(var6 instanceof TileEntityFurnace) {
-            ((TileEntityFurnace)var6).setCustomInventoryName(var5.getDisplayName());
-         }
-      }
+            if (tileentity instanceof TileEntityFurnace) {
+                playerIn.displayGUIChest((TileEntityFurnace) tileentity);
+                playerIn.triggerAchievement(StatList.field_181741_Y);
+            }
 
-   }
+        }
+        return true;
+    }
 
-   public void breakBlock(World var1, BlockPos var2, IBlockState var3) {
-      if(!keepInventory) {
-         TileEntity var4 = var1.getTileEntity(var2);
-         if(var4 instanceof TileEntityFurnace) {
-            InventoryHelper.dropInventoryItems(var1, var2, (TileEntityFurnace)var4);
-            var1.updateComparatorOutputLevel(var2, this);
-         }
-      }
+    public static void setState(boolean active, World worldIn, BlockPos pos) {
+        final IBlockState iblockstate = worldIn.getBlockState(pos);
+        final TileEntity tileentity = worldIn.getTileEntity(pos);
+        keepInventory = true;
 
-      super.breakBlock(var1, var2, var3);
-   }
+        if (active) {
+            worldIn.setBlockState(pos, Blocks.lit_furnace.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+            worldIn.setBlockState(pos, Blocks.lit_furnace.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+        } else {
+            worldIn.setBlockState(pos, Blocks.furnace.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+            worldIn.setBlockState(pos, Blocks.furnace.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+        }
 
-   public boolean hasComparatorInputOverride() {
-      return true;
-   }
+        keepInventory = false;
 
-   public int getComparatorInputOverride(World var1, BlockPos var2) {
-      return Container.calcRedstone(var1.getTileEntity(var2));
-   }
+        if (tileentity != null) {
+            tileentity.validate();
+            worldIn.setTileEntity(pos, tileentity);
+        }
+    }
 
-   public Item getItem(World var1, BlockPos var2) {
-      return Item.getItemFromBlock(Blocks.furnace);
-   }
+    /**
+     * Returns a new instance of a block's tile entity class. Called on placing the block.
+     */
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TileEntityFurnace();
+    }
 
-   public int getRenderType() {
-      return 3;
-   }
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
+    }
 
-   public IBlockState getStateForEntityRender(IBlockState var1) {
-      return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
-   }
+    /**
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
+     */
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+        worldIn.setBlockState(pos, state.withProperty(FACING, placer.getHorizontalFacing().getOpposite()), 2);
 
-   public IBlockState getStateFromMeta(int var1) {
-      EnumFacing var2 = EnumFacing.getFront(var1);
-      if(var2.getAxis() == EnumFacing$Axis.Y) {
-         var2 = EnumFacing.NORTH;
-      }
+        if (stack.hasDisplayName()) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-      return this.getDefaultState().withProperty(FACING, var2);
-   }
+            if (tileentity instanceof TileEntityFurnace) {
+                ((TileEntityFurnace) tileentity).setCustomInventoryName(stack.getDisplayName());
+            }
+        }
+    }
 
-   public int getMetaFromState(IBlockState var1) {
-      return ((EnumFacing)var1.getValue(FACING)).getIndex();
-   }
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        if (!keepInventory) {
+            final TileEntity tileentity = worldIn.getTileEntity(pos);
 
-   protected BlockState createBlockState() {
-      return new BlockState(this, new IProperty[]{FACING});
-   }
+            if (tileentity instanceof TileEntityFurnace) {
+                InventoryHelper.dropInventoryItems(worldIn, pos, (TileEntityFurnace) tileentity);
+                worldIn.updateComparatorOutputLevel(pos, this);
+            }
+        }
+
+        super.breakBlock(worldIn, pos, state);
+    }
+
+    public boolean hasComparatorInputOverride() {
+        return true;
+    }
+
+    public int getComparatorInputOverride(World worldIn, BlockPos pos) {
+        return Container.calcRedstone(worldIn.getTileEntity(pos));
+    }
+
+    public Item getItem(World worldIn, BlockPos pos) {
+        return Item.getItemFromBlock(Blocks.furnace);
+    }
+
+    /**
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
+     */
+    public int getRenderType() {
+        return 3;
+    }
+
+    /**
+     * Possibly modify the given BlockState before rendering it on an Entity (Minecarts, Endermen, ...)
+     */
+    public IBlockState getStateForEntityRender(IBlockState state) {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta) {
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
+
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y) {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state) {
+        return state.getValue(FACING).getIndex();
+    }
+
+    protected BlockState createBlockState() {
+        return new BlockState(this, FACING);
+    }
+
 }

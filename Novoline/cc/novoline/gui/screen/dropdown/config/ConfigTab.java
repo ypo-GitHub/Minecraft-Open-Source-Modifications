@@ -3,130 +3,104 @@ package cc.novoline.gui.screen.dropdown.config;
 import cc.novoline.Novoline;
 import cc.novoline.commands.impl.ConfigCommand;
 import cc.novoline.gui.screen.dropdown.Tab;
-import cc.novoline.gui.screen.dropdown.config.ConfigButton;
-import cc.novoline.gui.screen.dropdown.config.ConfigTextField;
-import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.visual.HUD;
-import cc.novoline.utils.fonts.impl.Fonts$SF$SF_20;
-import cc.novoline.utils.notifications.NotificationType;
-import java.awt.Color;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
-import net.l6;
 import net.minecraft.client.gui.Gui;
 
+import java.awt.*;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static cc.novoline.utils.fonts.impl.Fonts.SF.SF_20.SF_20;
+import static cc.novoline.utils.notifications.NotificationType.ERROR;
+
 public class ConfigTab extends Tab {
-   private final List configs = new CopyOnWriteArrayList();
-   private ConfigTextField newConfigName;
-   private l6 j;
 
-   public ConfigTab(float var1, float var2) {
-      super((EnumModuleType)null, var1, var2);
-      this.refreshConfigs();
-   }
+	private final List<Config> configs = new CopyOnWriteArrayList<>();
+	private ConfigTextField newConfigName;
+	private Config selectedConfig;
 
-   public void drawScreen(int var1, int var2) {
-      l6.d();
-      HUD var4 = (HUD)Novoline.getInstance().getModuleManager().getModule(HUD.class);
-      int var5 = 0;
-      Iterator var6 = this.configs.iterator();
-      if(var6.hasNext()) {
-         l6 var7 = (l6)var6.next();
-         var5 += var7.a();
-      }
+	public ConfigTab(float posX, float posY) {
+		super(null, posX, posY);
+		
+		refreshConfigs();
+	}
 
-      ++var5;
-      if(!this.opened) {
-         var5 = 0;
-      }
+	public void drawScreen(int mouseX, int mouseY) {
+		HUD hud = Novoline.getInstance().getModuleManager().getModule(HUD.class);
 
-      Gui.drawRect((double)(this.getPosX() - 1.0F), (double)this.getPosY(), (double)(this.getPosX() + 101.0F), (double)(this.getPosY() + 15.0F + (float)var5), (new Color(29, 29, 29, 255)).getRGB());
-      Fonts$SF$SF_20.SF_20.drawString("Configs", (double)(this.getPosX() + 4.0F), (double)(this.getPosY() + 4.0F), -1, true);
-      if(this.opened) {
-         this.configs.forEach(ConfigTab::lambda$drawScreen$0);
-      }
 
-   }
+		int h = 0;
+		for (Config config : configs) {
+			h+=config.getYPerConfig();
+		}
+		h+=1;
+		if(!opened) h = 0;
+		Gui.drawRect(getPosX() - 1, getPosY(), getPosX() + 101, getPosY() + 15 + h, new Color(29, 29, 29, 255).getRGB());
+		SF_20.drawString("Configs", getPosX() + 4, getPosY() + 4, 0xffffffff, true);
 
-   public void refreshConfigs() {
-      this.configs.clear();
-      this.a((l6)null);
-      Novoline.getInstance().getModuleManager().getConfigManager().getConfigs().forEach(this::lambda$refreshConfigs$1);
-      this.newConfigName = new ConfigTextField("Config name", this);
-      this.configs.add(this.newConfigName);
-      this.configs.add(new ConfigButton("Load", this, ConfigTab::lambda$refreshConfigs$2));
-      this.configs.add(new ConfigButton("Save", this, this::lambda$refreshConfigs$3));
-      this.configs.add(new ConfigButton("Delete", this, this::lambda$refreshConfigs$4));
-   }
+		if(opened) {
+			configs.forEach(config -> config.drawScreen(mouseX, mouseY));
+		}
+	}
 
-   public void mouseClicked(int var1, int var2, int var3) {
-      String var4 = l6.d();
-      if(this.b(var1, var2) && var3 == 1) {
-         this.opened = !this.opened;
-      }
+	public void refreshConfigs() {
+		configs.clear();
+		setSelectedConfig(null);
 
-      if(this.opened) {
-         this.configs.forEach(ConfigTab::lambda$mouseClicked$5);
-      }
+		Novoline.getInstance().getModuleManager().getConfigManager().getConfigs().forEach(config ->
+				configs.add(new Config(config, this))
+		);
 
-   }
+		newConfigName = new ConfigTextField("Config name", this);
 
-   public void keyTyped(char var1, int var2) {
-      this.configs.forEach(ConfigTab::lambda$keyTyped$6);
-   }
+		configs.add(newConfigName);
 
-   public List getConfigs() {
-      return this.configs;
-   }
+		configs.add(new ConfigButton("Load", this, (configName) -> {
+			if(configName.isEmpty()) {
+				Novoline.getInstance().getNotificationManager().pop("Select a config!", ERROR);
+			} else {
+				ConfigCommand.loadConfig(Novoline.getInstance().getModuleManager().getConfigManager(), configName);
+			}
+		}));
 
-   public l6 d() {
-      return this.j;
-   }
+		configs.add(new ConfigButton("Save", this, (ignored) -> {
+			ConfigCommand.saveConfig(Novoline.getInstance().getModuleManager().getConfigManager(),getSelectedConfig() != null ? getSelectedConfig().getName() : newConfigName.getValue());
+			refreshConfigs();
+		}));
 
-   public void a(l6 var1) {
-      this.j = var1;
-   }
+		configs.add(new ConfigButton("Delete", this, (configName) -> {
+			if(configName.isEmpty()) {
+				Novoline.getInstance().getNotificationManager().pop("Select a config!", ERROR);
+			} else {
+				ConfigCommand.deleteConfig(Novoline.getInstance().getModuleManager().getConfigManager(), configName);
+				refreshConfigs();
+			}
+		}));
+	}
 
-   private static void lambda$keyTyped$6(char var0, int var1, l6 var2) {
-      var2.a(var0, var1);
-   }
+	public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+		if(isHovered(mouseX, mouseY) && mouseButton == 1) {
+			opened = !opened;
+		}
 
-   private static void lambda$mouseClicked$5(int var0, int var1, int var2, l6 var3) {
-      var3.a(var0, var1, var2);
-   }
+		if(opened) {
+			configs.forEach(config -> config.mouseClicked(mouseX, mouseY, mouseButton));
+		}
+	}
 
-   private void lambda$refreshConfigs$4(String var1) {
-      String var2 = l6.d();
-      if(var1.isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Select a config!", NotificationType.ERROR);
-      }
+	public void keyTyped(char typedChar, int keyCode) {
+		configs.forEach(config -> config.keyTyped(typedChar, keyCode));
+	}
 
-      ConfigCommand.deleteConfig(Novoline.getInstance().getModuleManager().getConfigManager(), var1);
-      this.refreshConfigs();
-   }
+	public List<Config> getConfigs() {
+		return configs;
+	}
 
-   private void lambda$refreshConfigs$3(String var1) {
-      String var2 = l6.d();
-      ConfigCommand.saveConfig(Novoline.getInstance().getModuleManager().getConfigManager(), this.d() != null?this.d().b():this.newConfigName.a());
-      this.refreshConfigs();
-   }
+	public Config getSelectedConfig() {
+		return selectedConfig;
+	}
 
-   private static void lambda$refreshConfigs$2(String var0) {
-      String var1 = l6.d();
-      if(var0.isEmpty()) {
-         Novoline.getInstance().getNotificationManager().pop("Select a config!", NotificationType.ERROR);
-      }
-
-      ConfigCommand.loadConfig(Novoline.getInstance().getModuleManager().getConfigManager(), var0);
-   }
-
-   private void lambda$refreshConfigs$1(String var1) {
-      this.configs.add(new l6(var1, this));
-   }
-
-   private static void lambda$drawScreen$0(int var0, int var1, l6 var2) {
-      var2.b(var0, var1);
-   }
+	public void setSelectedConfig(Config selectedConfig) {
+		this.selectedConfig = selectedConfig;
+	}
 }

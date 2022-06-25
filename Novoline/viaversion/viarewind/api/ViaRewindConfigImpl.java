@@ -1,41 +1,46 @@
 package viaversion.viarewind.api;
 
+import viaversion.viaversion.util.Config;
+
 import java.io.File;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import net.bY;
-import viaversion.viarewind.api.ViaRewindConfig;
-import viaversion.viaversion.util.Config;
 
 public class ViaRewindConfigImpl extends Config implements ViaRewindConfig {
-   public ViaRewindConfigImpl(File var1) {
-      bY.c();
-      super(var1);
-      this.reloadConfig();
-   }
+    public ViaRewindConfigImpl(File configFile) {
+        super(configFile);
+        reloadConfig();
+    }
 
-   public bY a() {
-      return bY.valueOf(this.getString("cooldown-indicator", "TITLE").toUpperCase());
-   }
+    @Override
+    public CooldownIndicator getCooldownIndicator() {
+        return CooldownIndicator.valueOf(getString("cooldown-indicator", "TITLE").toUpperCase());
+    }
 
-   public boolean isReplaceAdventureMode() {
-      return this.getBoolean("replace-adventure", false);
-   }
+    @Override
+    public boolean isReplaceAdventureMode() {
+        return getBoolean("replace-adventure", false);
+    }
 
-   public boolean isReplaceParticles() {
-      return this.getBoolean("replace-particles", false);
-   }
+    @Override
+    public boolean isReplaceParticles() {
+        return getBoolean("replace-particles", false);
+    }
 
-   public URL getDefaultConfigURL() {
-      return this.getClass().getClassLoader().getResource("assets/viarewind/config.yml");
-   }
+    @Override
+    public URL getDefaultConfigURL() {
+        return getClass().getClassLoader().getResource("assets/viarewind/config.yml");
+    }
 
-   protected void handleConfig(Map var1) {
-   }
+    @Override
+    protected void handleConfig(Map<String, Object> map) {
 
-   public List getUnsupportedOptions() {
-      return Collections.emptyList();
-   }
+    }
+
+    @Override
+    public List<String> getUnsupportedOptions() {
+        return Collections.emptyList();
+    }
 }

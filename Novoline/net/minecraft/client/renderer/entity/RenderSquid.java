@@ -2,33 +2,37 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.RenderLiving;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.passive.EntitySquid;
 import net.minecraft.util.ResourceLocation;
 
-public class RenderSquid extends RenderLiving {
-   private static final ResourceLocation squidTextures = new ResourceLocation("textures/entity/squid.png");
+public class RenderSquid extends RenderLiving<EntitySquid> {
+    private static final ResourceLocation squidTextures = new ResourceLocation("textures/entity/squid.png");
 
-   public RenderSquid(RenderManager var1, ModelBase var2, float var3) {
-      super(var1, var2, var3);
-   }
+    public RenderSquid(RenderManager renderManagerIn, ModelBase modelBaseIn, float shadowSizeIn) {
+        super(renderManagerIn, modelBaseIn, shadowSizeIn);
+    }
 
-   protected ResourceLocation getEntityTexture(EntitySquid var1) {
-      return squidTextures;
-   }
+    /**
+     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
+     */
+    protected ResourceLocation getEntityTexture(EntitySquid entity) {
+        return squidTextures;
+    }
 
-   protected void rotateCorpse(EntitySquid var1, float var2, float var3, float var4) {
-      float var5 = var1.prevSquidPitch + (var1.squidPitch - var1.prevSquidPitch) * var4;
-      float var6 = var1.prevSquidYaw + (var1.squidYaw - var1.prevSquidYaw) * var4;
-      GlStateManager.translate(0.0F, 0.5F, 0.0F);
-      GlStateManager.rotate(180.0F - var3, 0.0F, 1.0F, 0.0F);
-      GlStateManager.rotate(var5, 1.0F, 0.0F, 0.0F);
-      GlStateManager.rotate(var6, 0.0F, 1.0F, 0.0F);
-      GlStateManager.translate(0.0F, -1.2F, 0.0F);
-   }
+    protected void rotateCorpse(EntitySquid bat, float p_77043_2_, float p_77043_3_, float partialTicks) {
+        float f = bat.prevSquidPitch + (bat.squidPitch - bat.prevSquidPitch) * partialTicks;
+        float f1 = bat.prevSquidYaw + (bat.squidYaw - bat.prevSquidYaw) * partialTicks;
+        GlStateManager.translate(0.0F, 0.5F, 0.0F);
+        GlStateManager.rotate(180.0F - p_77043_3_, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(f, 1.0F, 0.0F, 0.0F);
+        GlStateManager.rotate(f1, 0.0F, 1.0F, 0.0F);
+        GlStateManager.translate(0.0F, -1.2F, 0.0F);
+    }
 
-   protected float handleRotationFloat(EntitySquid var1, float var2) {
-      return var1.lastTentacleAngle + (var1.tentacleAngle - var1.lastTentacleAngle) * var2;
-   }
+    /**
+     * Defines what float the third param in setRotationAngles of ModelBase is
+     */
+    protected float handleRotationFloat(EntitySquid livingBase, float partialTicks) {
+        return livingBase.lastTentacleAngle + (livingBase.tentacleAngle - livingBase.lastTentacleAngle) * partialTicks;
+    }
 }

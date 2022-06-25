@@ -1,79 +1,92 @@
 package net.minecraft.command.server;
 
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.PlayerNotFoundException;
-import net.minecraft.command.WrongUsageException;
+import net.minecraft.command.*;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.IPBanEntry;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.IChatComponent;
 
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class CommandBanIp extends CommandBase {
-   public static final Pattern field_147211_a = Pattern.compile("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+    public static final Pattern field_147211_a = Pattern.compile("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
-   public String getCommandName() {
-      return "ban-ip";
-   }
+    /**
+     * Gets the name of the command
+     */
+    public String getCommandName() {
+        return "ban-ip";
+    }
 
-   public int getRequiredPermissionLevel() {
-      return 3;
-   }
+    /**
+     * Return the required permission level for this command.
+     */
+    public int getRequiredPermissionLevel() {
+        return 3;
+    }
 
-   public boolean canCommandSenderUseCommand(ICommandSender var1) {
-      return MinecraftServer.getServer().getConfigurationManager().getBannedIPs().isLanServer() && super.canCommandSenderUseCommand(var1);
-   }
+    /**
+     * Returns true if the given command sender is allowed to use this command.
+     */
+    public boolean canCommandSenderUseCommand(ICommandSender sender) {
+        return MinecraftServer.getServer().getConfigurationManager().getBannedIPs().isLanServer() && super.canCommandSenderUseCommand(sender);
+    }
 
-   public String getCommandUsage(ICommandSender var1) {
-      return "commands.banip.usage";
-   }
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender) {
+        return "commands.banip.usage";
+    }
 
-   public void processCommand(ICommandSender var1, String[] var2) throws CommandException {
-      if(var2.length >= 1 && var2[0].length() > 1) {
-         IChatComponent var3 = var2.length >= 2?getChatComponentFromNthArg(var1, var2, 1):null;
-         Matcher var4 = field_147211_a.matcher(var2[0]);
-         if(var4.matches()) {
-            this.func_147210_a(var1, var2[0], (String)null);
-         } else {
-            EntityPlayerMP var5 = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(var2[0]);
-            throw new PlayerNotFoundException("commands.banip.invalid", new Object[0]);
-         }
-      } else {
-         throw new WrongUsageException("commands.banip.usage", new Object[0]);
-      }
-   }
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+        if (args.length >= 1 && args[0].length() > 1) {
+            IChatComponent ichatcomponent = args.length >= 2 ? getChatComponentFromNthArg(sender, args, 1) : null;
+            Matcher matcher = field_147211_a.matcher(args[0]);
 
-   public List addTabCompletionOptions(ICommandSender var1, String[] var2, BlockPos var3) {
-      return var2.length == 1?getListOfStringsMatchingLastWord(var2, MinecraftServer.getServer().getAllUsernames()):null;
-   }
+            if (matcher.matches()) {
+                this.func_147210_a(sender, args[0], ichatcomponent == null ? null : ichatcomponent.getUnformattedText());
+            } else {
+                EntityPlayerMP entityplayermp = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(args[0]);
 
-   protected void func_147210_a(ICommandSender var1, String var2, String var3) {
-      IPBanEntry var4 = new IPBanEntry(var2, (Date)null, var1.getName(), (Date)null, var3);
-      MinecraftServer.getServer().getConfigurationManager().getBannedIPs().addEntry(var4);
-      List var5 = MinecraftServer.getServer().getConfigurationManager().getPlayersMatchingAddress(var2);
-      String[] var6 = new String[var5.size()];
-      int var7 = 0;
+                if (entityplayermp == null) {
+                    throw new PlayerNotFoundException("commands.banip.invalid", new Object[0]);
+                }
 
-      for(EntityPlayerMP var9 : var5) {
-         var9.playerNetServerHandler.kickPlayerFromServer("You have been IP banned.");
-         var6[var7++] = var9.getName();
-      }
+                this.func_147210_a(sender, entityplayermp.getPlayerIP(), ichatcomponent == null ? null : ichatcomponent.getUnformattedText());
+            }
+        } else {
+            throw new WrongUsageException("commands.banip.usage", new Object[0]);
+        }
+    }
 
-      if(var5.isEmpty()) {
-         notifyOperators(var1, this, "commands.banip.success", new Object[]{var2});
-      } else {
-         notifyOperators(var1, this, "commands.banip.success.players", new Object[]{var2, joinNiceString(var6)});
-      }
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames()) : null;
+    }
 
-   }
+    protected void func_147210_a(ICommandSender p_147210_1_, String p_147210_2_, String p_147210_3_) {
+        IPBanEntry ipbanentry = new IPBanEntry(p_147210_2_, (Date) null, p_147210_1_.getName(), (Date) null, p_147210_3_);
+        MinecraftServer.getServer().getConfigurationManager().getBannedIPs().addEntry(ipbanentry);
+        List<EntityPlayerMP> list = MinecraftServer.getServer().getConfigurationManager().getPlayersMatchingAddress(p_147210_2_);
+        String[] astring = new String[list.size()];
+        int i = 0;
 
-   private static CommandException a(CommandException var0) {
-      return var0;
-   }
+        for (EntityPlayerMP entityplayermp : list) {
+            entityplayermp.playerNetServerHandler.kickPlayerFromServer("You have been IP banned.");
+            astring[i++] = entityplayermp.getName();
+        }
+
+        if (list.isEmpty()) {
+            notifyOperators(p_147210_1_, this, "commands.banip.success", new Object[]{p_147210_2_});
+        } else {
+            notifyOperators(p_147210_1_, this, "commands.banip.success.players", new Object[]{p_147210_2_, joinNiceString(astring)});
+        }
+    }
 }

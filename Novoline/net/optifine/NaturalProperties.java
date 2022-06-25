@@ -2,163 +2,186 @@ package net.optifine;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
-import net.acE;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
-import net.optifine.Config;
-import net.optifine.MatchBlock;
 
-public class NaturalProperties {
-   public int rotation;
-   public boolean flip;
-   private Map[] quadMaps;
+public class NaturalProperties
+{
+    public int rotation = 1;
+    public boolean flip = false;
+    private Map[] quadMaps = new Map[8];
 
-   public NaturalProperties(String var1) {
-      MatchBlock.b();
-      super();
-      this.rotation = 1;
-      this.flip = false;
-      this.quadMaps = new Map[8];
-      if(var1.equals("4")) {
-         this.rotation = 4;
-      }
+    public NaturalProperties(String p_i68_1_)
+    {
+        if (p_i68_1_.equals("4"))
+        {
+            this.rotation = 4;
+        }
+        else if (p_i68_1_.equals("2"))
+        {
+            this.rotation = 2;
+        }
+        else if (p_i68_1_.equals("F"))
+        {
+            this.flip = true;
+        }
+        else if (p_i68_1_.equals("4F"))
+        {
+            this.rotation = 4;
+            this.flip = true;
+        }
+        else if (p_i68_1_.equals("2F"))
+        {
+            this.rotation = 2;
+            this.flip = true;
+        }
+        else
+        {
+            Config.warn("NaturalTextures: Unknown type: " + p_i68_1_);
+        }
+    }
 
-      if(var1.equals("2")) {
-         this.rotation = 2;
-      }
+    public boolean isValid()
+    {
+        return this.rotation != 2 && this.rotation != 4 ? this.flip : true;
+    }
 
-      if(var1.equals("F")) {
-         this.flip = true;
-      }
+    public synchronized BakedQuad getQuad(BakedQuad p_getQuad_1_, int p_getQuad_2_, boolean p_getQuad_3_)
+    {
+        int i = p_getQuad_2_;
 
-      if(var1.equals("4F")) {
-         this.rotation = 4;
-         this.flip = true;
-      }
+        if (p_getQuad_3_)
+        {
+            i = p_getQuad_2_ | 4;
+        }
 
-      if(var1.equals("2F")) {
-         this.rotation = 2;
-         this.flip = true;
-      }
+        if (i > 0 && i < this.quadMaps.length)
+        {
+            Map map = this.quadMaps[i];
 
-      Config.warn("NaturalTextures: Unknown type: " + var1);
-   }
+            if (map == null)
+            {
+                map = new IdentityHashMap(1);
+                this.quadMaps[i] = map;
+            }
 
-   public boolean a() {
-      acE[] var1 = MatchBlock.b();
-      return this.rotation != 2 && this.rotation != 4?this.flip:true;
-   }
+            BakedQuad bakedquad = (BakedQuad)map.get(p_getQuad_1_);
 
-   public synchronized BakedQuad b(BakedQuad var1, int var2, boolean var3) {
-      MatchBlock.b();
-      int var5 = var2;
-      if(var3) {
-         var5 = var2 | 4;
-      }
+            if (bakedquad == null)
+            {
+                bakedquad = this.makeQuad(p_getQuad_1_, p_getQuad_2_, p_getQuad_3_);
+                map.put(p_getQuad_1_, bakedquad);
+            }
 
-      if(var5 > 0 && var5 < this.quadMaps.length) {
-         Object var6 = this.quadMaps[var5];
-         if(var6 == null) {
-            var6 = new IdentityHashMap(1);
-            this.quadMaps[var5] = (Map)var6;
-         }
+            return bakedquad;
+        }
+        else
+        {
+            return p_getQuad_1_;
+        }
+    }
 
-         BakedQuad var7 = (BakedQuad)((Map)var6).get(var1);
-         if(var7 == null) {
-            var7 = this.makeQuad(var1, var2, var3);
-            ((Map)var6).put(var1, var7);
-         }
+    private BakedQuad makeQuad(BakedQuad p_makeQuad_1_, int p_makeQuad_2_, boolean p_makeQuad_3_)
+    {
+        int[] aint = p_makeQuad_1_.getVertexData();
+        int i = p_makeQuad_1_.getTintIndex();
+        EnumFacing enumfacing = p_makeQuad_1_.getFace();
+        TextureAtlasSprite textureatlassprite = p_makeQuad_1_.getSprite();
 
-         return var7;
-      } else {
-         return var1;
-      }
-   }
+        if (!this.isFullSprite(p_makeQuad_1_))
+        {
+            return p_makeQuad_1_;
+        }
+        else
+        {
+            aint = this.transformVertexData(aint, p_makeQuad_2_, p_makeQuad_3_);
+            BakedQuad bakedquad = new BakedQuad(aint, i, enumfacing, textureatlassprite);
+            return bakedquad;
+        }
+    }
 
-   private BakedQuad makeQuad(BakedQuad var1, int var2, boolean var3) {
-      int[] var5 = var1.getVertexData();
-      MatchBlock.b();
-      int var6 = var1.getTintIndex();
-      EnumFacing var7 = var1.getFace();
-      TextureAtlasSprite var8 = var1.getSprite();
-      if(!this.isFullSprite(var1)) {
-         return var1;
-      } else {
-         var5 = this.transformVertexData(var5, var2, var3);
-         BakedQuad var9 = new BakedQuad(var5, var6, var7, var8);
-         return var9;
-      }
-   }
+    private int[] transformVertexData(int[] p_transformVertexData_1_, int p_transformVertexData_2_, boolean p_transformVertexData_3_)
+    {
+        int[] aint = (int[])p_transformVertexData_1_.clone();
+        int i = 4 - p_transformVertexData_2_;
 
-   private int[] transformVertexData(int[] var1, int var2, boolean var3) {
-      MatchBlock.b();
-      int[] var5 = (int[])((int[])var1.clone());
-      int var6 = 4 - var2;
-      if(var3) {
-         var6 += 3;
-      }
+        if (p_transformVertexData_3_)
+        {
+            i += 3;
+        }
 
-      var6 = var6 % 4;
-      int var7 = var5.length / 4;
-      int var8 = 0;
-      if(var8 < 4) {
-         int var9 = var8 * var7;
-         int var10 = var6 * var7;
-         var5[var10 + 4] = var1[var9 + 4];
-         var5[var10 + 4 + 1] = var1[var9 + 4 + 1];
-         if(var3) {
-            --var6;
-            var6 = 3;
-         }
+        i = i % 4;
+        int j = aint.length / 4;
 
-         ++var6;
-         if(var6 > 3) {
-            var6 = 0;
-         }
+        for (int k = 0; k < 4; ++k)
+        {
+            int l = k * j;
+            int i1 = i * j;
+            aint[i1 + 4] = p_transformVertexData_1_[l + 4];
+            aint[i1 + 4 + 1] = p_transformVertexData_1_[l + 4 + 1];
 
-         ++var8;
-      }
+            if (p_transformVertexData_3_)
+            {
+                --i;
 
-      return var5;
-   }
+                if (i < 0)
+                {
+                    i = 3;
+                }
+            }
+            else
+            {
+                ++i;
 
-   private boolean isFullSprite(BakedQuad var1) {
-      TextureAtlasSprite var3 = var1.getSprite();
-      float var4 = var3.getMinU();
-      float var5 = var3.getMaxU();
-      float var6 = var5 - var4;
-      float var7 = var6 / 256.0F;
-      float var8 = var3.getMinV();
-      MatchBlock.b();
-      float var9 = var3.getMaxV();
-      float var10 = var9 - var8;
-      float var11 = var10 / 256.0F;
-      int[] var12 = var1.getVertexData();
-      int var13 = var12.length / 4;
-      int var14 = 0;
-      if(var14 < 4) {
-         int var15 = var14 * var13;
-         float var16 = Float.intBitsToFloat(var12[var15 + 4]);
-         float var17 = Float.intBitsToFloat(var12[var15 + 4 + 1]);
-         if(!this.equalsDelta(var16, var4, var7) && !this.equalsDelta(var16, var5, var7)) {
-            return false;
-         }
+                if (i > 3)
+                {
+                    i = 0;
+                }
+            }
+        }
 
-         if(!this.equalsDelta(var17, var8, var11) && !this.equalsDelta(var17, var9, var11)) {
-            return false;
-         }
+        return aint;
+    }
 
-         ++var14;
-      }
+    private boolean isFullSprite(BakedQuad p_isFullSprite_1_)
+    {
+        TextureAtlasSprite textureatlassprite = p_isFullSprite_1_.getSprite();
+        float f = textureatlassprite.getMinU();
+        float f1 = textureatlassprite.getMaxU();
+        float f2 = f1 - f;
+        float f3 = f2 / 256.0F;
+        float f4 = textureatlassprite.getMinV();
+        float f5 = textureatlassprite.getMaxV();
+        float f6 = f5 - f4;
+        float f7 = f6 / 256.0F;
+        int[] aint = p_isFullSprite_1_.getVertexData();
+        int i = aint.length / 4;
 
-      return true;
-   }
+        for (int j = 0; j < 4; ++j)
+        {
+            int k = j * i;
+            float f8 = Float.intBitsToFloat(aint[k + 4]);
+            float f9 = Float.intBitsToFloat(aint[k + 4 + 1]);
 
-   private boolean equalsDelta(float var1, float var2, float var3) {
-      MatchBlock.b();
-      float var5 = MathHelper.abs(var1 - var2);
-      return var5 < var3;
-   }
+            if (!this.equalsDelta(f8, f, f3) && !this.equalsDelta(f8, f1, f3))
+            {
+                return false;
+            }
+
+            if (!this.equalsDelta(f9, f4, f7) && !this.equalsDelta(f9, f5, f7))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean equalsDelta(float p_equalsDelta_1_, float p_equalsDelta_2_, float p_equalsDelta_3_)
+    {
+        float f = MathHelper.abs(p_equalsDelta_1_ - p_equalsDelta_2_);
+        return f < p_equalsDelta_3_;
+    }
 }

@@ -1,10 +1,6 @@
 package net.minecraft.client.gui.stream;
 
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
@@ -17,131 +13,176 @@ import tv.twitch.chat.ChatUserInfo;
 import tv.twitch.chat.ChatUserMode;
 import tv.twitch.chat.ChatUserSubscription;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
 public class GuiTwitchUserMode extends GuiScreen {
-   private static final EnumChatFormatting field_152331_a = EnumChatFormatting.DARK_GREEN;
-   private static final EnumChatFormatting field_152335_f = EnumChatFormatting.RED;
-   private static final EnumChatFormatting field_152336_g = EnumChatFormatting.DARK_PURPLE;
-   private final ChatUserInfo field_152337_h;
-   private final IChatComponent field_152338_i;
-   private final List field_152332_r = Lists.newArrayList();
-   private final IStream stream;
-   private int field_152334_t;
+    private static final EnumChatFormatting field_152331_a = EnumChatFormatting.DARK_GREEN;
+    private static final EnumChatFormatting field_152335_f = EnumChatFormatting.RED;
+    private static final EnumChatFormatting field_152336_g = EnumChatFormatting.DARK_PURPLE;
+    private final ChatUserInfo field_152337_h;
+    private final IChatComponent field_152338_i;
+    private final List<IChatComponent> field_152332_r = Lists.newArrayList();
+    private final IStream stream;
+    private int field_152334_t;
 
-   public GuiTwitchUserMode(IStream var1, ChatUserInfo var2) {
-      this.stream = var1;
-      this.field_152337_h = var2;
-      this.field_152338_i = new ChatComponentText(var2.displayName);
-      this.field_152332_r.addAll(func_152328_a(var2.modes, var2.subscriptions, var1));
-   }
+    public GuiTwitchUserMode(IStream streamIn, ChatUserInfo p_i1064_2_) {
+        this.stream = streamIn;
+        this.field_152337_h = p_i1064_2_;
+        this.field_152338_i = new ChatComponentText(p_i1064_2_.displayName);
+        this.field_152332_r.addAll(func_152328_a(p_i1064_2_.modes, p_i1064_2_.subscriptions, streamIn));
+    }
 
-   public static List func_152328_a(Set var0, Set var1, IStream var2) {
-      Object var3 = null;
-      boolean var4 = var2.func_152927_B();
-      ArrayList var5 = Lists.newArrayList();
+    public static List<IChatComponent> func_152328_a(Set<ChatUserMode> p_152328_0_, Set<ChatUserSubscription> p_152328_1_, IStream p_152328_2_) {
+        String s = p_152328_2_ == null ? null : p_152328_2_.func_152921_C();
+        boolean flag = p_152328_2_ != null && p_152328_2_.func_152927_B();
+        List<IChatComponent> list = Lists.newArrayList();
 
-      for(ChatUserMode var7 : var0) {
-         IChatComponent var8 = func_152329_a(var7, (String)var3, var4);
-         ChatComponentText var9 = new ChatComponentText("- ");
-         var9.appendSibling(var8);
-         var5.add(var9);
-      }
+        for (ChatUserMode chatusermode : p_152328_0_) {
+            IChatComponent ichatcomponent = func_152329_a(chatusermode, s, flag);
 
-      for(ChatUserSubscription var11 : var1) {
-         IChatComponent var12 = func_152330_a(var11, (String)var3, var4);
-         ChatComponentText var13 = new ChatComponentText("- ");
-         var13.appendSibling(var12);
-         var5.add(var13);
-      }
+            if (ichatcomponent != null) {
+                IChatComponent ichatcomponent1 = new ChatComponentText("- ");
+                ichatcomponent1.appendSibling(ichatcomponent);
+                list.add(ichatcomponent1);
+            }
+        }
 
-      return var5;
-   }
+        for (ChatUserSubscription chatusersubscription : p_152328_1_) {
+            IChatComponent ichatcomponent2 = func_152330_a(chatusersubscription, s, flag);
 
-   public static IChatComponent func_152330_a(ChatUserSubscription var0, String var1, boolean var2) {
-      ChatComponentTranslation var3 = null;
-      if(var0 == ChatUserSubscription.TTV_CHAT_USERSUB_SUBSCRIBER) {
-         var3 = new ChatComponentTranslation("stream.user.subscription.subscriber", new Object[0]);
-         var3.getChatStyle().setColor(field_152331_a);
-      } else if(var0 == ChatUserSubscription.TTV_CHAT_USERSUB_TURBO) {
-         var3 = new ChatComponentTranslation("stream.user.subscription.turbo", new Object[0]);
-         var3.getChatStyle().setColor(field_152336_g);
-      }
+            if (ichatcomponent2 != null) {
+                IChatComponent ichatcomponent3 = new ChatComponentText("- ");
+                ichatcomponent3.appendSibling(ichatcomponent2);
+                list.add(ichatcomponent3);
+            }
+        }
 
-      return var3;
-   }
+        return list;
+    }
 
-   public static IChatComponent func_152329_a(ChatUserMode var0, String var1, boolean var2) {
-      ChatComponentTranslation var3 = null;
-      if(var0 == ChatUserMode.TTV_CHAT_USERMODE_ADMINSTRATOR) {
-         var3 = new ChatComponentTranslation("stream.user.mode.administrator", new Object[0]);
-         var3.getChatStyle().setColor(field_152336_g);
-      } else if(var0 == ChatUserMode.TTV_CHAT_USERMODE_BANNED) {
-         var3 = new ChatComponentTranslation("stream.user.mode.banned", new Object[0]);
-         var3.getChatStyle().setColor(field_152335_f);
-      } else if(var0 == ChatUserMode.TTV_CHAT_USERMODE_BROADCASTER) {
-         var3 = new ChatComponentTranslation("stream.user.mode.broadcaster", new Object[0]);
-         var3.getChatStyle().setColor(field_152331_a);
-      } else if(var0 == ChatUserMode.TTV_CHAT_USERMODE_MODERATOR) {
-         var3 = new ChatComponentTranslation("stream.user.mode.moderator", new Object[0]);
-         var3.getChatStyle().setColor(field_152331_a);
-      } else if(var0 == ChatUserMode.TTV_CHAT_USERMODE_STAFF) {
-         var3 = new ChatComponentTranslation("stream.user.mode.staff", new Object[0]);
-         var3.getChatStyle().setColor(field_152336_g);
-      }
+    public static IChatComponent func_152330_a(ChatUserSubscription p_152330_0_, String p_152330_1_, boolean p_152330_2_) {
+        IChatComponent ichatcomponent = null;
 
-      return var3;
-   }
+        if (p_152330_0_ == ChatUserSubscription.TTV_CHAT_USERSUB_SUBSCRIBER) {
+            if (p_152330_1_ == null) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.subscription.subscriber");
+            } else if (p_152330_2_) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.subscription.subscriber.self");
+            } else {
+                ichatcomponent = new ChatComponentTranslation("stream.user.subscription.subscriber.other", p_152330_1_);
+            }
 
-   public void initGui() {
-      int var1 = this.width / 3;
-      int var2 = var1 - 130;
-      this.buttonList.add(new GuiButton(1, var1 * 0 + var2 / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.timeout", new Object[0])));
-      this.buttonList.add(new GuiButton(0, var1 * 1 + var2 / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.ban", new Object[0])));
-      this.buttonList.add(new GuiButton(2, var1 * 2 + var2 / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.mod", new Object[0])));
-      this.buttonList.add(new GuiButton(5, var1 * 0 + var2 / 2, this.height - 45, 130, 20, I18n.format("gui.cancel", new Object[0])));
-      this.buttonList.add(new GuiButton(3, var1 * 1 + var2 / 2, this.height - 45, 130, 20, I18n.format("stream.userinfo.unban", new Object[0])));
-      this.buttonList.add(new GuiButton(4, var1 * 2 + var2 / 2, this.height - 45, 130, 20, I18n.format("stream.userinfo.unmod", new Object[0])));
-      int var3 = 0;
+            ichatcomponent.getChatStyle().setColor(field_152331_a);
+        } else if (p_152330_0_ == ChatUserSubscription.TTV_CHAT_USERSUB_TURBO) {
+            ichatcomponent = new ChatComponentTranslation("stream.user.subscription.turbo");
+            ichatcomponent.getChatStyle().setColor(field_152336_g);
+        }
 
-      for(IChatComponent var5 : this.field_152332_r) {
-         var3 = Math.max(var3, this.fontRendererObj.d(var5.getFormattedText()));
-      }
+        return ichatcomponent;
+    }
 
-      this.field_152334_t = this.width / 2 - var3 / 2;
-   }
+    public static IChatComponent func_152329_a(ChatUserMode p_152329_0_, String p_152329_1_, boolean p_152329_2_) {
+        IChatComponent ichatcomponent = null;
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
-      if(var1.enabled) {
-         if(var1.id == 0) {
-            this.stream.func_152917_b("/ban " + this.field_152337_h.displayName);
-         } else if(var1.id == 3) {
-            this.stream.func_152917_b("/unban " + this.field_152337_h.displayName);
-         } else if(var1.id == 2) {
-            this.stream.func_152917_b("/mod " + this.field_152337_h.displayName);
-         } else if(var1.id == 4) {
-            this.stream.func_152917_b("/unmod " + this.field_152337_h.displayName);
-         } else if(var1.id == 1) {
-            this.stream.func_152917_b("/timeout " + this.field_152337_h.displayName);
-         }
+        if (p_152329_0_ == ChatUserMode.TTV_CHAT_USERMODE_ADMINSTRATOR) {
+            ichatcomponent = new ChatComponentTranslation("stream.user.mode.administrator");
+            ichatcomponent.getChatStyle().setColor(field_152336_g);
+        } else if (p_152329_0_ == ChatUserMode.TTV_CHAT_USERMODE_BANNED) {
+            if (p_152329_1_ == null) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.banned");
+            } else if (p_152329_2_) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.banned.self");
+            } else {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.banned.other", p_152329_1_);
+            }
 
-         this.mc.displayGuiScreen((GuiScreen)null);
-      }
+            ichatcomponent.getChatStyle().setColor(field_152335_f);
+        } else if (p_152329_0_ == ChatUserMode.TTV_CHAT_USERMODE_BROADCASTER) {
+            if (p_152329_1_ == null) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.broadcaster");
+            } else if (p_152329_2_) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.broadcaster.self");
+            } else {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.broadcaster.other");
+            }
 
-   }
+            ichatcomponent.getChatStyle().setColor(field_152331_a);
+        } else if (p_152329_0_ == ChatUserMode.TTV_CHAT_USERMODE_MODERATOR) {
+            if (p_152329_1_ == null) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.moderator");
+            } else if (p_152329_2_) {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.moderator.self");
+            } else {
+                ichatcomponent = new ChatComponentTranslation("stream.user.mode.moderator.other", p_152329_1_);
+            }
 
-   public void drawScreen(int var1, int var2, float var3) {
-      this.drawDefaultBackground();
-      this.drawCenteredString(this.fontRendererObj, this.field_152338_i.getUnformattedText(), this.width / 2, 70, 16777215);
-      int var4 = 80;
+            ichatcomponent.getChatStyle().setColor(field_152331_a);
+        } else if (p_152329_0_ == ChatUserMode.TTV_CHAT_USERMODE_STAFF) {
+            ichatcomponent = new ChatComponentTranslation("stream.user.mode.staff");
+            ichatcomponent.getChatStyle().setColor(field_152336_g);
+        }
 
-      for(IChatComponent var6 : this.field_152332_r) {
-         this.drawString(this.fontRendererObj, var6.getFormattedText(), this.field_152334_t, var4, 16777215);
-         var4 += this.fontRendererObj.getHeight();
-      }
+        return ichatcomponent;
+    }
 
-      super.drawScreen(var1, var2, var3);
-   }
+    /**
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
+     */
+    public void initGui() {
+        int i = this.width / 3;
+        int j = i - 130;
+        this.buttonList.add(new GuiButton(1, i * 0 + j / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.timeout")));
+        this.buttonList.add(new GuiButton(0, i * 1 + j / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.ban")));
+        this.buttonList.add(new GuiButton(2, i * 2 + j / 2, this.height - 70, 130, 20, I18n.format("stream.userinfo.mod")));
+        this.buttonList.add(new GuiButton(5, i * 0 + j / 2, this.height - 45, 130, 20, I18n.format("gui.cancel")));
+        this.buttonList.add(new GuiButton(3, i * 1 + j / 2, this.height - 45, 130, 20, I18n.format("stream.userinfo.unban")));
+        this.buttonList.add(new GuiButton(4, i * 2 + j / 2, this.height - 45, 130, 20, I18n.format("stream.userinfo.unmod")));
+        int k = 0;
 
-   private static IOException a(IOException var0) {
-      return var0;
-   }
+        for (IChatComponent ichatcomponent : this.field_152332_r) {
+            k = Math.max(k, this.fontRendererObj.getStringWidth(ichatcomponent.getFormattedText()));
+        }
+
+        this.field_152334_t = this.width / 2 - k / 2;
+    }
+
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if (button.enabled) {
+            if (button.id == 0) {
+                this.stream.func_152917_b("/ban " + this.field_152337_h.displayName);
+            } else if (button.id == 3) {
+                this.stream.func_152917_b("/unban " + this.field_152337_h.displayName);
+            } else if (button.id == 2) {
+                this.stream.func_152917_b("/mod " + this.field_152337_h.displayName);
+            } else if (button.id == 4) {
+                this.stream.func_152917_b("/unmod " + this.field_152337_h.displayName);
+            } else if (button.id == 1) {
+                this.stream.func_152917_b("/timeout " + this.field_152337_h.displayName);
+            }
+
+            this.mc.displayGuiScreen(null);
+        }
+    }
+
+    /**
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
+     */
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        this.drawDefaultBackground();
+        this.drawCenteredString(this.fontRendererObj, this.field_152338_i.getUnformattedText(), this.width / 2, 70, 16777215);
+        int i = 80;
+
+        for (IChatComponent ichatcomponent : this.field_152332_r) {
+            this.drawString(this.fontRendererObj, ichatcomponent.getFormattedText(), this.field_152334_t, i, 16777215);
+            i += this.fontRendererObj.getHeight();
+        }
+
+        super.drawScreen(mouseX, mouseY, partialTicks);
+    }
 }

@@ -1,38 +1,34 @@
 package viaversion.viaversion.protocols.protocol1_12to1_11_1.storage;
 
-import net.acE;
-import net.cL;
-
 public class ItemTransaction {
-   private final short windowId;
-   private final short slotId;
-   private final short actionId;
+    private final short windowId;
+    private final short slotId;
+    private final short actionId;
 
-   public ItemTransaction(short var1, short var2, short var3) {
-      cL.a();
-      this.windowId = var1;
-      this.slotId = var2;
-      this.actionId = var3;
-      if(acE.b() == null) {
-         cL.b("FPxA3b");
-      }
+    public ItemTransaction(short windowId, short slotId, short actionId) {
+        this.windowId = windowId;
+        this.slotId = slotId;
+        this.actionId = actionId;
+    }
 
-   }
+    public short getWindowId() {
+        return windowId;
+    }
 
-   public short getWindowId() {
-      return this.windowId;
-   }
+    public short getSlotId() {
+        return slotId;
+    }
 
-   public short getSlotId() {
-      return this.slotId;
-   }
+    public short getActionId() {
+        return actionId;
+    }
 
-   public short getActionId() {
-      return this.actionId;
-   }
-
-   public String toString() {
-      String var1 = cL.a();
-      return "ItemTransaction{windowId=" + this.windowId + ", slotId=" + this.slotId + ", actionId=" + this.actionId + '}';
-   }
+    @Override
+    public String toString() {
+        return "ItemTransaction{" +
+                "windowId=" + windowId +
+                ", slotId=" + slotId +
+                ", actionId=" + actionId +
+                '}';
+    }
 }

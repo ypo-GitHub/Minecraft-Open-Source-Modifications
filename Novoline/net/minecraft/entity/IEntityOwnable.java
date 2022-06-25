@@ -1,9 +1,7 @@
 package net.minecraft.entity;
 
-import net.minecraft.entity.Entity;
-
 public interface IEntityOwnable {
-   String getOwnerId();
+    String getOwnerId();
 
-   Entity getOwner();
+    Entity getOwner();
 }

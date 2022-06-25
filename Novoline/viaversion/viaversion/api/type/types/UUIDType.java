@@ -1,20 +1,23 @@
 package viaversion.viaversion.api.type.types;
 
 import io.netty.buffer.ByteBuf;
-import java.util.UUID;
 import viaversion.viaversion.api.type.Type;
 
-public class UUIDType extends Type {
-   public UUIDType() {
-      super("UUID", UUID.class);
-   }
+import java.util.UUID;
 
-   public UUID read(ByteBuf var1) {
-      return new UUID(var1.readLong(), var1.readLong());
-   }
+public class UUIDType extends Type<UUID> {
+    public UUIDType() {
+        super("UUID", UUID.class);
+    }
 
-   public void write(ByteBuf var1, UUID var2) {
-      var1.writeLong(var2.getMostSignificantBits());
-      var1.writeLong(var2.getLeastSignificantBits());
-   }
+    @Override
+    public UUID read(ByteBuf buffer) {
+        return new UUID(buffer.readLong(), buffer.readLong());
+    }
+
+    @Override
+    public void write(ByteBuf buffer, UUID object) {
+        buffer.writeLong(object.getMostSignificantBits());
+        buffer.writeLong(object.getLeastSignificantBits());
+    }
 }

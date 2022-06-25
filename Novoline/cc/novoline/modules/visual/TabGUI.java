@@ -3,228 +3,243 @@ package cc.novoline.modules.visual;
 import cc.novoline.events.EventTarget;
 import cc.novoline.events.events.KeyPressEvent;
 import cc.novoline.events.events.Render2DEvent;
-import cc.novoline.gui.screen.setting.Setting;
 import cc.novoline.gui.screen.setting.SettingType;
 import cc.novoline.modules.AbstractModule;
 import cc.novoline.modules.EnumModuleType;
 import cc.novoline.modules.ModuleManager;
-import cc.novoline.modules.visual.HUD;
-import cc.novoline.modules.visual.TabGUI$1;
 import cc.novoline.modules.visual.tabgui.TabModule;
 import cc.novoline.modules.visual.tabgui.TabSetting;
 import cc.novoline.modules.visual.tabgui.TabType;
 import cc.novoline.modules.visual.tabgui.TabValue;
 import cc.novoline.utils.ScaleUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.util.List;
+import java.util.Objects;
+
 public class TabGUI extends AbstractModule {
-   public List types = new ObjectArrayList();
-   private int typeN = 0;
-   private int moduleN = 0;
-   private int settingN = 0;
-   private int valueN = 0;
 
-   public TabGUI(ModuleManager var1) {
-      super(var1, "TabGui", "Tab Gui", 0, EnumModuleType.VISUALS);
-   }
+    public List<TabType> types = new ObjectArrayList<>();
+    private int typeN = 0;
+    private int moduleN = 0;
+    private int settingN = 0;
+    private int valueN = 0;
 
-   public void onEnable() {
-      HUD.h();
-      EnumModuleType[] var2 = EnumModuleType.values();
-      int var3 = var2.length;
-      int var4 = 0;
-      if(var4 < var3) {
-         EnumModuleType var5 = var2[var4];
-         this.types.add(new TabType(this, var5));
-         ++var4;
-      }
+    public TabGUI(@NonNull ModuleManager moduleManager) {
+        super(moduleManager, "TabGui", "Tab Gui", Keyboard.KEY_NONE, EnumModuleType.VISUALS);
+    }
 
-   }
+    @Override
+    public void onEnable() {
+        for (EnumModuleType enumModuleType : EnumModuleType.values()) {
+            this.types.add(new TabType(this, enumModuleType));
+        }
+    }
 
-   public int getColor() {
-      return ((HUD)this.getModule(HUD.class)).getHUDColor();
-   }
+    public int getColor(){
+        return getModule(HUD.class).getHUDColor();
+    }
 
-   public void onDisable() {
-      this.types.clear();
-   }
+    @Override
+    public void onDisable() {
+        this.types.clear();
+    }
 
-   @EventTarget
-   public void onRender2D(Render2DEvent var1) {
-      GL11.glPushMatrix();
-      ScaleUtils.scale(this.mc);
-      this.types.forEach(TabType::e);
-      GL11.glPopMatrix();
-   }
+    @EventTarget
+    public void onRender2D(Render2DEvent render2DEvent) {
+        GL11.glPushMatrix();
+        ScaleUtils.scale(mc);
+        this.types.forEach(TabType::render);
+        GL11.glPopMatrix();
+    }
 
-   @EventTarget
-   public void onKeyPress(KeyPressEvent var1) {
-      int var3 = var1.getKey();
-      TabType var4 = this.getSelectedType();
-      boolean var5 = ((TabType)Objects.requireNonNull(var4)).isOpened();
-      HUD.h();
-      TabModule var6 = var4.getSelectedModule();
-      boolean var7 = var6.isOpened();
-      TabSetting var8 = var6.getSelectedSetting();
-      if(var8 != null) {
-         Setting var9 = var8.getSetting();
-      }
 
-      Object var11 = null;
-      switch(var3) {
-      case 28:
-         if(!var5) {
-            break;
-         }
+    @EventTarget
+    public void onKeyPress(KeyPressEvent keyPressEvent) {
+        int key = keyPressEvent.getKey();
+        TabType selectedType = getSelectedType();
+        final boolean isTypeOpened = Objects.requireNonNull(selectedType).isOpened();
+        final TabModule selectedModule = selectedType.getSelectedModule();
+        final boolean selectedModuleOpened = selectedModule.isOpened();
+        final TabSetting selectedSetting = selectedModule.getSelectedSetting();
+        cc.novoline.gui.screen.setting.Setting setting;
 
-         if(var7) {
-            if(((Setting)Objects.requireNonNull(var11)).getSettingType() == SettingType.CHECKBOX) {
-               ((Setting)var11).getCheckBoxProperty().invert();
-            }
+        if (selectedSetting != null) {
+            setting = selectedSetting.getSetting();
+        } else {
+            setting = null;
+        }
 
-            TabValue var10 = var8.getSelectedValue();
-            switch(TabGUI$1.$SwitchMap$cc$novoline$gui$screen$setting$SettingType[((Setting)var11).getSettingType().ordinal()]) {
-            case 1:
-               ((Setting)var11).setComboBoxValue(var10.getValue());
-            case 2:
-               if(((Setting)var11).getSelectBox().contains(var10.getValue())) {
-                  ((Setting)var11).getSelectBox().remove(var10.getValue());
-               }
+        switch (key) {
+            case Keyboard.KEY_RETURN:
+                if (isTypeOpened) {
+                    if (selectedModuleOpened) {
+                        if (Objects.requireNonNull(setting).getSettingType() == SettingType.CHECKBOX) {
+                            setting.getCheckBoxProperty().invert();
+                        } else {
+                            final TabValue selectedValue = selectedSetting.getSelectedValue();
 
-               ((Setting)var11).getSelectBox().add(var10.getValue());
-            }
-         }
+                            switch (setting.getSettingType()) {
+                                case COMBOBOX: {
+                                    setting.setComboBoxValue(selectedValue.getValue());
+                                    break;
+                                }
+                                case SELECTBOX: {
+                                    if (setting.getSelectBox().contains(selectedValue.getValue())) {
+                                        setting.getSelectBox().remove(selectedValue.getValue());
+                                    } else {
+                                        setting.getSelectBox().add(selectedValue.getValue());
+                                    }
 
-         var6.getMod().toggle();
-      case 200:
-         if(!var5) {
-            if(this.typeN == 0) {
-               this.typeN = this.types.size() - 1;
-            }
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        selectedModule.getMod().toggle();
+                    }
+                }
 
-            --this.typeN;
-         }
+                break;
 
-         if(!var7) {
-            if(this.moduleN == 0) {
-               this.moduleN = var4.getModules().size() - 1;
-            }
+            case Keyboard.KEY_UP:
+                if (!isTypeOpened) {
+                    if (this.typeN == 0) {
+                        this.typeN = this.types.size() - 1;
+                    } else {
+                        this.typeN--;
+                    }
+                } else {
+                    if (!selectedModuleOpened) {
+                        if (this.moduleN == 0) {
+                            this.moduleN = selectedType.getModules().size() - 1;
+                        } else {
+                            this.moduleN--;
+                        }
+                    } else {
+                        if (!Objects.requireNonNull(selectedSetting).isOpened()) {
+                            if (this.settingN == 0) {
+                                this.settingN = selectedModule.getSettings().size() - 1;
+                            } else {
+                                this.settingN--;
+                            }
+                        } else {
+                            if (Objects.requireNonNull(setting).getSettingType() == SettingType.SLIDER) {
+                                setting.setSliderValue(setting.getDouble() + setting.getIncrement());
+                            } else {
+                                if (this.valueN == 0) {
+                                    this.valueN = selectedSetting.getValues().size() - 1;
+                                } else {
+                                    this.valueN--;
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case Keyboard.KEY_DOWN:
+                if (!isTypeOpened) {
+                    if (this.typeN == this.types.size() - 1) {
+                        this.typeN = 0;
+                    } else {
+                        this.typeN++;
+                    }
+                } else {
+                    if (!selectedModuleOpened) {
+                        if (this.moduleN == selectedType.getModules().size() - 1) {
+                            this.moduleN = 0;
+                        } else {
+                            this.moduleN++;
+                        }
+                    } else {
+                        if (!Objects.requireNonNull(selectedSetting).isOpened()) {
+                            if (this.settingN == selectedModule.getSettings().size() - 1) {
+                                this.settingN = 0;
+                            } else {
+                                this.settingN++;
+                            }
+                        } else {
+                            if (setting.getSettingType() == SettingType.SLIDER) {
+                                setting.setSliderValue(setting.getDouble() - setting.getIncrement());
+                            } else {
+                                if (this.valueN == selectedSetting.getValues().size() - 1) {
+                                    this.valueN = 0;
+                                } else {
+                                    this.valueN++;
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case Keyboard.KEY_RIGHT:
+                if (!isTypeOpened) {
+                    this.moduleN = 0;
+                    selectedType.setOpened(true);
+                } else {
+                    if (!selectedModuleOpened && !selectedModule.areSettingsEmpty()) {
+                        this.settingN = 0;
+                        selectedModule.setOpened(true);
+                    } else {
+                        if (!Objects.requireNonNull(selectedSetting).isOpened()) {
+                            if (setting.getSettingType() == SettingType.SELECTBOX || setting
+                                    .getSettingType() == SettingType.COMBOBOX || setting
+                                    .getSettingType() == SettingType.SLIDER) {
+                                selectedSetting.setOpened(true);
+                            }
+                        }
+                    }
+                }
+                break;
+            case Keyboard.KEY_LEFT:
+                if (selectedType.isOpened()) {
+                    if (selectedModule.isOpened()) {
+                        if (Objects.requireNonNull(selectedSetting).isOpened()) {
+                            this.valueN = 0;
+                            selectedSetting.setOpened(false);
+                        } else {
+                            this.settingN = 0;
+                            selectedModule.setOpened(false);
+                        }
+                    } else {
+                        this.moduleN = 0;
+                        selectedType.setOpened(false);
+                    }
+                }
 
-            --this.moduleN;
-         }
+                break;
+        }
+    }
 
-         if(!((TabSetting)Objects.requireNonNull(var8)).isOpened()) {
-            if(this.settingN == 0) {
-               this.settingN = var6.getSettings().size() - 1;
-            }
+    @Nullable
+    private TabType getSelectedType() {
+        return this.types.stream().filter(TabType::isSelected).findFirst().orElse(null);
+    }
 
-            --this.settingN;
-         }
+    //region Lombok
+    public List<TabType> getTypes() {
+        return this.types;
+    }
 
-         if(((Setting)Objects.requireNonNull(var11)).getSettingType() == SettingType.SLIDER) {
-            ((Setting)var11).setSliderValue(Double.valueOf(((Setting)var11).getDouble() + ((Setting)var11).getIncrement()));
-         }
+    public int getTypeN() {
+        return this.typeN;
+    }
 
-         if(this.valueN == 0) {
-            this.valueN = var8.getValues().size() - 1;
-         }
+    public int getModuleN() {
+        return this.moduleN;
+    }
 
-         --this.valueN;
-      case 208:
-         if(!var5) {
-            if(this.typeN == this.types.size() - 1) {
-               this.typeN = 0;
-            }
+    public int getSettingN() {
+        return this.settingN;
+    }
 
-            ++this.typeN;
-         }
+    public int getValueN() {
+        return this.valueN;
+    }
+    //endregion
 
-         if(!var7) {
-            if(this.moduleN == var4.getModules().size() - 1) {
-               this.moduleN = 0;
-            }
-
-            ++this.moduleN;
-         }
-
-         if(!((TabSetting)Objects.requireNonNull(var8)).isOpened()) {
-            if(this.settingN == var6.getSettings().size() - 1) {
-               this.settingN = 0;
-            }
-
-            ++this.settingN;
-         }
-
-         if(((Setting)var11).getSettingType() == SettingType.SLIDER) {
-            ((Setting)var11).setSliderValue(Double.valueOf(((Setting)var11).getDouble() - ((Setting)var11).getIncrement()));
-         }
-
-         if(this.valueN == var8.getValues().size() - 1) {
-            this.valueN = 0;
-         }
-
-         ++this.valueN;
-      case 205:
-         if(!var5) {
-            this.moduleN = 0;
-            var4.setOpened(true);
-         }
-
-         if(!var7 && !var6.areSettingsEmpty()) {
-            this.settingN = 0;
-            var6.setOpened(true);
-         }
-
-         if(((TabSetting)Objects.requireNonNull(var8)).isOpened() || ((Setting)var11).getSettingType() != SettingType.SELECTBOX && ((Setting)var11).getSettingType() != SettingType.COMBOBOX && ((Setting)var11).getSettingType() != SettingType.SLIDER) {
-            break;
-         }
-
-         var8.setOpened(true);
-      case 203:
-         if(var4.isOpened()) {
-            if(var6.isOpened()) {
-               if(((TabSetting)Objects.requireNonNull(var8)).isOpened()) {
-                  this.valueN = 0;
-                  var8.setOpened(false);
-               }
-
-               this.settingN = 0;
-               var6.setOpened(false);
-            }
-
-            this.moduleN = 0;
-            var4.setOpened(false);
-         }
-      }
-
-   }
-
-   private TabType getSelectedType() {
-      return (TabType)this.types.stream().filter(TabType::isSelected).findFirst().orElse((Object)null);
-   }
-
-   public List getTypes() {
-      return this.types;
-   }
-
-   public int getTypeN() {
-      return this.typeN;
-   }
-
-   public int getModuleN() {
-      return this.moduleN;
-   }
-
-   public int getSettingN() {
-      return this.settingN;
-   }
-
-   public int getValueN() {
-      return this.valueN;
-   }
 }

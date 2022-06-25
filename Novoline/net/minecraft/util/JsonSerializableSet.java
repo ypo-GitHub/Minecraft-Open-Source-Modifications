@@ -5,32 +5,34 @@ import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+
 import java.util.Set;
-import net.minecraft.util.IJsonSerializable;
 
-public class JsonSerializableSet extends ForwardingSet implements IJsonSerializable {
-   private final Set underlyingSet = Sets.newHashSet();
+public class JsonSerializableSet extends ForwardingSet<String> implements IJsonSerializable {
+    private final Set<String> underlyingSet = Sets.<String>newHashSet();
 
-   public void fromJson(JsonElement var1) {
-      if(var1.isJsonArray()) {
-         for(JsonElement var3 : var1.getAsJsonArray()) {
-            this.add(var3.getAsString());
-         }
-      }
+    public void fromJson(JsonElement json) {
+        if (json.isJsonArray()) {
+            for (JsonElement jsonelement : json.getAsJsonArray()) {
+                this.add(jsonelement.getAsString());
+            }
+        }
+    }
 
-   }
+    /**
+     * Gets the JsonElement that can be serialized.
+     */
+    public JsonElement getSerializableElement() {
+        JsonArray jsonarray = new JsonArray();
 
-   public JsonElement getSerializableElement() {
-      JsonArray var1 = new JsonArray();
+        for (String s : this) {
+            jsonarray.add(new JsonPrimitive(s));
+        }
 
-      for(String var3 : this) {
-         var1.add(new JsonPrimitive(var3));
-      }
+        return jsonarray;
+    }
 
-      return var1;
-   }
-
-   protected Set delegate() {
-      return this.underlyingSet;
-   }
+    protected Set<String> delegate() {
+        return this.underlyingSet;
+    }
 }

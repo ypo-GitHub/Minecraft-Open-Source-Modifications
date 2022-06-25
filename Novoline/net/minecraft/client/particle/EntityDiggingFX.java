@@ -3,7 +3,6 @@ package net.minecraft.client.particle;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
@@ -11,80 +10,92 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class EntityDiggingFX extends EntityFX {
-   private IBlockState field_174847_a;
-   private BlockPos field_181019_az;
+    private IBlockState field_174847_a;
+    private BlockPos field_181019_az;
 
-   protected EntityDiggingFX(World var1, double var2, double var4, double var6, double var8, double var10, double var12, IBlockState var14) {
-      super(var1, var2, var4, var6, var8, var10, var12);
-      this.field_174847_a = var14;
-      this.setParticleIcon(Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelShapes().getTexture(var14));
-      this.particleGravity = var14.getBlock().blockParticleGravity;
-      this.particleRed = this.particleGreen = this.particleBlue = 0.6F;
-      this.particleScale /= 2.0F;
-   }
+    protected EntityDiggingFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, IBlockState state) {
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        this.field_174847_a = state;
+        this.setParticleIcon(Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelShapes().getTexture(state));
+        this.particleGravity = state.getBlock().blockParticleGravity;
+        this.particleRed = this.particleGreen = this.particleBlue = 0.6F;
+        this.particleScale /= 2.0F;
+    }
 
-   public EntityDiggingFX func_174846_a(BlockPos var1) {
-      this.field_181019_az = var1;
-      if(this.field_174847_a.getBlock() == Blocks.grass) {
-         return this;
-      } else {
-         int var2 = this.field_174847_a.getBlock().colorMultiplier(this.worldObj, var1);
-         this.particleRed *= (float)(var2 >> 16 & 255) / 255.0F;
-         this.particleGreen *= (float)(var2 >> 8 & 255) / 255.0F;
-         this.particleBlue *= (float)(var2 & 255) / 255.0F;
-         return this;
-      }
-   }
+    public EntityDiggingFX func_174846_a(BlockPos pos) {
+        this.field_181019_az = pos;
 
-   public EntityDiggingFX func_174845_l() {
-      this.field_181019_az = new BlockPos(this.posX, this.posY, this.posZ);
-      Block var1 = this.field_174847_a.getBlock();
-      if(var1 != Blocks.grass) {
-         int var2 = var1.getRenderColor(this.field_174847_a);
-         this.particleRed *= (float)(var2 >> 16 & 255) / 255.0F;
-         this.particleGreen *= (float)(var2 >> 8 & 255) / 255.0F;
-         this.particleBlue *= (float)(var2 & 255) / 255.0F;
-      }
+        if (this.field_174847_a.getBlock() == Blocks.grass) {
+            return this;
+        } else {
+            int i = this.field_174847_a.getBlock().colorMultiplier(this.worldObj, pos);
+            this.particleRed *= (float) (i >> 16 & 255) / 255.0F;
+            this.particleGreen *= (float) (i >> 8 & 255) / 255.0F;
+            this.particleBlue *= (float) (i & 255) / 255.0F;
+            return this;
+        }
+    }
 
-      return this;
-   }
+    public EntityDiggingFX func_174845_l() {
+        this.field_181019_az = new BlockPos(this.posX, this.posY, this.posZ);
+        Block block = this.field_174847_a.getBlock();
 
-   public int getFXLayer() {
-      return 1;
-   }
+        if (block != Blocks.grass) {
+            int i = block.getRenderColor(this.field_174847_a);
+            this.particleRed *= (float) (i >> 16 & 255) / 255.0F;
+            this.particleGreen *= (float) (i >> 8 & 255) / 255.0F;
+            this.particleBlue *= (float) (i & 255) / 255.0F;
+        }
+        return this;
+    }
 
-   public void renderParticle(WorldRenderer var1, Entity var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      float var9 = ((float)this.particleTextureIndexX + this.particleTextureJitterX / 4.0F) / 16.0F;
-      float var10 = var9 + 0.015609375F;
-      float var11 = ((float)this.particleTextureIndexY + this.particleTextureJitterY / 4.0F) / 16.0F;
-      float var12 = var11 + 0.015609375F;
-      float var13 = 0.1F * this.particleScale;
-      if(this.particleIcon != null) {
-         var9 = this.particleIcon.getInterpolatedU((double)(this.particleTextureJitterX / 4.0F * 16.0F));
-         var10 = this.particleIcon.getInterpolatedU((double)((this.particleTextureJitterX + 1.0F) / 4.0F * 16.0F));
-         var11 = this.particleIcon.getInterpolatedV((double)(this.particleTextureJitterY / 4.0F * 16.0F));
-         var12 = this.particleIcon.getInterpolatedV((double)((this.particleTextureJitterY + 1.0F) / 4.0F * 16.0F));
-      }
+    public int getFXLayer() {
+        return 1;
+    }
 
-      float var14 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)var3 - interpPosX);
-      float var15 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)var3 - interpPosY);
-      float var16 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)var3 - interpPosZ);
-      int var17 = this.getBrightnessForRender(var3);
-      int var18 = var17 >> 16 & '\uffff';
-      int var19 = var17 & '\uffff';
-      var1.pos((double)(var14 - var4 * var13 - var7 * var13), (double)(var15 - var5 * var13), (double)(var16 - var6 * var13 - var8 * var13)).tex((double)var9, (double)var12).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(var18, var19).endVertex();
-      var1.pos((double)(var14 - var4 * var13 + var7 * var13), (double)(var15 + var5 * var13), (double)(var16 - var6 * var13 + var8 * var13)).tex((double)var9, (double)var11).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(var18, var19).endVertex();
-      var1.pos((double)(var14 + var4 * var13 + var7 * var13), (double)(var15 + var5 * var13), (double)(var16 + var6 * var13 + var8 * var13)).tex((double)var10, (double)var11).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(var18, var19).endVertex();
-      var1.pos((double)(var14 + var4 * var13 - var7 * var13), (double)(var15 - var5 * var13), (double)(var16 + var6 * var13 - var8 * var13)).tex((double)var10, (double)var12).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(var18, var19).endVertex();
-   }
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float p_180434_4_, float p_180434_5_, float p_180434_6_, float p_180434_7_, float p_180434_8_) {
+        float f = ((float) this.particleTextureIndexX + this.particleTextureJitterX / 4.0F) / 16.0F;
+        float f1 = f + 0.015609375F;
+        float f2 = ((float) this.particleTextureIndexY + this.particleTextureJitterY / 4.0F) / 16.0F;
+        float f3 = f2 + 0.015609375F;
+        float f4 = 0.1F * this.particleScale;
 
-   public int getBrightnessForRender(float var1) {
-      int var2 = super.getBrightnessForRender(var1);
-      int var3 = 0;
-      if(this.worldObj.isBlockLoaded(this.field_181019_az)) {
-         var3 = this.worldObj.getCombinedLight(this.field_181019_az, 0);
-      }
+        if (this.particleIcon != null) {
+            f = this.particleIcon.getInterpolatedU((double) (this.particleTextureJitterX / 4.0F * 16.0F));
+            f1 = this.particleIcon.getInterpolatedU((double) ((this.particleTextureJitterX + 1.0F) / 4.0F * 16.0F));
+            f2 = this.particleIcon.getInterpolatedV((double) (this.particleTextureJitterY / 4.0F * 16.0F));
+            f3 = this.particleIcon.getInterpolatedV((double) ((this.particleTextureJitterY + 1.0F) / 4.0F * 16.0F));
+        }
 
-      return var3;
-   }
+        float f5 = (float) (this.prevPosX + (this.posX - this.prevPosX) * (double) partialTicks - interpPosX);
+        float f6 = (float) (this.prevPosY + (this.posY - this.prevPosY) * (double) partialTicks - interpPosY);
+        float f7 = (float) (this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTicks - interpPosZ);
+        int i = this.getBrightnessForRender(partialTicks);
+        int j = i >> 16 & 65535;
+        int k = i & 65535;
+        worldRendererIn.pos((double) (f5 - p_180434_4_ * f4 - p_180434_7_ * f4), (double) (f6 - p_180434_5_ * f4), (double) (f7 - p_180434_6_ * f4 - p_180434_8_ * f4)).tex((double) f, (double) f3).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(j, k).endVertex();
+        worldRendererIn.pos((double) (f5 - p_180434_4_ * f4 + p_180434_7_ * f4), (double) (f6 + p_180434_5_ * f4), (double) (f7 - p_180434_6_ * f4 + p_180434_8_ * f4)).tex((double) f, (double) f2).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(j, k).endVertex();
+        worldRendererIn.pos((double) (f5 + p_180434_4_ * f4 + p_180434_7_ * f4), (double) (f6 + p_180434_5_ * f4), (double) (f7 + p_180434_6_ * f4 + p_180434_8_ * f4)).tex((double) f1, (double) f2).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(j, k).endVertex();
+        worldRendererIn.pos((double) (f5 + p_180434_4_ * f4 - p_180434_7_ * f4), (double) (f6 - p_180434_5_ * f4), (double) (f7 + p_180434_6_ * f4 - p_180434_8_ * f4)).tex((double) f1, (double) f3).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(j, k).endVertex();
+    }
+
+    public int getBrightnessForRender(float partialTicks) {
+        int i = super.getBrightnessForRender(partialTicks);
+        int j = 0;
+
+        if (this.worldObj.isBlockLoaded(this.field_181019_az)) {
+            j = this.worldObj.getCombinedLight(this.field_181019_az, 0);
+        }
+
+        return i == 0 ? j : i;
+    }
+
+    public static class Factory implements IParticleFactory {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_) {
+            return new EntityDiggingFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn, Block.getStateById(p_178902_15_[0])).func_174845_l();
+        }
+    }
 }

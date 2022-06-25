@@ -2,52 +2,64 @@ package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.ai.EntityAITarget;
 import net.minecraft.util.AxisAlignedBB;
 
 public class EntityAIHurtByTarget extends EntityAITarget {
-   private boolean entityCallsForHelp;
-   private int revengeTimerOld;
-   private final Class[] targetClasses;
+    private boolean entityCallsForHelp;
 
-   public EntityAIHurtByTarget(EntityCreature var1, boolean var2, Class... var3) {
-      super(var1, false);
-      this.entityCallsForHelp = var2;
-      this.targetClasses = var3;
-      this.setMutexBits(1);
-   }
+    /**
+     * Store the previous revengeTimer value
+     */
+    private int revengeTimerOld;
+    private final Class[] targetClasses;
 
-   public boolean shouldExecute() {
-      int var1 = this.taskOwner.getRevengeTimer();
-      return var1 != this.revengeTimerOld && this.isSuitableTarget(this.taskOwner.getAITarget(), false);
-   }
+    public EntityAIHurtByTarget(EntityCreature creatureIn, boolean entityCallsForHelpIn, Class... targetClassesIn) {
+        super(creatureIn, false);
+        this.entityCallsForHelp = entityCallsForHelpIn;
+        this.targetClasses = targetClassesIn;
+        this.setMutexBits(1);
+    }
 
-   public void startExecuting() {
-      this.taskOwner.setAttackTarget(this.taskOwner.getAITarget());
-      this.revengeTimerOld = this.taskOwner.getRevengeTimer();
-      if(this.entityCallsForHelp) {
-         double var1 = this.getTargetDistance();
+    /**
+     * Returns whether the EntityAIBase should begin execution.
+     */
+    public boolean shouldExecute() {
+        int i = this.taskOwner.getRevengeTimer();
+        return i != this.revengeTimerOld && this.isSuitableTarget(this.taskOwner.getAITarget(), false);
+    }
 
-         for(EntityCreature var4 : this.taskOwner.worldObj.getEntitiesWithinAABB(this.taskOwner.getClass(), (new AxisAlignedBB(this.taskOwner.posX, this.taskOwner.posY, this.taskOwner.posZ, this.taskOwner.posX + 1.0D, this.taskOwner.posY + 1.0D, this.taskOwner.posZ + 1.0D)).expand(var1, 10.0D, var1))) {
-            if(this.taskOwner != var4 && var4.getAttackTarget() == null && !var4.isOnSameTeam(this.taskOwner.getAITarget())) {
-               boolean var5 = false;
+    /**
+     * Execute a one shot task or start executing a continuous task
+     */
+    public void startExecuting() {
+        this.taskOwner.setAttackTarget(this.taskOwner.getAITarget());
+        this.revengeTimerOld = this.taskOwner.getRevengeTimer();
 
-               for(Class var9 : this.targetClasses) {
-                  if(var4.getClass() == var9) {
-                     var5 = true;
-                     break;
-                  }
-               }
+        if (this.entityCallsForHelp) {
+            double d0 = this.getTargetDistance();
 
-               this.setEntityAttackTarget(var4, this.taskOwner.getAITarget());
+            for (EntityCreature entitycreature : this.taskOwner.worldObj.getEntitiesWithinAABB(this.taskOwner.getClass(), new AxisAlignedBB(this.taskOwner.posX, this.taskOwner.posY, this.taskOwner.posZ, this.taskOwner.posX + 1.0D, this.taskOwner.posY + 1.0D, this.taskOwner.posZ + 1.0D).expand(d0, 10.0D, d0))) {
+                if (this.taskOwner != entitycreature && entitycreature.getAttackTarget() == null && !entitycreature.isOnSameTeam(this.taskOwner.getAITarget())) {
+                    boolean flag = false;
+
+                    for (Class oclass : this.targetClasses) {
+                        if (entitycreature.getClass() == oclass) {
+                            flag = true;
+                            break;
+                        }
+                    }
+
+                    if (!flag) {
+                        this.setEntityAttackTarget(entitycreature, this.taskOwner.getAITarget());
+                    }
+                }
             }
-         }
-      }
+        }
 
-      super.startExecuting();
-   }
+        super.startExecuting();
+    }
 
-   protected void setEntityAttackTarget(EntityCreature var1, EntityLivingBase var2) {
-      var1.setAttackTarget(var2);
-   }
+    protected void setEntityAttackTarget(EntityCreature creatureIn, EntityLivingBase entityLivingBaseIn) {
+        creatureIn.setAttackTarget(entityLivingBaseIn);
+    }
 }

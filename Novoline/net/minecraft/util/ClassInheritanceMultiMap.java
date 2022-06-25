@@ -4,107 +4,111 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import net.minecraft.util.ClassInheritanceMultiMap$1;
 
-public class ClassInheritanceMultiMap extends AbstractSet {
-   private static final Set field_181158_a = Sets.newHashSet();
-   private final Map map = Maps.newHashMap();
-   private final Set knownKeys = Sets.newIdentityHashSet();
-   private final Class baseClass;
-   private final List field_181745_e = Lists.newArrayList();
+import java.util.*;
 
-   public ClassInheritanceMultiMap(Class var1) {
-      this.baseClass = var1;
-      this.knownKeys.add(var1);
-      this.map.put(var1, this.field_181745_e);
+public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
+    private static final Set<Class<?>> field_181158_a = Sets.<Class<?>>newHashSet();
+    private final Map<Class<?>, List<T>> map = Maps.<Class<?>, List<T>>newHashMap();
+    private final Set<Class<?>> knownKeys = Sets.<Class<?>>newIdentityHashSet();
+    private final Class<T> baseClass;
+    private final List<T> field_181745_e = Lists.<T>newArrayList();
 
-      for(Class var3 : field_181158_a) {
-         this.createLookup(var3);
-      }
+    public ClassInheritanceMultiMap(Class<T> baseClassIn) {
+        this.baseClass = baseClassIn;
+        this.knownKeys.add(baseClassIn);
+        this.map.put(baseClassIn, this.field_181745_e);
 
-   }
+        for (Class<?> oclass : field_181158_a) {
+            this.createLookup(oclass);
+        }
+    }
 
-   protected void createLookup(Class var1) {
-      field_181158_a.add(var1);
+    protected void createLookup(Class<?> clazz) {
+        field_181158_a.add(clazz);
 
-      for(Object var3 : this.field_181745_e) {
-         if(var1.isAssignableFrom(var3.getClass())) {
-            this.func_181743_a(var3, var1);
-         }
-      }
-
-      this.knownKeys.add(var1);
-   }
-
-   protected Class func_181157_b(Class var1) {
-      if(this.baseClass.isAssignableFrom(var1)) {
-         if(!this.knownKeys.contains(var1)) {
-            this.createLookup(var1);
-         }
-
-         return var1;
-      } else {
-         throw new IllegalArgumentException("Don\'t know how to search for " + var1);
-      }
-   }
-
-   public boolean add(Object var1) {
-      for(Class var3 : this.knownKeys) {
-         if(var3.isAssignableFrom(var1.getClass())) {
-            this.func_181743_a(var1, var3);
-         }
-      }
-
-      return true;
-   }
-
-   private void func_181743_a(Object var1, Class var2) {
-      List var3 = (List)this.map.get(var2);
-      this.map.put(var2, Lists.newArrayList(new Object[]{var1}));
-   }
-
-   public boolean remove(Object var1) {
-      Object var2 = var1;
-      boolean var3 = false;
-
-      for(Class var5 : this.knownKeys) {
-         if(var5.isAssignableFrom(var2.getClass())) {
-            List var6 = (List)this.map.get(var5);
-            if(var6.remove(var2)) {
-               var3 = true;
+        for (T t : this.field_181745_e) {
+            if (clazz.isAssignableFrom(t.getClass())) {
+                this.func_181743_a(t, clazz);
             }
-         }
-      }
+        }
 
-      return var3;
-   }
+        this.knownKeys.add(clazz);
+    }
 
-   public boolean contains(Object var1) {
-      return Iterators.contains(this.getByClass(var1.getClass()).iterator(), var1);
-   }
+    protected Class<?> func_181157_b(Class<?> p_181157_1_) {
+        if (this.baseClass.isAssignableFrom(p_181157_1_)) {
+            if (!this.knownKeys.contains(p_181157_1_)) {
+                this.createLookup(p_181157_1_);
+            }
 
-   public Iterable getByClass(Class var1) {
-      return new ClassInheritanceMultiMap$1(this, var1);
-   }
+            return p_181157_1_;
+        } else {
+            throw new IllegalArgumentException("Don\'t know how to search for " + p_181157_1_);
+        }
+    }
 
-   public Iterator iterator() {
-      return this.field_181745_e.isEmpty()?Iterators.emptyIterator():Iterators.unmodifiableIterator(this.field_181745_e.iterator());
-   }
+    public boolean add(T p_add_1_) {
+        for (Class<?> oclass : this.knownKeys) {
+            if (oclass.isAssignableFrom(p_add_1_.getClass())) {
+                this.func_181743_a(p_add_1_, oclass);
+            }
+        }
 
-   public int size() {
-      return this.field_181745_e.size();
-   }
+        return true;
+    }
 
-   static Map access$000(ClassInheritanceMultiMap var0) {
-      return var0.map;
-   }
+    private void func_181743_a(T p_181743_1_, Class<?> p_181743_2_) {
+        List<T> list = (List) this.map.get(p_181743_2_);
 
-   private static IllegalArgumentException a(IllegalArgumentException var0) {
-      return var0;
-   }
+        if (list == null) {
+            this.map.put(p_181743_2_, Lists.newArrayList(p_181743_1_));
+        } else {
+            list.add(p_181743_1_);
+        }
+    }
+
+    public boolean remove(Object p_remove_1_) {
+        T t = (T) p_remove_1_;
+        boolean flag = false;
+
+        for (Class<?> oclass : this.knownKeys) {
+            if (oclass.isAssignableFrom(t.getClass())) {
+                List<T> list = (List) this.map.get(oclass);
+
+                if (list != null && list.remove(t)) {
+                    flag = true;
+                }
+            }
+        }
+
+        return flag;
+    }
+
+    public boolean contains(Object p_contains_1_) {
+        return Iterators.contains(this.getByClass(p_contains_1_.getClass()).iterator(), p_contains_1_);
+    }
+
+    public <S> Iterable<S> getByClass(final Class<S> clazz) {
+        return new Iterable<S>() {
+            public Iterator<S> iterator() {
+                List<T> list = (List) ClassInheritanceMultiMap.this.map.get(ClassInheritanceMultiMap.this.func_181157_b(clazz));
+
+                if (list == null) {
+                    return Iterators.<S>emptyIterator();
+                } else {
+                    Iterator<T> iterator = list.iterator();
+                    return Iterators.filter(iterator, clazz);
+                }
+            }
+        };
+    }
+
+    public Iterator<T> iterator() {
+        return this.field_181745_e.isEmpty() ? Iterators.<T>emptyIterator() : Iterators.unmodifiableIterator(this.field_181745_e.iterator());
+    }
+
+    public int size() {
+        return this.field_181745_e.size();
+    }
 }

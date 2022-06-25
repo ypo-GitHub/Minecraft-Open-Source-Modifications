@@ -3,7 +3,7 @@ package net.minecraft.util;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public interface IThreadListener {
-   ListenableFuture addScheduledTask(Runnable var1);
+    ListenableFuture<Object> addScheduledTask(Runnable runnableToSchedule);
 
-   boolean isCallingFromMinecraftThread();
+    boolean isCallingFromMinecraftThread();
 }

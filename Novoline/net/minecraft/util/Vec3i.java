@@ -1,78 +1,113 @@
 package net.minecraft.util;
 
 import com.google.common.base.Objects;
-import net.minecraft.util.MathHelper;
 
-public class Vec3i implements Comparable {
-   public static final Vec3i NULL_VECTOR = new Vec3i(0, 0, 0);
-   private final int x;
-   private final int y;
-   private final int z;
+public class Vec3i implements Comparable<Vec3i> {
+    /**
+     * The Null vector constant (0, 0, 0)
+     */
+    public static final Vec3i NULL_VECTOR = new Vec3i(0, 0, 0);
 
-   public Vec3i(int var1, int var2, int var3) {
-      this.x = var1;
-      this.y = var2;
-      this.z = var3;
-   }
+    /**
+     * X coordinate
+     */
+    private final int x;
 
-   public Vec3i(double var1, double var3, double var5) {
-      this(MathHelper.floor_double(var1), MathHelper.floor_double(var3), MathHelper.floor_double(var5));
-   }
+    /**
+     * Y coordinate
+     */
+    private final int y;
 
-   public boolean equals(Object var1) {
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof Vec3i)) {
-         return false;
-      } else {
-         Vec3i var2 = (Vec3i)var1;
-         return this.getX() == var2.getX() && this.getY() == var2.getY() && this.getZ() == var2.getZ();
-      }
-   }
+    /**
+     * Z coordinate
+     */
+    private final int z;
 
-   public int hashCode() {
-      return (this.getY() + this.getZ() * 31) * 31 + this.getX();
-   }
+    public Vec3i(int xIn, int yIn, int zIn) {
+        this.x = xIn;
+        this.y = yIn;
+        this.z = zIn;
+    }
 
-   public int compareTo(Vec3i var1) {
-      return this.getY() == var1.getY()?(this.getZ() == var1.getZ()?this.getX() - var1.getX():this.getZ() - var1.getZ()):this.getY() - var1.getY();
-   }
+    public Vec3i(double xIn, double yIn, double zIn) {
+        this(MathHelper.floor_double(xIn), MathHelper.floor_double(yIn), MathHelper.floor_double(zIn));
+    }
 
-   public int getX() {
-      return this.x;
-   }
+    public boolean equals(Object p_equals_1_) {
+        if (this == p_equals_1_) {
+            return true;
+        } else if (!(p_equals_1_ instanceof Vec3i)) {
+            return false;
+        } else {
+            Vec3i vec3i = (Vec3i) p_equals_1_;
+            return this.getX() == vec3i.getX() && this.getY() == vec3i.getY() && this.getZ() == vec3i.getZ();
+        }
+    }
 
-   public int getY() {
-      return this.y;
-   }
+    public int hashCode() {
+        return (this.getY() + this.getZ() * 31) * 31 + this.getX();
+    }
 
-   public int getZ() {
-      return this.z;
-   }
+    public int compareTo(Vec3i p_compareTo_1_) {
+        return this.getY() == p_compareTo_1_.getY() ? this.getZ() == p_compareTo_1_.getZ() ? this.getX() - p_compareTo_1_.getX() : this.getZ() - p_compareTo_1_.getZ() : this.getY() - p_compareTo_1_.getY();
+    }
 
-   public Vec3i crossProduct(Vec3i var1) {
-      return new Vec3i(this.getY() * var1.getZ() - this.getZ() * var1.getY(), this.getZ() * var1.getX() - this.getX() * var1.getZ(), this.getX() * var1.getY() - this.getY() * var1.getX());
-   }
+    /**
+     * Get the X coordinate
+     */
+    public int getX() {
+        return this.x;
+    }
 
-   public double distanceSq(double var1, double var3, double var5) {
-      double var7 = (double)this.getX() - var1;
-      double var9 = (double)this.getY() - var3;
-      double var11 = (double)this.getZ() - var5;
-      return var7 * var7 + var9 * var9 + var11 * var11;
-   }
+    /**
+     * Get the Y coordinate
+     */
+    public int getY() {
+        return this.y;
+    }
 
-   public double distanceSqToCenter(double var1, double var3, double var5) {
-      double var7 = (double)this.getX() + 0.5D - var1;
-      double var9 = (double)this.getY() + 0.5D - var3;
-      double var11 = (double)this.getZ() + 0.5D - var5;
-      return var7 * var7 + var9 * var9 + var11 * var11;
-   }
+    /**
+     * Get the Z coordinate
+     */
+    public int getZ() {
+        return this.z;
+    }
 
-   public double distanceSq(Vec3i var1) {
-      return this.distanceSq((double)var1.getX(), (double)var1.getY(), (double)var1.getZ());
-   }
+    /**
+     * Calculate the cross product of this and the given Vector
+     */
+    public Vec3i crossProduct(Vec3i vec) {
+        return new Vec3i(this.getY() * vec.getZ() - this.getZ() * vec.getY(), this.getZ() * vec.getX() - this.getX() * vec.getZ(), this.getX() * vec.getY() - this.getY() * vec.getX());
+    }
 
-   public String toString() {
-      return Objects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
-   }
+    /**
+     * Calculate squared distance to the given coordinates
+     */
+    public double distanceSq(double toX, double toY, double toZ) {
+        double d0 = (double) this.getX() - toX;
+        double d1 = (double) this.getY() - toY;
+        double d2 = (double) this.getZ() - toZ;
+        return d0 * d0 + d1 * d1 + d2 * d2;
+    }
+
+    /**
+     * Compute square of distance from point x, y, z to center of this Block
+     */
+    public double distanceSqToCenter(double xIn, double yIn, double zIn) {
+        double d0 = (double) this.getX() + 0.5D - xIn;
+        double d1 = (double) this.getY() + 0.5D - yIn;
+        double d2 = (double) this.getZ() + 0.5D - zIn;
+        return d0 * d0 + d1 * d1 + d2 * d2;
+    }
+
+    /**
+     * Calculate squared distance to the given Vector
+     */
+    public double distanceSq(Vec3i to) {
+        return this.distanceSq((double) to.getX(), (double) to.getY(), (double) to.getZ());
+    }
+
+    public String toString() {
+        return Objects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+    }
 }

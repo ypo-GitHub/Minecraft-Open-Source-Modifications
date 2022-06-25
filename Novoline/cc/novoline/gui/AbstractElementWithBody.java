@@ -1,67 +1,73 @@
 package cc.novoline.gui;
 
-import cc.novoline.gui.AbstractElement;
-import cc.novoline.gui.ElementWithBody;
 import java.util.Objects;
-import net.acE;
 
+/**
+ * @author xDelsy
+ */
 public abstract class AbstractElementWithBody extends AbstractElement implements ElementWithBody {
-   protected int width;
-   protected int height;
 
-   public AbstractElementWithBody(int var1, int var2, int var3, int var4) {
-      super(var1, var2);
-      this.width = var3;
-      this.height = var4;
-   }
+    /* fields */
+    protected int width, height;
 
-   public boolean isHovered(int var1, int var2) {
-      int[] var3 = AbstractElement.b();
-      boolean var4 = var1 >= this.x && var1 <= this.x + this.width && var2 >= this.y && var2 <= this.y + this.height;
-      return var4;
-   }
+    /* constructors */
+    public AbstractElementWithBody(int x, int y, int width, int height) {
+        super(x, y);
+        this.width = width;
+        this.height = height;
+    }
 
-   public int getWidth() {
-      return this.width;
-   }
+    /* methods */
+    @Override
+    public boolean isHovered(int mouseX, int mouseY) { // @off
+        // noinspection UnnecessaryLocalVariable
+        final boolean b = mouseX >= this.x && mouseX <= this.x + this.width &&
+                mouseY >= this.y && mouseY <= this.y + this.height; // @on
 
-   public void setWidth(int var1) {
-      this.width = var1;
-   }
+        // if(b) RenderUtils.drawBorderedRect(x, y, x + width, y + height, 1, 0xFFFF0000, 0);
 
-   public int getHeight() {
-      return this.height;
-   }
+        return b;
+    }
 
-   public void setHeight(int var1) {
-      this.height = var1;
-   }
+    @Override
+    public int getWidth() {
+        return this.width;
+    }
 
-   public boolean equals(Object var1) {
-      int[] var2 = AbstractElement.b();
-      if(this == var1) {
-         return true;
-      } else if(!(var1 instanceof AbstractElementWithBody)) {
-         return false;
-      } else if(!super.equals(var1)) {
-         return false;
-      } else {
-         AbstractElementWithBody var3 = (AbstractElementWithBody)var1;
-         return this.width == var3.width && this.height == var3.height;
-      }
-   }
+    //region Lombok
+    @Override
+    public void setWidth(int width) {
+        this.width = width;
+    }
 
-   public int hashCode() {
-      return Objects.hash(new Object[]{Integer.valueOf(super.hashCode()), Integer.valueOf(this.width), Integer.valueOf(this.height)});
-   }
+    @Override
+    public int getHeight() {
+        return this.height;
+    }
 
-   public String toString() {
-      int[] var1 = AbstractElement.b();
-      String var10000 = "AbstractDrawableWithBody{width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
-      if(acE.b() == null) {
-         AbstractElement.b(new int[3]);
-      }
+    @Override
+    public void setHeight(int height) {
+        this.height = height;
+    }
 
-      return var10000;
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractElementWithBody)) return false;
+        if (!super.equals(o)) return false;
+        final AbstractElementWithBody that = (AbstractElementWithBody) o;
+        return this.width == that.width && this.height == that.height;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.width, this.height);
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractDrawableWithBody{" + "width=" + this.width + ", height=" + this.height + ", visible=" + this.visible + ", x=" + this.x + ", y=" + this.y + '}';
+    }
+    //endregion
+
 }

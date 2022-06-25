@@ -5,16 +5,19 @@ import viaversion.viaversion.api.command.ViaCommandSender;
 import viaversion.viaversion.api.command.ViaSubCommand;
 
 public class HelpSubCmd extends ViaSubCommand {
-   public String name() {
-      return "help";
-   }
+    @Override
+    public String name() {
+        return "help";
+    }
 
-   public String description() {
-      return "You are looking at it right now!";
-   }
+    @Override
+    public String description() {
+        return "You are looking at it right now!";
+    }
 
-   public boolean execute(ViaCommandSender var1, String[] var2) {
-      Via.getManager().getCommandHandler().showHelp(var1);
-      return true;
-   }
+    @Override
+    public boolean execute(ViaCommandSender sender, String[] args) {
+        Via.getManager().getCommandHandler().showHelp(sender);
+        return true;
+    }
 }

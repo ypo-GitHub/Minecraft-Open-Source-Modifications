@@ -3,18 +3,20 @@ package viaversion.viaversion.api.type.types;
 import io.netty.buffer.ByteBuf;
 import viaversion.viaversion.api.type.Type;
 
-public class RemainingBytesType extends Type {
-   public RemainingBytesType() {
-      super("byte[]", byte[].class);
-   }
+public class RemainingBytesType extends Type<byte[]> {
+    public RemainingBytesType() {
+        super("byte[]", byte[].class);
+    }
 
-   public byte[] read(ByteBuf var1) {
-      byte[] var2 = new byte[var1.readableBytes()];
-      var1.readBytes(var2);
-      return var2;
-   }
+    @Override
+    public byte[] read(ByteBuf buffer) {
+        byte[] array = new byte[buffer.readableBytes()];
+        buffer.readBytes(array);
+        return array;
+    }
 
-   public void write(ByteBuf var1, byte[] var2) {
-      var1.writeBytes(var2);
-   }
+    @Override
+    public void write(ByteBuf buffer, byte[] object) {
+        buffer.writeBytes(object);
+    }
 }
